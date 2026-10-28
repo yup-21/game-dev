@@ -1,0 +1,31 @@
+# Godot editor metadata and import caches
+**/.godot/
+**/.import/
+**/export.cfg
+**/export_credentials.cfg
+
+# Generated captures, test output, and builds (curated docs/screenshots stay tracked)
+**/captures/
+**/checks/*-results.json
+*.log
+**/build/
+**/builds/
+**/exports/
+
+# Local tooling and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+*.tmp
+*.bak
+Thumbs.db
+.DS_Store
+
+# Local planning document; outside the published demo scope
+/长风浮生录_完整游戏企划案.md
