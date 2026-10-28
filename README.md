@@ -4,7 +4,7 @@
 
 ## 当前 Demo：断桥听风
 
-[打开 Demo 目录](demos/changfeng-battle) · [操作与规则](demos/changfeng-battle/README.md) · [引擎架构](demos/changfeng-battle/docs/tingfeng-engine.md) · [验证记录](demos/changfeng-battle/reports/validation.md)
+[打开 Demo 目录](demos/changfeng-battle) · [操作与规则](demos/changfeng-battle/README.md) · [战斗机制与框架详细说明](demos/changfeng-battle/docs/tingfeng-engine.md) · [验证记录](demos/changfeng-battle/reports/validation.md)
 
 Godot 4.x 的 2D 武侠战棋原型，采用 **CTB 集气、自由行动、五式多用法卡牌、有限 LIFO 连锁交锋**。玩家和敌人使用相同的资源、牌区、攻击与防御规则；AI 只负责选择合法行动。
 
