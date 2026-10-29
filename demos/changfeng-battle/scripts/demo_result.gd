@@ -30,6 +30,15 @@ func _action(id: String) -> void:
 			call_deferred("_go","res://opening.tscn")
 		"rest": session.choose_aftercare("rest")
 		"pursue": session.choose_aftercare("pursue")
+		"inventory":
+			session.open_management("res://demo_result.tscn")
+			call_deferred("_go","res://inventory.tscn")
+		"martial":
+			session.open_management("res://demo_result.tscn")
+			call_deferred("_go","res://martial_hall.tscn")
+		"save":
+			session.open_management("res://demo_result.tscn")
+			call_deferred("_go","res://save_slots.tscn")
 		"train_str": session.allocate_training_point("STR")
 		"train_agi": session.allocate_training_point("AGI")
 		"break_taixu": session.breakthrough_taixu()
@@ -41,6 +50,7 @@ func _action(id: String) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode==KEY_ESCAPE: _action("menu")
+		if event.keycode==KEY_F5: _action("save")
 	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
 		for button in buttons:
 			if button.rect.has_point(event.position):
@@ -65,6 +75,9 @@ func _draw() -> void:
 	var result_title: String="江湖暂安 · 一战得脱" if success else ("两败俱伤 · 血路未定" if outcome=="draw" else "追兵得势 · 退守破庙")
 	var heading: String="序章 · 雨夜残镖"
 	draw_string(font,Vector2(270,183),heading,HORIZONTAL_ALIGNMENT_LEFT,-1,46,INK)
+	_button(Rect2(800,156,180,47),"行囊装备","inventory")
+	_button(Rect2(990,156,180,47),"武学修炼","martial")
+	_button(Rect2(1180,156,180,47),"存档 F5","save")
 	draw_string(font,Vector2(270,310),result_title,HORIZONTAL_ALIGNMENT_LEFT,-1,40,JADE if success else Color("a95d4c"))
 	draw_string(font,Vector2(270,392),"获得线索：《太虚引气残篇》" if session.items.has("taixu_fragment") else "尚无残篇线索",HORIZONTAL_ALIGNMENT_LEFT,-1,24,INK)
 	var decision: String="你曾试着救治镖头。" if bool(session.flags.get("helped_escort",false)) else "你曾追问劫镖真相。"
