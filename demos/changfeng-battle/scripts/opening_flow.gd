@@ -2,6 +2,7 @@ extends Node2D
 ## Data-driven title screen, ink-wash prologue, walkable vignette and classic wuxia dialogue.
 ## Presentation only: chapter flow is in OpeningStory; existing battles are separate scenes.
 const Story = preload("res://scripts/opening_story.gd")
+const Sfx = preload("res://scripts/demo_sfx.gd")
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
 const JADE = Color("3a8178")
@@ -9,6 +10,7 @@ const GOLD = Color("c5a16b")
 const RED = Color("aa5548")
 const ESCORT = Vector2(1110, 530)
 var story = Story.new()
+var sound = Sfx.new()
 var ui_font: SystemFont
 var title_font: SystemFont
 var clock: float = 0.0
@@ -21,6 +23,7 @@ var message: String = ""
 var message_left: float = 0.0
 
 func _ready() -> void:
+	add_child(sound)
 	ui_font = SystemFont.new()
 	ui_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -38,6 +41,7 @@ func _run_visual_check() -> void:
 	await check.run(self)
 
 func _process(delta: float) -> void:
+	sound.rain_enabled=story.phase in ["cinematic","explore","dialogue","complete"]
 	clock += delta
 	if message_left > 0: message_left = maxf(0.0, message_left-delta)
 	match story.phase:
@@ -62,6 +66,7 @@ func _session():
 	return get_node_or_null("/root/GameSession")
 
 func _enter_new_game() -> void:
+	sound.cue("menu")
 	var session=_session()
 	if session!=null: session.start_new_game()
 	story.begin()
@@ -76,6 +81,7 @@ func _advance_cinematic() -> void:
 
 func _start_dialogue() -> void:
 	if story.interact():
+		sound.cue("dialogue")
 		visible_characters = 0.0
 
 func _dialogue_next() -> void:
@@ -85,6 +91,7 @@ func _dialogue_next() -> void:
 		visible_characters = float(str(node.text).length())
 		return
 	if node.get("choices", []).is_empty() and story.advance_dialogue():
+		sound.cue("dialogue")
 		_sync_story_events()
 		visible_characters = 0.0
 
@@ -95,6 +102,7 @@ func _dialogue_choice(index: int) -> void:
 	var session=_session()
 	if session!=null: session.record_choice(story.dialogue_id,index)
 	if story.choose(index):
+		sound.cue("dialogue")
 		_sync_story_events()
 		visible_characters=0.0
 
