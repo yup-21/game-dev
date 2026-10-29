@@ -30,6 +30,7 @@ func _action(id: String) -> void:
 			call_deferred("_go","res://opening.tscn")
 		"finish":
 			session.finish_demo()
+			queue_redraw()
 		"new":
 			session.return_to_menu()
 			call_deferred("_go","res://opening.tscn")

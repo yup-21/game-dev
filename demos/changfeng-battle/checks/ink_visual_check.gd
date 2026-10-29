@@ -1,6 +1,6 @@
 extends RefCounted
 ## Real Godot canvas smoke test and reproducible screenshots for the presentation PR.
-## Execute: godot --path demos/changfeng-battle -- --ink-visual-check
+## Execute: godot --path demos/changfeng-battle res://battle.tscn -- --ink-visual-check
 
 func _fail(view, message: String) -> void:
 	push_error("INK_VISUAL_CHECK: "+message)
@@ -60,14 +60,16 @@ func run(view) -> void:
 	view.combat_cues.clear()
 	view._sync()
 	await _frames(view,2)
-	var has_ability_button: bool=false
+	var ability_button: Dictionary={}
 	for button in view.buttons:
-		if str(button.get("action",""))=="ability_slot:0": has_ability_button=true
-	if not has_ability_button:
+		if str(button.get("action",""))=="ability_slot:0":
+			ability_button=button
+			break
+	if ability_button.is_empty() or not ability_button.get("enabled",false):
 		_fail(view,"equipped stage does not appear in skill tray")
 		return
 	await view._capture("ink-ability-tray.png")
-	view._button_action("ability:test_chain:one")
+	view._click(ability_button.rect.get_center())
 	if view.mode!="ability":
 		_fail(view,"stage button did not open target selection")
 		return

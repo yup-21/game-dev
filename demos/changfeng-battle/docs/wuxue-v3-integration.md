@@ -120,7 +120,7 @@ AI按规范化usage和公共效果评分，支持抽牌、回气、凝势、燃�
 .\checks\verify.ps1 -Stage SchoolPlaythrough
 ```
 
-新增图形检查：Godot运行参数 `--wuxue-visual-check`。日志仍写captures及captures/checks，生成数据不加入Git。
+新增图形检查：显式运行 `res://battle.tscn` 并传入参数 `--wuxue-visual-check`。日志仍写captures及captures/checks，生成数据不加入Git。
 
 ![双方独立选择流派](screenshots/wuxue-schools.png)
 

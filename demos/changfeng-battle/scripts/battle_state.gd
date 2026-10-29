@@ -107,6 +107,9 @@ func configure_combatants(roster: Variant) -> bool:
 		if not name is String or str(name).is_empty() or not coords is Array or coords.size()!=2 or not coords[0] is int or not coords[1] is int:
 			party_error="Invalid actor name or cell"
 			return false
+		if coords[0]<0 or coords[0]>=COLS or coords[1]<0 or coords[1]>=ROWS:
+			party_error="Actor spawn must be inside the board"
+			return false
 		var cell: Vector2i=Vector2i(int(coords[0]),int(coords[1]))
 		if not passable(cell) or used_cells.has(cell):
 			party_error="Actor spawn must be passable and unoccupied"

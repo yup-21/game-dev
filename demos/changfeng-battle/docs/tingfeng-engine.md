@@ -808,7 +808,7 @@ submit 同步完成当前可结算部分
 .\checks\verify.ps1 -Stage SchoolPlaythrough
 ```
 
-脚本支持 `-GodotPath`、`GODOT_BIN` 与PATH查找，日志写到captures/checks。图形检查命令见 [Demo操作说明](../README.md)；V3用 --wuxue-visual-check，原界面回归用 --tingfeng-visual-check。本次已对受影响的旧定向检查及新增检查分别执行验证。
+脚本支持 `-GodotPath`、`GODOT_BIN` 与PATH查找，日志写到captures/checks。图形检查命令见 [Demo操作说明](../README.md)；显式运行 `res://battle.tscn`，V3用 --wuxue-visual-check，原界面回归用 --tingfeng-visual-check。本次已对受影响的旧定向检查及新增检查分别执行验证。
 
 ## 22. 扩展路线与当前限制
 

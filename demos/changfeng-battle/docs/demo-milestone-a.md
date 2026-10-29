@@ -14,6 +14,7 @@
 godot --headless --path demos/changfeng-battle --script res://checks/test_demo_flow.gd
 godot --headless --path demos/changfeng-battle --script res://checks/test_opening_story.gd
 godot --headless --path demos/changfeng-battle --script res://checks/test_parties.gd
+godot --path demos/changfeng-battle --script res://checks/demo_result_visual_check.gd
 ```
 
-本次提交未运行 Godot（环境无引擎）。需在实机验证故事交互、两名手动角色的 3v3 对战、交锋响应、胜败结算、返回菜单和重开。剧情结果目前暂不修改数值；修炼和暗伤代价将在 Demo B 实现。
+已使用本地 Windows Godot 4.7.2 完成剧情会话、遭遇配置、队伍规则与结算状态的定向检查，并通过序章和结算页窗口截图检查。Godlink MCP 实测了序章输入、菜单进入单挑及 3v3、两名手动角色切换、AI 行动和重开。剧情结果目前暂不修改数值；修炼和暗伤代价将在 Demo B 实现。

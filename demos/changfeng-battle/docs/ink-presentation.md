@@ -17,10 +17,10 @@
 ```powershell
 godot --headless --path demos/changfeng-battle --script res://checks/test_ability_framework.gd
 godot --headless --path demos/changfeng-battle --script res://checks/test_generated_cards.gd
-godot --path demos/changfeng-battle -- --ink-visual-check
+godot --path demos/changfeng-battle res://battle.tscn -- --ink-visual-check
 ```
 
-最后一条指令通过实际窗口捕获 `res://captures/ink-action.png`、`ink-attack.png`、`ink-ability-tray.png`，并核对可点击阶段能力。还应继续运行现有的 `--tingfeng-visual-check` / `--wuxue-visual-check`，验证原有按键、卡牌分支、目标落点、动画确认和战斗结果。
+最后一条指令通过实际窗口捕获 `res://captures/ink-action.png`、`ink-attack.png`、`ink-ability-tray.png`，并核对可点击阶段能力。还应以同样的 `res://battle.tscn` 显式场景运行 `--tingfeng-visual-check` / `--wuxue-visual-check`，验证原有按键、卡牌分支、目标落点、动画确认和战斗结果。
 
 这些检查需要 Godot 环境执行；没有在代码提交环境虚构通过结果。
 

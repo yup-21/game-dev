@@ -18,10 +18,29 @@ func _init(path: String = "res://data/demo_scenario.json") -> void:
 		if not entry.get("combatants") is Array or entry.combatants.size()<2 or entry.combatants.size()>8:
 			load_error="Invalid encounter roster"
 			return
-		if not entry.get("seed",0) is int or not entry.get("schools",{}) is Dictionary:
+		if not _valid_integer(entry.get("seed",0)) or not entry.get("schools",{}) is Dictionary:
 			load_error="Invalid encounter seed / schools"
 			return
-		encounters[entry.id]=entry.duplicate(true)
+		var normalized: Dictionary=entry.duplicate(true)
+		if normalized.has("seed"): normalized.seed=int(normalized.seed)
+		for actor in normalized.combatants:
+			if not actor is Dictionary or not _valid_integer(actor.get("id")) or not _valid_integer(actor.get("team_id")):
+				load_error="Invalid encounter actor numbers"
+				return
+			var cell: Variant=actor.get("cell")
+			if not cell is Array or cell.size()!=2 or not _valid_integer(cell[0]) or not _valid_integer(cell[1]):
+				load_error="Invalid encounter cell numbers"
+				return
+			actor.id=int(actor.id)
+			actor.team_id=int(actor.team_id)
+			actor.cell=[int(cell[0]),int(cell[1])]
+		encounters[entry.id]=normalized
+
+func _valid_integer(value: Variant) -> bool:
+	if value is int: return true
+	# A float at 2^63 cannot be represented by Godot's signed 64-bit int.
+	return (value is float and is_finite(value) and value==floor(value)
+		and value>=-9223372036854775808.0 and value<9223372036854775808.0)
 
 func encounter(id: String) -> Dictionary:
 	return encounters.get(id,{}).duplicate(true)

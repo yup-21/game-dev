@@ -226,7 +226,7 @@ func _sky(t: float, bleak: bool = false) -> void:
 		_polygon(vertices,Color(0.12,0.29,0.28,0.20+float(layer)*0.095))
 	# Slow parallax clouds, independent of battle RNG.
 	for i in range(8):
-		var x: float=mod(float(i)*243.0+t*(6.0+i*1.7),1850.0)-100.0
+		var x: float=fmod(float(i)*243.0+t*(6.0+i*1.7),1850.0)-100.0
 		var y: float=190.0+float(i%4)*90.0
 		draw_ellipse_ink(Vector2(x,y),Vector2(115,20),Color(0.91,0.93,0.85,0.10))
 	# Paper scratches provide motion while keeping the title readable.
@@ -242,8 +242,8 @@ func draw_ellipse_ink(pos: Vector2, radius: Vector2, color: Color) -> void:
 
 func _rain(t: float, density: int = 145) -> void:
 	for i in range(density):
-		var x: float=mod(float((i*159)%1703)+t*170.0*(1.0+float(i%3)*0.12),1640.0)-20.0
-		var y: float=mod(float((i*317)%1191)+t*370.0,1040.0)-20.0
+		var x: float=fmod(float((i*159)%1703)+t*170.0*(1.0+float(i%3)*0.12),1640.0)-20.0
+		var y: float=fmod(float((i*317)%1191)+t*370.0,1040.0)-20.0
 		draw_line(Vector2(x,y),Vector2(x-9,y+28),Color(0.79,0.91,0.88,0.09+float(i%4)*0.04),1.0)
 
 func _paint_pavilion(pos: Vector2, scale_factor: float = 1.0) -> void:
