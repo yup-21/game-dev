@@ -61,7 +61,8 @@ jobs:
             test_demo_flow \
             test_demo_technique \
             test_unified_state_progression \
-            test_save_inventory_martial
+            test_save_inventory_martial \
+            test_oga_cc0_art
           do
             echo "::group::${name}"
             limit=90

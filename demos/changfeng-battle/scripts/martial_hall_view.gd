@@ -11,9 +11,13 @@ var font: SystemFont
 var martial=Martial.new()
 var selected: String="taixu"
 var buttons: Array=[]
+var skill_icons: Texture2D
+const SKILL_ICONS_PATH="res://assets/third_party/oga_cc0/rpg_skill_tree_icons.png"
 var message: String=""
 
 func _ready() -> void:
+	if ResourceLoader.exists(SKILL_ICONS_PATH):
+		skill_icons=load(SKILL_ICONS_PATH) as Texture2D
 	font=SystemFont.new()
 	font.font_names=PackedStringArray(["KaiTi","Noto Sans CJK SC","Microsoft YaHei"])
 	var session=_session()
@@ -104,6 +108,9 @@ func _draw() -> void:
 		var x: float=432+index*143.0
 		var rect: Rect2=Rect2(x,359,134,115)
 		draw_rect(rect,Color("d0e0d2") if rank>=index+1 else Color("e8e5d9"))
+		if skill_icons!=null:
+			var region: Rect2=Rect2(float(index%4)*16.0,0,16,16)
+			draw_texture_rect_region(skill_icons,Rect2(x+52,446,28,28),region,Color.WHITE if rank>=index+1 else Color(0.67,0.67,0.67,0.8))
 		draw_rect(rect,GOLD if rank==index+1 else Color("b6b7a9"),false,2)
 		_txt(Vector2(x+9,384),"%d · %s" % [index+1,str(tier.title)],18,INK)
 		_txt(Vector2(x+9,408),"已领悟" if rank>=index+1 else "未突破",15,JADE if rank>=index+1 else RED)

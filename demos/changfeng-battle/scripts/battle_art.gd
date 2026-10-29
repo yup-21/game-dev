@@ -5,6 +5,22 @@ const JADE = Color("357e77")
 const GOLD = Color("c19659")
 const RED = Color("c26754")
 const PAPER = Color("f2eedf")
+const OGA_TILESET_PATH="res://assets/third_party/oga_cc0/open_tileset.png"
+var oga_terrain: Texture2D
+
+func _init() -> void:
+	# Cosmetic only. No changes to the board's passability or combat RNG.
+	if ResourceLoader.exists(OGA_TILESET_PATH):
+		oga_terrain=load(OGA_TILESET_PATH) as Texture2D
+
+func _terrain_stamps(v: CanvasItem) -> void:
+	if oga_terrain==null: return
+	# Three decorative strips of genuine CC0 pixel tiles; never mark actionable cells.
+	for i in range(9):
+		var source: Rect2=Rect2(96,64,16,16) if i%3!=0 else Rect2(112,64,16,16)
+		var dest: Rect2=Rect2(42+i*108,222,45,32)
+		v.draw_texture_rect_region(oga_terrain,dest,source,Color(0.89,0.96,0.87,0.38))
+
 
 func _poly(v: CanvasItem, points: Array, color: Color) -> void:
 	v.draw_colored_polygon(PackedVector2Array(points), color)
@@ -53,6 +69,7 @@ func battlefield(v: CanvasItem, snap: Dictionary, t: float) -> void:
 	var rect: Rect2=Rect2(24,206,1124,454)
 	v.draw_rect(rect,Color("344c43"),false,2)
 	v.draw_rect(Rect2(29,211,1114,444),Color(0.97,0.91,0.75,0.18),false,1)
+	_terrain_stamps(v)
 	var origin: Vector2=Vector2(78,252)
 	var tile: Vector2=Vector2(70,39)
 	for i in range(13):
