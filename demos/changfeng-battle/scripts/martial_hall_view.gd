@@ -126,14 +126,14 @@ func _draw() -> void:
 	_txt(Vector2(1205,240),"武意抉择",29,JADE)
 	var chosen: Array=record.get("traits",[])
 	var y: int=271
-	for trait in definition.get("traits",[]):
+	for trait_entry in definition.get("traits",[]):
 		draw_rect(Rect2(1203,y,292,132),Color("e7e4d6"))
-		_txt(Vector2(1214,y+29),str(trait.name),21,INK)
-		_txt(Vector2(1214,y+56),str(trait.description),16,INK)
-		if chosen.has(str(trait.id)):
+		_txt(Vector2(1214,y+29),str(trait_entry.name),21,INK)
+		_txt(Vector2(1214,y+56),str(trait_entry.description),16,INK)
+		if chosen.has(str(trait_entry.id)):
 			_txt(Vector2(1214,y+103),"已选择此武意",18,JADE)
 		else:
-			_button(Rect2(1212,y+72,267,41),"领悟 · 第%d重" % int(trait.required_rank),"trait:"+str(trait.id),rank>=int(trait.required_rank) and chosen.is_empty())
+			_button(Rect2(1212,y+72,267,41),"领悟 · 第%d重" % int(trait_entry.required_rank),"trait:"+str(trait_entry.id),rank>=int(trait_entry.required_rank) and chosen.is_empty())
 		y+=146
 	_txt(Vector2(1209,617),"永久属性修炼",25,JADE)
 	var attr_record: Dictionary=session.character_records.get(0,{})
