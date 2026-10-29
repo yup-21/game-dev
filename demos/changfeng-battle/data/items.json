@@ -266,6 +266,15 @@
       "stack_limit": 30,
       "quality": "common",
       "description": "用于后续打造系统。"
+    },
+    {
+      "id": "taixu_scroll",
+      "name": "太虚引气残篇",
+      "kind": "quest",
+      "weight": 0,
+      "stack_limit": 1,
+      "quality": "story",
+      "description": "镖头所托之物，留作参悟心法的线索，不可丢弃。"
     }
   ]
 }
