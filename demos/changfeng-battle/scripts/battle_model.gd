@@ -128,6 +128,9 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		var martial_record: Variant=options.get("martial_progressions",{}).get(actor.id,{})
 		if not martial_record is Dictionary or not martial_progress.configure(actor,martial_record):
 			cards.load_error="Invalid martial progression for actor "+str(actor.id)
+		var permanent_states: Variant=options.get("persistent_states",{}).get(actor.id,{})
+		if not permanent_states is Dictionary or not statuses.import_persistent(actor.id,permanent_states):
+			cards.load_error="Invalid persistent states for actor "+str(actor.id)
 		# Start-of-encounter conditions run through the normal StatusSystem.
 		var initial: Variant=options.get("initial_statuses",{}).get(actor.id,{})
 		if not initial is Dictionary:
