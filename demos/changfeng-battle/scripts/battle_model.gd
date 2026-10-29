@@ -13,6 +13,9 @@ const Events = preload("res://scripts/event_log.gd")
 const Turns = preload("res://scripts/turn_manager.gd")
 const Reactions = preload("res://scripts/reaction_controller.gd")
 const Resolver = preload("res://scripts/combat_resolver.gd")
+const Techniques = preload("res://scripts/technique_runtime.gd")
+const Conditions = preload("res://scripts/condition_evaluator.gd")
+const Abilities = preload("res://scripts/ability_system.gd")
 const COLS: int=15
 const ROWS: int=10
 var state
@@ -28,6 +31,9 @@ var audit
 var turns
 var reactions
 var resolver
+var techniques
+var conditions
+var abilities
 var _request_serial: int=0
 static var _battle_serial: int=0
 var _busy: bool=false
@@ -55,6 +61,11 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	hooks=Hooks.new()
 	costs=Costs.new(state,hooks)
 	rules=Rules.new(state,cards,costs,hooks,statuses)
+	techniques=Techniques.new(str(options.get("technique_catalog_path","res://data/techniques.json")))
+	conditions=Conditions.new()
+	abilities=Abilities.new(state,cards,costs,rules,techniques,conditions)
+	rules.abilities=abilities
+	rules.conditions=conditions
 	combos=Combos.new(cards,statuses)
 	audit=Events.new(state)
 	turns=Turns.new(state,cards,statuses,visibility)
@@ -62,8 +73,11 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	resolver=Resolver.new(state,cards,costs,rules,hooks,combos,statuses,visibility,audit)
 	resolver.turns=turns
 	resolver.reactions=reactions
+	resolver.techniques=techniques
+	turns.techniques=techniques
 	turns.resolver=resolver
 	reactions.resolver=resolver
+	if cards.load_error.is_empty() and not techniques.load_error.is_empty(): cards.load_error=techniques.load_error
 	if not cards.load_error.is_empty():
 		state.outcome="defeat"
 		state.mode="FINISHED"
@@ -72,6 +86,13 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		return
 	for actor in state.actors:
 		attributes.configure(actor,options.get("attributes",{}).get(actor.id,{}),options.get("passives",{}).get(actor.id,{}))
+		var learned=options.get("techniques",{}).get(actor.id,{})
+		if not learned is Dictionary or not techniques.configure(actor,learned):
+			state.outcome="defeat"
+			state.mode="FINISHED"
+			state.phase="FINISHED"
+			audit.emit("RULE_ERROR",{"text":techniques.load_error})
+			return
 		cards.build_deck(actor,seed)
 		cards.draw(actor,5)
 	for actor in state.actors: visibility.refresh_intel(actor.id,true)
