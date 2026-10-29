@@ -62,7 +62,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	costs=Costs.new(state,hooks)
 	rules=Rules.new(state,cards,costs,hooks,statuses)
 	techniques=Techniques.new(str(options.get("technique_catalog_path","res://data/techniques.json")))
-	conditions=Conditions.new()
+	conditions=Conditions.new(statuses)
 	abilities=Abilities.new(state,cards,costs,rules,techniques,conditions)
 	rules.abilities=abilities
 	rules.conditions=conditions
@@ -87,6 +87,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 					break
 		if cards.load_error.is_empty() and not cards.registry.verify(cards.definitions): cards.load_error=cards.registry.error
 	if cards.load_error.is_empty() and not techniques.load_error.is_empty(): cards.load_error=techniques.load_error
+	if cards.load_error.is_empty() and not techniques.validate_with(cards,conditions): cards.load_error=techniques.load_error
 	if not cards.load_error.is_empty():
 		state.outcome="defeat"
 		state.mode="FINISHED"
