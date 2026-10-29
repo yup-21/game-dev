@@ -5,11 +5,53 @@ var failed: int=0
 func _initialize() -> void:
 	call_deferred("run")
 
-func check(ok: bool, label: String) -> void:
+func check(ok: bool, label: String) -> bool:
 	if not ok:
 		failed+=1
 		push_error("FAIL "+label)
 	else: print("PASS "+label)
+	return ok
+
+func finish() -> void:
+	print("RESULTS ",failed," failures")
+	quit(1 if failed>0 else 0)
+
+func check_retention_durations(model, base: Dictionary) -> void:
+	var json_values: Array = JSON.parse_string("[0,2,20,21,-1,2.5]")
+	var cases: Array = [
+		[0,true,"integer zero"],
+		[2,true,"integer two"],
+		[20,true,"integer upper boundary"],
+		[json_values[0],true,"JSON zero"],
+		[json_values[1],true,"JSON two"],
+		[json_values[2],true,"JSON upper boundary"],
+		[json_values[3],false,"JSON above upper boundary"],
+		[json_values[4],false,"JSON negative integer"],
+		[json_values[5],false,"JSON fraction"],
+		[21,false,"integer above upper boundary"],
+		[-1,false,"negative integer"],
+		[-0.5,false,"negative fraction"],
+		[NAN,false,"NaN"],
+		[INF,false,"infinity"],
+		[-INF,false,"negative infinity"],
+		["2",false,"numeric string"],
+		[true,false,"true"],
+		[false,false,"false"],
+		[null,false,"null"],
+		[[],false,"array"],
+		[{},false,"dictionary"],
+	]
+	for i in range(cases.size()):
+		var test_case: Array = cases[i]
+		var definition: Dictionary = base.duplicate(true)
+		definition.id = "test_retention_validation_"+str(i)
+		definition.retain_own_actions = test_case[0]
+		var accepted: bool = model.cards.register_definition(definition)
+		check(accepted==test_case[1] and model.cards.definitions.has(definition.id)==test_case[1],"retention validates "+test_case[2])
+	var default_definition: Dictionary = base.duplicate(true)
+	default_definition.id = "test_retention_default"
+	default_definition.erase("retain_own_actions")
+	check(model.cards.register_definition(default_definition),"missing retention uses default")
 
 func submit(model, uid: String, usage: String) -> bool:
 	if model.state.animation_pending: model.acknowledge_animation(model.state.animation_ticket)
@@ -20,19 +62,28 @@ func submit(model, uid: String, usage: String) -> bool:
 
 func run() -> void:
 	var data=JSON.parse_string(FileAccess.get_file_as_string("res://checks/fixtures/generated_cards.json"))
+	if not check(data is Dictionary and data.get("cards") is Array,"generated fixture parsed"):
+		finish()
+		return
 	var model=Model.new()
 	model.reset(2026,0,"tingfeng",{"card_definitions":data.cards})
-	check(model.state.outcome=="playing","extra definitions registered without initial-deck slots")
+	if not check(model.state.outcome=="playing","extra definitions registered without initial-deck slots"):
+		finish()
+		return
 	var actor=model.state.get_actor(0)
 	var before: int=actor.draw_pile.size()+actor.hand.size()+actor.discard_pile.size()+actor.resolving.size()
 	var source: String=model.cards.create_instance(actor,"test_parent","hand")
-	check(not source.is_empty(),"source can be instantiated from registered definition")
+	if not check(not source.is_empty(),"source can be instantiated from registered definition"):
+		finish()
+		return
 	check(submit(model,source,"make"),"card grants child using general effect")
 	check(actor.hand.size()==6,"generated card added to hand")
 	var generated: String=""
 	for uid in actor.hand:
 		if str(model.cards.instance(uid).get("definition_id",""))=="test_token": generated=uid
-	check(not generated.is_empty(),"child generated although absent from original deck")
+	if not check(not generated.is_empty(),"child generated although absent from original deck"):
+		finish()
+		return
 	check(model.cards.instance(generated).get("generated",false),"generated marker recorded")
 	check(model.cards.relations(generated).get("parent_uid","")==source,"generated card knows its parent")
 	check(model.cards.relations(source).get("child_uids",[]).has(generated),"parent knows child UID")
@@ -50,13 +101,19 @@ func run() -> void:
 	retained.id="test_retained"
 	retained.name="Retained token"
 	retained.relations={"parent":"","children":[],"related":[]}
-	retained.retain_own_actions=2
-	check(model.cards.register_definition(retained),"retention definition registered")
+	retained.retain_own_actions=JSON.parse_string("{\"retain_own_actions\":2}").retain_own_actions
+	check(retained.retain_own_actions is float,"retention duration is a JSON number")
+	if not check(model.cards.register_definition(retained),"retention definition registered"):
+		finish()
+		return
 	var hold_uid: String=model.cards.create_instance(actor,"test_retained","hand")
+	if not check(not hold_uid.is_empty(),"retained card instantiated"):
+		finish()
+		return
 	check(model.cards.retain_on_refresh(actor,hold_uid),"generated card survives next hand refresh")
 	actor.turns_started+=1
 	check(model.cards.retain_on_refresh(actor,hold_uid),"retained card survives first subsequent own ACTION")
 	actor.turns_started+=1
 	check(not model.cards.retain_on_refresh(actor,hold_uid),"retained card expires at configured boundary")
-	print("RESULTS ",failed," failures")
-	quit(1 if failed>0 else 0)
+	check_retention_durations(model,retained)
+	finish()
