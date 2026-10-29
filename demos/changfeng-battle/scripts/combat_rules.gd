@@ -32,7 +32,7 @@ func context(actor_id: int,req: Dictionary = {}) -> Dictionary:
 	return {"actor_id":actor_id,"actors":actors,"request":req.duplicate(true),"mode":state.mode,"tick":state.global_tick,"attack":state.attack.duplicate(true)}
 
 func condition_allows(actor,u: Dictionary) -> bool:
-	if conditions != null and not conditions.allows(u.get("when",{}),actor,{"timing":str(u.get("timing","")),"tick":state.global_tick}): return false
+	if conditions != null and not conditions.allows(actor,u.get("when",{}),{"timing":str(u.get("timing","")),"tick":state.global_tick}): return false
 	for key in u.get("conditions",{}):
 		var value=u.conditions[key]
 		match key:
