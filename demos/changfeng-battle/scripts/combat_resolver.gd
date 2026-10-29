@@ -270,8 +270,22 @@ func apply_attack_effects(trigger: String,source_id: int) -> void:
 
 func effect_target(source: int,target: String) -> int:
 	if target=="enemy":
+		if not state.attack.is_empty():
+			var attacker: int=int(state.attack.attacker_id)
+			var defender: int=int(state.attack.defender_id)
+			if state.is_hostile(source,defender): return defender
+			if state.is_hostile(source,attacker): return attacker
+		var source_actor=state.get_actor(source)
+		if source_actor==null: return source
+		var closest: int=source
+		var distance: int=2147483647
 		for a in state.actors:
-			if a.id!=source: return a.id
+			if not state.is_hostile(source,a.id) or a.hp_u<=0: continue
+			var steps: int=absi(a.cell.x-source_actor.cell.x)+absi(a.cell.y-source_actor.cell.y)
+			if steps<distance or (steps==distance and a.id<closest):
+				distance=steps
+				closest=a.id
+		return closest
 	if target=="attack_target" and not state.attack.is_empty(): return int(state.attack.defender_id)
 	if target=="attack_source" and not state.attack.is_empty(): return int(state.attack.attacker_id)
 	return source
@@ -399,16 +413,20 @@ func finish_card(actor_id: int,uid: String) -> void:
 
 func check_death() -> void:
 	if state.outcome!="playing": return
-	var living: Array=[]
-	for a in state.actors:
-		if a.hp_u>0: living.append(a.id)
-	if living.size()==state.actors.size(): return
-	state.winner_id=int(living[0]) if living.size()==1 else -1
-	state.outcome="draw" if living.is_empty() else ("victory" if state.winner_id==0 else "defeat")
+	var teams: Array=state.living_teams()
+	if teams.size()>1: return
+	state.winning_team=int(teams[0]) if teams.size()==1 else -1
+	state.winner_id=-1
+	if state.winning_team>=0:
+		for a in state.actors:
+			if a.team_id==state.winning_team and a.hp_u>0:
+				state.winner_id=a.id
+				break
+	state.outcome="draw" if teams.is_empty() else ("victory" if state.winning_team==0 else "defeat")
 	state.mode="FINISHED"
 	state.phase="FINISHED"
 	state.hook_queue.clear()
-	audit.emit("BATTLE_FINISHED",{"winner_id":state.winner_id,"text":"同归于尽" if state.outcome=="draw" else "对局结束"})
+	audit.emit("BATTLE_FINISHED",{"winner_id":state.winner_id,"winning_team":state.winning_team,"text":"同归于尽" if state.outcome=="draw" else "对局结束"})
 
 func deal_status_damage(actor_id: int,amount: int,status_id: String) -> void:
 	# Timeline batches all simultaneous periodic effects before checking terminal state.
