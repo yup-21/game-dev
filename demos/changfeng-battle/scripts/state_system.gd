@@ -220,3 +220,27 @@ func on_event(event: Dictionary,resolver) -> void:
 	_pending.clear()
 	_dispatching=false
 	if budget<=0: resolver.diagnostic("STATE_TRANSITION_LIMIT","State transition limit reached")
+
+## Only character-scoped permanent effects cross encounter boundaries.
+func export_persistent(actor_id: int) -> Dictionary:
+	var result: Dictionary={}
+	var actor=state.get_actor(actor_id)
+	if actor==null: return result
+	var ids: Array=actor.statuses.keys()
+	ids.sort()
+	for id in ids:
+		var d: Dictionary=definition(str(id))
+		if d.get("scope","battle")=="character" and d.get("expiry",{}).get("kind","")=="permanent" and has(actor_id,str(id)):
+			result[str(id)]={"stacks":int(actor.statuses[id].get("stacks",1)),"source":str(actor.statuses[id].get("source",""))}
+	return result
+
+func import_persistent(actor_id: int,records: Dictionary) -> bool:
+	var keys: Array=records.keys()
+	keys.sort()
+	for id in keys:
+		var d: Dictionary=definition(str(id))
+		var record: Variant=records[id]
+		if d.get("scope","battle")!="character" or d.get("expiry",{}).get("kind","")!="permanent" or not record is Dictionary: return false
+		if not record.get("stacks") is int or int(record.stacks)<1 or int(record.stacks)>int(d.get("stack_limit",1)): return false
+		if not add(actor_id,str(id),int(record.stacks),{"source":str(record.get("source",""))}): return false
+	return true
