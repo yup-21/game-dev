@@ -58,9 +58,11 @@ func _ready() -> void:
 	DisplayServer.window_set_min_size(Vector2i(1040,650))
 	model.reset(2026,0,"tingfeng",{"passives":passive_settings,"schools":school_settings})
 	_sync()
-	check_mode = "--tingfeng-visual-check" in OS.get_cmdline_user_args() or "--wuxue-visual-check" in OS.get_cmdline_user_args()
+	check_mode = "--tingfeng-visual-check" in OS.get_cmdline_user_args() or "--wuxue-visual-check" in OS.get_cmdline_user_args() or "--ink-visual-check" in OS.get_cmdline_user_args()
 	print("TINGFENG_DUEL_READY seed=",snap.seed," board=15x10 mode=",snap.get("mode","ACTION"))
-	if "--wuxue-visual-check" in OS.get_cmdline_user_args():
+	if "--ink-visual-check" in OS.get_cmdline_user_args():
+		call_deferred("_ink_visual_check")
+	elif "--wuxue-visual-check" in OS.get_cmdline_user_args():
 		call_deferred("_wuxue_visual_check")
 	elif check_mode:
 		call_deferred("_tingfeng_visual_check")
@@ -474,7 +476,7 @@ func _draw_hand() -> void:
 		var card: Dictionary = snap.hand[i]
 		var enabled = _card_enabled(card)
 		art.card_frame(self,rect,i,_uid(card)==selected_card,enabled,card,wall)
-		_text(rect.position+Vector2(14,25),"%d  招式 · %d 用法" % [i+1,card.get("usages",[]).size()],13,GOLD)
+		_text(rect.position+Vector2(14,25),"%d  %s · %d 用法" % [i+1,("衍生" if bool(card.get("generated",false)) else "招式"),card.get("usages",[]).size()],13,GOLD)
 		_text(rect.position+Vector2(14,65),_trim(str(card.name),rect.size.x-28,25),25,INK if enabled else MUTED,true)
 		var usages: Array = card.get("usages",[])
 		for u in range(mini(3,usages.size())):
@@ -548,7 +550,12 @@ func _draw_sidebar() -> void:
 		_text(Vector2(1189,823+(i-begin)*23),_trim(str(entries[i].get("text","")),364,12),12,MUTED)
 
 func _small_button(rect: Rect2, title: String, action: String, enabled: bool, dark: bool = false) -> void:
-	_panel(rect,Color("264e48") if dark else (JADE if enabled else Color("dce2d5")),GOLD if rect.has_point(mouse) else Color("bbcbb6"))
+	var hovered: bool=rect.has_point(mouse) and enabled
+	var base_color: Color=Color("254b46") if dark else (JADE if enabled else Color("dce0d4"))
+	if hovered: base_color=base_color.lightened(0.12)
+	draw_rect(Rect2(rect.position+Vector2(1,3),rect.size),Color(0.13,0.24,0.20,0.12))
+	_panel(rect,base_color,GOLD if hovered else Color("acb7a8"))
+	if hovered: draw_rect(rect.grow(1),Color(GOLD,0.48),false,1.5)
 	_center(rect.position+Vector2(rect.size.x/2,rect.size.y/2+6),title,14,PAPER if enabled else MUTED)
 	buttons.append({"rect":rect,"action":action,"enabled":enabled,"reason":"当前时机、距离、气或移动预算不足"})
 
@@ -607,7 +614,7 @@ func _draw_board() -> void:
 		var terrain: String = snap.terrain[cell]
 		var pos = cell_to_screen(cell)
 		var noise = sin(cell.x*14.1+cell.y*31.7)*0.018
-		var color = Color(0.81+noise,0.84+noise,0.74+noise)
+		var color = Color(0.81+noise,0.84+noise,0.75+noise)
 		if terrain == "water": color = Color("7daba9")
 		elif terrain == "bridge": color = Color("bfa47a")
 		elif terrain == "ford": color = Color("a2b9a6")
@@ -668,12 +675,6 @@ func _draw_actors() -> void:
 	for actor in snap.actors:
 		var pos = _unit_pos(actor.id)
 		var color = JADE if actor.id==0 else RED
-		draw_set_transform(pos+Vector2(0,7),0,Vector2(1,.4))
-		draw_circle(Vector2.ZERO,21,Color(.1,.19,.17,.22))
-		draw_set_transform(Vector2.ZERO)
-		draw_arc(pos,26,0,TAU,36,color,2.5,true)
-		if snap.active_id==actor.id:
-			draw_arc(pos,30,wall*.25,wall*.25+TAU*.8,36,Color(color,.5),2,true)
 		var taking_hit: bool=false
 		for cue in combat_cues:
 			if str(cue.get("kind",""))=="damage" and int(cue.get("target_id",-1))==int(actor.id): taking_hit=true
@@ -750,6 +751,10 @@ func _capture(filename: String) -> void:
 
 func _tingfeng_visual_check() -> void:
 	var check = load("res://checks/tingfeng_visual_check.gd").new()
+	await check.run(self)
+
+func _ink_visual_check() -> void:
+	var check = load("res://checks/ink_visual_check.gd").new()
 	await check.run(self)
 
 func _wuxue_visual_check() -> void:
