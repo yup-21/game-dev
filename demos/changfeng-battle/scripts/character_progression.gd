@@ -48,3 +48,11 @@ func allocate(actor,stat: String,amount: int,attributes,states) -> bool:
 
 func export_record(actor) -> Dictionary:
 	return actor.progression.duplicate(true)
+
+func allocate_record(record: Dictionary,base: Dictionary,stat: String,amount: int=1) -> bool:
+	if not valid(record) or stat not in STATS or amount<1 or amount>20: return false
+	if int(record.get("unspent_points",0))<amount: return false
+	if int(base.get(stat,10))+int(record.growth.get(stat,0))+amount>100: return false
+	record.growth[stat]=int(record.growth.get(stat,0))+amount
+	record.unspent_points=int(record.unspent_points)-amount
+	return true
