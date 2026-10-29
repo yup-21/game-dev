@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "disciplines": [
+    {
+      "id": "taixu",
+      "name": "太虚引气",
+      "school": "内功心法",
+      "intro": "以微末气脉引天地之息，柔中藏锋。残篇所载只是一线门户。",
+      "tiers": [
+        {
+          "rank": 1,
+          "title": "初窥",
+          "description": "初悟行气之理，掌握探脉、流云、断空的基础相承。",
+          "bonus": []
+        },
+        {
+          "rank": 2,
+          "title": "熟练",
+          "description": "行气更稳，内息回复略有精进。",
+          "bonus": [
+            {
+              "stat": "qi_regen_u_per_100",
+              "op": "percent",
+              "value": 5
+            }
+          ]
+        },
+        {
+          "rank": 3,
+          "title": "精通",
+          "description": "察敌经脉空隙，破招力提升。",
+          "bonus": [
+            {
+              "stat": "break_power",
+              "op": "flat",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "rank": 4,
+          "title": "大成",
+          "description": "出招耗气降低，可领悟一种武意分支。",
+          "bonus": [
+            {
+              "stat": "qi_cost_percent",
+              "op": "flat",
+              "value": -5
+            }
+          ]
+        },
+        {
+          "rank": 5,
+          "title": "化境",
+          "description": "以意引气，行招集气更快。",
+          "bonus": [
+            {
+              "stat": "charge_speed",
+              "op": "percent",
+              "value": 5
+            }
+          ]
+        }
+      ],
+      "techniques": [
+        {
+          "name": "探脉",
+          "text": "起手式 · 命中后衍生流云"
+        },
+        {
+          "name": "流云",
+          "text": "续式 · 命中后衍生断空"
+        },
+        {
+          "name": "断空",
+          "text": "收势 · 较强破势能力"
+        }
+      ],
+      "traits": [
+        {
+          "id": "flowing_qi",
+          "name": "绵绵不绝",
+          "required_rank": 4,
+          "description": "内息恢复 +10%",
+          "modifiers": [
+            {
+              "stat": "qi_regen_u_per_100",
+              "op": "percent",
+              "value": 10
+            }
+          ]
+        },
+        {
+          "id": "thunder_break",
+          "name": "势如奔雷",
+          "required_rank": 4,
+          "description": "破招力 +2",
+          "modifiers": [
+            {
+              "stat": "break_power",
+              "op": "flat",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tingfeng",
+      "name": "听风十二势",
+      "school": "身法武学",
+      "intro": "以听劲观势为根，静若藏锋，动若迅雷。",
+      "tiers": [
+        {
+          "rank": 1,
+          "title": "初窥",
+          "description": "身法立桩。",
+          "bonus": []
+        },
+        {
+          "rank": 2,
+          "title": "熟练",
+          "description": "反应更快。",
+          "bonus": [
+            {
+              "stat": "AGI",
+              "op": "flat",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "rank": 3,
+          "title": "精通",
+          "description": "卸劲更稳。",
+          "bonus": [
+            {
+              "stat": "parry_power",
+              "op": "flat",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "rank": 4,
+          "title": "大成",
+          "description": "风行不滞。",
+          "bonus": [
+            {
+              "stat": "charge_speed",
+              "op": "percent",
+              "value": 5
+            }
+          ]
+        },
+        {
+          "rank": 5,
+          "title": "化境",
+          "description": "听息知人。",
+          "bonus": [
+            {
+              "stat": "MND",
+              "op": "flat",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "techniques": [
+        {
+          "name": "听风",
+          "text": "待后续剧情学会"
+        },
+        {
+          "name": "拂叶",
+          "text": "待后续剧情解锁"
+        }
+      ],
+      "traits": []
+    }
+  ]
+}
