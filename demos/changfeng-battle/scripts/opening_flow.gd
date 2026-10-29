@@ -19,8 +19,10 @@ var mouse_pos: Vector2 = Vector2(-100, -100)
 var buttons: Array = []
 var message: String = ""
 var message_left: float = 0.0
+var button_skin: Texture2D
 
 func _ready() -> void:
+	button_skin=load("res://assets/kenney/ui/button_brown.png") as Texture2D
 	ui_font = SystemFont.new()
 	ui_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -190,7 +192,9 @@ func _button(rect: Rect2, caption: String, action: String, dark: bool = false) -
 	var color: Color=(Color("264842") if dark else Color("ede8d7"))
 	if hovered: color=color.lightened(0.12)
 	_panel(rect,color,GOLD if hovered else Color("a79b7c"))
-	_center(rect.position+Vector2(rect.size.x/2,rect.size.y/2+8),caption,22,PAPER if dark else INK,true)
+	if button_skin!=null:
+		draw_texture_rect(button_skin,rect.grow(-2),false,Color(1,1,1,1.0 if hovered else 0.92))
+	_center(rect.position+Vector2(rect.size.x/2,rect.size.y/2+8),caption,22,INK if button_skin!=null else (PAPER if dark else INK),true)
 	if hovered: draw_rect(rect.grow(3),Color(GOLD,0.47),false,1.5)
 	buttons.append({"rect":rect,"action":action})
 
