@@ -35,6 +35,11 @@ func refresh_intel(target_id: int, hand_refresh: bool = true) -> void:
 
 func actor_view(actor, observer_id: int) -> Dictionary:
 	var out: Dictionary=actor.public_data()
+	if actor.id!=observer_id:
+		var status_ids: Array=out.statuses.keys()
+		for status_id in status_ids:
+			if statuses.definition(str(status_id)).get("private",false):
+				out.statuses.erase(status_id)
 	out["observed_hand"]=[]
 	out["danger"]=""
 	if actor.id==observer_id:
