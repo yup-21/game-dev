@@ -12,8 +12,8 @@ func _export() -> void:
     var folder: String = ProjectSettings.globalize_path("user://")
     var hero_path: String = folder.path_join("wuxia_swordsman_6x4.png")
     var rival_path: String = folder.path_join("wuxia_saber_6x4.png")
-    var err1: Error = hero.get_image().save_png(hero_path)
-    var err2: Error = rival.get_image().save_png(rival_path)
+    var err1: int = hero.get_image().save_png(hero_path)
+    var err2: int = rival.get_image().save_png(rival_path)
     if err1 != OK or err2 != OK:
         push_error("HD2D_ATLAS_EXPORT_FAIL ", err1, " ", err2)
         quit(1)
