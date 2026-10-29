@@ -1,0 +1,80 @@
+extends RefCounted
+## Cross-ACTION technique progression; separate from cards and card UIDs.
+var definitions: Dictionary = {}
+var load_error: String = ""
+
+func _init(path: String = "res://data/techniques.json") -> void:
+	if not FileAccess.file_exists(path):
+		load_error = "Technique catalog missing: " + path
+		return
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not data is Dictionary or data.get("version") != 1 or not data.get("techniques") is Array:
+		load_error = "Invalid technique catalog"
+		return
+	for d in data.techniques:
+		if not d is Dictionary or not d.get("id") is String or str(d.id).is_empty() or definitions.has(d.id):
+			load_error = "Duplicate or invalid technique id"
+			return
+		if not d.get("nodes") is Array or d.nodes.is_empty() or d.nodes.size() > 32: load_error = "Invalid graph nodes"; return
+		var ids: Dictionary = {}
+		for n in d.nodes:
+			if not n is Dictionary or not n.get("id") is String or ids.has(n.id): load_error = "Invalid node"; return
+			if n.get("timing", "") not in ["ACTION", "ATTACK_REACTION", "DEFENSE_REACTION"]: load_error = "Invalid timing"; return
+			if not n.get("effects", []) is Array or n.effects.is_empty(): load_error = "Invalid effects"; return
+			if not n.get("cost", {}) is Dictionary or not n.get("target", {}) is Dictionary: load_error = "Invalid costs or target"; return
+			ids[n.id] = true
+		if not ids.has(d.get("entry", "")): load_error = "Invalid entry"; return
+		for n in d.nodes:
+			if not ids.has(n.get("next", d.entry)): load_error = "Invalid transition"; return
+		definitions[d.id] = d.duplicate(true)
+
+func configure(actor, learned: Dictionary) -> bool:
+	for id in learned:
+		if not definitions.has(id) or not learned[id] is int or learned[id] < 1:
+			load_error = "Invalid learned technique: " + str(id)
+			return false
+		actor.technique_states[id] = {"node": definitions[id].entry, "rank": learned[id], "last_used_action": -1}
+	return true
+
+func node(actor, id: String, stage: String) -> Dictionary:
+	if not actor.technique_states.has(id) or not definitions.has(id): return {}
+	if str(actor.technique_states[id].node) != stage: return {}
+	for n in definitions[id].nodes:
+		if str(n.id) == stage and int(n.get("unlock_rank", 1)) <= int(actor.technique_states[id].rank):
+			return n.duplicate(true)
+	return {}
+
+func cost(actor, id: String, stage: String) -> Dictionary:
+	var n = node(actor, id, stage)
+	if n.is_empty(): return {}
+	var c: Dictionary = n.get("cost", {}).duplicate(true)
+	if int(actor.technique_states[id].last_used_action) == actor.turns_started and actor.turns_started > 0:
+		c["qi"] = float(c.get("qi", 0)) + float(n.get("same_action_extra_qi", 0))
+	return c
+
+func advance(actor, id: String, stage: String, interrupted: bool = false) -> void:
+	var n: Dictionary = node(actor, id, stage)
+	if n.is_empty(): return
+	var d: Dictionary = definitions[id]
+	var next_id: String = str(n.get("next", d.entry))
+	if interrupted and bool(n.get("reset_on_interrupt", true)): next_id = str(d.entry)
+	var unlocked: bool = false
+	for candidate in d.nodes:
+		if candidate.id == next_id and int(candidate.get("unlock_rank", 1)) <= int(actor.technique_states[id].rank):
+			unlocked = true
+			break
+	actor.technique_states[id].node = next_id if unlocked else d.entry
+	actor.technique_states[id].last_used_action = actor.turns_started
+
+func on_action_start(actor) -> void:
+	for id in actor.technique_states:
+		var last: int = int(actor.technique_states[id].last_used_action)
+		var hold: int = int(definitions[id].get("hold_own_actions", 2))
+		if last >= 0 and actor.turns_started - last > hold:
+			reset(actor, id)
+
+func reset(actor, id: String) -> bool:
+	if not actor.technique_states.has(id): return false
+	actor.technique_states[id].node = definitions[id].entry
+	actor.technique_states[id].last_used_action = -1
+	return true

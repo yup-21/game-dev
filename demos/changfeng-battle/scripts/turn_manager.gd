@@ -5,6 +5,7 @@ var state
 var cards
 var statuses
 var visibility
+var techniques
 var _resolver_ref: WeakRef
 var resolver:
 	get: return _resolver_ref.get_ref() if _resolver_ref!=null else null
@@ -59,6 +60,7 @@ func begin_next_action() -> void:
 				var drawn: Array=cards.draw(a,5)
 				resolver.emit("CARDS_DRAWN",{"actor_id":a.id,"count":drawn.size()})
 			a.turns_started+=1
+			if techniques!=null: techniques.on_action_start(a)
 			visibility.refresh_intel(a.id,true)
 			state.phase_history.append({"phase":"ACTION","actor_id":a.id,"tick":state.global_tick,"revision":state.revision})
 			resolver.emit("ACTION_STARTED",{"actor_id":a.id,"action_no":state.action_no,"text":"%s 行动 · t=%d" % [a.name,state.global_tick]})

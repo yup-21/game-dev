@@ -39,6 +39,7 @@ func actor_view(actor, observer_id: int) -> Dictionary:
 	out["danger"]=""
 	if actor.id==observer_id:
 		out["passives"]=actor.passives.duplicate(true)
+		out["technique_states"]=actor.technique_states.duplicate(true)
 		out["attack_history"]=actor.attack_history.duplicate(true)
 	for uid in actor.hand:
 		var known: bool=actor.id==observer_id or statuses.has(actor.id,"hand_exposed") or state.knowledge.get(observer_id,{}).has(uid)

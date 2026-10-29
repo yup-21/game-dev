@@ -13,6 +13,7 @@ var visibility
 var audit
 var turns
 var reactions
+var techniques
 
 func _init(s,c,cost_system,validator,registry,combo_system,status_system,visibility_system,event_log) -> void:
 	state=s
@@ -93,6 +94,10 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 			gain_qi(actor.id,1)
 			emit("CARD_DISCARDED",{"actor_id":actor.id,"definition_id":cards.instance(str(action.card_uid)).definition_id,"text":"%s 弃牌调息" % actor.name})
 		"PLAY_CARD": play_card(actor,action)
+		"USE_ABILITY": play_ability(actor,action)
+		"RESET_TECHNIQUE":
+			if techniques.reset(actor,str(action.technique_id)):
+				emit("TECHNIQUE_RESET",{"actor_id":actor.id,"technique_id":action.technique_id})
 		"PASS_REACTION": reactions.pass_response(actor.id)
 	drain_hooks()
 	check_death()
@@ -128,13 +133,33 @@ func play_card(actor,choice: Dictionary) -> void:
 		apply_effects(actor.id,u.get("effects",[]),choice)
 		finish_card(actor.id,uid)
 
-func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: String,target_id: int,damage: int,route: String,break_bonus: int,effects: Array) -> void:
+func play_ability(actor,choice: Dictionary) -> void:
+	var id: String=str(choice.technique_id)
+	var stage: String=str(choice.node_id)
+	var u: Dictionary=techniques.node(actor,id,stage)
+	if u.is_empty(): return
+	emit("ABILITY_USED",{"actor_id":actor.id,"technique_id":id,"node_id":stage})
+	if state.mode=="CLASH":
+		techniques.advance(actor,id,stage)
+		reactions.add(actor.id,"",id,u,choice)
+		return
+	var damage: int=-1
+	for effect in u.effects:
+		if effect.type=="deal_damage": damage=int(effect.amount)
+	if damage>=0:
+		var profile: Dictionary=u.get("attack_profile",{})
+		declare_attack(actor.id,"",id,stage,int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.effects,id,stage)
+	else:
+		apply_effects(actor.id,u.effects,choice)
+		techniques.advance(actor,id,stage)
+
+func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: String,target_id: int,damage: int,route: String,break_bonus: int,effects: Array,technique_id: String="",node_id: String="") -> void:
 	var actor=state.get_actor(actor_id)
 	var target=state.get_actor(target_id)
 	var attack: Dictionary={"attack_id":state.root_action_id,"attacker_id":actor_id,"defender_id":target_id,
 		"card_uid":uid,"definition_id":definition_id,"usage_id":usage_id,"route":route,"break_bonus":break_bonus,
 		"origin_cell":actor.cell,"target_cell":target.cell,"affected_cells":[target.cell],
-		"base_damage":damage,"attack_bonus":0,"defense_reduction":0,"effects":effects.duplicate(true),"interrupted":false,"combo":{},"paid":true}
+		"base_damage":damage,"attack_bonus":0,"defense_reduction":0,"effects":effects.duplicate(true),"interrupted":false,"combo":{},"paid":true,"technique_id":technique_id,"node_id":node_id}
 	var focus: int=statuses.stacks(actor_id,"focus")
 	if focus>0:
 		attack.attack_bonus+=focus
@@ -163,6 +188,8 @@ func resolve_clash() -> void:
 		emit("CHAIN_LINK_RESOLVED",{"actor_id":link.actor_id,"link_id":link.id,"text":"L%d 结算 · %s" % [link.id,link.name]})
 		drain_hooks()
 	if state.outcome=="playing": resolve_attack()
+	if techniques!=null and not str(state.attack.get("technique_id","")).is_empty():
+		techniques.advance(state.get_actor(int(state.attack.attacker_id)),str(state.attack.technique_id),str(state.attack.node_id),bool(state.attack.interrupted))
 	for link in stack: finish_card(int(link.actor_id),str(link.uid))
 	if not str(state.attack.get("card_uid","")).is_empty(): finish_card(int(state.attack.attacker_id),str(state.attack.card_uid))
 	var source: int=int(state.attack.get("attacker_id",-1))
