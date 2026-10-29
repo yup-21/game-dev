@@ -15,6 +15,8 @@ var turns
 var reactions
 var techniques
 var martial
+var inventory
+var inventory_records: Dictionary={}
 
 func _init(s,c,cost_system,validator,registry,combo_system,status_system,visibility_system,event_log) -> void:
 	state=s
@@ -97,6 +99,11 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 		"BASIC_GUARD":
 			actor.basic_guard_used=true
 			add_shield(actor.id,1,100)
+		"USE_ITEM":
+			if inventory!=null and inventory_records.has(actor.id) and not actor.item_used:
+				if inventory.consume(inventory_records[actor.id],str(action.item_id),actor,statuses):
+					actor.item_used=true
+					emit("ITEM_USED",{"actor_id":actor.id,"item_id":str(action.item_id),"text":"%s 使用 %s" % [actor.name,inventory.item(str(action.item_id)).get("name","物品")]})
 		"PITCH_CARD":
 			cards.leave_hand(actor,str(action.card_uid),false)
 			actor.pitch_used=true

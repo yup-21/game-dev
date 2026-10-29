@@ -8,6 +8,9 @@ var cell: Vector2i
 var base_attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
 var attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
 var effective_attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
+var equipment_modifiers: Array=[]
+var martial_modifiers: Array=[]
+var item_used: bool=false
 var progression: Dictionary = {}
 var martial_progress: Dictionary = {}
 var stats: Dictionary = {}

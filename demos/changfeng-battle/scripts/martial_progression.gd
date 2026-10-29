@@ -4,6 +4,42 @@ extends RefCounted
 const RANK_THRESHOLDS=[0,50,150,350,700]
 const MAX_RANK: int=5
 const MAX_XP: int=1000000
+var catalog: Dictionary={}
+
+func _init(path: String="res://data/martial_catalog.json") -> void:
+	if not FileAccess.file_exists(path): return
+	var parsed: Variant=JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not parsed is Dictionary or parsed.get("schema_version")!=1 or not parsed.get("disciplines") is Array: return
+	for entry in parsed.disciplines:
+		if entry is Dictionary and entry.get("id") is String and entry.get("tiers") is Array and entry.get("traits",[]) is Array:
+			catalog[str(entry.id)]=entry.duplicate(true)
+
+func discipline(id: String) -> Dictionary:
+	return catalog.get(id,{}).duplicate(true)
+
+func modifiers(actor) -> Array:
+	var results: Array=[]
+	var ids: Array=actor.martial_progress.keys()
+	ids.sort()
+	for id in ids:
+		if not catalog.has(id): continue
+		var definition: Dictionary=catalog[id]
+		var record: Dictionary=actor.martial_progress[id]
+		for tier in definition.get("tiers",[]):
+			if int(tier.get("rank",99))>int(record.rank): continue
+			for item in tier.get("bonus",[]): results.append(item.duplicate(true))
+		for choice in definition.get("traits",[]):
+			if record.get("traits",[]).has(str(choice.id)):
+				for item in choice.get("modifiers",[]): results.append(item.duplicate(true))
+	return results
+
+func unlock_trait_record(record: Dictionary,id: String,trait_id: String) -> bool:
+	if not valid(record) or not catalog.has(id) or not record.traits.is_empty(): return false
+	for choice in catalog[id].get("traits",[]):
+		if str(choice.get("id",""))==trait_id and int(record.rank)>=int(choice.get("required_rank",4)):
+			record.traits.append(trait_id)
+			return true
+	return false
 
 func create_record(rank: int=1) -> Dictionary:
 	return {"rank":clampi(rank,1,MAX_RANK),"xp":0,"traits":[]}
@@ -52,10 +88,8 @@ func breakthrough(actor,id: String) -> bool:
 func unlock_trait(actor,id: String,trait_id: String,required_rank: int=4) -> bool:
 	if not actor.martial_progress.has(id) or trait_id.is_empty(): return false
 	var record: Dictionary=actor.martial_progress[id]
-	if int(record.rank)<required_rank or record.traits.has(trait_id): return false
-	record.traits.append(trait_id)
-	record.traits.sort()
-	return true
+	if int(record.rank)<required_rank: return false
+	return unlock_trait_record(record,id,trait_id)
 
 func export_records(actor) -> Dictionary:
 	return actor.martial_progress.duplicate(true)

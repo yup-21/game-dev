@@ -32,11 +32,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for script in martial_progression character_progression state_system attribute_modifier_pipeline technique_runtime; do
+          for script in martial_progression character_progression state_system attribute_modifier_pipeline technique_runtime inventory_system save_system json_number_codec scenario_director inventory_view martial_hall_view save_slots_view; do
             godot --headless --path demos/changfeng-battle --check-only --script "res://scripts/${script}.gd"
           done
-      - name: Fast AI policy regression
-        run: timeout 20s godot --headless --path demos/changfeng-battle --script res://checks/test_tingfeng_ai.gd
+      - name: Fast integration gate for save, equipment, consumables and mastery
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 25s godot --headless --path demos/changfeng-battle --script res://checks/test_save_inventory_martial.gd
       - name: Run existing combat and demo contracts
         shell: bash
         run: |
@@ -57,7 +60,8 @@ jobs:
             test_opening_story \
             test_demo_flow \
             test_demo_technique \
-            test_unified_state_progression
+            test_unified_state_progression \
+            test_save_inventory_martial
           do
             echo "::group::${name}"
             limit=90
@@ -97,9 +101,13 @@ jobs:
           set -euo pipefail
           xvfb-run -a godot --path demos/changfeng-battle -- --opening-visual-check
           xvfb-run -a godot --path demos/changfeng-battle res://battle.tscn -- --ink-visual-check
+          xvfb-run -a godot --path demos/changfeng-battle --script res://checks/management_visual_check.gd
           test -s demos/changfeng-battle/captures/opening-title.png
           test -s demos/changfeng-battle/captures/opening-dialogue.png
           test -s demos/changfeng-battle/captures/ink-action.png
+          test -s demos/changfeng-battle/captures/inventory-ui.png
+          test -s demos/changfeng-battle/captures/martial-hall-ui.png
+          test -s demos/changfeng-battle/captures/save-slots-ui.png
       - name: Upload evidence screenshots
         if: always()
         uses: actions/upload-artifact@v4

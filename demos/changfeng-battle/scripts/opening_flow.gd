@@ -32,6 +32,20 @@ func _ready() -> void:
 	if not story.load_error.is_empty():
 		push_error(story.load_error)
 		return
+	var session=_session()
+	if session!=null and session.phase=="story":
+		var checkpoint: Dictionary=session.opening_checkpoint
+		story.begin()
+		if not checkpoint.is_empty():
+			var restore: String=str(checkpoint.get("phase","cinematic"))
+			if restore in ["cinematic","explore","dialogue","complete"]:
+				story.phase=restore
+				story.cinematic_index=clampi(int(checkpoint.get("cinematic_index",0)),0,story.data.cinematic.size()-1)
+				var node: String=str(checkpoint.get("dialogue_id",""))
+				if restore=="dialogue" and story.nodes.has(node): story.dialogue_id=node
+				elif restore=="dialogue": story.phase="explore"
+				story.obtained_fragment=bool(checkpoint.get("obtained_fragment",false))
+				player_pos=Vector2(float(checkpoint.get("player_x",405)),float(checkpoint.get("player_y",593)))
 	print("CHANGFENG_OPENING_READY chapter=", story.data.id)
 	if "--opening-visual-check" in OS.get_cmdline_user_args():
 		call_deferred("_run_visual_check")
@@ -64,6 +78,13 @@ func _process(delta: float) -> void:
 
 func _session():
 	return get_node_or_null("/root/GameSession")
+
+func _checkpoint() -> void:
+	var session=_session()
+	if session==null or session.phase!="story": return
+	session.opening_checkpoint={"phase":story.phase,"cinematic_index":story.cinematic_index,
+		"dialogue_id":story.dialogue_id,"obtained_fragment":story.obtained_fragment,
+		"player_x":player_pos.x,"player_y":player_pos.y}
 
 func _enter_new_game() -> void:
 	sound.cue("menu")
@@ -130,6 +151,11 @@ func _action(action: String) -> void:
 				message_left=3.0
 		"party": call_deferred("_change_scene","res://party_battle.tscn")
 		"quit": get_tree().quit()
+		"save":
+			_checkpoint()
+			var session=_session()
+			if session!=null: session.open_management("res://opening.tscn")
+			call_deferred("_change_scene","res://save_slots.tscn")
 		"menu":
 			story.reset()
 			var session=_session()
@@ -144,6 +170,9 @@ func _action(action: String) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion: mouse_pos = event.position
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode==KEY_F5:
+			_action("save")
+			return
 		match story.phase:
 			"menu":
 				if event.keycode in [KEY_ENTER, KEY_SPACE]: _action("start")
@@ -306,10 +335,11 @@ func _draw_menu() -> void:
 	draw_line(Vector2(126,424),Vector2(618,424),GOLD,2)
 	_text(Vector2(132,482),"英雄无百岁，刀剑不饶人。",23,Color("e1dcc7"),true)
 	_text(Vector2(135,524),"由武入道 · 逆天改命",17,Color("bbcfc3"))
-	_button(Rect2(137,602,391,67),"初入江湖 · 新游戏","start",true)
-	_button(Rect2(137,689,391,59),"断桥论剑 · 战斗试玩","duel",true)
-	_button(Rect2(137,766,391,59),"群侠试炼 · 多人战斗","party",true)
-	_button(Rect2(137,844,391,56),"退出游戏","quit",true)
+	_button(Rect2(137,568,391,64),"初入江湖 · 新游戏","start",true)
+	_button(Rect2(137,645,391,57),"存档与继续游戏","save",true)
+	_button(Rect2(137,713,391,57),"断桥论剑 · 战斗试玩","duel",true)
+	_button(Rect2(137,780,391,57),"群侠试炼 · 多人战斗","party",true)
+	_button(Rect2(137,848,391,53),"退出游戏","quit",true)
 	_text(Vector2(138,947),"序章演示 · 原创水墨程序化动画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
