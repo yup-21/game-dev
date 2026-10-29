@@ -24,6 +24,8 @@ var glow_material: StandardMaterial3D
 
 func _ready() -> void:
     model.reset(2026)
+    snap = model.snapshot(0)
+    legals = model.legal_actions(0)
     _build_world()
     _build_ui()
     _refresh()
