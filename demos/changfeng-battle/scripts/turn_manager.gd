@@ -62,6 +62,7 @@ func begin_next_action() -> void:
 				resolver.emit("CARDS_DRAWN",{"actor_id":a.id,"count":drawn.size()})
 			a.turns_started+=1
 			if techniques!=null: techniques.on_action_start(a)
+			else: statuses.on_owner_action(a.id,resolver)
 			visibility.refresh_intel(a.id,true)
 			state.phase_history.append({"phase":"ACTION","actor_id":a.id,"tick":state.global_tick,"revision":state.revision})
 			resolver.emit("ACTION_STARTED",{"actor_id":a.id,"action_no":state.action_no,"text":"%s 行动 · t=%d" % [a.name,state.global_tick]})
