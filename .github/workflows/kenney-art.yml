@@ -1,0 +1,67 @@
+name: Kenney CC0 art integration
+
+on:
+  push:
+    branches:
+      - art/kenney-cc0-first-pass
+  pull_request:
+    paths:
+      - 'demos/changfeng-battle/assets/**'
+      - 'demos/changfeng-battle/scripts/battle_art.gd'
+      - 'demos/changfeng-battle/scripts/opening_flow.gd'
+      - 'demos/changfeng-battle/checks/test_kenney_assets.gd'
+      - '.github/workflows/kenney-art.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  asset-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: '4.7.2'
+          use-dotnet: false
+      - name: Import scene and image textures
+        run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Verify imported PNG dimensions and scenes
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_kenney_assets.gd
+      - name: Smoke test unchanged combat/story rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suite in test_opening_story test_tingfeng test_parties; do
+            godot --headless --path demos/changfeng-battle --script "res://checks/${suite}.gd"
+          done
+
+  screenshot-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: '4.7.2'
+          use-dotnet: false
+      - name: Virtual display
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1
+      - name: Capture opening and combat
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path demos/changfeng-battle --editor --import --quit
+          xvfb-run -a godot --path demos/changfeng-battle -- --opening-visual-check
+          xvfb-run -a godot --path demos/changfeng-battle res://battle.tscn -- --ink-visual-check
+          test -s demos/changfeng-battle/captures/opening-title.png
+          test -s demos/changfeng-battle/captures/ink-action.png
+      - name: Upload screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kenney-cc0-first-pass-screenshots
+          path: demos/changfeng-battle/captures/*.png
+          if-no-files-found: warn
