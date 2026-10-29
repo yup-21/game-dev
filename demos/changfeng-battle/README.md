@@ -1,6 +1,6 @@
 # 长风浮生录 · 雨夜残镖 Demo
 
-**完整试玩路径（Demo A + B + C）**：主菜单 → 水墨雨夜过场 → 破庙探索与镖头对话 → 参悟《太虚引气残篇》 → 3v3 追兵战斗（两名手动队友、一名 AI 队友）→ 战后暗伤与寿元取舍 → 序章结局。剧情选择、获得残篇、参悟状态与结算结果由 GameSession 跨场景维护。详见 [Demo 总体验收与发布说明](docs/demo-milestone-c.md)、[整合主流程](docs/demo-milestone-a.md)、[参悟与寿元机制](docs/demo-milestone-b.md)。
+**完整试玩路径（Demo A + B + C）**：主菜单 → 水墨雨夜过场 → 破庙探索与镖头对话 → 参悟《太虚引气残篇》 → 3v3 追兵战斗（两名手动队友、一名 AI 队友）→ 战后疗伤或带伤追查 → 序章结局。剧情选择、获得残篇、参悟状态与结算结果由 GameSession 跨场景维护。详见 [Demo 总体验收与发布说明](docs/demo-milestone-c.md)、[整合主流程](docs/demo-milestone-a.md)、[参悟与暗伤机制](docs/demo-milestone-b.md)。
 
 直接运行项目进入主菜单；双人战斗沙盒 `battle.tscn` 和多人沙盒 `party_battle.tscn` 仍可从菜单进入。战斗时按 **P 暂停/继续**，**F10 返回菜单**；原有战棋控制不变。
 
