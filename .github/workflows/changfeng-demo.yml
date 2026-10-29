@@ -47,7 +47,8 @@ jobs:
             test_parties \
             test_opening_story \
             test_demo_flow \
-            test_demo_technique
+            test_demo_technique \
+            test_unified_state_progression
           do
             echo "::group::${name}"
             godot --headless --path "$project" --script "res://checks/${name}.gd"
