@@ -23,7 +23,15 @@ var training_awarded: bool=false
 var persistent_states: Dictionary={}
 var inventories: Dictionary={}
 var opening_checkpoint: Dictionary={}
-var management_return: String="res://opening.tscn"
+var management_history: Array=[]
+func open_management(from_scene: String) -> void:
+	if from_scene in ["res://opening.tscn","res://study.tscn","res://demo_result.tscn","res://martial_hall.tscn","res://inventory.tscn","res://save_slots.tscn"]:
+		management_history.append(from_scene)
+		if management_history.size()>12: management_history.pop_front()
+
+func return_from_management() -> String:
+	if management_history.is_empty(): return "res://opening.tscn"
+	return str(management_history.pop_back())
 var save_message: String=""
 
 func start_new_game() -> void:
@@ -43,6 +51,7 @@ func start_new_game() -> void:
 	persistent_states.clear()
 	inventories={0:Inventory.new().starter_record()}
 	opening_checkpoint.clear()
+	management_history.clear()
 
 func study_fragment() -> bool:
 	if phase!="story" or not items.has("taixu_fragment"): return false
