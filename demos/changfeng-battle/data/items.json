@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "slots": [
+    "weapon",
+    "offhand",
+    "head",
+    "body",
+    "hands",
+    "waist",
+    "feet",
+    "accessory_1",
+    "accessory_2"
+  ],
+  "items": [
+    {
+      "id": "old_saber",
+      "name": "旧式长刀",
+      "kind": "equipment",
+      "slot": "weapon",
+      "weight": 4,
+      "stack_limit": 1,
+      "quality": "common",
+      "description": "磨损的长刀，习武之人入江湖的起手兵器。",
+      "modifiers": [
+        {
+          "stat": "attack",
+          "op": "flat",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "iron_sword",
+      "name": "青钢剑",
+      "kind": "equipment",
+      "slot": "weapon",
+      "weight": 3,
+      "stack_limit": 1,
+      "quality": "fine",
+      "description": "剑身轻快，招式凌厉。",
+      "modifiers": [
+        {
+          "stat": "AGI",
+          "op": "flat",
+          "value": 1
+        },
+        {
+          "stat": "attack",
+          "op": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "iron_staff",
+      "name": "玄铁重棍",
+      "kind": "equipment",
+      "slot": "weapon",
+      "weight": 6,
+      "stack_limit": 1,
+      "two_handed": true,
+      "quality": "fine",
+      "description": "双手兵器，无法同时装备副手。",
+      "modifiers": [
+        {
+          "stat": "attack",
+          "op": "flat",
+          "value": 4
+        },
+        {
+          "stat": "charge_speed",
+          "op": "percent",
+          "value": -5
+        }
+      ]
+    },
+    {
+      "id": "woven_shield",
+      "name": "藤纹小盾",
+      "kind": "equipment",
+      "slot": "offhand",
+      "weight": 3,
+      "stack_limit": 1,
+      "quality": "common",
+      "description": "轻盾，可格挡短兵。",
+      "modifiers": [
+        {
+          "stat": "defense",
+          "op": "flat",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "cloth_cap",
+      "name": "青布巾",
+      "kind": "equipment",
+      "slot": "head",
+      "weight": 1,
+      "stack_limit": 1,
+      "quality": "common",
+      "description": "江湖行旅常见头巾。",
+      "modifiers": [
+        {
+          "stat": "MND",
+          "op": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "traveler_coat",
+      "name": "行旅短衣",
+      "kind": "equipment",
+      "slot": "body",
+      "weight": 2,
+      "stack_limit": 1,
+      "quality": "common",
+      "description": "方便行路的贴身短衣。",
+      "modifiers": [
+        {
+          "stat": "defense",
+          "op": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "wrist_wraps",
+      "name": "护腕",
+      "kind": "equipment",
+      "slot": "hands",
+      "weight": 1,
+      "stack_limit": 1,
+      "quality": "common",
+      "description": "护住手腕经脉。",
+      "modifiers": [
+        {
+          "stat": "parry_power",
+          "op": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "leather_belt",
+      "name": "束腰带",
+      "kind": "equipment",
+      "slot": "waist",
+      "weight": 1,
+      "stack_limit": 1,
+      "quality": "common",
+      "description": "收束衣袍，随身易取。",
+      "modifiers": [
+        {
+          "stat": "move_budget",
+          "op": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "soft_boots",
+      "name": "轻底靴",
+      "kind": "equipment",
+      "slot": "feet",
+      "weight": 2,
+      "stack_limit": 1,
+      "quality": "fine",
+      "description": "行步迅疾。",
+      "modifiers": [
+        {
+          "stat": "charge_speed",
+          "op": "percent",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "jade_pendant",
+      "name": "温玉佩",
+      "kind": "equipment",
+      "slot": "accessory",
+      "weight": 0.5,
+      "stack_limit": 1,
+      "quality": "fine",
+      "description": "温玉沁润，凝神静气。",
+      "modifiers": [
+        {
+          "stat": "max_qi_u",
+          "op": "flat",
+          "value": 10000
+        }
+      ]
+    },
+    {
+      "id": "copper_ring",
+      "name": "护心铜环",
+      "kind": "equipment",
+      "slot": "accessory",
+      "weight": 0.3,
+      "stack_limit": 1,
+      "quality": "common",
+      "description": "气血恢复略有助益。",
+      "modifiers": [
+        {
+          "stat": "hp_regen_u_per_100",
+          "op": "percent",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "healing_powder",
+      "name": "金疮药",
+      "kind": "consumable",
+      "weight": 0.2,
+      "stack_limit": 20,
+      "quality": "common",
+      "description": "战斗中恢复4点气血。",
+      "use": {
+        "kind": "heal_hp",
+        "amount": 4
+      }
+    },
+    {
+      "id": "qi_pill",
+      "name": "回气丸",
+      "kind": "consumable",
+      "weight": 0.15,
+      "stack_limit": 20,
+      "quality": "common",
+      "description": "战斗中恢复2点内息。",
+      "use": {
+        "kind": "restore_qi",
+        "amount": 2
+      }
+    },
+    {
+      "id": "meridian_ointment",
+      "name": "通脉膏",
+      "kind": "consumable",
+      "weight": 0.3,
+      "stack_limit": 10,
+      "quality": "rare",
+      "description": "战斗内或休整时消去一层暗伤。",
+      "use": {
+        "kind": "remove_status",
+        "status_id": "meridian_wound"
+      }
+    },
+    {
+      "id": "escort_seal",
+      "name": "残镖令牌",
+      "kind": "quest",
+      "weight": 0,
+      "stack_limit": 1,
+      "quality": "quest",
+      "description": "镖局遗物，不可消耗或装备。"
+    },
+    {
+      "id": "iron_ore",
+      "name": "精铁矿",
+      "kind": "material",
+      "weight": 1,
+      "stack_limit": 30,
+      "quality": "common",
+      "description": "用于后续打造系统。"
+    }
+  ]
+}
