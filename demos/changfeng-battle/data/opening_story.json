@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "id": "rain_escort_prologue",
+  "title": "雨夜残镖",
+  "subtitle": "第一幕 · 微末草莽，风雨入局",
+  "cinematic": [
+    {
+      "caption": "暮秋 · 江南道",
+      "text": "秋雨连夜。旧武馆的门楣，早已烧成灰烬。",
+      "duration": 3.5
+    },
+    {
+      "caption": "荒道 · 三更",
+      "text": "一辆残破的镖车，停在无名破庙外。血沿车辕，混入雨水。",
+      "duration": 4
+    },
+    {
+      "caption": "无名之卷",
+      "text": "有些江湖事，始于一场劫镖；也有人为此搭上一生。",
+      "duration": 3.6
+    }
+  ],
+  "entry_node": "escort_intro",
+  "dialogues": [
+    {
+      "id": "escort_intro",
+      "speaker": "旁白",
+      "text": "破庙前，风雨几乎掩住人声。镖车旁靠着一名浑身是血的老镖头。",
+      "next": "escort_warning"
+    },
+    {
+      "id": "escort_warning",
+      "speaker": "老镖头",
+      "text": "别……别往官道走。那些人还在找我。",
+      "next": "hero_answer"
+    },
+    {
+      "id": "hero_answer",
+      "speaker": "沈长风",
+      "text": "你伤得太重。我先替你止血。",
+      "next": "escort_urgent"
+    },
+    {
+      "id": "escort_urgent",
+      "speaker": "老镖头",
+      "text": "来不及了。这趟镖……原本就不该出门。小兄弟，你若真想知道缘由……",
+      "choices": [
+        {
+          "text": "先替他包扎伤口",
+          "next": "help_wound"
+        },
+        {
+          "text": "追问是谁截了镖",
+          "next": "ask_pursuers"
+        }
+      ]
+    },
+    {
+      "id": "help_wound",
+      "speaker": "沈长风",
+      "text": "撑住。我学过些粗浅的止血手法。",
+      "next": "help_answer"
+    },
+    {
+      "id": "help_answer",
+      "speaker": "老镖头",
+      "text": "你有这份心，我记下了。可他们要的不是银两……",
+      "next": "escort_fragment"
+    },
+    {
+      "id": "ask_pursuers",
+      "speaker": "沈长风",
+      "text": "追你的人是谁？江湖仇家，还是官府？",
+      "next": "ask_answer"
+    },
+    {
+      "id": "ask_answer",
+      "speaker": "老镖头",
+      "text": "我只认得其中一人的令牌。那东西……不该出现在寻常匪徒身上。",
+      "next": "escort_fragment"
+    },
+    {
+      "id": "escort_fragment",
+      "speaker": "旁白",
+      "text": "老镖头颤抖着扯开衣襟，将一卷浸血的无名绢帛塞进你手中。",
+      "event": "obtain_fragment",
+      "next": "escort_title"
+    },
+    {
+      "id": "escort_title",
+      "speaker": "老镖头",
+      "text": "《太虚引气残篇》……别信那些满口仁义的人。若能活下去，替我问一句：这卷东西，究竟值几条人命？",
+      "next": "hero_oath"
+    },
+    {
+      "id": "hero_oath",
+      "speaker": "沈长风",
+      "text": "我会查清楚。你且在此避雨，追兵若来，我挡上一挡。",
+      "next": "finale"
+    },
+    {
+      "id": "finale",
+      "speaker": "旁白",
+      "text": "远处马蹄踏碎积水，火把在雨幕中亮起。你握紧绢帛，知道自己已经踏进了这场风波。",
+      "next": ""
+    }
+  ]
+}
