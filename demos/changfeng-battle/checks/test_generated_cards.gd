@@ -46,5 +46,17 @@ func run() -> void:
 	for uid in zones: seen[uid]=true
 	check(zones.size()==seen.size() and zones.size()==before+2,"dynamic card count conserved over all zones")
 	check(model.cards.registry.related(model.cards.definitions,"test_parent","children").has("test_token"),"definition-level child references retained")
+	var retained=JSON.parse_string(FileAccess.get_file_as_string("res://checks/fixtures/generated_cards.json")).cards[1].duplicate(true)
+	retained.id="test_retained"
+	retained.name="Retained token"
+	retained.relations={"parent":"","children":[],"related":[]}
+	retained.retain_own_actions=2
+	check(model.cards.register_definition(retained),"retention definition registered")
+	var hold_uid: String=model.cards.create_instance(actor,"test_retained","hand")
+	check(model.cards.retain_on_refresh(actor,hold_uid),"generated card survives next hand refresh")
+	actor.turns_started+=1
+	check(model.cards.retain_on_refresh(actor,hold_uid),"retained card survives first subsequent own ACTION")
+	actor.turns_started+=1
+	check(not model.cards.retain_on_refresh(actor,hold_uid),"retained card expires at configured boundary")
 	print("RESULTS ",failed," failures")
 	quit(1 if failed>0 else 0)
