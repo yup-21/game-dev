@@ -50,7 +50,7 @@ func run_tests() -> void:
 
 func test_catalog_decks() -> void:
 	var base = fresh()
-	check(base.cards.definitions.size() == 5 and base.cards.statuses.size() == 2 and base.cards.combos.size() == 2, "default five forms retain original schema")
+	check(base.cards.definitions.size() == 5 and base.cards.statuses.has("opening") and base.cards.statuses.has("hand_exposed") and base.cards.combos.size() == 2, "default five forms and required legacy states remain compatible")
 	var catalog = base.cards.catalog
 	check(catalog.load_error.is_empty() and catalog.schools.size() == 10 and catalog.forms.size() == 20 and catalog.statuses.size() == 3 and catalog.combos.size() == 7, "V3 catalog complete and validated")
 	check(base.school_options().size() == 11 and base.snapshot().school_catalog.size() == 11, "eleven public school options")
@@ -162,6 +162,14 @@ func scorched():
 	for i in range(2):
 		check(use(model, 0, "ember_fire", "spark"), "scorch applied by legal spark")
 		pass_clash(model)
+	# Live stat changes now recompute derived values. Disable regeneration through
+	# the same modifier system instead of mutating a cached derived stat.
+	check(model.statuses.register_definition("fixture_no_hp_regen",
+		{"id":"fixture_no_hp_regen","scope":"battle","expiry":{"kind":"permanent"},
+		"modifiers":[{"stat":"hp_regen_u_per_100","op":"flat","value":-2000}]}),
+		"scorch clock fixture registers no-regen status")
+	for actor in model.state.actors:
+		check(model.statuses.add(actor.id,"fixture_no_hp_regen"),"scorch clock fixture prevents automatic HP regeneration")
 	model.state.get_actor(1).shield_u = 10 * UNIT
 	return model
 
