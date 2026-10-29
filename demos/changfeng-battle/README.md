@@ -128,3 +128,13 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 ```
 
 图形检查前将 `GODOT_BIN` 指向 Godot 可执行文件。检查会自动退出。控制台检查日志生成于 `captures/checks/`，对局记录生成于 `checks/tingfeng-playthrough-results.json`，运行截图生成于 `captures/tingfeng-*.png`；这些生成文件均忽略提交。已选取的界面截图见 [docs/screenshots](docs/screenshots)，验证摘要见 [reports/validation.md](reports/validation.md)。
+
+## 本地美术资源（CC0）
+
+本分支已将 Kenney 的 18 张 CC0 原始 PNG **实际提交到 `assets/kenney/`**，用于双人/多人战场的人物精灵、地形装饰、卡牌外框和序章菜单按钮。来源、逐组许可和固定上游版本详见 [素材来源与许可](docs/asset-licenses.md)。
+
+```powershell
+.\checks\verify.ps1 -Stage ArtAssets
+```
+
+这是一轮优先解决占位图粗糙问题的素材替换，完整五式教学、连续技槽、动画骨骼和战场镜头仍需单独设计。未触及现有战斗规则。
