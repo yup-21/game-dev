@@ -36,15 +36,19 @@ static func _cylinder(parent: Node3D, pos: Vector3, radius: float, height: float
 
 static func _pine(parent: Node3D, pos: Vector3, height: float, variant: int) -> void:
     _cylinder(parent, pos + Vector3(0, height * 0.31, 0), 0.15, height * 0.62, WOOD)
+    # Layered soft foliage masses read as hand-painted shapes at oblique angles.
     for layer in range(3):
         var crown := MeshInstance3D.new()
-        var cone := CylinderMesh.new()
-        cone.top_radius = 0.0
-        cone.bottom_radius = height * (0.31 - float(layer) * 0.045)
-        cone.height = height * 0.46
-        crown.mesh = cone
+        var leaves := SphereMesh.new()
+        leaves.radius = height * (0.30 - float(layer) * 0.03)
+        leaves.height = height * 0.36
+        crown.mesh = leaves
         crown.material_override = _mat(LEAF_DARK if (variant + layer) % 2 else LEAF_LIGHT)
-        crown.position = pos + Vector3(0, height * (0.56 + float(layer) * 0.16), 0)
+        crown.position = pos + Vector3(
+            sin(float(variant) * 1.7 + float(layer)) * height * 0.055,
+            height * (0.61 + float(layer) * 0.12),
+            cos(float(variant) * 2.1 + float(layer)) * height * 0.05)
+        crown.scale = Vector3(1.36, 1.0, 1.15)
         parent.add_child(crown)
 
 static func _rock(parent: Node3D, pos: Vector3, size: float, variant: int) -> void:
@@ -95,7 +99,15 @@ static func build(parent: Node3D) -> void:
         _box(scenery, "BridgeRail", Vector3(0, 0.75, z), Vector3(4.2, 0.12, 0.14), Color("72543a"))
     _lantern(scenery, Vector3(-3.3, 0, -1.7))
     _lantern(scenery, Vector3(3.3, 0, 1.7))
-    # Distant ridge silhouettes create depth under the angled camera.
+    # Overlapping rounded mountains avoid the old hard cuboid skyline.
     for i in range(9):
-        _box(scenery, "Ridge", Vector3(-17.0 + i * 4.3, -0.3, -19.0),
-            Vector3(5.5, 2.0 + float((i * 7) % 4) * 0.8, 2.4), Color("53685c").darkened(float(i % 3) * 0.08))
+        var ridge := MeshInstance3D.new()
+        var ridge_shape := SphereMesh.new()
+        ridge_shape.radius = 2.8
+        ridge_shape.height = 2.9
+        ridge.mesh = ridge_shape
+        ridge.material_override = _mat(Color("53685c").darkened(float(i % 3) * 0.08))
+        ridge.position = Vector3(-17.0 + float(i) * 4.3,
+            0.1 + float((i * 7) % 4) * 0.28, -19.0)
+        ridge.scale = Vector3(1.55, 0.96 + float(i % 3) * 0.20, 1.1)
+        scenery.add_child(ridge)
