@@ -79,5 +79,18 @@ func _run() -> void:
         quit(1)
         return
 
+    var vfx: RefCounted = scene.get("effects_driver") as RefCounted
+    if vfx == null:
+        push_error("HD2D_STARTUP: sword VFX controller missing")
+        quit(1)
+        return
+    vfx.call("handle_events", [{"type": "ATTACK_DECLARED", "actor_id": 0}], scene.get("actor_nodes"))
+    var bursts: Array = vfx.get("bursts")
+    if bursts.is_empty():
+        push_error("HD2D_STARTUP: slash VFX did not spawn")
+        quit(1)
+        return
+    vfx.call("clear")
+
     print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 sprites=6x4")
     quit(0)
