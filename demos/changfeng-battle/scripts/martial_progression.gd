@@ -59,3 +59,10 @@ func unlock_trait(actor,id: String,trait_id: String,required_rank: int=4) -> boo
 
 func export_records(actor) -> Dictionary:
 	return actor.martial_progress.duplicate(true)
+
+func breakthrough_record(record: Dictionary) -> bool:
+	if not valid(record): return false
+	var current: int=int(record.rank)
+	if current>=MAX_RANK or int(record.xp)<int(RANK_THRESHOLDS[current]): return false
+	record.rank=current+1
+	return true
