@@ -31,6 +31,10 @@ var selected_kind := ""
 var last_cue := ""
 var cue_lights: Dictionary = {}
 var cue_remaining: Dictionary = {}
+var target_markers: Array = []
+var camera_base := Vector3(17, 22, 25)
+var camera_shake := 0.0
+var elapsed := 0.0
 
 func _ready() -> void:
     model.reset(2026)
@@ -88,12 +92,15 @@ func _build_world() -> void:
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
     camera.size = 29.0
-    camera.position = Vector3(17, 22, 25)
+    camera.position = camera_base
     rig.add_child(camera)
     camera.look_at(Vector3.ZERO, Vector3.UP)
     camera.current = true
 
-    _box("River", Vector3(0, -0.35, 0), Vector3(3.3, 0.18, 20), Color("397e82"), 0.22)
+    var river := _box("River", Vector3(0, -0.35, 0), Vector3(3.3, 0.18, 20), Color("397e82"), 0.22)
+    var water := ShaderMaterial.new()
+    water.shader = preload("res://shaders/hd2d_river.gdshader")
+    river.material_override = water
     for x in range(COLS):
         for y in range(ROWS):
             var cell := Vector2i(x, y)
@@ -134,6 +141,45 @@ func _build_world() -> void:
 
     for actor in snap.get("actors", []):
         _create_actor(actor)
+    _build_target_markers()
+
+func _build_target_markers() -> void:
+    var marker_mesh := BoxMesh.new()
+    marker_mesh.size = Vector3(CELL * 0.76, 0.02, CELL * 0.76)
+    var marker_material := StandardMaterial3D.new()
+    marker_material.albedo_color = Color(0.27, 0.71, 0.61, 0.16)
+    marker_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    marker_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    marker_material.no_depth_test = false
+    for x in range(COLS):
+        for y in range(ROWS):
+            var marker := MeshInstance3D.new()
+            marker.mesh = marker_mesh
+            marker.material_override = marker_material
+            marker.position = _world(Vector2i(x, y)) + Vector3(0, 0.09, 0)
+            marker.visible = false
+            add_child(marker)
+            target_markers.append(marker)
+
+func _refresh_target_markers() -> void:
+    if target_markers.is_empty():
+        return
+    var target_cells: Dictionary = {}
+    var actions: Array = _selected_actions() if not selected_kind.is_empty() else legals
+    for action in actions:
+        if selected_kind.is_empty() and str(action.get("kind", "")) != "MOVE":
+            continue
+        if action.has("target_cell"):
+            target_cells[action.target_cell] = true
+        if action.has("target_id"):
+            for actor in snap.get("actors", []):
+                if int(actor.id) == int(action.target_id):
+                    target_cells[actor.cell] = true
+    for x in range(COLS):
+        for y in range(ROWS):
+            var cell := Vector2i(x, y)
+            var marker: MeshInstance3D = target_markers[x * ROWS + y]
+            marker.visible = target_cells.has(cell) and animation_ticket < 0 and _decision_owner() == 0
 
 func _create_actor(actor: Dictionary) -> void:
     var root := Node3D.new()
@@ -202,6 +248,7 @@ func _refresh() -> void:
         if not actor_nodes.has(id):
             _create_actor(actor)
     _rebuild_actions()
+    _refresh_target_markers()
 
 func _decision_owner() -> int:
     if snap.get("phase", "") == "CLASH":
@@ -312,6 +359,7 @@ func _activate_selection() -> void:
         button.pressed.connect(_submit_legal.bind(action))
         card_actions.add_child(button)
     selection_label.text = "已选择招式：点击绿色目标格或角色；右键取消。"
+    _refresh_target_markers()
 
 func _action_at(cell: Vector2i) -> Dictionary:
     for action in _selected_actions():
@@ -337,6 +385,12 @@ func _update_status() -> void:
 func _process(delta: float) -> void:
     if snap.is_empty():
         return
+    elapsed += delta
+    camera_shake = maxf(0.0, camera_shake - delta)
+    if camera_shake > 0.0:
+        camera.position = camera_base + Vector3(sin(elapsed * 71.0) * 0.12, sin(elapsed * 89.0) * 0.07, 0) * camera_shake
+    else:
+        camera.position = camera_base
     _update_cursor()
     for actor in snap.get("actors", []):
         var id := int(actor.id)
@@ -379,6 +433,7 @@ func _accept(result: Dictionary) -> void:
     if snap.get("animation_pending", false):
         animation_ticket = int(result.get("ticket", snap.get("ticket", -1)))
         animation_time = 0.35
+    _refresh_target_markers()
     _update_status()
 
 func _cue_events(events: Array) -> void:
@@ -405,6 +460,8 @@ func _cue_events(events: Array) -> void:
                 continue
         cue_remaining[id] = 0.55
         last_cue = kind
+        if kind in ["DAMAGE", "HP_DAMAGED", "ATTACK_HIT", "COMBO_TRIGGERED"]:
+            camera_shake = 0.20
 
 func _submit(kind: String, params: Dictionary = {}) -> void:
     if animation_ticket >= 0:
@@ -446,12 +503,13 @@ func _update_cursor() -> void:
     var usable := not _action_at(hovered).is_empty() if not selected_kind.is_empty() else not _legal("MOVE", hovered).is_empty()
     cursor_mesh.visible = usable and animation_ticket < 0
     if cursor_mesh.visible:
-        cursor_mesh.position = _world(hovered) + Vector3(0, 0.085, 0)
+        cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
 
 func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
         _clear_selection()
         _rebuild_actions()
+        _refresh_target_markers()
         return
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         if not selected_kind.is_empty():
@@ -480,6 +538,7 @@ func _unhandled_input(event: InputEvent) -> void:
                 _clear_selection()
                 animation_ticket = -1
                 _refresh()
+                _refresh_target_markers()
                 for actor in snap.get("actors", []):
                     actor_nodes[int(actor.id)].position = _world(actor.cell)
             KEY_ESCAPE:
