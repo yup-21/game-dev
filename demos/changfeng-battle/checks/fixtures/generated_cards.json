@@ -1,0 +1,62 @@
+{
+  "cards": [
+    {
+      "id": "test_parent",
+      "name": "Entry",
+      "relations": {
+        "children": [
+          "test_token"
+        ],
+        "related": []
+      },
+      "usages": [
+        {
+          "id": "make",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 0
+          },
+          "target": {
+            "kind": "self"
+          },
+          "effects": [
+            {
+              "type": "grant_card",
+              "card_id": "test_token",
+              "destination": "hand",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "test_token",
+      "name": "Token",
+      "lifecycle": "exile_on_finish",
+      "relations": {
+        "parent": "test_parent",
+        "children": [],
+        "related": []
+      },
+      "usages": [
+        {
+          "id": "use",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 0
+          },
+          "target": {
+            "kind": "self"
+          },
+          "effects": [
+            {
+              "type": "gain_qi",
+              "amount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
