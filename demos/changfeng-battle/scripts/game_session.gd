@@ -128,6 +128,14 @@ func breakthrough_taixu() -> bool:
 	if phase not in ["aftermath","complete"] or not martial_records.has(0) or not martial_records[0].has("taixu"): return false
 	return MartialProgress.new().breakthrough_record(martial_records[0]["taixu"])
 
+func choose_martial_trait(id: String,trait_id: String) -> bool:
+	if phase not in ["aftermath","complete","story"] or not martial_records.has(0) or not martial_records[0].has(id): return false
+	return MartialProgress.new().unlock_trait_record(martial_records[0][id],id,trait_id)
+
+func breakthrough_martial(id: String) -> bool:
+	if phase not in ["aftermath","complete"] or not martial_records.has(0) or not martial_records[0].has(id): return false
+	return MartialProgress.new().breakthrough_record(martial_records[0][id])
+
 func report_battle(outcome: String, team: int) -> bool:
 	if phase!="battle" or outcome not in ["victory","defeat","draw"]: return false
 	battle_outcome=outcome
