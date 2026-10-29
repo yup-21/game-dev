@@ -530,7 +530,11 @@ func _draw_sidebar() -> void:
 		_text(rect.position+Vector2(14,25),"%s · %s  %s" % [actor.name,"你" if i==0 else "对手",actor.get("danger","")],21,color,true)
 		_text(rect.position+Vector2(245,24),"护体 %.1f" % float(actor.shield),14,GOLD)
 		_bar(Rect2(rect.position+Vector2(15,36),Vector2(245,5)),float(actor.hp)/maxf(1,float(actor.get("max_hp",20))),color)
-		_text(rect.position+Vector2(270,43),"%.1f / %.1f" % [float(actor.hp),float(actor.get("max_hp",20))],13,color)
+		var base_hp: float=float(actor.get("base_max_hp",actor.get("max_hp",20)))
+		var effective_hp: float=float(actor.get("max_hp",20))
+		var hp_label: String="%.1f / %.1f" % [float(actor.hp),effective_hp]
+		if effective_hp<base_hp: hp_label+=" (基础 %.1f)" % base_hp
+		_text(rect.position+Vector2(270,43),hp_label,13,color)
 		_text(rect.position+Vector2(15,63),"气 %.1f / %.1f · 移动余 %d · 手牌 %d" % [float(actor.qi),float(actor.get("max_qi",6)),maxi(0,int(actor.get("move_budget",2))-int(actor.get("normal_moves_used",0))),int(actor.hand_count)],13,MUTED)
 		var attrs: Dictionary = actor.get("attributes",{})
 		_text(rect.position+Vector2(15,83),"力 %s  敏 %s  体 %s  意 %s  ·  速度 %.1f" % [attrs.get("STR",10),attrs.get("AGI",10),attrs.get("CON",10),attrs.get("MND",10),float(actor.get("charge_speed",0))],12,MUTED)
