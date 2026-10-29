@@ -3,6 +3,8 @@ extends RefCounted
 const State = preload("res://scripts/battle_state.gd")
 const Cards = preload("res://scripts/card_system.gd")
 const Attributes = preload("res://scripts/attribute_system.gd")
+const CharacterProgress = preload("res://scripts/character_progression.gd")
+const MartialProgress = preload("res://scripts/martial_progression.gd")
 const Statuses = preload("res://scripts/status_system.gd")
 const Visibility = preload("res://scripts/visibility_system.gd")
 const Hooks = preload("res://scripts/hook_registry.gd")
@@ -21,6 +23,8 @@ const ROWS: int=10
 var state
 var cards
 var attributes
+var character_progress
+var martial_progress
 var statuses
 var visibility
 var hooks
@@ -65,15 +69,19 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	state.animation_ticket=ticket
 	state.profile="tingfeng"
 	attributes=Attributes.new()
+	character_progress=CharacterProgress.new()
+	martial_progress=MartialProgress.new()
 	var schools=options.get("schools",{})
 	cards=Cards.new(state,"res://data/tingfeng_cards.json",schools if schools is Dictionary else {})
 	if not schools is Dictionary: cards.load_error="schools必须是角色到流派ID的对象"
 	statuses=Statuses.new(state,cards)
+	statuses.attributes=attributes
 	visibility=Visibility.new(state,cards,statuses)
 	hooks=Hooks.new()
 	costs=Costs.new(state,hooks)
 	rules=Rules.new(state,cards,costs,hooks,statuses)
 	techniques=Techniques.new(str(options.get("technique_catalog_path","res://data/techniques.json")))
+	techniques.states=statuses
 	conditions=Conditions.new(statuses)
 	abilities=Abilities.new(state,cards,costs,rules,techniques,conditions)
 	rules.abilities=abilities
@@ -86,6 +94,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	resolver.turns=turns
 	resolver.reactions=reactions
 	resolver.techniques=techniques
+	resolver.martial=martial_progress
 	turns.techniques=techniques
 	turns.resolver=resolver
 	reactions.resolver=resolver
@@ -98,6 +107,11 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 					cards.load_error="Invalid extra card definition"
 					break
 		if cards.load_error.is_empty() and not cards.registry.verify(cards.definitions): cards.load_error=cards.registry.error
+	if cards.load_error.is_empty():
+		for status_definition in cards.statuses.values():
+			if not statuses.valid_definition(status_definition):
+				cards.load_error="Invalid unified state definition: "+str(status_definition.get("id",""))
+				break
 	if cards.load_error.is_empty() and not techniques.load_error.is_empty(): cards.load_error=techniques.load_error
 	if cards.load_error.is_empty() and not techniques.validate_with(cards,conditions): cards.load_error=techniques.load_error
 	if not cards.load_error.is_empty():
@@ -108,6 +122,12 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		return
 	for actor in state.actors:
 		attributes.configure(actor,options.get("attributes",{}).get(actor.id,{}),options.get("passives",{}).get(actor.id,{}))
+		var growth_record: Variant=options.get("character_progressions",{}).get(actor.id,character_progress.create_record())
+		if not character_progress.configure(actor,growth_record,attributes):
+			cards.load_error="Invalid character progression for actor "+str(actor.id)
+		var martial_record: Variant=options.get("martial_progressions",{}).get(actor.id,{})
+		if not martial_record is Dictionary or not martial_progress.configure(actor,martial_record):
+			cards.load_error="Invalid martial progression for actor "+str(actor.id)
 		# Start-of-encounter conditions run through the normal StatusSystem.
 		var initial: Variant=options.get("initial_statuses",{}).get(actor.id,{})
 		if not initial is Dictionary:
@@ -127,7 +147,11 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 			state.phase="FINISHED"
 			audit.emit("RULE_ERROR",{"text":cards.load_error})
 			return
-		var learned=options.get("techniques",{}).get(actor.id,{})
+		var learned=options.get("techniques",{}).get(actor.id,{}).duplicate(true)
+		if learned is Dictionary:
+			for id in learned:
+				if actor.martial_progress.has(id): learned[id]=int(actor.martial_progress[id].rank)
+				else: martial_progress.learn(actor,str(id),int(learned[id]))
 		if not learned is Dictionary or not techniques.configure(actor,learned):
 			state.outcome="defeat"
 			state.mode="FINISHED"
