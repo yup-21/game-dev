@@ -30,6 +30,12 @@ func _ready() -> void:
 		push_error(story.load_error)
 		return
 	print("CHANGFENG_OPENING_READY chapter=", story.data.id)
+	if "--opening-visual-check" in OS.get_cmdline_user_args():
+		call_deferred("_run_visual_check")
+
+func _run_visual_check() -> void:
+	var check=load("res://checks/opening_visual_check.gd").new()
+	await check.run(self)
 
 func _process(delta: float) -> void:
 	clock += delta
