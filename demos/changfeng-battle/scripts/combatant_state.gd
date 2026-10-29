@@ -12,7 +12,8 @@ var school_id: String = "tingfeng"
 var school_name: String = "听风五式"
 var hand_generation: int = 0
 var hp_u: int = 200000
-var max_hp_u: int = 200000
+var base_max_hp_u: int = 200000 # Innate/persistent attribute-derived ceiling, untouched by status effects.
+var max_hp_u: int = 200000 # Effective ceiling after buffs/debuffs; legacy max_hp reads this.
 var qi_u: int = 30000
 var max_qi_u: int = 60000
 var shield_u: int = 0
@@ -39,6 +40,8 @@ var card_uses: Dictionary = {}
 var technique_states: Dictionary = {}
 var hp: float:
 	get: return float(hp_u)/UNIT
+var base_max_hp: float:
+	get: return float(base_max_hp_u)/UNIT
 var max_hp: float:
 	get: return float(max_hp_u)/UNIT
 var qi: float:
@@ -54,7 +57,7 @@ func _init(actor_id: int = 0, actor_name: String = "", start_cell: Vector2i = Ve
 	cell=start_cell
 
 func public_data(_include_hand: bool = false) -> Dictionary:
-	return {"id":id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"hp":hp,"max_hp":max_hp,"qi":qi,"max_qi":max_qi,
+	return {"id":id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"hp":hp,"max_hp":max_hp,"base_max_hp":base_max_hp,"qi":qi,"max_qi":max_qi,
 		"school_id":school_id,"school_name":school_name,
 		"shield":shield,"gauge":gauge,"charge_speed":stats.get("charge_speed",100),
 		"attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),
