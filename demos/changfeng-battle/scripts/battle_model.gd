@@ -125,6 +125,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		var growth_record: Variant=options.get("character_progressions",{}).get(actor.id,character_progress.create_record())
 		if not character_progress.configure(actor,growth_record,attributes):
 			cards.load_error="Invalid character progression for actor "+str(actor.id)
+		else: actor.hp_u=actor.max_hp_u # Full health at a new encounter, before injuries.
 		var martial_record: Variant=options.get("martial_progressions",{}).get(actor.id,{})
 		if not martial_record is Dictionary or not martial_progress.configure(actor,martial_record):
 			cards.load_error="Invalid martial progression for actor "+str(actor.id)
