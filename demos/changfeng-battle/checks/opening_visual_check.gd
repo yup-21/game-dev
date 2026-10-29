@@ -17,8 +17,19 @@ func _fail(view, message: String) -> void:
 
 func run(view) -> void:
 	await _wait(view)
-	if view.story.phase!="menu" or view.buttons.size()<4:
+	if view.story.phase!="menu" or view.buttons.size()<5:
 		_fail(view,"title screen/menu buttons")
+		return
+	var has_hd2d: bool = false
+	for button in view.buttons:
+		if str(button.action) == "hd2d":
+			has_hd2d = true
+	if not has_hd2d:
+		_fail(view,"illustrated battle preview entry missing")
+		return
+	var sheet: Texture2D = view.CharacterArt.make_sheet(false)
+	if sheet == null or sheet.get_size() != Vector2(960, 800):
+		_fail(view,"opening character illustration sheet not loaded")
 		return
 	if not await _capture(view,"opening-title.png"):
 		_fail(view,"title screenshot write")
