@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Opening','Parties','DemoFlow')][string]$Stage = 'All',
+    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Opening','Parties','DemoFlow','ArtAssets')][string]$Stage = 'All',
     [string]$GodotPath
 )
 $ErrorActionPreference = 'Stop'
@@ -23,6 +23,7 @@ if ($Stage -in @('All','Playthrough')) { $checks += @{ Script = 'res://checks/te
 if ($Stage -in @('All','Schools')) { $checks += @{ Script = 'res://checks/test_wuxue_v3.gd'; Log = 'wuxue-v3.log'; Marker = 'SCHOOL TESTS: \d+ PASS / 0 FAIL' } }
 if ($Stage -in @('All','Catalog')) { $checks += @{ Script = 'res://checks/test_wuxue_catalog.gd'; Log = 'wuxue-catalog.log'; Marker = 'CATALOG CHECK: \d+ checks, 0 failures' } }
 if ($Stage -in @('All','SchoolPlaythrough')) { $checks += @{ Script = 'res://checks/test_wuxue_playthrough.gd'; Log = 'wuxue-playthrough.log'; Marker = 'SCHOOL PLAYTHROUGHS: 0 FAIL' } }
+if ($Stage -in @('All','ArtAssets')) { $checks += @{ Script = 'res://checks/test_kenney_assets.gd'; Log = 'kenney-cc0-art.log'; Marker = 'KENNEY_CC0_ASSETS: 18 loaded, 0 failures' } }
 foreach ($check in $checks) {
     $logPath = Join-Path $logRoot $check.Log
     if (Test-Path -LiteralPath $logPath) { Remove-Item -LiteralPath $logPath }
