@@ -2,6 +2,7 @@ extends Node2D
 ## Data-driven title screen, ink-wash prologue, walkable vignette and classic wuxia dialogue.
 ## Presentation only: chapter flow is in OpeningStory; existing battles are separate scenes.
 const Story = preload("res://scripts/opening_story.gd")
+const CharacterArt = preload("res://scripts/hd2d_illustrated_factory.gd")
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
 const JADE = Color("3a8178")
@@ -115,6 +116,7 @@ func _action(action: String) -> void:
 	match action:
 		"start": _enter_new_game()
 		"duel": call_deferred("_change_scene","res://battle.tscn")
+		"hd2d": call_deferred("_change_scene","res://battle_hd2d.tscn")
 		"story_battle":
 			var session=_session()
 			if session!=null and session.begin_encounter():
@@ -274,39 +276,75 @@ func _carriage(pos: Vector2) -> void:
 	draw_line(pos+Vector2(99,14),pos+Vector2(205,55),Color("765a40"),5)
 	draw_circle(pos+Vector2(-91,27),7,Color("a94e47"))
 
-func _portrait(pos: Vector2, old: bool) -> void:
-	var cloak: Color=Color("74534a") if old else Color("345d59")
-	draw_ellipse_ink(pos+Vector2(0,70),Vector2(65,21),Color(0,0,0,0.15))
-	_polygon([pos+Vector2(-68,92),pos+Vector2(-52,-5),pos+Vector2(-22,-25),pos+Vector2(30,-19),pos+Vector2(67,93)],cloak)
-	_polygon([pos+Vector2(-15,-17),pos+Vector2(18,-17),pos+Vector2(25,83),pos+Vector2(-18,91)],cloak.lightened(0.15))
-	draw_circle(pos+Vector2(0,-39),37,Color("d6b58f"))
-	_polygon([pos+Vector2(-39,-40),pos+Vector2(-38,-64),pos+Vector2(-19,-88),pos+Vector2(19,-81),pos+Vector2(36,-60),pos+Vector2(36,-35),pos+Vector2(13,-59),pos+Vector2(-21,-52)],Color("29393a"))
-	draw_line(pos+Vector2(-16,-42),pos+Vector2(-6,-44),Color("303b39"),2)
-	draw_line(pos+Vector2(8,-45),pos+Vector2(19,-43),Color("303b39"),2)
-	if old:
-		draw_line(pos+Vector2(-21,-23),pos+Vector2(-10,-13),Color("b7b4a9"),3)
-		draw_line(pos+Vector2(11,-10),pos+Vector2(25,-26),Color("b7b4a9"),2)
-		draw_line(pos+Vector2(4,-12),pos+Vector2(20,-1),RED,3)
-	else:
-		draw_circle(pos+Vector2(0,-86),8,Color("273b3c"))
-		draw_line(pos+Vector2(46,20),pos+Vector2(86,-80),Color("dedbd1"),4)
-		draw_line(pos+Vector2(37,23),pos+Vector2(57,32),GOLD,5)
+func _portrait(pos: Vector2, old: bool, scale_factor: float = 1.0) -> void:
+	# Render the same transparent high-resolution character frames as the battle.
+	# The escort uses the warm robe variant; no nearest filtering or pixel grid.
+	var sheet: Texture2D = CharacterArt.make_sheet(old)
+	var width: float = 158.0 * scale_factor
+	var height: float = 198.0 * scale_factor
+	draw_ellipse_ink(pos + Vector2(0, 85.0 * scale_factor),
+		Vector2(68.0 * scale_factor, 13.0 * scale_factor), Color(0.01, 0.06, 0.06, 0.25))
+	draw_texture_rect_region(sheet,
+		Rect2(pos - Vector2(width * 0.5, height * 0.58), Vector2(width, height)),
+		Rect2(0, 0, CharacterArt.FRAME_W, CharacterArt.FRAME_H))
+
+
+func _lantern_light(pos: Vector2, t: float) -> void:
+	# Warm pooled lantern light and wet-ground reflections against the cool rain.
+	var warm: Color = Color("efbf77")
+	var flicker: float = 1.0 + sin(t * 4.8) * 0.09
+	for layer in range(6, 0, -1):
+		var spread: float = float(layer) * 37.0
+		draw_circle(pos, spread, Color(warm, 0.0055 * float(7 - layer) * flicker))
+	draw_line(pos + Vector2(0, -100), pos + Vector2(0, -19), Color("544438"), 5)
+	draw_line(pos + Vector2(-20, -80), pos + Vector2(20, -80), Color("6e5841"), 5)
+	_polygon([pos + Vector2(-17, -65), pos + Vector2(17, -65),
+		pos + Vector2(13, -24), pos + Vector2(-13, -24)], Color("eac589"))
+	draw_rect(Rect2(pos + Vector2(-15, -67), Vector2(30, 45)), Color("6e5142"), false, 3)
+	draw_line(pos + Vector2(0, -64), pos + Vector2(0, -25), Color("af754a"), 2)
+	for ring in range(4):
+		draw_ellipse_ink(pos + Vector2(0, 37 + ring * 13),
+			Vector2(15.0 + ring * 14, 3.0 + ring), Color(warm, 0.13 / float(ring + 1)))
+
+
+func _wet_road(t: float) -> void:
+	# Dappled puddles and ripples preserve the original interaction coordinates.
+	for i in range(28):
+		var x: float = float((i * 167 + 121) % 1540) + 20.0
+		var y: float = 686.0 + float((i * 73) % 265)
+		var radius: float = 13.0 + float(i % 6) * 7.0
+		var phase: float = fposmod(t * 30.0 + float(i * 17), 45.0)
+		draw_arc(Vector2(x, y), radius + phase * 0.23,
+			0.05, PI - 0.05, 16, Color(0.82, 0.91, 0.85, 0.09 * (1.0 - phase / 45.0)), 1.4)
+		if i % 4 == 0:
+			draw_line(Vector2(x - 38, y + 5), Vector2(x + 48, y + 3),
+				Color("b4c3ae", 0.12), 2)
+
+
+func _cinema_bars() -> void:
+	draw_rect(Rect2(0, 0, 1600, 75), Color(0.03, 0.08, 0.09, 0.91))
+	draw_rect(Rect2(0, 924, 1600, 76), Color(0.03, 0.08, 0.09, 0.91))
+	draw_line(Vector2(0, 76), Vector2(1600, 76), Color(GOLD, 0.18), 2)
+	draw_line(Vector2(0, 923), Vector2(1600, 923), Color(GOLD, 0.18), 2)
 
 func _draw_menu() -> void:
 	_sky(clock)
 	draw_rect(Rect2(0,0,650,1000),Color(0.08,0.18,0.17,0.47))
 	_paint_pavilion(Vector2(1290,755),1.1)
+	_lantern_light(Vector2(1280,711),clock)
+	_portrait(Vector2(1010,700),false,2.10)
 	draw_circle(Vector2(800,370),105,Color(0.93,0.86,0.67,0.10))
 	_text(Vector2(132,250),"MORTAL DAO  /  江 湖 浮 生",19,GOLD)
 	_text(Vector2(118,384),"长风浮生录",77,PAPER,true)
 	draw_line(Vector2(126,424),Vector2(618,424),GOLD,2)
 	_text(Vector2(132,482),"英雄无百岁，刀剑不饶人。",23,Color("e1dcc7"),true)
 	_text(Vector2(135,524),"由武入道 · 逆天改命",17,Color("bbcfc3"))
-	_button(Rect2(137,602,391,67),"初入江湖 · 新游戏","start",true)
-	_button(Rect2(137,689,391,59),"断桥论剑 · 战斗试玩","duel",true)
-	_button(Rect2(137,766,391,59),"群侠试炼 · 多人战斗","party",true)
-	_button(Rect2(137,844,391,56),"退出游戏","quit",true)
-	_text(Vector2(138,947),"序章演示 · 原创水墨程序化动画 · 暮秋雨夜",13,Color("c3c9b6"))
+	_button(Rect2(137,595,391,65),"初入江湖 · 新游戏","start",true)
+	_button(Rect2(137,672,391,57),"插画立体战场 · HD-2D","hd2d",true)
+	_button(Rect2(137,741,391,53),"经典断桥论剑 · 旧版","duel",true)
+	_button(Rect2(137,806,391,53),"群侠试炼 · 多人战斗","party",true)
+	_button(Rect2(137,871,391,50),"退出游戏","quit",true)
+	_text(Vector2(138,960),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
 	_sky(clock,true)
@@ -316,9 +354,16 @@ func _draw_cinematic() -> void:
 	var opacity: float=clampf(minf(cinematic_elapsed/1.0,(duration-cinematic_elapsed)/0.7),0.0,1.0)
 	var caption: String=str(beat.get("caption",""))
 	var body: String=str(beat.get("text",""))
-	_paint_pavilion(Vector2(1120,752),0.98)
+	var drift: float = sin(cinematic_elapsed * 0.55) * 13.0
+	_paint_pavilion(Vector2(1120 + drift,752),0.98)
 	_carriage(Vector2(800+sin(clock*.24)*7.0,743))
+	_lantern_light(Vector2(1250 + drift,724),clock)
+	if story.cinematic_index >= 1:
+		_portrait(Vector2(315 - drift,730),false,1.80)
+	if story.cinematic_index >= 2:
+		_portrait(Vector2(1400,753),true,1.40)
 	draw_rect(Rect2(0,0,1600,1000),Color(0.05,0.11,0.12,0.43))
+	_cinema_bars()
 	_center(Vector2(800,382),caption,32,Color(GOLD,opacity),true)
 	_center(Vector2(800,484),body,27,Color(PAPER,opacity))
 	_center(Vector2(800,556),"——  风雨入局  ——",18,Color(0.89,0.83,0.64,opacity))
@@ -340,8 +385,10 @@ func _draw_explore() -> void:
 		var px: float=float((i*137+62)%1550)
 		var py: float=678+float((i*41)%293)
 		draw_line(Vector2(px,py),Vector2(px+16,py-2),Color(0.68,0.74,0.65,0.13),1)
+	_wet_road(clock)
 	_paint_pavilion(Vector2(1280,570),0.9)
 	_carriage(Vector2(837,625))
+	_lantern_light(Vector2(1233,574),clock)
 	_portrait(ESCORT+Vector2(0,10),true)
 	_portrait(player_pos,false)
 	var near: bool=player_pos.distance_to(ESCORT)<175.0
@@ -364,7 +411,7 @@ func _draw_dialogue() -> void:
 	_panel(Rect2(124,665,1352,292),Color("eae3cf"),GOLD)
 	# Classic wuxia character frame / nameplate.
 	_panel(Rect2(153,574,227,308),Color("38534c"),GOLD)
-	_portrait(Vector2(266,738),speaker=="老镖头")
+	_portrait(Vector2(266,738),speaker=="老镖头",1.18)
 	_panel(Rect2(385,628,264,63),Color("25483f"),GOLD)
 	_center(Vector2(517,671),speaker,27,PAPER,true)
 	var clipped: String=full_text.substr(0,mini(full_text.length(),int(visible_characters)))
@@ -385,8 +432,10 @@ func _draw_explore_backdrop() -> void:
 	_sky(clock,true)
 	_rain(clock,80)
 	_polygon([Vector2(0,665),Vector2(600,600),Vector2(1200,610),Vector2(1600,720),Vector2(1600,1000),Vector2(0,1000)],Color("525e56"))
+	_wet_road(clock)
 	_paint_pavilion(Vector2(1270,580),0.9)
 	_carriage(Vector2(822,628))
+	_lantern_light(Vector2(1225,582),clock)
 	_portrait(ESCORT+Vector2(0,10),true)
 	_portrait(player_pos,false)
 
@@ -403,8 +452,9 @@ func _draw_complete() -> void:
 	_center(Vector2(800,525),"你尚不知道，它将牵出多少江湖恩怨。",20,INK)
 	_center(Vector2(800,579),"远处的马蹄声越来越近……",19,Color("846d4e"))
 	_button(Rect2(430,639,742,70),"迎战追兵 · 继续序章","story_battle",true)
-	_button(Rect2(430,734,350,58),"进入群侠战斗试玩","party",true)
-	_button(Rect2(822,734,350,58),"返回主菜单","menu",true)
+	_button(Rect2(430,734,350,58),"插画战斗场景预览","hd2d",true)
+	_button(Rect2(822,734,350,58),"群侠战斗试玩","party",true)
+	_button(Rect2(626,810,350,49),"返回主菜单","menu",true)
 
 func _draw() -> void:
 	if ui_font==null or story.load_error!="": return
