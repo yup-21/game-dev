@@ -19,7 +19,7 @@ static func _line(img: Image, x0: int, y0: int, x1: int, y1: int, c: Color, thic
     var sy: int = 1 if y0 < y1 else -1
     var err: int = dx + dy
     while true:
-        _rect(img, x0 - thickness / 2, y0 - thickness / 2, thickness, thickness, c)
+        _rect(img, x0 - (thickness >> 1), y0 - (thickness >> 1), thickness, thickness, c)
         if x0 == x1 and y0 == y1:
             break
         var e2: int = 2 * err
@@ -53,7 +53,7 @@ static func _draw_frame(img: Image, ox: int, oy: int, row: int, frame: int, enem
     _rect(img, px + 3 - stride, oy + 55, 8, 10, Color("3b3d3b"))
     # Flowing robe with contrasting hem.
     for y in range(29):
-        var half: int = 11 + y / 4
+        var half: int = 11 + (y >> 2)
         _rect(img, px - half, py + y, half * 2, 1, outline)
         _rect(img, px - half + 2, py + y, half * 2 - 4, 1, coat)
     _rect(img, px - 4, py + 15, 9, 34, cream)
