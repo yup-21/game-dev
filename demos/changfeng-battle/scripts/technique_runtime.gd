@@ -69,7 +69,7 @@ func advance(actor, id: String, stage: String, interrupted: bool = false) -> voi
 func on_action_start(actor) -> void:
 	for id in actor.technique_states:
 		var last: int = int(actor.technique_states[id].last_used_action)
-		var hold: int = int(definitions[id].get("hold_own_actions", 2))
+		var hold = definitions[id].get("hold_own_actions", 2)
 		if last >= 0 and actor.turns_started - last > hold:
 			reset(actor, id)
 
@@ -82,7 +82,10 @@ func reset(actor, id: String) -> bool:
 ## Reject invalid graph inputs before any action is enumerated.
 func validate_with(cards, conditions) -> bool:
 	for d in definitions.values():
-		if not d.get("hold_own_actions",2) is int or int(d.get("hold_own_actions",2)) < 0: load_error="Invalid hold duration"; return false
+		var hold = d.get("hold_own_actions", 2)
+		if not (hold is int or hold is float) or not is_finite(float(hold)) or hold < 0 or (hold is float and hold != floor(hold)):
+			load_error="Invalid hold duration"
+			return false
 		for node_def in d.nodes:
 			if node_def.get("target",{}).get("kind","") not in ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]:
 				load_error="Invalid target kind: "+str(node_def.id)

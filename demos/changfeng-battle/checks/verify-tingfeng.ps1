@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough')][string]$Stage = 'All',
+    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle')][string]$Stage = 'All',
     [string]$GodotPath
 )
 $ErrorActionPreference = 'Stop'
@@ -10,6 +10,9 @@ $resolvedGodot = Resolve-DemoGodotPath -ProjectRoot $projectRoot -GodotPath $God
 $logRoot = Join-Path $projectRoot 'captures/checks'
 [IO.Directory]::CreateDirectory($logRoot) | Out-Null
 $checks = @()
+if ($Stage -in @('All','Framework')) { $checks += @{ Script = 'res://checks/test_ability_framework.gd'; Log = 'ability-framework.log'; Marker = 'FAILURES 0' } }
+if ($Stage -in @('All','Generated')) { $checks += @{ Script = 'res://checks/test_generated_cards.gd'; Log = 'generated-cards.log'; Marker = 'RESULTS 0 failures' } }
+if ($Stage -in @('All','Lifecycle')) { $checks += @{ Script = 'res://checks/test_model_lifecycle.gd'; Log = 'model-lifecycle.log'; Marker = 'MODEL LIFECYCLE: \d+ PASS / 0 FAIL' } }
 if ($Stage -in @('All','Policy')) { $checks += @{ Script = 'res://checks/test_tingfeng_ai.gd'; Log = 'tingfeng-policy.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - context-only tingfeng policy' } }
 if ($Stage -in @('All','Rules')) { $checks += @{ Script = 'res://checks/test_tingfeng.gd'; Log = 'tingfeng-rules.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - targeted tingfeng migration' } }
 if ($Stage -in @('All','Edges')) { $checks += @{ Script = 'res://checks/test_tingfeng_edges.gd'; Log = 'tingfeng-edges.log'; Marker = 'EDGE AUDIT: \d+ PASS / 0 failures' } }

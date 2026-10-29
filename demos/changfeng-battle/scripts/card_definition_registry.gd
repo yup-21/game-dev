@@ -13,7 +13,8 @@ func register(store: Dictionary, definition: Dictionary) -> bool:
 	if definition.get("lifecycle", "normal") not in ["normal", "exile_on_finish"]:
 		error="Invalid card lifecycle: " + str(definition.id)
 		return false
-	if not definition.get("retain_own_actions", 0) is int or int(definition.get("retain_own_actions", 0)) < 0 or int(definition.get("retain_own_actions", 0)) > 20:
+	var retention = definition.get("retain_own_actions", 0)
+	if not (retention is int or retention is float) or not is_finite(float(retention)) or retention < 0 or retention > 20 or (retention is float and retention != floor(retention)):
 		error="Invalid retention: "+str(definition.id)
 		return false
 	store[str(definition.id)] = definition.duplicate(true)

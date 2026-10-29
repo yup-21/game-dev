@@ -98,7 +98,12 @@
 .\checks\verify.ps1 -Stage Catalog
 .\checks\verify.ps1 -Stage Schools
 .\checks\verify.ps1 -Stage SchoolPlaythrough
+.\checks\verify.ps1 -Stage Framework
+.\checks\verify.ps1 -Stage Generated
+.\checks\verify.ps1 -Stage Lifecycle
 ```
+
+`Framework` 检查能力图和 JSON 整数值校验，`Generated` 检查生成卡牌与保留期限，`Lifecycle` 检查模型重开、释放及子系统引用回收。校验同时核对退出码、成功标记和 Godot 错误日志。
 
 以上命令同样支持 `-GodotPath` 和 `GODOT_BIN`。例如：
 

@@ -3,7 +3,10 @@ extends RefCounted
 var state
 var cards
 var costs
-var rules
+var _rules_ref: WeakRef
+var rules:
+	get: return _rules_ref.get_ref() if _rules_ref!=null else null
+	set(value): _rules_ref=weakref(value)
 var techniques
 var conditions
 
