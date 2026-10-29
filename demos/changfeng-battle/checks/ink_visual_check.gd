@@ -62,7 +62,7 @@ func run(view) -> void:
 	await _frames(view,2)
 	var has_ability_button: bool=false
 	for button in view.buttons:
-		if str(button.get("action",""))=="ability:test_chain:one": has_ability_button=true
+		if str(button.get("action",""))=="ability_slot:0": has_ability_button=true
 	if not has_ability_button:
 		_fail(view,"equipped stage does not appear in skill tray")
 		return
