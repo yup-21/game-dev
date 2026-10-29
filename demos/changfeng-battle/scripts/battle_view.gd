@@ -39,6 +39,7 @@ var next_decision = 0.0
 var effects: Array = []
 var combat_cues: Array = []
 var selected_ability: Dictionary = {}
+var ability_entries: Array = []
 var movements: Dictionary = {}
 var log_scroll = 0
 var check_mode = false
@@ -273,9 +274,10 @@ func _button_action(action: String) -> void:
 			elif action.begins_with("usage:"):
 				usage_choices.clear()
 				_apply_usage(usage_card,action.substr(6))
-			elif action.begins_with("ability:"):
-				var parts: PackedStringArray=action.split(":")
-				if parts.size()==3: _choose_ability(parts[1],parts[2])
+			elif action.begins_with("ability_slot:"):
+				var slot: int=int(action.substr(13))
+				if displayed_revision==snap.revision and slot>=0 and slot<ability_entries.size():
+					_choose_ability(str(ability_entries[slot].technique_id),str(ability_entries[slot].node_id))
 			elif action.begins_with("link:"):
 				var candidates: Array=_ability_actions(str(selected_ability.get("technique_id","")),str(selected_ability.get("node_id",""))) if mode=="ability_link" else _usage_actions(selected_card,selected_usage)
 				for req in candidates:
@@ -329,6 +331,7 @@ func _choose_ability(technique_id: String, node_id: String) -> void:
 		_submit_legal(actions[0])
 
 func _draw_ability_tray() -> bool:
+	ability_entries.clear()
 	var states: Dictionary=snap.actors[0].get("technique_states",{})
 	if states.is_empty(): return false
 	var ids: Array=states.keys()
@@ -343,7 +346,8 @@ func _draw_ability_tray() -> bool:
 				label=str(node.get("name",node_id))
 				break
 		var title: String=_trim(label,135,12)
-		_small_button(Rect2(342+i*170,681,162,36),title,"ability:"+id+":"+node_id,not _ability_actions(id,node_id).is_empty())
+		ability_entries.append({"technique_id":id,"node_id":node_id})
+		_small_button(Rect2(342+i*170,681,162,36),title,"ability_slot:"+str(i),not _ability_actions(id,node_id).is_empty())
 	return true
 
 func _choose_card(card: Dictionary) -> void:
@@ -604,7 +608,7 @@ func _draw_help() -> void:
 	draw_rect(Rect2(0,0,1600,1000),Color(.06,.14,.13,.72))
 	_panel(Rect2(295,175,1010,665),Color("f4f0e1"),Color("b7bda7"))
 	_text(Vector2(340,231),"十一门武学 · 自由行动与连锁",36,INK,true)
-	var lines = ["集气阈值 10000；速度取决于敏捷。内息随全局逻辑时间恢复。","获得行动后自由移动、出牌、攻防；Space / Enter 结束行动。","攻击声明进入 CLASH，防御方先获得优先权；双方轮流响应或 Pass。","每方最多响应 2 张、总共 4 张；连续两次 Pass 后，从栈顶逆序结算。","游身可主动移动或响应避锋；变锋截势需选择敌方某一层响应。","卡牌先展开分支，灰色用法显示气不足、时机或目标限制，不扣资源。","四维属性、集气速度、气血、内息与移动预算显示在角色栏。","观势严格高于对方藏锋才识破；明牌覆盖藏锋，已见手牌保留记忆。","敌方手牌仅显示已知事实；危表示高威胁牌，？表示危险提示被隐藏。","远程按正交直线计算最小 / 最大距离；分支显示血费与每行动限次。","凝势强化下次根攻击，封气减慢自然回气；灼痕按时钟扣血，可同时倒下。","1–5 选牌，更多手牌点翻页；Q 攻击 / G 格挡 / C 弃牌 / M 移动；H 关闭。"]
+	var lines = ["集气阈值 10000；速度取决于敏捷。内息随全局逻辑时间恢复。","获得行动后自由移动、出牌、攻防；Space / Enter 结束行动。","攻击声明进入 CLASH，防御方先获得优先权；双方轮流响应或 Pass。","每方最多响应 2 张、总共 4 张；连续两次 Pass 后，从栈顶逆序结算。","游身可主动移动或响应避锋；变锋截势需选择敌方某一层响应。","卡牌先展开分支，灰色用法显示气不足、时机或目标限制，不扣资源。","四维属性、集气速度、气血、内息与移动预算显示在角色栏。","观势严格高于对方藏锋才识破；明牌覆盖藏锋，已见手牌保留记忆。","敌方手牌仅显示已知事实；危表示高威胁牌，？表示危险提示被隐藏。","远程按正交直线计算最小 / 最大距离；分支显示血费与每行动限次。","凝势强化下次根攻击，封气减慢自然回气；灼痕按时钟扣血，可同时倒下。","1–5 选牌，更多手牌点翻页；Q 攻击 / G 格挡 / C 弃牌 / M 移动；H 关闭；续式按钮在手牌上方。"]
 	for i in range(lines.size()): _text(Vector2(340,280+i*40),lines[i],16,INK if i<5 else MUTED)
 	_small_button(Rect2(625,742,350,48),"返回战场  H / Esc","help",true)
 
