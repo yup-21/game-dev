@@ -5,6 +5,7 @@ const Cards = preload("res://scripts/card_system.gd")
 const Attributes = preload("res://scripts/attribute_system.gd")
 const CharacterProgress = preload("res://scripts/character_progression.gd")
 const MartialProgress = preload("res://scripts/martial_progression.gd")
+const Inventory = preload("res://scripts/inventory_system.gd")
 const Statuses = preload("res://scripts/status_system.gd")
 const Visibility = preload("res://scripts/visibility_system.gd")
 const Hooks = preload("res://scripts/hook_registry.gd")
@@ -25,6 +26,8 @@ var cards
 var attributes
 var character_progress
 var martial_progress
+var inventory
+var inventory_records: Dictionary={}
 var statuses
 var visibility
 var hooks
@@ -71,6 +74,25 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	attributes=Attributes.new()
 	character_progress=CharacterProgress.new()
 	martial_progress=MartialProgress.new()
+	inventory=Inventory.new()
+	inventory_records.clear()
+	var input_inventories: Variant=options.get("inventories",{})
+	if not input_inventories is Dictionary or not inventory.load_error.is_empty():
+		state.outcome="defeat"
+		state.mode="FINISHED"
+		state.phase="FINISHED"
+		audit=Events.new(state)
+		audit.emit("RULE_ERROR",{"text":"Invalid inventory catalog or records"})
+		return
+	for key in input_inventories:
+		if not key is int or state.get_actor(int(key))==null or not inventory.valid(input_inventories[key]):
+			state.outcome="defeat"
+			state.mode="FINISHED"
+			state.phase="FINISHED"
+			audit=Events.new(state)
+			audit.emit("RULE_ERROR",{"text":"Invalid encounter inventory"})
+			return
+		inventory_records[int(key)]=input_inventories[key].duplicate(true)
 	var schools=options.get("schools",{})
 	cards=Cards.new(state,"res://data/tingfeng_cards.json",schools if schools is Dictionary else {})
 	if not schools is Dictionary: cards.load_error="schools必须是角色到流派ID的对象"
@@ -80,6 +102,8 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	hooks=Hooks.new()
 	costs=Costs.new(state,hooks)
 	rules=Rules.new(state,cards,costs,hooks,statuses)
+	rules.inventory=inventory
+	rules.inventory_records=inventory_records
 	techniques=Techniques.new(str(options.get("technique_catalog_path","res://data/techniques.json")))
 	techniques.states=statuses
 	conditions=Conditions.new(statuses)
@@ -95,6 +119,8 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	resolver.reactions=reactions
 	resolver.techniques=techniques
 	resolver.martial=martial_progress
+	resolver.inventory=inventory
+	resolver.inventory_records=inventory_records
 	turns.techniques=techniques
 	turns.resolver=resolver
 	reactions.resolver=resolver
@@ -122,10 +148,14 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		return
 	for actor in state.actors:
 		attributes.configure(actor,options.get("attributes",{}).get(actor.id,{}),options.get("passives",{}).get(actor.id,{}))
+		if inventory_records.has(actor.id):
+			actor.equipment_modifiers=inventory.equipment_modifiers(inventory_records[actor.id])
 		var growth_record: Variant=options.get("character_progressions",{}).get(actor.id,character_progress.create_record())
 		if not character_progress.configure(actor,growth_record,attributes):
 			cards.load_error="Invalid character progression for actor "+str(actor.id)
-		else: actor.hp_u=actor.max_hp_u # Full health at a new encounter, before injuries.
+		else:
+			attributes.recalculate(actor,statuses)
+			actor.hp_u=actor.max_hp_u # Full health at a new encounter, before injuries.
 		var martial_record: Variant=options.get("martial_progressions",{}).get(actor.id,{})
 		if not martial_record is Dictionary or not martial_progress.configure(actor,martial_record):
 			cards.load_error="Invalid martial progression for actor "+str(actor.id)
