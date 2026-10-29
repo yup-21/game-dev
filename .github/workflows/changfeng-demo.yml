@@ -99,9 +99,13 @@ jobs:
           set -euo pipefail
           xvfb-run -a godot --path demos/changfeng-battle -- --opening-visual-check
           xvfb-run -a godot --path demos/changfeng-battle res://battle.tscn -- --ink-visual-check
+          xvfb-run -a godot --path demos/changfeng-battle --script res://checks/management_visual_check.gd
           test -s demos/changfeng-battle/captures/opening-title.png
           test -s demos/changfeng-battle/captures/opening-dialogue.png
           test -s demos/changfeng-battle/captures/ink-action.png
+          test -s demos/changfeng-battle/captures/inventory-ui.png
+          test -s demos/changfeng-battle/captures/martial-hall-ui.png
+          test -s demos/changfeng-battle/captures/save-slots-ui.png
       - name: Upload evidence screenshots
         if: always()
         uses: actions/upload-artifact@v4
