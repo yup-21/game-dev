@@ -243,12 +243,19 @@ func _rebuild_actions() -> void:
             button.text = "%s · %s (%.1f 气)" % [str(card.get("name", "招式")), str(usage.get("name", usage_id)), float(cost.get("qi", 0))]
             button.pressed.connect(_select_card.bind(uid, usage_id))
             card_actions.add_child(button)
+    var seen_abilities: Dictionary = {}
     for action in legals:
         if str(action.get("kind", "")) != "USE_ABILITY":
             continue
+        var technique_id := str(action.get("technique_id", ""))
+        var node_id := str(action.get("node_id", ""))
+        var key := technique_id + ":" + node_id
+        if seen_abilities.has(key):
+            continue
+        seen_abilities[key] = true
         var button := Button.new()
-        button.text = "武学续式 %s / %s" % [str(action.get("technique_id", "")), str(action.get("node_id", ""))]
-        button.pressed.connect(_select_technique.bind(str(action.get("technique_id", "")), str(action.get("node_id", ""))))
+        button.text = "武学续式 %s / %s" % [technique_id, node_id]
+        button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
     if snap.get("phase", "") == "CLASH":
         var pass_button := Button.new()
