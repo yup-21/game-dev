@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "encounters": [
+    {
+      "id": "escort_ambush",
+      "title": "雨夜截镖 · 断桥遭遇",
+      "seed": 2026,
+      "combatants": [
+        {
+          "id": 0,
+          "name": "沈长风",
+          "team_id": 0,
+          "controller": "PLAYER",
+          "cell": [
+            6,
+            4
+          ]
+        },
+        {
+          "id": 2,
+          "name": "顾清霜",
+          "team_id": 0,
+          "controller": "PLAYER",
+          "cell": [
+            5,
+            5
+          ]
+        },
+        {
+          "id": 3,
+          "name": "青衫客",
+          "team_id": 0,
+          "controller": "AI",
+          "cell": [
+            5,
+            3
+          ]
+        },
+        {
+          "id": 1,
+          "name": "追镖首领",
+          "team_id": 1,
+          "controller": "AI",
+          "cell": [
+            8,
+            4
+          ]
+        },
+        {
+          "id": 4,
+          "name": "黑衣刀客",
+          "team_id": 1,
+          "controller": "AI",
+          "cell": [
+            9,
+            5
+          ]
+        },
+        {
+          "id": 5,
+          "name": "夜行刺客",
+          "team_id": 1,
+          "controller": "AI",
+          "cell": [
+            9,
+            3
+          ]
+        }
+      ],
+      "schools": {
+        "0": "tingfeng",
+        "1": "tingfeng",
+        "2": "tingfeng",
+        "3": "tingfeng",
+        "4": "tingfeng",
+        "5": "tingfeng"
+      }
+    }
+  ]
+}
