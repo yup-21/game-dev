@@ -30,6 +30,9 @@ func _action(id: String) -> void:
 			call_deferred("_go","res://opening.tscn")
 		"rest": session.choose_aftercare("rest")
 		"pursue": session.choose_aftercare("pursue")
+		"train_str": session.allocate_training_point("STR")
+		"train_agi": session.allocate_training_point("AGI")
+		"break_taixu": session.breakthrough_taixu()
 		"finish": session.finish_demo()
 		"new":
 			session.return_to_menu()
@@ -84,3 +87,12 @@ func _draw() -> void:
 		_button(Rect2(270,706,440,64),"结束序章","finish")
 		_button(Rect2(736,706,340,64),"重新挑战","retry")
 		_button(Rect2(1096,706,270,64),"主菜单","menu")
+		var record: Dictionary=session.character_records.get(0,{})
+		var available: int=int(record.get("unspent_points",0))
+		var martial_record: Dictionary=session.martial_records.get(0,{}).get("taixu",{})
+		draw_string(font,Vector2(270,811),"可分配属性点：%d · 太虚熟练度：%d · 境界：%d" % [available,int(martial_record.get("xp",0)),int(martial_record.get("rank",1))],HORIZONTAL_ALIGNMENT_LEFT,-1,19,INK)
+		if available>0:
+			_button(Rect2(270,829,260,50),"修炼力道 +1","train_str")
+			_button(Rect2(555,829,260,50),"修炼身法 +1","train_agi")
+		if not martial_record.is_empty() and session.martial_records[0]["taixu"].xp>=50 and int(martial_record.rank)==1:
+			_button(Rect2(850,829,350,50),"突破太虚 · 熟练","break_taixu")
