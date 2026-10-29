@@ -18,7 +18,8 @@ func configure(actor, overrides: Dictionary = {}, talents: Dictionary = {}) -> v
 	for key in actor.attributes:
 		actor.attributes[key]=clampi(int(overrides.get(key,10)),1,100)
 	actor.stats=derive(actor.attributes)
-	actor.max_hp_u=int(actor.stats.max_hp)*UNIT
+	actor.base_max_hp_u=int(actor.stats.max_hp)*UNIT
+	actor.max_hp_u=actor.base_max_hp_u
 	actor.hp_u=actor.max_hp_u
 	actor.max_qi_u=int(actor.stats.max_qi_u)
 	actor.qi_u=3*UNIT
