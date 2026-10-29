@@ -27,7 +27,7 @@ func context() -> Dictionary:
 	for x in range(15):
 		for y in range(10): terrain[Vector2i(x, y)] = "grass"
 	return {"battle_id": "policy-fixture", "revision": 1, "action_no": 1, "observer_id": 0, "phase": "ACTION", "reaction": "NONE", "terrain": terrain,
-		"actors": [{"id": 0, "cell": Vector2i(6, 4), "hp": 20.0, "max_hp": 20.0, "qi": 3.0, "max_qi": 6.0, "shield": 0.0, "attributes": {}, "attack_history": []}, {"id": 1, "cell": Vector2i(7, 4), "hp": 20.0, "shield": 0.0, "attributes": {}, "observed_hand": [{"known": false}]}], "hand": [], "legal_actions": []}
+		"actors": [{"id": 0, "team_id": 0, "cell": Vector2i(6, 4), "hp": 20.0, "max_hp": 20.0, "qi": 3.0, "max_qi": 6.0, "shield": 0.0, "attributes": {}, "attack_history": []}, {"id": 1, "team_id": 1, "cell": Vector2i(7, 4), "hp": 20.0, "shield": 0.0, "attributes": {}, "observed_hand": [{"known": false}]}], "hand": [], "legal_actions": []}
 
 func response(defender: bool = true) -> Dictionary:
 	var c: Dictionary = context()

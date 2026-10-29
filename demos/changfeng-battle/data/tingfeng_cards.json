@@ -114,8 +114,107 @@
         "kind": "permanent",
         "duration": -1
       },
-      "max_hp_penalty_per_stack": 2,
-      "description": "经脉受损，每层降低2点气血上限；疗伤可解除。"
+      "description": "经脉受损，每层降低2点当前气血上限与10%有效身法；不影响先天属性及隐藏寿元。",
+      "scope": "character",
+      "stacking": "add",
+      "modifiers": [
+        {
+          "stat": "max_hp",
+          "op": "flat",
+          "value": -2
+        },
+        {
+          "stat": "AGI",
+          "op": "percent",
+          "value": -10
+        }
+      ]
+    },
+    {
+      "id": "fleet_step",
+      "name": "轻身",
+      "public": true,
+      "stack_limit": 2,
+      "scope": "battle",
+      "expiry": {
+        "kind": "global_ticks_after_apply",
+        "duration": 130
+      },
+      "modifiers": [
+        {
+          "stat": "AGI",
+          "op": "flat",
+          "value": 2
+        },
+        {
+          "stat": "charge_speed",
+          "op": "percent",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "meridian_open",
+      "name": "通脉",
+      "public": true,
+      "stack_limit": 1,
+      "scope": "character",
+      "expiry": {
+        "kind": "permanent"
+      },
+      "modifiers": [
+        {
+          "stat": "max_qi_u",
+          "op": "flat",
+          "value": 10000
+        },
+        {
+          "stat": "qi_regen_u_per_100",
+          "op": "percent",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "sword_flow",
+      "name": "剑势待发",
+      "public": true,
+      "stack_limit": 1,
+      "scope": "battle",
+      "expiry": {
+        "kind": "owner_actions",
+        "count": 2
+      },
+      "transitions": [
+        {
+          "event": "ATTACK_HIT",
+          "subject": "owner",
+          "remove": [
+            "sword_flow"
+          ],
+          "apply": [
+            "focused_stance"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "focused_stance",
+      "name": "破势",
+      "public": true,
+      "stack_limit": 1,
+      "scope": "battle",
+      "expiry": {
+        "kind": "global_ticks_after_apply",
+        "duration": 100
+      },
+      "modifiers": [
+        {
+          "stat": "attack",
+          "op": "flat",
+          "value": 2
+        }
+      ]
     }
   ],
   "combos": [

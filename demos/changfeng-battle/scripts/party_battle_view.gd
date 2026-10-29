@@ -124,6 +124,7 @@ func _sync() -> void:
 	page=clampi(page,0,maxi(0,ceili(groups.size()/11.0)-1))
 	var session=_session()
 	if story_encounter and snap.outcome!="playing" and session!=null and session.phase=="battle":
+		session.capture_battle_progress(model)
 		session.report_battle(str(snap.outcome),int(snap.get("winning_team",-1)))
 	if not selected_key.is_empty() and _candidates().is_empty(): selected_key=""
 

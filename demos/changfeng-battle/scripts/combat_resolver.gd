@@ -14,6 +14,7 @@ var audit
 var turns
 var reactions
 var techniques
+var martial
 
 func _init(s,c,cost_system,validator,registry,combo_system,status_system,visibility_system,event_log) -> void:
 	state=s
@@ -29,6 +30,14 @@ func _init(s,c,cost_system,validator,registry,combo_system,status_system,visibil
 func emit(kind: String,data: Dictionary = {}) -> void:
 	var event: Dictionary=audit.emit(kind,data)
 	if state.outcome!="playing": return
+	var owner=state.get_actor(int(event.get("actor_id",-1)))
+	if owner!=null and martial!=null:
+		if kind=="ABILITY_USED": martial.award(owner,str(event.get("technique_id","")),5)
+		if kind=="CARD_PLAYED":
+			var definition: Dictionary=cards.definitions.get(str(event.get("definition_id","")),{})
+			var school: String=str(definition.get("martial_id",""))
+			if not school.is_empty(): martial.award(owner,school,5)
+	statuses.on_event(event,self)
 	var actor_id: int=int(event.get("actor_id",-1))
 	if state.get_actor(actor_id)!=null:
 		state.hook_queue.append_array(hooks.collect(event,rules.context(actor_id)))

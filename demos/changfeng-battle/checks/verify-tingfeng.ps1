@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Parties','Opening','DemoFlow','DemoTechnique')][string]$Stage = 'All',
+    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Parties','Opening','DemoFlow','DemoTechnique','UnifiedState')][string]$Stage = 'All',
     [string]$GodotPath
 )
 $ErrorActionPreference = 'Stop'
@@ -17,6 +17,7 @@ if ($Stage -in @('All','Parties')) { $checks += @{ Script = 'res://checks/test_p
 if ($Stage -in @('All','Opening')) { $checks += @{ Script = 'res://checks/test_opening_story.gd'; Log = 'opening-story.log'; Marker = 'OPENING STORY FAILURES: 0' } }
 if ($Stage -in @('All','DemoFlow')) { $checks += @{ Script = 'res://checks/test_demo_flow.gd'; Log = 'demo-flow.log'; Marker = 'DEMO FLOW FAILURES: 0' } }
 if ($Stage -in @('All','DemoTechnique')) { $checks += @{ Script = 'res://checks/test_demo_technique.gd'; Log = 'demo-technique.log'; Marker = 'DEMO TECHNIQUE FAILURES: 0' } }
+if ($Stage -in @('All','UnifiedState')) { $checks += @{ Script = 'res://checks/test_unified_state_progression.gd'; Log = 'unified-state-progression.log'; Marker = 'UNIFIED STATE PROGRESSION: 0 failures' } }
 if ($Stage -in @('All','Policy')) { $checks += @{ Script = 'res://checks/test_tingfeng_ai.gd'; Log = 'tingfeng-policy.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - context-only tingfeng policy' } }
 if ($Stage -in @('All','Rules')) { $checks += @{ Script = 'res://checks/test_tingfeng.gd'; Log = 'tingfeng-rules.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - targeted tingfeng migration' } }
 if ($Stage -in @('All','Edges')) { $checks += @{ Script = 'res://checks/test_tingfeng_edges.gd'; Log = 'tingfeng-edges.log'; Marker = 'EDGE AUDIT: \d+ PASS / 0 failures' } }

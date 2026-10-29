@@ -2,6 +2,8 @@ extends Node
 ## Persistent glue between opening story, the existing combat engine and aftermath.
 ## Stores demo-only progress; never replaces BattleModel, card zones or CTB.
 const ScenarioDirector = preload("res://scripts/scenario_director.gd")
+const CharacterProgress = preload("res://scripts/character_progression.gd")
+const MartialProgress = preload("res://scripts/martial_progression.gd")
 var director=ScenarioDirector.new()
 var phase: String="menu"
 var chapter_id: String=""
@@ -13,6 +15,10 @@ var battle_outcome: String=""
 var winning_team: int=-1
 var injury_stacks: int=0
 var aftercare: String=""
+var character_records: Dictionary={}
+var martial_records: Dictionary={}
+var training_awarded: bool=false
+var persistent_states: Dictionary={}
 
 func start_new_game() -> void:
 	phase="story"
@@ -25,10 +31,16 @@ func start_new_game() -> void:
 	winning_team=-1
 	injury_stacks=0
 	aftercare=""
+	training_awarded=false
+	character_records={0:CharacterProgress.new().create_record()}
+	martial_records.clear()
+	persistent_states.clear()
 
 func study_fragment() -> bool:
 	if phase!="story" or not items.has("taixu_fragment"): return false
 	flags["studied_fragment"]=true
+	if not martial_records.has(0): martial_records[0]={}
+	if not martial_records[0].has("taixu"): martial_records[0]["taixu"]=MartialProgress.new().create_record()
 	return true
 
 func record_choice(node_id: String, option_id: int) -> void:
@@ -54,15 +66,44 @@ func encounter_options() -> Dictionary:
 	if phase!="battle": return {}
 	var options: Dictionary=director.battle_options(encounter_id)
 	if injury_stacks>0: options["initial_statuses"]={0:{"meridian_wound":injury_stacks}}
+	options["character_progressions"]=character_records.duplicate(true)
+	options["martial_progressions"]=martial_records.duplicate(true)
+	options["persistent_states"]=persistent_states.duplicate(true)
 	return options
 
 func encounter_seed() -> int:
 	return int(director.encounter(encounter_id).get("seed",2026))
 
+func capture_battle_progress(model) -> void:
+	if phase!="battle" or model==null: return
+	for actor in model.state.actors:
+		if actor.team_id!=0: continue
+		character_records[actor.id]=CharacterProgress.new().export_record(actor)
+		martial_records[actor.id]=MartialProgress.new().export_records(actor)
+		persistent_states[actor.id]=model.statuses.export_persistent(actor.id)
+		persistent_states[actor.id].erase("meridian_wound")
+
+func allocate_training_point(stat: String) -> bool:
+	if phase not in ["aftermath","complete"] or not character_records.has(0): return false
+	return CharacterProgress.new().allocate_record(character_records[0],{"STR":10,"AGI":10,"CON":10,"MND":10},stat,1)
+
+func breakthrough_taixu() -> bool:
+	if phase not in ["aftermath","complete"] or not martial_records.has(0) or not martial_records[0].has("taixu"): return false
+	return MartialProgress.new().breakthrough_record(martial_records[0]["taixu"])
+
 func report_battle(outcome: String, team: int) -> bool:
 	if phase!="battle" or outcome not in ["victory","defeat","draw"]: return false
 	battle_outcome=outcome
 	winning_team=team
+	if outcome=="victory" and not training_awarded:
+		training_awarded=true
+		var record: Dictionary=character_records.get(0,CharacterProgress.new().create_record())
+		record.earned_points=int(record.get("earned_points",0))+1
+		record.unspent_points=int(record.get("unspent_points",0))+1
+		character_records[0]=record
+		if martial_records.has(0) and martial_records[0].has("taixu"):
+			var martial_record: Dictionary=martial_records[0]["taixu"]
+			martial_record.xp=mini(1000000,int(martial_record.xp)+50)
 	phase="aftermath"
 	# The scripted rainy-night overexertion introduces one persistent injury tag.
 	injury_stacks=maxi(injury_stacks,1)
@@ -74,6 +115,7 @@ func choose_aftercare(choice: String) -> bool:
 	aftercare=choice
 	if choice=="rest":
 		injury_stacks=0
+		if persistent_states.has(0): persistent_states[0].erase("meridian_wound")
 		flags["healed_injury"]=true
 		if bool(flags.get("helped_escort",false)): flags["escort_healing_hint"]=true
 	else:

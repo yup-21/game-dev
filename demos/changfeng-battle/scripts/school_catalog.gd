@@ -125,7 +125,7 @@ func _load(raw: Dictionary, base: Dictionary, legacy_path: String) -> bool:
 	return _valid_legacy(_read(legacy_path))
 
 func _valid_status(item: Variant) -> bool:
-	if not _keys(item,["id","name","public","stack_limit","expiry"],["id","name","public","stack_limit","expiry"]): return false
+	if not _keys(item,["id","name","public","stack_limit","expiry","periodic","modifiers","transitions","scope","stacking"],["id","name","public","stack_limit","expiry"]): return false
 	if not _text(item.id) or not _text(item.name) or not item.public is bool or not _number(item.stack_limit,1,2): return false
 	if not _keys(item.expiry,["kind","duration"],["kind","duration"]): return false
 	return item.expiry.kind == "global_ticks_after_apply" and _number(item.expiry.duration,1)

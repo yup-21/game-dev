@@ -5,7 +5,11 @@ var team_id: int = 0
 var controller: String = "AI"
 var name: String
 var cell: Vector2i
+var base_attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
 var attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
+var effective_attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
+var progression: Dictionary = {}
+var martial_progress: Dictionary = {}
 var stats: Dictionary = {}
 var passives: Dictionary = {"insight":0,"conceal":0}
 var school_id: String = "tingfeng"
@@ -60,7 +64,7 @@ func public_data(_include_hand: bool = false) -> Dictionary:
 	return {"id":id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"hp":hp,"max_hp":max_hp,"base_max_hp":base_max_hp,"qi":qi,"max_qi":max_qi,
 		"school_id":school_id,"school_name":school_name,
 		"shield":shield,"gauge":gauge,"charge_speed":stats.get("charge_speed",100),
-		"attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),
+		"attributes":effective_attributes.duplicate(true),"base_attributes":base_attributes.duplicate(true),"growth_attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),
 		"turns_started":turns_started,"normal_moves_used":normal_moves_used,"move_budget":stats.get("move_budget",2),
 		"basic_attack_used":basic_attack_used,"basic_guard_used":basic_guard_used,"pitch_used":pitch_used,
 		"hand_count":hand.size(),"draw_count":draw_pile.size(),"discard_count":discard_pile.size(),"resolving_count":resolving.size(),"exile_count":exile_pile.size()}

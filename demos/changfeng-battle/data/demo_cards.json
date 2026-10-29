@@ -49,7 +49,8 @@
             }
           ]
         }
-      ]
+      ],
+      "martial_id": "taixu"
     },
     {
       "id": "taixu_follow",
@@ -99,7 +100,8 @@
             }
           ]
         }
-      ]
+      ],
+      "martial_id": "taixu"
     },
     {
       "id": "taixu_final",
@@ -136,7 +138,8 @@
             }
           ]
         }
-      ]
+      ],
+      "martial_id": "taixu"
     }
   ]
 }
