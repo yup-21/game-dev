@@ -64,7 +64,9 @@ jobs:
             test_save_inventory_martial
           do
             echo "::group::${name}"
-            godot --headless --path "$project" --script "res://checks/${name}.gd"
+            limit=90
+            if [[ "$name" == "test_wuxue_playthrough" ]]; then limit=180; fi
+            timeout --signal=TERM --kill-after=5s "${limit}s" godot --headless --path "$project" --script "res://checks/${name}.gd"
             echo "::endgroup::"
           done
       - name: Export Windows standalone demo
