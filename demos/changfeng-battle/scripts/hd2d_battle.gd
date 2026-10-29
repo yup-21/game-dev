@@ -7,6 +7,7 @@ const Scenery = preload("res://scripts/hd2d_scenery.gd")
 const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
 const SpriteFactory = preload("res://scripts/hd2d_sprite_factory.gd")
 const Animator = preload("res://scripts/hd2d_animation.gd")
+const VFX = preload("res://scripts/hd2d_vfx.gd")
 const COLS := 15
 const ROWS := 10
 const CELL := 1.5
@@ -14,6 +15,7 @@ const CELL := 1.5
 var model = Model.new()
 var ai = EnemyAI.new()
 var animation_driver = Animator.new()
+var effects_driver
 var camera: Camera3D
 var actor_nodes: Dictionary = {}
 var snap: Dictionary = {}
@@ -48,6 +50,7 @@ func _ready() -> void:
     snap = model.snapshot(0)
     legals = model.legal_actions(0)
     _build_world()
+    effects_driver = VFX.new(self, camera)
     _build_ui()
     _refresh()
     _update_status()
@@ -485,6 +488,8 @@ func _process(delta: float) -> void:
             if sprite != null:
                 sprite.position.y = 0.80 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
     animation_driver.update(delta, moving)
+    if effects_driver != null:
+        effects_driver.update(delta)
     for id in cue_remaining.keys():
         cue_remaining[id] = maxf(0.0, float(cue_remaining[id]) - delta)
         if cue_lights.has(id):
@@ -516,6 +521,8 @@ func _accept(result: Dictionary) -> void:
         return
     _cue_events(result.get("events", []))
     animation_driver.events(result.get("events", []))
+    if effects_driver != null:
+        effects_driver.handle_events(result.get("events", []), actor_nodes)
     _clear_selection()
     _refresh()
     if snap.get("animation_pending", false):
@@ -629,6 +636,8 @@ func _unhandled_input(event: InputEvent) -> void:
             KEY_R:
                 model.reset(2026)
                 animation_driver.reset()
+                if effects_driver != null:
+                    effects_driver.clear()
                 _clear_selection()
                 animation_ticket = -1
                 _refresh()
