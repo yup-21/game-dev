@@ -56,6 +56,9 @@ func collect(actor,states) -> Array:
 
 func recalculate(actor,states) -> void:
 	var modifiers: Array=collect(actor,states)
+	# Gear uses the same flat -> percent -> clamp semantics as states.
+	for mod in actor.equipment_modifiers:
+		modifiers.append(mod.duplicate(true))
 	actor.effective_attributes=_apply(actor.attributes,modifiers,BASE_STATS)
 	var permanent: Dictionary=attributes.derive(actor.attributes)
 	actor.base_max_hp_u=int(permanent.max_hp)*UNIT
