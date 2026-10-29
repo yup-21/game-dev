@@ -2,18 +2,20 @@ extends Node2D
 ## Presentation consumes the observer projection; all gameplay enters request/submit.
 const Model = preload("res://scripts/battle_model.gd")
 const AI = preload("res://scripts/enemy_ai.gd")
-const PAPER = Color("eeeade")
-const INK = Color("243f3e")
-const MUTED = Color("718279")
-const JADE = Color("2f7770")
-const GOLD = Color("ad8047")
-const RED = Color("b45d50")
+const Art = preload("res://scripts/battle_art.gd")
+const PAPER = Color("ede9dc")
+const INK = Color("273f3f")
+const MUTED = Color("718077")
+const JADE = Color("387c75")
+const GOLD = Color("b48b50")
+const RED = Color("b95b4c")
 const BOARD = Rect2(24, 206, 1124, 454)
 const ORIGIN = Vector2(78, 252)
 const TILE = Vector2(70, 39)
 var model = Model.new()
 var enemy_ai = AI.new()
 var player_policy = AI.new()
+var art = Art.new()
 var snap: Dictionary = {}
 var legals: Array = []
 var body_font: SystemFont
@@ -35,6 +37,8 @@ var wall = 0.0
 var presentation_left = 0.0
 var next_decision = 0.0
 var effects: Array = []
+var combat_cues: Array = []
+var selected_ability: Dictionary = {}
 var movements: Dictionary = {}
 var log_scroll = 0
 var check_mode = false
@@ -73,6 +77,7 @@ func _sync() -> void:
 func _clear_selection() -> void:
 	selected_card = ""
 	selected_usage = ""
+	selected_ability.clear()
 	usage_choices.clear()
 	mode = "move"
 
@@ -85,6 +90,9 @@ func _process(delta: float) -> void:
 	for i in range(effects.size()-1,-1,-1):
 		effects[i].left -= delta
 		if effects[i].left <= 0: effects.remove_at(i)
+	for i in range(combat_cues.size()-1,-1,-1):
+		combat_cues[i].left -= delta
+		if combat_cues[i].left <= 0: combat_cues.remove_at(i)
 	for id in movements.keys():
 		movements[id].elapsed += delta
 		if movements[id].elapsed >= movements[id].duration: movements.erase(id)
@@ -109,7 +117,19 @@ func _consume(result: Dictionary) -> void:
 		_toast(str(result.get("message","指令未执行")))
 		return
 	for event in result.get("events",[]):
-		match str(event.get("type","")):
+		var kind: String=str(event.get("type",""))
+		var cue_kind: String=""
+		var cue_target: int=int(event.get("defender_id",event.get("target_id",event.get("actor_id",-1))))
+		match kind:
+			"ATTACK_DECLARED": cue_kind="attack"
+			"DAMAGE": cue_kind="damage"
+			"SHIELD", "INTERCEPT_JUDGED": cue_kind="guard"
+			"COMBO_TRIGGERED": cue_kind="combo"
+			"MOVE": cue_kind="evade"
+		if not cue_kind.is_empty() and cue_target>=0 and cue_target<snap.get("actors",[]).size():
+			combat_cues.append({"kind":cue_kind,"target_id":cue_target,"source_id":int(event.get("actor_id",-1)),"left":0.65,"duration":0.65})
+			if combat_cues.size()>24: combat_cues.pop_front()
+		match kind:
 			"MOVE":
 				var points: Array = [cell_to_screen(event["from"])]
 				for cell in event.get("path",[event["to"]]): points.append(cell_to_screen(cell))
@@ -135,7 +155,7 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
 
 func _submit_legal(req: Dictionary) -> void:
 	var params: Dictionary = {}
-	for key in ["card_uid","card_id","usage_id","target_cell","target_id","link_id"]:
+	for key in ["card_uid","card_id","usage_id","technique_id","node_id","target_cell","target_id","link_id"]:
 		if req.has(key): params[key] = req[key]
 	_submit(str(req.kind),params)
 
@@ -150,6 +170,7 @@ func _restart(_profile: String = "tingfeng") -> void:
 	_clear_selection()
 	movements.clear()
 	effects.clear()
+	combat_cues.clear()
 	presentation_left = 0
 	next_decision = wall+0.65
 	started = true
@@ -192,7 +213,7 @@ func _input(event: InputEvent) -> void:
 			return
 		if event.button_index==MOUSE_BUTTON_RIGHT:
 			if school_picker_actor>=0: school_picker_actor=-1; return
-			if not usage_choices.is_empty() or mode in ["card","link","pitch"]:
+			if not usage_choices.is_empty() or mode in ["card","link","pitch","ability","ability_link"]:
 				_clear_selection(); _toast("已取消选择。")
 				return
 		if event.button_index==MOUSE_BUTTON_LEFT:
@@ -211,7 +232,12 @@ func _input(event: InputEvent) -> void:
 					if (req.has("target_cell") and req.target_cell==cell) or (req.has("target_id") and int(req.target_id)>=0 and int(req.target_id)<snap.actors.size() and cell==snap.actors[int(req.target_id)].cell):
 						_submit_legal(req); return
 				_toast("该目标不合法，请选择高亮落点或敌人。")
-			elif mode=="link": _toast("请点击右侧连锁中高亮的敌方响应。")
+			elif mode=="ability":
+				for req in _ability_actions(str(selected_ability.get("technique_id","")),str(selected_ability.get("node_id",""))):
+					if (req.has("target_cell") and req.target_cell==cell) or (req.has("target_id") and int(req.target_id)>=0 and int(req.target_id)<snap.actors.size() and cell==snap.actors[int(req.target_id)].cell):
+						_submit_legal(req); return
+				_toast("请点击合法的招式目标或落点。")
+			elif mode in ["link","ability_link"]: _toast("请点击右侧连锁中高亮的敌方响应。")
 			elif cell==snap.actors[1].cell and event.button_index==MOUSE_BUTTON_RIGHT: _submit("BASIC_ATTACK",{"target_id":1})
 			else: _submit("MOVE",{"target_cell":cell})
 
@@ -245,8 +271,12 @@ func _button_action(action: String) -> void:
 			elif action.begins_with("usage:"):
 				usage_choices.clear()
 				_apply_usage(usage_card,action.substr(6))
+			elif action.begins_with("ability:"):
+				var parts: PackedStringArray=action.split(":")
+				if parts.size()==3: _choose_ability(parts[1],parts[2])
 			elif action.begins_with("link:"):
-				for req in _usage_actions(selected_card,selected_usage):
+				var candidates: Array=_ability_actions(str(selected_ability.get("technique_id","")),str(selected_ability.get("node_id",""))) if mode=="ability_link" else _usage_actions(selected_card,selected_usage)
+				for req in candidates:
 					if str(req.get("link_id",""))==action.substr(5): _submit_legal(req); return
 			elif action.begins_with("passive:"):
 				var parts = action.split(":")
@@ -272,6 +302,47 @@ func _usage_actions(uid: String, usage_id: String) -> Array:
 	for req in legals:
 		if req.kind=="PLAY_CARD" and str(req.get("card_uid",req.get("card_id","")))==uid and str(req.get("usage_id",""))==usage_id: result.append(req)
 	return result
+
+func _ability_actions(technique_id: String, node_id: String) -> Array:
+	var actions: Array=[]
+	for req in legals:
+		if str(req.get("kind",""))=="USE_ABILITY" and str(req.get("technique_id",""))==technique_id and str(req.get("node_id",""))==node_id: actions.append(req)
+	return actions
+
+func _choose_ability(technique_id: String, node_id: String) -> void:
+	if not _can_player(): return
+	var actions: Array=_ability_actions(technique_id,node_id)
+	if actions.is_empty():
+		_toast("当前无可用阶段：检查内息、目标与出招时机。")
+		return
+	_clear_selection()
+	selected_ability={"technique_id":technique_id,"node_id":node_id}
+	if actions[0].has("link_id"):
+		mode="ability_link"
+		_toast("选择连锁中的合法响应目标。")
+	elif actions[0].has("target_cell") or actions[0].has("target_id"):
+		mode="ability"
+		_toast("选择此式的合法目标或落点；右键取消。")
+	else:
+		_submit_legal(actions[0])
+
+func _draw_ability_tray() -> bool:
+	var states: Dictionary=snap.actors[0].get("technique_states",{})
+	if states.is_empty(): return false
+	var ids: Array=states.keys()
+	ids.sort()
+	_text(Vector2(237,708),"武学续式",14,GOLD)
+	for i in range(mini(3,ids.size())):
+		var id: String=str(ids[i])
+		var node_id: String=str(states[id].get("node",""))
+		var label: String=node_id
+		for node in model.techniques.definitions.get(id,{}).get("nodes",[]):
+			if str(node.get("id",""))==node_id:
+				label=str(node.get("name",node_id))
+				break
+		var title: String=_trim(label,135,12)
+		_small_button(Rect2(342+i*170,681,162,36),title,"ability:"+id+":"+node_id,not _ability_actions(id,node_id).is_empty())
+	return true
 
 func _choose_card(card: Dictionary) -> void:
 	if card.is_empty() or not _can_player(): return
@@ -328,11 +399,14 @@ func _draw() -> void:
 	if body_font==null or snap.is_empty(): return
 	displayed_revision = snap.revision
 	buttons.clear()
-	draw_rect(Rect2(0,0,1600,1000),PAPER)
+	art.backdrop(self,wall)
 	_draw_header()
 	_draw_timeline()
 	_draw_board()
 	_draw_actors()
+	var fx_positions: Array=[]
+	for actor in snap.actors: fx_positions.append(_unit_pos(int(actor.id)))
+	art.burst(self,snap,combat_cues,fx_positions,wall)
 	_draw_hand()
 	_draw_sidebar()
 	_draw_status_tooltip()
@@ -353,6 +427,7 @@ func _draw() -> void:
 func _draw_header() -> void:
 	draw_rect(Rect2(0,0,1600,126),Color("173f3d"))
 	draw_line(Vector2(24,126),Vector2(1576,126),GOLD,2)
+	art.header(self,wall)
 	_panel(Rect2(34,28,42,62),RED)
 	_center(Vector2(55,54),"长",23,PAPER,true)
 	_center(Vector2(55,80),"风",23,PAPER,true)
@@ -382,7 +457,8 @@ func _draw_timeline() -> void:
 func _draw_hand() -> void:
 	_panel(Rect2(24,678,1124,292),Color("f7f4e9"),Color("c9d1c0"))
 	_text(Vector2(44,709),str(snap.actors[0].get("school_name","听风五式")),17,GOLD)
-	_text(Vector2(240,709),"手牌 %d  抽牌 %d  弃牌 %d  结算 %d · 一张牌只选一种用法" % [int(snap.actors[0].hand_count),int(snap.actors[0].draw_count),int(snap.actors[0].discard_count),int(snap.actors[0].resolving_count)],13,MUTED)
+	if not _draw_ability_tray():
+		_text(Vector2(240,709),"手牌 %d  抽牌 %d  弃牌 %d  结算 %d · 一张牌只选一种用法" % [int(snap.actors[0].hand_count),int(snap.actors[0].draw_count),int(snap.actors[0].discard_count),int(snap.actors[0].resolving_count)],13,MUTED)
 	var pages: int=maxi(1,ceili(snap.hand.size()/5.0))
 	hand_page=clampi(hand_page,0,pages-1)
 	if pages>1:
@@ -397,7 +473,7 @@ func _draw_hand() -> void:
 			_panel(rect,Color("e8e9de")); _center(rect.position+Vector2(rect.size.x/2,100),"空",26,MUTED,true); continue
 		var card: Dictionary = snap.hand[i]
 		var enabled = _card_enabled(card)
-		_panel(rect,Color("faf7eb") if enabled else Color("e5e6dc"),GOLD if _uid(card)==selected_card else Color("c9d1c0"))
+		art.card_frame(self,rect,i,_uid(card)==selected_card,enabled,card,wall)
 		_text(rect.position+Vector2(14,25),"%d  招式 · %d 用法" % [i+1,card.get("usages",[]).size()],13,GOLD)
 		_text(rect.position+Vector2(14,65),_trim(str(card.name),rect.size.x-28,25),25,INK if enabled else MUTED,true)
 		var usages: Array = card.get("usages",[])
@@ -447,8 +523,9 @@ func _draw_sidebar() -> void:
 		var link: Dictionary = stack[stack.size()-1-i]
 		var id = str(link.get("link_id",link.get("id","")))
 		var legal_link = false
-		if mode=="link":
-			for req in _usage_actions(selected_card,selected_usage):
+		if mode in ["link","ability_link"]:
+			var candidate_links: Array=_ability_actions(str(selected_ability.get("technique_id","")),str(selected_ability.get("node_id",""))) if mode=="ability_link" else _usage_actions(selected_card,selected_usage)
+			for req in candidate_links:
 				if str(req.get("link_id",""))==id: legal_link=true
 		var rect = Rect2(1189,451+i*17,368,16)
 		if legal_link: draw_rect(rect,Color("c9d8bd"))
@@ -545,10 +622,11 @@ func _draw_board() -> void:
 			for i in range(3): draw_circle(pos+Vector2((i-1)*18,sin(i*2.0)*6),6,Color("cbd0b8"))
 		elif terrain == "rock": _draw_rock(pos,cell.x+cell.y)
 		elif terrain == "bamboo": _draw_bamboo(pos,cell.x+cell.y)
+	art.battlefield(self,snap,wall)
 	_draw_attack_area()
 	if _can_player():
 		for req in legals:
-			var selected: bool = mode=="card" and req.kind=="PLAY_CARD" and str(req.get("card_uid",req.get("card_id","")))==selected_card and str(req.get("usage_id",""))==selected_usage
+			var selected: bool = (mode=="card" and req.kind=="PLAY_CARD" and str(req.get("card_uid",req.get("card_id","")))==selected_card and str(req.get("usage_id",""))==selected_usage) or (mode=="ability" and req.kind=="USE_ABILITY" and str(req.get("technique_id",""))==str(selected_ability.get("technique_id","")) and str(req.get("node_id",""))==str(selected_ability.get("node_id","")))
 			if (mode=="move" and req.kind=="MOVE") or selected:
 				if req.has("target_cell"):
 					if snap.phase=="CLASH":
@@ -596,14 +674,10 @@ func _draw_actors() -> void:
 		draw_arc(pos,26,0,TAU,36,color,2.5,true)
 		if snap.active_id==actor.id:
 			draw_arc(pos,30,wall*.25,wall*.25+TAU*.8,36,Color(color,.5),2,true)
-		var robe = Color("497a72") if actor.id==0 else Color("936357")
-		draw_colored_polygon(PackedVector2Array([pos+Vector2(-10,-24),pos+Vector2(8,-24),pos+Vector2(17,7),pos+Vector2(0,14),pos+Vector2(-15,6)]),robe)
-		draw_colored_polygon(PackedVector2Array([pos+Vector2(-4,-23),pos+Vector2(4,-23),pos+Vector2(8,6),pos+Vector2(-4,10)]),robe.lightened(.18))
-		draw_circle(pos+Vector2(0,-31),9,Color("d7ba91"))
-		draw_arc(pos+Vector2(0,-32),9,PI,TAU,15,Color("354542"),6,true)
-		draw_circle(pos+Vector2(-3,-42),4,Color("354542"))
-		var direction = 1 if actor.id==0 else -1
-		draw_line(pos+Vector2(10*direction,-15),pos+Vector2(37*direction,-15),Color("f1e9ca"),3,true)
+		var taking_hit: bool=false
+		for cue in combat_cues:
+			if str(cue.get("kind",""))=="damage" and int(cue.get("target_id",-1))==int(actor.id): taking_hit=true
+		art.combatant(self,pos,actor,wall,int(snap.active_id)==int(actor.id),taking_hit)
 		_bar(Rect2(pos+Vector2(-28,-59),Vector2(56,5)),float(actor.hp)/maxf(1,float(actor.get("max_hp",20))),color)
 		if actor.shield>0:
 			draw_arc(pos,34,-PI*.9,-PI*.1,24,Color("d2ad69"),3,true)
