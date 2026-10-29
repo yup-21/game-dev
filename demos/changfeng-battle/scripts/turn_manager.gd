@@ -47,7 +47,7 @@ func begin_next_action() -> void:
 			state.mode="ACTION"
 			state.phase="ACTION"
 			state.action_no+=1
-			state.round_no=1+floori(float(state.action_no-1)/2)
+			state.round_no=1+floori(float(state.action_no-1)/float(maxi(1,state.actors.size())))
 			a.normal_moves_used=0
 			a.basic_attack_used=false
 			a.basic_guard_used=false

@@ -41,10 +41,22 @@ func _actor(context: Dictionary, actor_id: int) -> Dictionary:
 		if int(actor.get("id", -1)) == actor_id: return actor
 	return {}
 
-func _enemy(context: Dictionary) -> Dictionary:
-	for actor in context.get("actors", []):
-		if int(actor.get("id", -1)) != int(context.get("observer_id", -1)) and float(actor.get("hp", 0)) > 0: return actor
-	return {}
+func _enemy(context: Dictionary, option: Dictionary = {}) -> Dictionary:
+	var own: Dictionary=_actor(context,int(context.get("observer_id",-1)))
+	if own.is_empty(): return {}
+	var own_team: int=int(own.get("team_id",0))
+	if option.has("target_id"):
+		var selected: Dictionary=_actor(context,int(option.target_id))
+		if not selected.is_empty() and int(selected.get("team_id",0))!=own_team and float(selected.get("hp",0))>0: return selected
+	var best: Dictionary={}
+	var best_dist: int=2147483647
+	for actor in context.get("actors",[]):
+		if int(actor.get("team_id",0))==own_team or float(actor.get("hp",0))<=0: continue
+		var d: int=absi(int(actor.cell.x)-int(own.cell.x))+absi(int(actor.cell.y)-int(own.cell.y))
+		if d<best_dist or (d==best_dist and int(actor.id)<int(best.get("id",2147483647))):
+			best=actor
+			best_dist=d
+	return best
 
 func _card(context: Dictionary, option: Dictionary) -> Dictionary:
 	var uid: String = str(option.get("card_uid", option.get("card_id", "")))
@@ -80,7 +92,7 @@ func _fallback(legal: Array, clash: bool) -> Dictionary:
 
 func _action_score(context: Dictionary, option: Dictionary, _record: Dictionary) -> float:
 	var own: Dictionary = _actor(context, int(context.observer_id))
-	var enemy: Dictionary = _enemy(context)
+	var enemy: Dictionary = _enemy(context,option)
 	if enemy.is_empty(): return 0
 	var kind: String = str(option.get("kind", ""))
 	var usage: Dictionary = _usage_for(context, option)

@@ -48,7 +48,19 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	_battle_serial+=1
 	state.battle_id="battle:%d:%d" % [seed,_battle_serial]
 	state.root_action_id=state.battle_id+":initial"
-	state.preferred_first=first_actor if first_actor in [0,1] else 0
+	if options.has("combatants") and not state.configure_combatants(options.combatants):
+		state.outcome="defeat"
+		state.mode="FINISHED"
+		state.phase="FINISHED"
+		audit=Events.new(state)
+		audit.emit("RULE_ERROR",{"text":state.party_error})
+		return
+	state.preferred_first=state.actors[0].id
+	for candidate in state.actors:
+		if candidate.team_id==0 and candidate.controller=="PLAYER":
+			state.preferred_first=candidate.id
+			break
+	if state.get_actor(first_actor)!=null: state.preferred_first=first_actor
 	state.revision=revision
 	state.animation_ticket=ticket
 	state.profile="tingfeng"
@@ -107,7 +119,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		cards.draw(actor,5)
 	for actor in state.actors: visibility.refresh_intel(actor.id,true)
 	turns.begin_next_action()
-	resolver.emit("BATTLE_STARTED",{"seed":seed,"text":"断桥听风 · 双方各3内息、5张手牌"})
+	resolver.emit("BATTLE_STARTED",{"seed":seed,"text":"断桥听风 · %d名角色入阵" % state.actors.size()})
 	state.pending_events.clear()
 	_busy=false
 
@@ -196,7 +208,7 @@ func snapshot(observer_id: int = 0) -> Dictionary:
 		"active_id":state.active_id,"reaction":state.reaction_window,"responder_id":rules.responder_id(),
 		"battle_id":state.battle_id,"revision":state.revision,"request_version":state.revision,"event_seq":state.event_seq,
 		"animation_pending":state.animation_pending,"ticket":state.animation_ticket,"seed":state.seed,"round_no":state.round_no,
-		"outcome":state.outcome,"winner_id":state.winner_id,"terrain":state.terrain.duplicate(true),"actors":actors,"hand":hand,
+		"outcome":state.outcome,"winner_id":state.winner_id,"winning_team":state.winning_team,"terrain":state.terrain.duplicate(true),"actors":actors,"hand":hand,
 		"attack":state.attack.duplicate(true),"clash":clash,"logs":state.logs.duplicate(true),"phase_history":state.phase_history.duplicate(true)}
 
 func school_options() -> Array:

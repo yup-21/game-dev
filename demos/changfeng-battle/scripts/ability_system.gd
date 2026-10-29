@@ -49,7 +49,7 @@ func _targets(actor,base: Dictionary,usage: Dictionary,reachable: Dictionary) ->
 		"self","pending_root_attack": result.append(base)
 		"enemy_actor":
 			for target in state.actors:
-				if target.id==actor.id or target.hp_u<=0: continue
+				if not state.is_hostile(actor.id,target.id) or target.hp_u<=0: continue
 				var max_dist: int=int(usage.get("attack_profile",{}).get("range",usage.target.get("max_distance",1)))
 				var dist: int=rules.distance(actor.cell,target.cell)
 				if dist<int(usage.target.get("min_distance",1)) or dist>max_dist: continue

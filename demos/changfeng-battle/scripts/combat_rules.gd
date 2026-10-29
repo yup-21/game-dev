@@ -84,7 +84,7 @@ func raw_actions(actor_id: int) -> Array:
 				options.append({"kind":"MOVE","actor_id":actor_id,"target_cell":cell})
 		if not actor.basic_attack_used and actor.qi_u>=10000:
 			for target in state.actors:
-				if target.id!=actor_id and target.hp_u>0 and distance(actor.cell,target.cell)==1:
+				if state.is_hostile(actor_id,target.id) and target.hp_u>0 and distance(actor.cell,target.cell)==1:
 					options.append({"kind":"BASIC_ATTACK","actor_id":actor_id,"target_id":target.id})
 		if not actor.basic_guard_used and actor.qi_u>=10000: options.append({"kind":"BASIC_GUARD","actor_id":actor_id})
 		if not actor.pitch_used:
