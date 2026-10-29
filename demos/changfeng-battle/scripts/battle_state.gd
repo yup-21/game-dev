@@ -29,6 +29,7 @@ var reaction_window: String = "NONE"
 var attack: Dictionary = {}
 var outcome: String = "playing"
 var winner_id: int = -1
+var winning_team: int = -1
 var revision: int = 0
 var animation_pending: bool = false
 var animation_ticket: int = 0
