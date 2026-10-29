@@ -11,8 +11,6 @@ var items: Dictionary={}
 var encounter_id: String=""
 var battle_outcome: String=""
 var winning_team: int=-1
-var remaining_life_months: int=720 # Demonstration starting budget, not full character lifespan simulation.
-var elapsed_months: int=0
 var injury_stacks: int=0
 var aftercare: String=""
 
@@ -25,8 +23,6 @@ func start_new_game() -> void:
 	encounter_id=""
 	battle_outcome=""
 	winning_team=-1
-	remaining_life_months=720
-	elapsed_months=0
 	injury_stacks=0
 	aftercare=""
 
@@ -55,7 +51,10 @@ func begin_encounter(id: String="escort_ambush") -> bool:
 	return true
 
 func encounter_options() -> Dictionary:
-	return director.battle_options(encounter_id) if phase=="battle" else {}
+	if phase!="battle": return {}
+	var options: Dictionary=director.battle_options(encounter_id)
+	if injury_stacks>0: options["initial_statuses"]={0:{"meridian_wound":injury_stacks}}
+	return options
 
 func encounter_seed() -> int:
 	return int(director.encounter(encounter_id).get("seed",2026))
@@ -74,14 +73,11 @@ func choose_aftercare(choice: String) -> bool:
 	if phase!="aftermath" or not aftercare.is_empty() or choice not in ["rest","pursue"]: return false
 	aftercare=choice
 	if choice=="rest":
-		var delay: int=1 if bool(flags.get("helped_escort",false)) else 2
-		elapsed_months+=delay
-		remaining_life_months=maxi(0,remaining_life_months-delay)
 		injury_stacks=0
 		flags["healed_injury"]=true
+		if bool(flags.get("helped_escort",false)): flags["escort_healing_hint"]=true
 	else:
-		elapsed_months+=1
-		remaining_life_months=maxi(0,remaining_life_months-(1+injury_stacks*3))
+		# A visible battle penalty, without revealing a life counter.
 		flags["pursued_early"]=true
 		if not bool(flags.get("helped_escort",false)): flags["pursuer_token_clue"]=true
 	return true
