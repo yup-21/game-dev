@@ -1,6 +1,20 @@
 extends RefCounted
 var state
 var cards
+
+func _refresh_hp_limit(actor) -> void:
+	# Status-driven cap modifiers apply equally to player-controlled and AI units.
+	var base_u: int=actor.base_max_hp_u
+	var penalty_u: int=0
+	for status_id in actor.statuses:
+		if not cards.statuses.has(status_id): continue
+		var entry: Dictionary=actor.statuses[status_id]
+		var stacks_count: int=int(entry.get("stacks",1))
+		penalty_u+=maxi(0,int(cards.statuses[status_id].get("max_hp_penalty_per_stack",0)))*maxi(0,stacks_count)*10000
+	actor.max_hp_u=clampi(base_u-penalty_u,10000,base_u)
+	# Removing a debuff restores capacity, never current HP.
+	actor.hp_u=mini(actor.hp_u,actor.max_hp_u)
+
 func _init(s,c) -> void:
 	state=s
 	cards=c
@@ -21,15 +35,20 @@ func add(actor_id: int, id: String, amount: int = 1) -> bool:
 	if not cards.statuses.has(id): return false
 	var actor=state.get_actor(actor_id)
 	var d: Dictionary=cards.statuses[id]
-	var expiry: int=state.global_tick+int(d.get("expiry",{}).get("duration",150))
+	var duration: int=int(d.get("expiry",{}).get("duration",150))
+	var expiry: int=-1 if duration<0 else state.global_tick+duration
 	var next_tick: int=state.global_tick+100
 	if id=="scorch" and has(actor_id,id): next_tick=int(actor.statuses[id].get("next_tick",next_tick))
 	actor.statuses[id]={"expiry":expiry,"stacks":mini(int(d.get("stack_limit",1)),stacks(actor_id,id)+amount)}
 	if id=="scorch": actor.statuses[id]["next_tick"]=next_tick
+	_refresh_hp_limit(actor)
 	return true
 
 func remove(actor_id: int,id: String) -> void:
-	state.get_actor(actor_id).statuses.erase(id)
+	var actor=state.get_actor(actor_id)
+	if actor==null: return
+	actor.statuses.erase(id)
+	_refresh_hp_limit(actor)
 
 func conditional_bonus(actor_id: int,target_id: int,c: Dictionary) -> int:
 	var a=state.get_actor(actor_id)
