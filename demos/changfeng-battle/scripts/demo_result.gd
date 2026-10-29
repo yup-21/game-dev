@@ -67,17 +67,17 @@ func _draw() -> void:
 	var decision: String="你曾试着救治镖头。" if bool(session.flags.get("helped_escort",false)) else "你曾追问劫镖真相。"
 	draw_string(font,Vector2(270,446),decision,HORIZONTAL_ALIGNMENT_LEFT,-1,23,INK)
 	draw_string(font,Vector2(270,505),"这只是江湖第一幕的开端。更深的阴谋，仍藏在雨幕之后。",HORIZONTAL_ALIGNMENT_LEFT,-1,22,INK)
-	draw_string(font,Vector2(270,551),"剩余寿元：%d个月 · 暗伤：%d层 · 已过：%d个月" % [int(session.remaining_life_months),int(session.injury_stacks),int(session.elapsed_months)],HORIZONTAL_ALIGNMENT_LEFT,-1,22,INK)
+	var wound_label: String="暗伤：%d层 · 气血上限 -%d" % [int(session.injury_stacks),int(session.injury_stacks)*2] if int(session.injury_stacks)>0 else "暗伤已愈 · 气血上限恢复"
+	draw_string(font,Vector2(270,551),wound_label,HORIZONTAL_ALIGNMENT_LEFT,-1,22,INK)
 	if session.phase=="complete":
 		draw_string(font,Vector2(270,613),"序章试玩完成 · 江湖未完，长风未止。",HORIZONTAL_ALIGNMENT_LEFT,-1,29,GOLD)
 		_button(Rect2(270,700,450,65),"返回主菜单","new")
 	elif session.aftercare.is_empty():
-		var rest_months: int=1 if bool(session.flags.get("helped_escort",false)) else 2
 		draw_string(font,Vector2(270,605),"战后气脉受损，必须决定去留：",HORIZONTAL_ALIGNMENT_LEFT,-1,24,INK)
-		_button(Rect2(270,675,510,65),"疗伤休整 · 消耗%d个月" % rest_months,"rest")
-		_button(Rect2(820,675,515,65),"带伤追查 · 额外耗损寿元","pursue")
+		_button(Rect2(270,675,510,65),"疗伤休整 · 消除暗伤","rest")
+		_button(Rect2(820,675,515,65),"带伤追查 · 气血上限受损","pursue")
 	else:
-		var consequence: String="你静养疗伤，暗伤尽消。" if session.aftercare=="rest" else "你强撑伤势追索线索，寿元额外流失。"
+		var consequence: String="你静养疗伤，暗伤尽消，气血上限恢复。" if session.aftercare=="rest" else "你强撑伤势追索线索，暗伤未愈，气血上限仍受限制。"
 		draw_string(font,Vector2(270,608),consequence,HORIZONTAL_ALIGNMENT_LEFT,-1,24,INK)
 		if bool(session.flags.get("pursuer_token_clue",false)):
 			draw_string(font,Vector2(270,643),"得到新线索：追兵令牌",HORIZONTAL_ALIGNMENT_LEFT,-1,20,GOLD)
