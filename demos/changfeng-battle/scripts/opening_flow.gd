@@ -115,10 +115,10 @@ func _action(action: String) -> void:
 		"duel": call_deferred("_change_scene","res://battle.tscn")
 		"story_battle":
 			var session=_session()
-			if session!=null and session.begin_encounter():
-				call_deferred("_change_scene","res://party_battle.tscn")
+			if session!=null and session.items.has("taixu_fragment"):
+				call_deferred("_change_scene","res://study.tscn")
 			else:
-				message="尚未获得残篇，无法进入剧情遭遇"
+				message="尚未获得残篇，无法继续剧情"
 				message_left=3.0
 		"party": call_deferred("_change_scene","res://party_battle.tscn")
 		"quit": get_tree().quit()
@@ -398,7 +398,7 @@ func _draw_complete() -> void:
 	_center(Vector2(800,470),"一卷无名绢帛，一场未完的血案。",24,INK,true)
 	_center(Vector2(800,525),"你尚不知道，它将牵出多少江湖恩怨。",20,INK)
 	_center(Vector2(800,579),"远处的马蹄声越来越近……",19,Color("846d4e"))
-	_button(Rect2(430,639,742,70),"迎战追兵 · 继续序章","story_battle",true)
+	_button(Rect2(430,639,742,70),"参悟残篇 · 迎战追兵","story_battle",true)
 	_button(Rect2(430,734,350,58),"进入群侠战斗试玩","party",true)
 	_button(Rect2(822,734,350,58),"返回主菜单","menu",true)
 
