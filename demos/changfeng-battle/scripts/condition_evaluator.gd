@@ -73,7 +73,7 @@ func allows(actor, condition: Variant, context: Dictionary = {}, depth: int = 0)
 			"target_status":
 				return context.has("target_id") and statuses != null and statuses.has(int(context.target_id), str(value))
 			"qi_at_least": return actor.qi_u >= roundi(float(value) * 10000.0)
-			"attribute_at_least": return float(actor.attributes.get(str(condition.stat), -1)) >= float(value)
+			"attribute_at_least": return float(actor.effective_attributes.get(str(condition.stat), -1)) >= float(value)
 			"technique_node":
 				var id: String = str(condition.technique_id)
 				return actor.technique_states.has(id) and str(actor.technique_states[id].get("node", "")) == str(value)
