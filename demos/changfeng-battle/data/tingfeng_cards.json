@@ -114,7 +114,7 @@
         "kind": "permanent",
         "duration": -1
       },
-      "description": "经脉受损，每层降低2点气血上限；疗伤可解除。",
+      "description": "经脉受损，每层降低2点当前气血上限与10%有效身法；不影响先天属性及隐藏寿元。",
       "scope": "character",
       "stacking": "add",
       "modifiers": [
@@ -126,7 +126,7 @@
         {
           "stat": "AGI",
           "op": "percent",
-          "value": -5
+          "value": -10
         }
       ]
     },
