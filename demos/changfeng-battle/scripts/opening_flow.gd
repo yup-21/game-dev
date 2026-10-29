@@ -318,7 +318,7 @@ func _wet_road(t: float) -> void:
 			0.05, PI - 0.05, 16, Color(0.82, 0.91, 0.85, 0.09 * (1.0 - phase / 45.0)), 1.4)
 		if i % 4 == 0:
 			draw_line(Vector2(x - 38, y + 5), Vector2(x + 48, y + 3),
-				Color("b4c3ae", 0.12), 2)
+				Color(Color("b4c3ae"), 0.12), 2)
 
 
 func _cinema_bars() -> void:
