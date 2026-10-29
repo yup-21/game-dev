@@ -26,7 +26,7 @@ func _act(code: String) -> void:
 	var session=_session()
 	if session==null: return
 	if code=="back":
-		call_deferred("_go",session.management_return)
+		call_deferred("_go",session.return_from_management())
 		return
 	if code=="resume":
 		call_deferred("_go",session.resume_scene())
