@@ -35,6 +35,8 @@ jobs:
           for script in martial_progression character_progression state_system attribute_modifier_pipeline technique_runtime; do
             godot --headless --path demos/changfeng-battle --check-only --script "res://scripts/${script}.gd"
           done
+      - name: Fast AI policy regression
+        run: timeout 20s godot --headless --path demos/changfeng-battle --script res://checks/test_tingfeng_ai.gd
       - name: Run existing combat and demo contracts
         shell: bash
         run: |
@@ -58,7 +60,9 @@ jobs:
             test_unified_state_progression
           do
             echo "::group::${name}"
-            godot --headless --path "$project" --script "res://checks/${name}.gd"
+            limit=90
+            if [[ "$name" == "test_wuxue_playthrough" ]]; then limit=180; fi
+            timeout --signal=TERM --kill-after=5s "${limit}s" godot --headless --path "$project" --script "res://checks/${name}.gd"
             echo "::endgroup::"
           done
       - name: Export Windows standalone demo
