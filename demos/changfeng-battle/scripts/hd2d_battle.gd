@@ -275,7 +275,7 @@ func _rebuild_actions() -> void:
     for child in card_actions.get_children():
         if child != selection_label:
             child.queue_free()
-    var available := _decision_owner() == 0 and not bool(snap.get("animation_pending", false)) and snap.get("outcome", "playing") == "playing"
+    var available: bool = _decision_owner() == 0 and not bool(snap.get("animation_pending", false)) and str(snap.get("outcome", "playing")) == "playing"
     selection_label.text = ("选择目标：" + selected_usage_id if not selected_usage_id.is_empty() else "左键走位，选择招式后再点目标格；右键取消") if available else "等待对手行动 / 动画结算"
     if not available:
         return
@@ -343,7 +343,7 @@ func _submit_legal(action: Dictionary) -> void:
     _submit(str(action.get("kind", "")), params)
 
 func _activate_selection() -> void:
-    var actions := _selected_actions()
+    var actions: Array = _selected_actions()
     if actions.is_empty():
         _clear_selection()
         return
@@ -500,7 +500,7 @@ func _hover_cell() -> Vector2i:
 
 func _update_cursor() -> void:
     hovered = _hover_cell()
-    var usable := not _action_at(hovered).is_empty() if not selected_kind.is_empty() else not _legal("MOVE", hovered).is_empty()
+    var usable: bool = not _action_at(hovered).is_empty() if not selected_kind.is_empty() else not _legal("MOVE", hovered).is_empty()
     cursor_mesh.visible = usable and animation_ticket < 0
     if cursor_mesh.visible:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
