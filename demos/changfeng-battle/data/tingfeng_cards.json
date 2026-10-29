@@ -103,6 +103,19 @@
       },
       "refresh_on_reapply": true,
       "visibility": "expose_current_and_newly_drawn_hand; overriding passive_conceal"
+    },
+    {
+      "id": "meridian_wound",
+      "name": "暗伤",
+      "public": true,
+      "negative": true,
+      "stack_limit": 3,
+      "expiry": {
+        "kind": "permanent",
+        "duration": -1
+      },
+      "max_hp_penalty_per_stack": 2,
+      "description": "经脉受损，每层降低2点气血上限；疗伤可解除。"
     }
   ],
   "combos": [
