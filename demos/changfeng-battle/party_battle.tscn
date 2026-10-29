@@ -3,4 +3,5 @@
 [ext_resource type="Script" path="res://scripts/party_battle_view.gd" id="1_q9w8e"]
 
 [node name="PartyBattle" type="Node2D"]
+texture_filter = 1
 script = ExtResource("1_q9w8e")
