@@ -1,5 +1,6 @@
 extends RefCounted
 ## Windowed presentation smoke check. Captures actual Godot frames, not mock screenshots.
+const Illustration = preload("res://scripts/hd2d_illustrated_factory.gd")
 func _wait(view, frames: int = 3) -> void:
 	for _i in range(frames): await view.get_tree().process_frame
 
@@ -27,7 +28,7 @@ func run(view) -> void:
 	if not has_hd2d:
 		_fail(view,"illustrated battle preview entry missing")
 		return
-	var sheet: Texture2D = view.CharacterArt.make_sheet(false)
+	var sheet: Texture2D = Illustration.make_sheet(false)
 	if sheet == null or sheet.get_size() != Vector2(960, 800):
 		_fail(view,"opening character illustration sheet not loaded")
 		return
