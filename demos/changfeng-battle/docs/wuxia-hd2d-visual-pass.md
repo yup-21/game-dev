@@ -8,6 +8,8 @@
 - **光影与水面**：沿用 3D 斜俯视和水波 Shader，暖色灯光与冷绿环境色构成武侠暮色氛围。
 - **角色**：改由 `hd2d_sprite_factory.gd` 生成两套原创、透明、严格按6列×4行排列的角色 atlas（青衣剑客/赤褐衣刀客），继续 nearest 采样，增加3D姓名牌与事件光照。
 - **角色动画**：`hd2d_animation.gd` 从 `BattleModel` 的语义事件驱动待机、行走、攻击、护体、受击、闪避和连携状态；每个角色使用独立动画游标，攻击/响应/受击按事件顺序排队，结束后回到待机。`BattleModel` 的 presentation ticket 仅在播放队列结束后被确认。
+- **剑招特效**：`hd2d_vfx.gd` 绘制剑弧、连携强化剑光、命中冲击、护罩和闪避光迹；效果使用独立场景节点和有界生命周期，不改变伤害或命中逻辑。
+- **角色细节**：Sprite Sheet 增加服饰分层、衣褶、腰带、刺绣、发髻、飘带，以及敌方胡须等区别元素。
 - **HUD**：原创青玉/墨色/宣纸/金色配色；顶部角色资源，右侧行动与响应状态，底部武学和卡牌用法面板。
 - **战斗交互**：仍读取原 BattleModel 的合法动作，保留所有卡牌使用条件、目标选择、LIFO与动画票据，不把 UI 变成规则真值。
 
@@ -26,6 +28,7 @@
 - `scripts/hd2d_scenery.gd`：视觉性地图装饰；
 - `scripts/hd2d_sprite_factory.gd`：透明角色 atlas 生成；
 - `scripts/hd2d_animation.gd`：语义事件动画状态控制；
+- `scripts/hd2d_vfx.gd`：语义事件驱动的 3D 剑招/受击光效；
 - `scripts/hd2d_ui_theme.gd`：界面 StyleBox、颜色与按钮；
 - `scripts/hd2d_battle.gd`：场景装配与现有模型事件适配。
 
@@ -46,6 +49,8 @@ godot --path demos/changfeng-battle res://battle_hd2d.tscn
 4. 3D地形装饰不遮挡主角，也不改变15×10网格移动、射程和可达性。
 5. 1600×1000与较小窗口下，HUD 不遮住关键可操作区域。
 6. 原 `battle.tscn` 与 `opening.tscn` 均可正常运行。
+7. 攻击/格挡/受击/连携各自触发可见特效；时间到后释放节点，不留下累积的 MeshInstance3D。
+8. 检查 add-blend 光效与 Sprite3D 的透明排序、角色遮挡，以及剑光是否超出世界可视区。
 
 ## 仍需继续
 
