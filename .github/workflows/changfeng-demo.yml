@@ -35,6 +35,11 @@ jobs:
           for script in martial_progression character_progression state_system attribute_modifier_pipeline technique_runtime inventory_system save_system inventory_view martial_hall_view save_slots_view; do
             godot --headless --path demos/changfeng-battle --check-only --script "res://scripts/${script}.gd"
           done
+      - name: Fast integration gate for save, equipment, consumables and mastery
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120s godot --headless --path demos/changfeng-battle --script res://checks/test_save_inventory_martial.gd
       - name: Run existing combat and demo contracts
         shell: bash
         run: |
