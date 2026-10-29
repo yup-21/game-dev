@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for script in martial_progression character_progression state_system attribute_modifier_pipeline technique_runtime; do
+          for script in martial_progression character_progression state_system attribute_modifier_pipeline technique_runtime inventory_system save_system inventory_view martial_hall_view save_slots_view; do
             godot --headless --path demos/changfeng-battle --check-only --script "res://scripts/${script}.gd"
           done
       - name: Run existing combat and demo contracts
@@ -55,7 +55,8 @@ jobs:
             test_opening_story \
             test_demo_flow \
             test_demo_technique \
-            test_unified_state_progression
+            test_unified_state_progression \
+            test_save_inventory_martial
           do
             echo "::group::${name}"
             godot --headless --path "$project" --script "res://checks/${name}.gd"
