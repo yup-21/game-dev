@@ -21,6 +21,14 @@ var ai_wait := 0.0
 var hovered := Vector2i(-1, -1)
 var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
+var card_actions: VBoxContainer
+var selection_label: Label
+var selected_card_uid := ""
+var selected_usage_id := ""
+var selected_technique := ""
+var selected_node := ""
+var selected_kind := ""
+var last_cue := ""
 
 func _ready() -> void:
     model.reset(2026)
@@ -89,7 +97,7 @@ func _build_world() -> void:
             var cell := Vector2i(x, y)
             var terrain := str(snap.get("terrain", {}).get(cell, ""))
             # Model terrain is authoritative; these meshes are visual only.
-            # snap is initialized below before the geometry is built.
+            # snap was initialized from the model before geometry creation.
             if terrain == "water":
                 continue
             var center := _world(cell)
@@ -161,8 +169,20 @@ func _build_ui() -> void:
     status_label.add_theme_font_size_override("font_size", 18)
     column.add_child(status_label)
     help_label = Label.new()
-    help_label.text = "左键合法格移动  ·  Q 基础攻击  ·  G 格挡  ·  Space 结束/Pass  ·  R 重开  ·  Esc 返回主菜单"
+    help_label.text = "左键选目标/走位 · Q 普攻 · G 格挡 · Space Pass/结束 · R 重开 · 右键取消 · Esc 菜单"
     column.add_child(help_label)
+    var tray := PanelContainer.new()
+    tray.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    tray.custom_minimum_size.y = 154
+    canvas.add_child(tray)
+    var scroll := ScrollContainer.new()
+    tray.add_child(scroll)
+    card_actions = VBoxContainer.new()
+    card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    scroll.add_child(card_actions)
+    selection_label = Label.new()
+    selection_label.text = "点击招式用法选择，再点击有效目标；可响应连锁。"
+    card_actions.add_child(selection_label)
 
 func _refresh() -> void:
     snap = model.snapshot(0)
@@ -171,6 +191,121 @@ func _refresh() -> void:
         var id := int(actor.id)
         if not actor_nodes.has(id):
             _create_actor(actor)
+    _rebuild_actions()
+
+func _decision_owner() -> int:
+    if snap.get("phase", "") == "CLASH":
+        return int(snap.get("clash", {}).get("priority_actor_id", -1))
+    return int(snap.get("active_id", -1))
+
+func _find_actions(uid: String, usage: String) -> Array:
+    var choices: Array = []
+    for action in legals:
+        if str(action.get("kind", "")) == "PLAY_CARD" and str(action.get("card_uid", action.get("card_id", ""))) == uid and str(action.get("usage_id", "")) == usage:
+            choices.append(action)
+    return choices
+
+func _clear_selection() -> void:
+    selected_card_uid = ""
+    selected_usage_id = ""
+    selected_technique = ""
+    selected_node = ""
+    selected_kind = ""
+
+func _rebuild_actions() -> void:
+    if card_actions == null:
+        return
+    for child in card_actions.get_children():
+        if child != selection_label:
+            child.queue_free()
+    var available := _decision_owner() == 0 and not bool(snap.get("animation_pending", false)) and snap.get("outcome", "playing") == "playing"
+    selection_label.text = ("选择目标：" + selected_usage_id if not selected_usage_id.is_empty() else "左键走位，选择招式后再点目标格；右键取消") if available else "等待对手行动 / 动画结算"
+    if not available:
+        return
+    for card in snap.get("hand", []):
+        var uid := str(card.get("uid", card.get("card_id", "")))
+        for usage in card.get("usages", []):
+            var usage_id := str(usage.get("id", ""))
+            if _find_actions(uid, usage_id).is_empty():
+                continue
+            var button := Button.new()
+            var cost: Dictionary = usage.get("quoted_cost", {})
+            button.text = "%s · %s (%.1f 气)" % [str(card.get("name", "招式")), str(usage.get("name", usage_id)), float(cost.get("qi", 0))]
+            button.pressed.connect(_select_card.bind(uid, usage_id))
+            card_actions.add_child(button)
+    for action in legals:
+        if str(action.get("kind", "")) != "USE_ABILITY":
+            continue
+        var button := Button.new()
+        button.text = "武学续式 %s / %s" % [str(action.get("technique_id", "")), str(action.get("node_id", ""))]
+        button.pressed.connect(_select_technique.bind(str(action.get("technique_id", "")), str(action.get("node_id", ""))))
+        card_actions.add_child(button)
+    if snap.get("phase", "") == "CLASH":
+        var pass_button := Button.new()
+        pass_button.text = "Pass · 交还响应权"
+        pass_button.pressed.connect(_submit.bind("PASS_REACTION", {}))
+        card_actions.add_child(pass_button)
+
+func _select_card(uid: String, usage: String) -> void:
+    _clear_selection()
+    selected_card_uid = uid
+    selected_usage_id = usage
+    selected_kind = "PLAY_CARD"
+    _activate_selection()
+
+func _select_technique(technique: String, node: String) -> void:
+    _clear_selection()
+    selected_technique = technique
+    selected_node = node
+    selected_kind = "USE_ABILITY"
+    _activate_selection()
+
+func _selected_actions() -> Array:
+    if selected_kind == "PLAY_CARD":
+        return _find_actions(selected_card_uid, selected_usage_id)
+    var choices: Array = []
+    if selected_kind == "USE_ABILITY":
+        for action in legals:
+            if str(action.get("kind", "")) == selected_kind and str(action.get("technique_id", "")) == selected_technique and str(action.get("node_id", "")) == selected_node:
+                choices.append(action)
+    return choices
+
+func _submit_legal(action: Dictionary) -> void:
+    var params: Dictionary = {}
+    for key in ["card_uid", "card_id", "usage_id", "technique_id", "node_id", "target_cell", "target_id", "link_id"]:
+        if action.has(key):
+            params[key] = action[key]
+    _clear_selection()
+    _submit(str(action.get("kind", "")), params)
+
+func _activate_selection() -> void:
+    var actions := _selected_actions()
+    if actions.is_empty():
+        _clear_selection()
+        return
+    # Untargeted effects execute immediately. Link-targeted responses get buttons.
+    if not actions[0].has("target_cell") and not actions[0].has("target_id") and not actions[0].has("link_id"):
+        _submit_legal(actions[0])
+        return
+    for action in actions:
+        if not action.has("link_id"):
+            continue
+        var button := Button.new()
+        button.text = "截势：选择响应层 %s" % str(action.link_id)
+        button.pressed.connect(_submit_legal.bind(action))
+        card_actions.add_child(button)
+    selection_label.text = "已选择招式：点击绿色目标格或角色；右键取消。"
+
+func _action_at(cell: Vector2i) -> Dictionary:
+    for action in _selected_actions():
+        if action.has("target_cell") and action.target_cell == cell:
+            return action
+        if action.has("target_id"):
+            var target_id := int(action.target_id)
+            for actor in snap.get("actors", []):
+                if int(actor.id) == target_id and actor.cell == cell:
+                    return action
+    return {}
 
 func _update_status() -> void:
     if status_label == null or snap.is_empty():
@@ -216,6 +351,7 @@ func _accept(result: Dictionary) -> void:
     if not result.get("success", false):
         push_warning(str(result.get("message", "Action rejected")))
         return
+    _clear_selection()
     _refresh()
     if snap.get("animation_pending", false):
         animation_ticket = int(result.get("ticket", snap.get("ticket", -1)))
@@ -259,16 +395,25 @@ func _hover_cell() -> Vector2i:
 
 func _update_cursor() -> void:
     hovered = _hover_cell()
-    var usable := not _legal("MOVE", hovered).is_empty()
+    var usable := not _action_at(hovered).is_empty() if not selected_kind.is_empty() else not _legal("MOVE", hovered).is_empty()
     cursor_mesh.visible = usable and animation_ticket < 0
     if cursor_mesh.visible:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.085, 0)
 
 func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+        _clear_selection()
+        _rebuild_actions()
+        return
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        var move := _legal("MOVE", _hover_cell())
-        if not move.is_empty():
-            _submit("MOVE", {"target_cell": move.target_cell})
+        if not selected_kind.is_empty():
+            var selected := _action_at(_hover_cell())
+            if not selected.is_empty():
+                _submit_legal(selected)
+        else:
+            var move := _legal("MOVE", _hover_cell())
+            if not move.is_empty():
+                _submit("MOVE", {"target_cell": move.target_cell})
     if event is InputEventKey and event.pressed and not event.echo:
         match event.keycode:
             KEY_Q:
@@ -284,6 +429,7 @@ func _unhandled_input(event: InputEvent) -> void:
                     _submit(kind)
             KEY_R:
                 model.reset(2026)
+                _clear_selection()
                 animation_ticket = -1
                 _refresh()
                 for actor in snap.get("actors", []):
