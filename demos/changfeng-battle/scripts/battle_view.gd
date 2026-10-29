@@ -3,6 +3,7 @@ extends Node2D
 const Model = preload("res://scripts/battle_model.gd")
 const AI = preload("res://scripts/enemy_ai.gd")
 const Navigation = preload("res://scripts/demo_navigation.gd")
+const Sfx = preload("res://scripts/demo_sfx.gd")
 const Art = preload("res://scripts/battle_art.gd")
 const PAPER = Color("ede9dc")
 const INK = Color("273f3f")
@@ -16,6 +17,7 @@ const TILE = Vector2(70, 39)
 var model = Model.new()
 var enemy_ai = AI.new()
 var player_policy = AI.new()
+var sound = Sfx.new()
 var art = Art.new()
 var snap: Dictionary = {}
 var legals: Array = []
@@ -54,6 +56,7 @@ var school_picker_actor = -1
 var hand_page = 0
 
 func _ready() -> void:
+	add_child(sound)
 	body_font = SystemFont.new()
 	body_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -126,6 +129,7 @@ func _consume(result: Dictionary) -> void:
 		return
 	for event in result.get("events",[]):
 		var kind: String=str(event.get("type",""))
+		sound.cue(kind)
 		var cue_kind: String=""
 		var cue_target: int=int(event.get("defender_id",event.get("target_id",event.get("actor_id",-1))))
 		match kind:
