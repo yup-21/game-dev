@@ -108,6 +108,25 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		return
 	for actor in state.actors:
 		attributes.configure(actor,options.get("attributes",{}).get(actor.id,{}),options.get("passives",{}).get(actor.id,{}))
+		# Start-of-encounter conditions run through the normal StatusSystem.
+		var initial: Variant=options.get("initial_statuses",{}).get(actor.id,{})
+		if not initial is Dictionary:
+			cards.load_error="initial_statuses must map actor IDs to status dictionaries"
+		else:
+			for status_id in initial:
+				var count: Variant=initial[status_id]
+				if not status_id is String or not count is int or int(count)<1 or not cards.statuses.has(status_id) or int(count)>int(cards.statuses[status_id].get("stack_limit",1)):
+					cards.load_error="Invalid starting status: "+str(status_id)
+					break
+				if not statuses.add(actor.id,str(status_id),int(count)):
+					cards.load_error="Cannot apply starting status: "+str(status_id)
+					break
+		if not cards.load_error.is_empty():
+			state.outcome="defeat"
+			state.mode="FINISHED"
+			state.phase="FINISHED"
+			audit.emit("RULE_ERROR",{"text":cards.load_error})
+			return
 		var learned=options.get("techniques",{}).get(actor.id,{})
 		if not learned is Dictionary or not techniques.configure(actor,learned):
 			state.outcome="defeat"
