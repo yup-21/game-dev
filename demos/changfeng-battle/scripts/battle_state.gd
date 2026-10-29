@@ -13,6 +13,7 @@ var action_no: int = 0
 var clash: Dictionary = {}
 var card_instances: Dictionary = {}
 var knowledge: Dictionary = {0:{},1:{}}
+var party_error: String = ""
 var last_ready: int = -1
 var preferred_first: int = 0
 var next_link: int = 0
@@ -61,6 +62,10 @@ func _init(battle_seed: int = 74291) -> void:
 		CombatantState.new(0, "沈长风", Vector2i(6, 4)),
 		CombatantState.new(1, "拦江客", Vector2i(8, 4))
 	]
+	actors[0].team_id=0
+	actors[0].controller="PLAYER"
+	actors[1].team_id=1
+	actors[1].controller="AI"
 	for row in range(ROWS):
 		for col in range(COLS):
 			terrain[Vector2i(col, row)] = "water" if col == 7 else "grass"
@@ -72,6 +77,68 @@ func _init(battle_seed: int = 74291) -> void:
 		terrain[point] = "bamboo"
 	terrain[Vector2i(13, 4)] = "exit"
 
+
+## Optional encounter roster; default duel remains unchanged.
+## Format: [{id:int, name:String, team_id:0|1, controller:"PLAYER"|"AI", cell:[x,y]}].
+func configure_combatants(roster: Variant) -> bool:
+	if not roster is Array or roster.size()<2 or roster.size()>8:
+		party_error="Encounter must have 2–8 combatants"
+		return false
+	var created: Array=[]
+	var used_ids: Dictionary={}
+	var used_cells: Dictionary={}
+	var teams: Dictionary={}
+	for entry in roster:
+		if not entry is Dictionary:
+			party_error="Combatant must be an object"
+			return false
+		if not entry.get("id") is int or int(entry.id)<0 or int(entry.id)>1023 or used_ids.has(entry.id):
+			party_error="Invalid or duplicated actor ID"
+			return false
+		if not entry.get("team_id") is int or int(entry.team_id) not in [0,1]:
+			party_error="Encounter teams must be 0 and 1"
+			return false
+		if entry.get("controller","AI") not in ["PLAYER","AI"]:
+			party_error="Controller must be PLAYER or AI"
+			return false
+		var name: Variant=entry.get("name","")
+		var coords: Variant=entry.get("cell",[])
+		if not name is String or str(name).is_empty() or not coords is Array or coords.size()!=2 or not coords[0] is int or not coords[1] is int:
+			party_error="Invalid actor name or cell"
+			return false
+		var cell: Vector2i=Vector2i(int(coords[0]),int(coords[1]))
+		if not passable(cell) or used_cells.has(cell):
+			party_error="Actor spawn must be passable and unoccupied"
+			return false
+		var actor=CombatantState.new(int(entry.id),str(name),cell)
+		actor.team_id=int(entry.team_id)
+		actor.controller=str(entry.get("controller","AI"))
+		created.append(actor)
+		used_ids[actor.id]=true
+		used_cells[cell]=true
+		teams[actor.team_id]=true
+	if teams.size()!=2:
+		party_error="Both opposing teams must be present"
+		return false
+	actors=created
+	knowledge.clear()
+	combo_history.clear()
+	for actor in actors:
+		knowledge[actor.id]={}
+		combo_history[actor.id]=[]
+	party_error=""
+	return true
+
+func is_hostile(a_id: int, b_id: int) -> bool:
+	var a=get_actor(a_id)
+	var b=get_actor(b_id)
+	return a!=null and b!=null and a.id!=b.id and a.team_id!=b.team_id
+
+func living_teams() -> Array:
+	var result: Array=[]
+	for actor in actors:
+		if actor.hp_u>0 and not result.has(actor.team_id): result.append(actor.team_id)
+	return result
 
 func get_actor(actor_id: int):
 	for actor in actors:
