@@ -11,6 +11,20 @@ func _init(directory: String="user://saves") -> void:
 func _path(slot: int) -> String:
 	return folder.path_join("slot_%02d.json" % slot)
 
+## Godot JSON parses every number as float; normalize whole values after digest verification.
+func _normalize_numbers(value: Variant) -> Variant:
+	if value is Dictionary:
+		var result: Dictionary={}
+		for key in value: result[key]=_normalize_numbers(value[key])
+		return result
+	if value is Array:
+		var result: Array=[]
+		for child in value: result.append(_normalize_numbers(child))
+		return result
+	if value is float and is_finite(value) and absf(value)<9000000000000000.0 and floor(value)==value:
+		return int(value)
+	return value
+
 func _read_file(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path): return {}
 	var file=FileAccess.open(path,FileAccess.READ)
@@ -22,7 +36,7 @@ func _read_file(path: String) -> Dictionary:
 	if parsed.get("version")!=VERSION or not parsed.get("data") is Dictionary or not parsed.get("digest") is String: return {}
 	var data: Dictionary=parsed.data
 	if JSON.stringify(data,"",true).sha256_text()!=str(parsed.digest): return {}
-	return data.duplicate(true)
+	return _normalize_numbers(data)
 
 func info(slot: int) -> Dictionary:
 	if slot<1 or slot>SLOTS: return {"state":"invalid"}
