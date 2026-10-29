@@ -1,4 +1,5 @@
 extends RefCounted
+const JsonNumbers=preload("res://scripts/json_number_codec.gd")
 ## Atomic, checksum-protected, versioned save slots; never serialize live battle objects.
 const VERSION: int=1
 const SLOTS: int=3
@@ -11,20 +12,6 @@ func _init(directory: String="user://saves") -> void:
 func _path(slot: int) -> String:
 	return folder.path_join("slot_%02d.json" % slot)
 
-## Godot JSON parses every number as float; normalize whole values after digest verification.
-func _normalize_numbers(value: Variant) -> Variant:
-	if value is Dictionary:
-		var result: Dictionary={}
-		for key in value: result[key]=_normalize_numbers(value[key])
-		return result
-	if value is Array:
-		var result: Array=[]
-		for child in value: result.append(_normalize_numbers(child))
-		return result
-	if value is float and is_finite(value) and absf(value)<9000000000000000.0 and floor(value)==value:
-		return int(value)
-	return value
-
 func _read_file(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path): return {}
 	var file=FileAccess.open(path,FileAccess.READ)
@@ -36,7 +23,7 @@ func _read_file(path: String) -> Dictionary:
 	if parsed.get("version")!=VERSION or not parsed.get("data") is Dictionary or not parsed.get("digest") is String: return {}
 	var data: Dictionary=parsed.data
 	if JSON.stringify(data,"",true).sha256_text()!=str(parsed.digest): return {}
-	return _normalize_numbers(data)
+	return JsonNumbers.normalize(data)
 
 func info(slot: int) -> Dictionary:
 	if slot<1 or slot>SLOTS: return {"state":"invalid"}
@@ -66,7 +53,10 @@ func save(slot: int,session) -> bool:
 	var target: String=ProjectSettings.globalize_path(_path(slot))
 	var tmp: String=target+".tmp"
 	var backup: String=target+".bak"
-	var record: Dictionary={"version":VERSION,"data":data,"digest":JSON.stringify(data,"",true).sha256_text()}
+	# Hash the JSON-parsed representation, because Godot serializes integer values as floats.
+	var encoded: String=JSON.stringify(data,"",true)
+	var canonical: Variant=JSON.parse_string(encoded)
+	var record: Dictionary={"version":VERSION,"data":data,"digest":JSON.stringify(canonical,"",true).sha256_text()}
 	var writer=FileAccess.open(tmp,FileAccess.WRITE)
 	if writer==null:
 		last_error="Unable to open temporary save"
