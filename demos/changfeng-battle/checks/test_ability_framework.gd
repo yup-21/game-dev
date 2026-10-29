@@ -35,8 +35,8 @@ func run() -> void:
 	var a = model.state.get_actor(0)
 	a.cell = Vector2i(7,4)
 	a.qi_u = 60000
-	check(Conditions.new().allows({"all":[{"type":"qi_at_least","value":6},{"not":{"type":"qi_at_least","value":7}}]},a),"bounded conditions")
-	check(not Conditions.new().allows({"type":"unknown"},a),"unknown condition fails closed")
+	check(model.conditions.allows(a,{"all":[{"type":"qi_at_least","value":6},{"not":{"type":"qi_at_least","value":7}}]}),"bounded conditions")
+	check(not model.conditions.allows(a,{"type":"unknown"}),"unknown condition fails closed")
 	check(not model.snapshot(1).actors[0].has("technique_states"),"opponent cannot read private technique progress")
 	check(model.snapshot(0).actors[0].has("technique_states"),"owner can read technique progress")
 	check(send(model,"USE_ABILITY",0,"one"),"first node")

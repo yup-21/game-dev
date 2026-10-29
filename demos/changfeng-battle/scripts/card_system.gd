@@ -150,7 +150,7 @@ func create_instance(actor, definition_id: String, destination: String = "hand",
 	state.next_uid+=1
 	var uid: String="card:%d:%04d" % [actor.id,state.next_uid]
 	var origin: Dictionary=instances.get(source_uid,{})
-	instances[uid]={"uid":uid,"definition_id":definition_id,"card_id":definition_id,"owner_actor_id":actor.id,"owner":actor.id,"modifications":{},"generated":not source_uid.is_empty(),"source_uid":source_uid,"parent_uid":source_uid,"child_uids":[],"related_uids":[],"root_uid":str(origin.get("root_uid",source_uid)) if not source_uid.is_empty() else uid,"lifecycle":str(definitions[definition_id].get("lifecycle","normal"))}
+	instances[uid]={"uid":uid,"definition_id":definition_id,"card_id":definition_id,"owner_actor_id":actor.id,"owner":actor.id,"modifications":{},"generated":not source_uid.is_empty(),"source_uid":source_uid,"parent_uid":source_uid,"child_uids":[],"related_uids":[],"root_uid":str(origin.get("root_uid",source_uid)) if not source_uid.is_empty() else uid,"lifecycle":str(definitions[definition_id].get("lifecycle","normal")),"retain_own_actions":int(definitions[definition_id].get("retain_own_actions",0)),"created_own_action":actor.turns_started}
 	match destination:
 		"hand": actor.hand.append(uid)
 		"draw_pile": actor.draw_pile.append(uid)
@@ -234,6 +234,12 @@ func draw(actor, count: int) -> Array:
 		drawn.append(uid)
 	if not drawn.is_empty(): actor.hand_generation+=1
 	return drawn
+
+func retain_on_refresh(actor, uid: String) -> bool:
+	var card: Dictionary=instances.get(uid,{})
+	if card.is_empty(): return false
+	var allowance: int=int(card.get("retain_own_actions",0))
+	return allowance>0 and actor.turns_started-int(card.get("created_own_action",0))<allowance
 
 func leave_hand(actor, uid: String, to_resolving: bool = true) -> void:
 	actor.hand.erase(uid)

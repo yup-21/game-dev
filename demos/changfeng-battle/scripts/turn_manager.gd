@@ -56,7 +56,8 @@ func begin_next_action() -> void:
 			a.attack_history.clear()
 			a.card_uses.clear()
 			if a.turns_started>0:
-				for uid in a.hand.duplicate(): cards.leave_hand(a,str(uid),false)
+				for uid in a.hand.duplicate():
+					if not cards.retain_on_refresh(a,str(uid)): cards.leave_hand(a,str(uid),false)
 				var drawn: Array=cards.draw(a,5)
 				resolver.emit("CARDS_DRAWN",{"actor_id":a.id,"count":drawn.size()})
 			a.turns_started+=1
