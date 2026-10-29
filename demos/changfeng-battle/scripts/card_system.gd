@@ -1,7 +1,8 @@
 extends RefCounted
 ## Definitions are copied on access. Only UID instances reside in BattleState.
-const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add_shield","gain_qi","modify_pending_damage","modify_attack_area","cancel_chain_link","contest_intercept","interrupt_root_attack","apply_status","consume_status","force_move","draw_cards","discard_cards"]
+const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add_shield","gain_qi","modify_pending_damage","modify_attack_area","cancel_chain_link","contest_intercept","interrupt_root_attack","apply_status","consume_status","force_move","draw_cards","discard_cards","grant_card"]
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
+const DefinitionRegistry = preload("res://scripts/card_definition_registry.gd")
 var state
 var catalog
 var definitions: Dictionary = {}
@@ -9,6 +10,7 @@ var statuses: Dictionary = {}
 var combos: Array = []
 var deck: Array = []
 var load_error: String = ""
+var registry = DefinitionRegistry.new()
 var instances: Dictionary:
 	get: return state.card_instances
 
@@ -24,7 +26,9 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		if not item is Dictionary or definitions.has(str(item.get("id",""))) or not valid_definition(item):
 			load_error="卡牌配置不合法"
 			return
-		definitions[str(item.id)]=item.duplicate(true)
+		if not registry.register(definitions,item):
+			load_error=registry.error
+			return
 	deck=data.get("deck",{}).get("cards",[]).duplicate(true)
 	combos=data.get("combos",[]).duplicate(true)
 	for entry in deck:
@@ -54,12 +58,15 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 			if definitions.has(definition.id) or not valid_definition(definition):
 				load_error="规范化武学定义不合法："+str(definition.id)
 				return
-			definitions[definition.id]=definition.duplicate(true)
+			if not registry.register(definitions,definition):
+				load_error=registry.error
+				return
 		for combo in catalog.combos:
 			var complete: bool=true
 			for step in combo.get("sequence",[]):
 				if not definitions.has(str(step.card_id)): complete=false
 			if complete: combos.append(combo.duplicate(true))
+	if not registry.verify(definitions): load_error=registry.error
 
 func whole(value: Variant, minimum: int = 0) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and float(value)==float(int(value)) and int(value)>=minimum
@@ -88,6 +95,10 @@ func valid_effect(e: Variant, depth: int = 0) -> bool:
 			if not (value is int or value is float) or not is_finite(float(value)) or absf(float(value))>10000: return false
 	if kind=="force_move" and e.get("direction","") not in ["away_from_attacker","towards_attacker"]: return false
 	if kind=="draw_cards" and not whole(e.get("count"),1): return false
+	if kind=="grant_card":
+		if not e.get("card_id") is String or str(e.card_id).is_empty(): return false
+		if e.get("destination","hand") not in ["hand","draw_pile","discard_pile"]: return false
+		if not whole(e.get("count",1),1) or int(e.get("count",1))>16: return false
 	if kind=="discard_cards" and not e.get("uids",[]) is Array: return false
 	for key in ["effects","on_success","on_contested","on_failure","on_hit"]:
 		if not e.get(key,[]) is Array: return false
@@ -129,12 +140,24 @@ func build_deck(actor, _seed: int = 0, _deck_ids: Array = []) -> bool:
 	for entry in entries:
 		if not definitions.has(str(entry.card_id)): return false
 		for _i in range(int(entry.count)):
-			state.next_uid+=1
-			var uid: String="card:%d:%04d" % [actor.id,state.next_uid]
-			instances[uid]={"uid":uid,"definition_id":str(entry.card_id),"card_id":str(entry.card_id),"owner_actor_id":actor.id,"owner":actor.id,"modifications":{}}
-			actor.draw_pile.append(uid)
+			var uid: String=create_instance(actor,str(entry.card_id),"draw_pile")
+			if uid.is_empty(): return false
 	shuffle(actor.draw_pile)
 	return true
+
+func create_instance(actor, definition_id: String, destination: String = "hand", source_uid: String = "") -> String:
+	if not definitions.has(definition_id) or destination not in ["hand","draw_pile","discard_pile"]: return ""
+	state.next_uid+=1
+	var uid: String="card:%d:%04d" % [actor.id,state.next_uid]
+	var origin: Dictionary=instances.get(source_uid,{})
+	instances[uid]={"uid":uid,"definition_id":definition_id,"card_id":definition_id,"owner_actor_id":actor.id,"owner":actor.id,"modifications":{},"generated":not source_uid.is_empty(),"source_uid":source_uid,"parent_uid":source_uid,"root_uid":str(origin.get("root_uid",source_uid)) if not source_uid.is_empty() else uid,"lifecycle":str(definitions[definition_id].get("lifecycle","normal"))}
+	actor.get(destination).append(uid)
+	if destination=="hand": actor.hand_generation+=1
+	return uid
+
+func register_definition(definition: Dictionary) -> bool:
+	if not valid_definition(definition): return false
+	return registry.register(definitions,definition)
 
 func shuffle(items: Array) -> void:
 	for i in range(items.size()-1,0,-1):
@@ -173,6 +196,9 @@ func card_view(uid: String) -> Dictionary:
 	d["card_id"]=uid
 	d["kind"]=kind
 	d["cost"]=d.usages[0].get("cost",{}).get("qi",0)
+	d["generated"]=bool(instances[uid].get("generated",false))
+	d["source_uid"]=str(instances[uid].get("source_uid",""))
+	d["lifecycle"]=str(instances[uid].get("lifecycle","normal"))
 	return d
 
 func forget(uid: String) -> void:
@@ -197,9 +223,11 @@ func leave_hand(actor, uid: String, to_resolving: bool = true) -> void:
 	actor.hand.erase(uid)
 	forget(uid)
 	if to_resolving: actor.resolving.append(uid)
+	elif str(instances.get(uid,{}).get("lifecycle","normal"))=="exile_on_finish": actor.exile_pile.append(uid)
 	else: actor.discard_pile.append(uid)
 
 func finish(actor, uid: String) -> void:
 	if actor.resolving.has(uid):
 		actor.resolving.erase(uid)
-		actor.discard_pile.append(uid)
+		if str(instances.get(uid,{}).get("lifecycle","normal"))=="exile_on_finish": actor.exile_pile.append(uid)
+		else: actor.discard_pile.append(uid)
