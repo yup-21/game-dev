@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Opening','Parties','DemoFlow','ArtAssets')][string]$Stage = 'All',
+    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Opening','Parties','DemoFlow','ArtAssets','HD2D','HD2DStartup','HD2DInteractions')][string]$Stage = 'All',
     [string]$GodotPath
 )
 $ErrorActionPreference = 'Stop'
@@ -24,13 +24,15 @@ if ($Stage -in @('All','Schools')) { $checks += @{ Script = 'res://checks/test_w
 if ($Stage -in @('All','Catalog')) { $checks += @{ Script = 'res://checks/test_wuxue_catalog.gd'; Log = 'wuxue-catalog.log'; Marker = 'CATALOG CHECK: \d+ checks, 0 failures' } }
 if ($Stage -in @('All','SchoolPlaythrough')) { $checks += @{ Script = 'res://checks/test_wuxue_playthrough.gd'; Log = 'wuxue-playthrough.log'; Marker = 'SCHOOL PLAYTHROUGHS: 0 FAIL' } }
 if ($Stage -in @('All','ArtAssets')) { $checks += @{ Script = 'res://checks/test_kenney_assets.gd'; Log = 'kenney-cc0-art.log'; Marker = 'KENNEY_CC0_ASSETS: 18 loaded, 0 failures' } }
+if ($Stage -in @('All','HD2D','HD2DStartup')) { $checks += @{ Script = 'res://checks/test_hd2d_startup.gd'; Log = 'hd2d-startup.log'; Marker = '^HD2D_STARTUP_PASS\b' } }
+if ($Stage -in @('All','HD2D','HD2DInteractions')) { $checks += @{ Script = 'res://checks/test_hd2d_interactions.gd'; Log = 'hd2d-interactions.log'; Marker = '^HD2D_INTERACTIONS_PASS\b'; TimeoutMs = 90000 } }
 foreach ($check in $checks) {
     $logPath = Join-Path $logRoot $check.Log
     if (Test-Path -LiteralPath $logPath) { Remove-Item -LiteralPath $logPath }
     $processArgs = @('--headless', '--path', ('"' + $projectRoot + '"'), '--log-file', ('"' + $logPath + '"'), '--script', $check.Script)
     $checkClock = [Diagnostics.Stopwatch]::StartNew()
     $process = Start-Process -FilePath $resolvedGodot -ArgumentList $processArgs -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru
-    $timeoutMs = if ($check.Script -eq 'res://checks/test_wuxue_playthrough.gd') { 180000 } else { 60000 }
+    $timeoutMs = if ($check.ContainsKey('TimeoutMs')) { $check.TimeoutMs } elseif ($check.Script -eq 'res://checks/test_wuxue_playthrough.gd') { 180000 } else { 60000 }
     if (-not $process.WaitForExit($timeoutMs)) {
         $process.Kill()
         $process.WaitForExit()
@@ -44,6 +46,6 @@ foreach ($check in $checks) {
     if ($logText) { Write-Output $logText.TrimEnd() }
     if ($process.ExitCode -ne 0) { throw "校验 $($check.Script) 失败（退出码 $($process.ExitCode)）。日志：$logPath" }
     if ($logText -match '(?im)(SCRIPT ERROR:|Parse Error:|^ERROR:|^FAIL:|^FAILED:)') { throw "Godot 日志包含错误：$logPath" }
-    if ($logText -notmatch $check.Marker) { throw "日志中缺少成功标记：$logPath" }
+    if ($logText -notmatch ('(?m)' + $check.Marker)) { throw "日志中缺少成功标记：$logPath" }
 }
 Write-Output 'Targeted tingfeng verification passed.'

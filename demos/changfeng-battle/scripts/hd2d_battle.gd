@@ -228,6 +228,7 @@ func _create_actor(actor: Dictionary) -> void:
     shadow.material_override = _material(Color("263c34"))
     root.add_child(shadow)
     var sprite := Sprite3D.new()
+    sprite.name = "Sprite3D"
     sprite.texture = SpriteFactory.make_sheet(int(actor.get("team_id", 0)) != 0)
     sprite.pixel_size = 0.010
     sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
@@ -552,7 +553,9 @@ func _process(delta: float) -> void:
             light.light_energy = float(cue_remaining[id]) * 4.0
     if animation_ticket >= 0:
         animation_time -= delta
-        if animation_time <= 0.0:
+        # The semantic queue can span several frame boundaries. Its remaining
+        # stages must finish even when the initial wall-clock estimate expires.
+        if animation_time <= 0.0 and animation_driver.remaining_seconds() <= 0.0:
             var ticket := animation_ticket
             animation_ticket = -1
             _accept(model.acknowledge_animation(ticket))

@@ -2,6 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/opening_flow.gd" id="1_story"]
 
-[node name="Opening" type="Node2D"]
-texture_filter = 1
+[node name="Opening" type="Node2D" unique_id=1104709788]
+texture_filter = 2
 script = ExtResource("1_story")
