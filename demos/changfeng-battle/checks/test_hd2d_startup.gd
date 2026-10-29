@@ -51,12 +51,23 @@ func _run() -> void:
     var hero: Sprite3D = scene.get_node_or_null("Actor_0/Sprite3D") as Sprite3D
     var foe: Sprite3D = scene.get_node_or_null("Actor_1/Sprite3D") as Sprite3D
     if hero == null or foe == null or hero.hframes != 6 or hero.vframes != 4:
-        push_error("HD2D_STARTUP: original sprite atlas missing")
+        push_error("HD2D_STARTUP: 6x4 illustrated atlas missing")
         quit(1)
         return
     var texture: ImageTexture = hero.texture as ImageTexture
-    if texture == null or texture.get_image().get_pixel(0, 0).a != 0.0:
-        push_error("HD2D_STARTUP: sprite atlas is not transparent")
+    var rival_texture: ImageTexture = foe.texture as ImageTexture
+    if texture == null or rival_texture == null:
+        push_error("HD2D_STARTUP: illustrated atlas is not an image texture")
+        quit(1)
+        return
+    var image: Image = texture.get_image()
+    var rival_image: Image = rival_texture.get_image()
+    if image.get_size() != Vector2i(960, 800) or rival_image.get_size() != Vector2i(960, 800):
+        push_error("HD2D_STARTUP: 160x200 painterly atlas frames expected")
+        quit(1)
+        return
+    if image.get_pixel(0, 0).a != 0.0 or rival_image.get_pixel(0, 0).a != 0.0:
+        push_error("HD2D_STARTUP: illustrated atlas is not transparent")
         quit(1)
         return
     var driver: RefCounted = scene.get("animation_driver") as RefCounted
@@ -92,5 +103,5 @@ func _run() -> void:
         return
     vfx.call("clear")
 
-    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 sprites=6x4")
+    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 illustrated_sprites=6x4_160x200")
     quit(0)
