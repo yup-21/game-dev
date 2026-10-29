@@ -5,7 +5,7 @@ func _wait(view, frames: int = 3) -> void:
 
 func _capture(view, name: String) -> bool:
 	var folder: String=ProjectSettings.globalize_path("res://captures")
-	var err: Error=DirAccess.make_dir_recursive_absolute(folder)
+	var err: int=DirAccess.make_dir_recursive_absolute(folder)
 	if err!=OK: return false
 	await _wait(view,2)
 	var image: Image=view.get_viewport().get_texture().get_image()
