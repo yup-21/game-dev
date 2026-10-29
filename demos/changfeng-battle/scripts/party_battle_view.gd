@@ -168,7 +168,8 @@ func _input(event: InputEvent) -> void:
 				if action.kind in ["END_ACTION","PASS_REACTION"]:
 					_submit(action)
 					return
-	if not event is InputEventMouseButton or not event.pressed or not _human_turn(): return
+	if not event is InputEventMouseButton: return
+	if not event.pressed or not _human_turn(): return
 	if event.button_index==MOUSE_BUTTON_RIGHT:
 		selected_key=""
 		return
