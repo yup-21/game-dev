@@ -3,25 +3,34 @@ extends Node3D
 ## Run res://battle_hd2d.tscn explicitly; the original 2D scene is untouched.
 const Model = preload("res://scripts/battle_model.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
+const Scenery = preload("res://scripts/hd2d_scenery.gd")
+const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
+const SpriteFactory = preload("res://scripts/hd2d_illustrated_factory.gd")
+const Animator = preload("res://scripts/hd2d_animation.gd")
+const VFX = preload("res://scripts/hd2d_vfx.gd")
 const COLS := 15
 const ROWS := 10
 const CELL := 1.5
 
 var model = Model.new()
 var ai = EnemyAI.new()
+var animation_driver = Animator.new()
+var effects_driver
 var camera: Camera3D
 var actor_nodes: Dictionary = {}
 var snap: Dictionary = {}
 var legals: Array = []
 var status_label: Label
 var help_label: Label
+var clash_label: Label
+var phase_label: Label
 var animation_time := 0.0
 var animation_ticket := -1
 var ai_wait := 0.0
 var hovered := Vector2i(-1, -1)
 var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
-var card_actions: VBoxContainer
+var card_actions: HFlowContainer
 var selection_label: Label
 var selected_card_uid := ""
 var selected_usage_id := ""
@@ -35,12 +44,16 @@ var target_markers: Array = []
 var camera_base := Vector3(17, 22, 25)
 var camera_shake := 0.0
 var elapsed := 0.0
+var intro_remaining := 3.25
+var intro_title: Label
+var intro_subtitle: Label
 
 func _ready() -> void:
     model.reset(2026)
     snap = model.snapshot(0)
     legals = model.legal_actions(0)
     _build_world()
+    effects_driver = VFX.new(self, camera)
     _build_ui()
     _refresh()
     _update_status()
@@ -110,22 +123,41 @@ func _build_world() -> void:
             if terrain == "water":
                 continue
             var center := _world(cell)
-            var ground_color := Color("647e54") if (x + y) % 3 else Color("70875c")
+            var ground_color := Color("6b806a") if (x + y) % 3 else Color("70866c")
             if terrain == "bridge":
                 ground_color = Color("8b6746")
             elif terrain == "ford":
                 ground_color = Color("8e9d8a")
             elif terrain == "rock":
                 ground_color = Color("82887a")
-            _box("Ground_%d_%d" % [x, y], center + Vector3(0, -0.10, 0),
-                Vector3(CELL * 0.985, 0.20, CELL * 0.985), ground_color)
+            # Flush terrain plates avoid a visible block-grid; rules still use 15x10 cells.
+            _box("Ground_%d_%d" % [x, y], center + Vector3(0, -0.052, 0),
+                Vector3(CELL * 1.003, 0.105, CELL * 1.003), ground_color)
+            if terrain != "bridge" and terrain != "rock" and (x * 7 + y * 11) % 8 == 0:
+                var moss := MeshInstance3D.new()
+                var patch := CylinderMesh.new()
+                patch.top_radius = 0.34
+                patch.bottom_radius = 0.36
+                patch.height = 0.018
+                moss.mesh = patch
+                moss.material_override = _material(Color("7a9175"))
+                moss.position = center + Vector3(-0.31, 0.014, 0.28)
+                add_child(moss)
             if terrain == "bridge":
                 for plank in range(3):
                     _box("Plank", center + Vector3(0, 0.025, (plank - 1) * 0.42),
                         Vector3(1.45, 0.08, 0.36), Color("9b7955"))
             elif terrain == "bamboo" or terrain == "rock":
-                _box("Scenery", center + Vector3(0.40, 0.22, -0.38),
-                    Vector3(0.30, 0.44, 0.34), Color("405c43") if terrain == "bamboo" else Color("898d80"))
+                var ornament := MeshInstance3D.new()
+                var shape := SphereMesh.new()
+                shape.radius = 0.34 if terrain == "bamboo" else 0.40
+                shape.height = 0.66 if terrain == "bamboo" else 0.55
+                ornament.mesh = shape
+                ornament.material_override = _material(
+                    Color("476b54") if terrain == "bamboo" else Color("8c9185"))
+                ornament.position = center + Vector3(0.37, 0.28, -0.32)
+                ornament.scale = Vector3(0.90, 1.18, 0.78)
+                add_child(ornament)
 
     # A floating ground highlight; visible only for selectable cells.
     glow_material = _material(Color(0.48, 0.93, 0.77, 0.52))
@@ -141,6 +173,7 @@ func _build_world() -> void:
 
     for actor in snap.get("actors", []):
         _create_actor(actor)
+    Scenery.build(self)
     _build_target_markers()
 
 func _build_target_markers() -> void:
@@ -195,14 +228,23 @@ func _create_actor(actor: Dictionary) -> void:
     shadow.material_override = _material(Color("263c34"))
     root.add_child(shadow)
     var sprite := Sprite3D.new()
-    var sprite_id := 86 if int(actor.get("team_id", 0)) == 0 else 96
-    sprite.texture = load("res://assets/kenney/characters/tile_%04d.png" % sprite_id)
-    sprite.pixel_size = 0.092
-    sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+    sprite.texture = SpriteFactory.make_sheet(int(actor.get("team_id", 0)) != 0)
+    sprite.pixel_size = 0.010
+    sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
     sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     sprite.transparent = true
-    sprite.position.y = 0.80
+    sprite.position.y = 1.0
     root.add_child(sprite)
+    animation_driver.register_actor(int(actor.id), sprite)
+    var nameplate := Label3D.new()
+    nameplate.name = "Nameplate"
+    nameplate.text = str(actor.get("name", "江湖客"))
+    nameplate.font_size = 28
+    nameplate.pixel_size = 0.006
+    nameplate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    nameplate.modulate = Color("ccead8") if int(actor.get("team_id", 0)) == 0 else Color("f2b4a2")
+    nameplate.position.y = 2.20
+    root.add_child(nameplate)
     var cue := OmniLight3D.new()
     cue.light_color = Color("eac77e")
     cue.light_energy = 0.0
@@ -216,29 +258,106 @@ func _create_actor(actor: Dictionary) -> void:
 func _build_ui() -> void:
     var canvas := CanvasLayer.new()
     add_child(canvas)
+
+    # Upper status banner: parchment typography over translucent dark jade.
     var panel := PanelContainer.new()
-    panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
     canvas.add_child(panel)
+    panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+    panel.offset_left = 10.0
+    panel.offset_right = -10.0
+    panel.offset_top = 8.0
+    panel.offset_bottom = 108.0
+    UITheme.apply_panel(panel)
     var column := VBoxContainer.new()
     panel.add_child(column)
+    var heading := Label.new()
+    heading.text = "长风浮生录  ·  断桥论剑"
+    heading.add_theme_font_size_override("font_size", 23)
+    heading.add_theme_color_override("font_color", UITheme.GOLD)
+    column.add_child(heading)
     status_label = Label.new()
-    status_label.add_theme_font_size_override("font_size", 18)
+    status_label.add_theme_font_size_override("font_size", 16)
+    status_label.add_theme_color_override("font_color", UITheme.PAPER)
     column.add_child(status_label)
     help_label = Label.new()
-    help_label.text = "左键选目标/走位 · Q 普攻 · G 格挡 · Space Pass/结束 · R 重开 · 右键取消 · Esc 菜单"
+    help_label.text = "左键走位/选目标  ·  Q 普攻  ·  G 格挡  ·  Space Pass/结束  ·  R 重开  ·  右键取消  ·  Esc 返回"
+    help_label.add_theme_font_size_override("font_size", 12)
+    help_label.add_theme_color_override("font_color", UITheme.MUTED)
     column.add_child(help_label)
+
+    # Combat priority and response window information remain visible.
+    var sidebar := PanelContainer.new()
+    canvas.add_child(sidebar)
+    sidebar.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    sidebar.offset_left = -350.0
+    sidebar.offset_right = -12.0
+    sidebar.offset_top = 119.0
+    sidebar.offset_bottom = 236.0
+    UITheme.apply_panel(sidebar)
+    var sidebar_column := VBoxContainer.new()
+    sidebar.add_child(sidebar_column)
+    phase_label = Label.new()
+    phase_label.add_theme_font_size_override("font_size", 19)
+    phase_label.add_theme_color_override("font_color", UITheme.GOLD)
+    sidebar_column.add_child(phase_label)
+    clash_label = Label.new()
+    clash_label.add_theme_font_size_override("font_size", 14)
+    clash_label.add_theme_color_override("font_color", UITheme.PAPER)
+    sidebar_column.add_child(clash_label)
+
+    # The lower martial-arts command tray keeps the 3D battlefield visible.
     var tray := PanelContainer.new()
-    tray.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    tray.custom_minimum_size.y = 154
     canvas.add_child(tray)
+    tray.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    tray.offset_left = 12.0
+    tray.offset_right = -12.0
+    tray.offset_top = -230.0
+    tray.offset_bottom = -10.0
+    UITheme.apply_panel(tray)
+    var tray_column := VBoxContainer.new()
+    tray.add_child(tray_column)
+    var tray_heading := Label.new()
+    tray_heading.text = "武 学 招 式  /  自由行动与连锁交锋"
+    tray_heading.add_theme_font_size_override("font_size", 19)
+    tray_heading.add_theme_color_override("font_color", UITheme.GOLD)
+    tray_column.add_child(tray_heading)
+    selection_label = Label.new()
+    selection_label.text = "选择武学招式后点击合法目标；敌人响应期间可进行迎锋、闪避与截势。"
+    selection_label.add_theme_font_size_override("font_size", 14)
+    selection_label.add_theme_color_override("font_color", UITheme.MUTED)
+    tray_column.add_child(selection_label)
     var scroll := ScrollContainer.new()
-    tray.add_child(scroll)
-    card_actions = VBoxContainer.new()
+    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    tray_column.add_child(scroll)
+    card_actions = HFlowContainer.new()
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(card_actions)
-    selection_label = Label.new()
-    selection_label.text = "点击招式用法选择，再点击有效目标；可响应连锁。"
-    card_actions.add_child(selection_label)
+
+    # Brief illustrated chapter card; visual only, no BattleModel state changes.
+    intro_title = Label.new()
+    intro_title.text = "断 桥 听 风"
+    intro_title.add_theme_font_size_override("font_size", 54)
+    intro_title.add_theme_color_override("font_color", UITheme.PAPER)
+    intro_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    canvas.add_child(intro_title)
+    intro_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    intro_title.offset_left = -320.0
+    intro_title.offset_right = 320.0
+    intro_title.offset_top = -160.0
+    intro_title.offset_bottom = -84.0
+    intro_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    intro_subtitle = Label.new()
+    intro_subtitle.text = "一剑试江湖  ·  原创手绘角色 / 立体战场"
+    intro_subtitle.add_theme_font_size_override("font_size", 20)
+    intro_subtitle.add_theme_color_override("font_color", UITheme.GOLD)
+    intro_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    canvas.add_child(intro_subtitle)
+    intro_subtitle.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    intro_subtitle.offset_left = -320.0
+    intro_subtitle.offset_right = 320.0
+    intro_subtitle.offset_top = -90.0
+    intro_subtitle.offset_bottom = -45.0
+    intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _refresh() -> void:
     snap = model.snapshot(0)
@@ -288,6 +407,7 @@ func _rebuild_actions() -> void:
             var button := Button.new()
             var cost: Dictionary = usage.get("quoted_cost", {})
             button.text = "%s · %s (%.1f 气)" % [str(card.get("name", "招式")), str(usage.get("name", usage_id)), float(cost.get("qi", 0))]
+            UITheme.apply_button(button)
             button.pressed.connect(_select_card.bind(uid, usage_id))
             card_actions.add_child(button)
     var seen_abilities: Dictionary = {}
@@ -302,11 +422,13 @@ func _rebuild_actions() -> void:
         seen_abilities[key] = true
         var button := Button.new()
         button.text = "武学续式 %s / %s" % [technique_id, node_id]
+        UITheme.apply_button(button)
         button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
     if snap.get("phase", "") == "CLASH":
         var pass_button := Button.new()
         pass_button.text = "Pass · 交还响应权"
+        UITheme.apply_button(pass_button)
         pass_button.pressed.connect(_submit.bind("PASS_REACTION", {}))
         card_actions.add_child(pass_button)
 
@@ -356,6 +478,7 @@ func _activate_selection() -> void:
             continue
         var button := Button.new()
         button.text = "截势：选择响应层 %s" % str(action.link_id)
+        UITheme.apply_button(button)
         button.pressed.connect(_submit_legal.bind(action))
         card_actions.add_child(button)
     selection_label.text = "已选择招式：点击绿色目标格或角色；右键取消。"
@@ -381,23 +504,47 @@ func _update_status() -> void:
     if snap.get("outcome", "playing") != "playing":
         info += "    结束: %s" % str(snap.outcome)
     status_label.text = info
+    var acting: int = _decision_owner()
+    if phase_label != null:
+        phase_label.text = "交锋应变" if snap.get("phase", "") == "CLASH" else ("自由行动" if acting == 0 else "敌方行动")
+    if clash_label != null:
+        var clash: Dictionary = snap.get("clash", {})
+        if snap.get("phase", "") == "CLASH":
+            clash_label.text = "响应层 %d / 4   Pass %d / 2\n%s获得响应权" % [clash.get("stack", []).size(), int(clash.get("consecutive_passes", 0)), "我方" if acting == 0 else "敌方"]
+        else:
+            clash_label.text = "移动 · 出招 · 护体 · 连携\n按合法行动结算，不改变原规则"
 
 func _process(delta: float) -> void:
     if snap.is_empty():
         return
     elapsed += delta
+    if intro_remaining > 0.0:
+        intro_remaining = maxf(0.0, intro_remaining - delta)
+        var reveal: float = minf(1.0, intro_remaining / 0.65)
+        intro_title.modulate.a = reveal
+        intro_subtitle.modulate.a = reveal
+        intro_title.visible = intro_remaining > 0.0
+        intro_subtitle.visible = intro_remaining > 0.0
     camera_shake = maxf(0.0, camera_shake - delta)
     if camera_shake > 0.0:
         camera.position = camera_base + Vector3(sin(elapsed * 71.0) * 0.12, sin(elapsed * 89.0) * 0.07, 0) * camera_shake
     else:
         camera.position = camera_base
     _update_cursor()
+    var moving: Dictionary = {}
     for actor in snap.get("actors", []):
         var id := int(actor.id)
         if actor_nodes.has(id):
             var node: Node3D = actor_nodes[id]
             var destination := _world(actor.cell)
             node.position = node.position.move_toward(destination, delta * 5.5)
+            moving[id] = node.position.distance_to(destination) > 0.035
+            var sprite: Sprite3D = node.get_node_or_null("Sprite3D") as Sprite3D
+            if sprite != null:
+                sprite.position.y = 1.0 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
+    animation_driver.update(delta, moving)
+    if effects_driver != null:
+        effects_driver.update(delta)
     for id in cue_remaining.keys():
         cue_remaining[id] = maxf(0.0, float(cue_remaining[id]) - delta)
         if cue_lights.has(id):
@@ -428,13 +575,21 @@ func _accept(result: Dictionary) -> void:
         push_warning(str(result.get("message", "Action rejected")))
         return
     _cue_events(result.get("events", []))
+    animation_driver.events(result.get("events", []))
+    if effects_driver != null:
+        effects_driver.handle_events(result.get("events", []), actor_nodes)
     _clear_selection()
     _refresh()
     if snap.get("animation_pending", false):
         animation_ticket = int(result.get("ticket", snap.get("ticket", -1)))
-        animation_time = 0.35
+        animation_time = _event_duration(result.get("events", []))
     _refresh_target_markers()
     _update_status()
+
+func _event_duration(_events: Array) -> float:
+    # Await the entire semantic event animation queue before acknowledging
+    # the model's presentation ticket and letting the next actor act.
+    return maxf(0.35, animation_driver.remaining_seconds())
 
 func _cue_events(events: Array) -> void:
     for event in events:
@@ -535,6 +690,9 @@ func _unhandled_input(event: InputEvent) -> void:
                     _submit(kind)
             KEY_R:
                 model.reset(2026)
+                animation_driver.reset()
+                if effects_driver != null:
+                    effects_driver.clear()
                 _clear_selection()
                 animation_ticket = -1
                 _refresh()

@@ -33,10 +33,75 @@ func _run() -> void:
         quit(1)
         return
 
-    if scene.get("card_actions") == null:
-        push_error("HD2D_STARTUP: action UI missing")
+    if scene.get("card_actions") == null or scene.get("phase_label") == null:
+        push_error("HD2D_STARTUP: themed action UI missing")
         quit(1)
         return
 
-    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10")
+    if scene.get_node_or_null("WuxiaScenery") == null:
+        push_error("HD2D_STARTUP: wuxia scenery missing")
+        quit(1)
+        return
+
+    if scene.get_node_or_null("Actor_0/Nameplate") == null:
+        push_error("HD2D_STARTUP: character nameplate missing")
+        quit(1)
+        return
+
+    var hero: Sprite3D = scene.get_node_or_null("Actor_0/Sprite3D") as Sprite3D
+    var foe: Sprite3D = scene.get_node_or_null("Actor_1/Sprite3D") as Sprite3D
+    if hero == null or foe == null or hero.hframes != 6 or hero.vframes != 4:
+        push_error("HD2D_STARTUP: 6x4 illustrated atlas missing")
+        quit(1)
+        return
+    var texture: ImageTexture = hero.texture as ImageTexture
+    var rival_texture: ImageTexture = foe.texture as ImageTexture
+    if texture == null or rival_texture == null:
+        push_error("HD2D_STARTUP: illustrated atlas is not an image texture")
+        quit(1)
+        return
+    var image: Image = texture.get_image()
+    var rival_image: Image = rival_texture.get_image()
+    if image.get_size() != Vector2i(960, 800) or rival_image.get_size() != Vector2i(960, 800):
+        push_error("HD2D_STARTUP: 160x200 painterly atlas frames expected")
+        quit(1)
+        return
+    if image.get_pixel(0, 0).a != 0.0 or rival_image.get_pixel(0, 0).a != 0.0:
+        push_error("HD2D_STARTUP: illustrated atlas is not transparent")
+        quit(1)
+        return
+    var driver: RefCounted = scene.get("animation_driver") as RefCounted
+    driver.call("play", 0, "attack")
+    driver.call("update", 0.16, {})
+    if hero.frame < 12 or hero.frame > 17:
+        push_error("HD2D_STARTUP: attack animation frame not selected")
+        quit(1)
+        return
+
+    driver.call("events", [{"type": "ATTACK_DECLARED", "actor_id": 0},
+        {"type": "HP_DAMAGED", "actor_id": 1, "defender_id": 0}])
+    if float(driver.call("remaining_seconds")) < 0.9:
+        push_error("HD2D_STARTUP: semantic animation queue too short")
+        quit(1)
+        return
+    driver.call("update", 0.65, {})
+    if hero.frame != 19:
+        push_error("HD2D_STARTUP: hit reaction did not follow attack")
+        quit(1)
+        return
+
+    var vfx: RefCounted = scene.get("effects_driver") as RefCounted
+    if vfx == null:
+        push_error("HD2D_STARTUP: sword VFX controller missing")
+        quit(1)
+        return
+    vfx.call("handle_events", [{"type": "ATTACK_DECLARED", "actor_id": 0}], scene.get("actor_nodes"))
+    var bursts: Array = vfx.get("bursts")
+    if bursts.is_empty():
+        push_error("HD2D_STARTUP: slash VFX did not spawn")
+        quit(1)
+        return
+    vfx.call("clear")
+
+    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 illustrated_sprites=6x4_160x200")
     quit(0)
