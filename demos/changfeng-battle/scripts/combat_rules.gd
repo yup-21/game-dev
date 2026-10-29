@@ -5,6 +5,8 @@ var cards
 var costs
 var hooks
 var statuses
+var inventory
+var inventory_records: Dictionary={}
 var abilities
 var conditions
 func _init(s,c,cost_system,registry,status_system) -> void:
@@ -89,6 +91,16 @@ func raw_actions(actor_id: int) -> Array:
 		if not actor.basic_guard_used and actor.qi_u>=10000: options.append({"kind":"BASIC_GUARD","actor_id":actor_id})
 		if not actor.pitch_used:
 			for uid in actor.hand: options.append({"kind":"PITCH_CARD","actor_id":actor_id,"card_uid":uid,"card_id":uid})
+		if not actor.item_used and inventory!=null and inventory_records.has(actor.id):
+			var record: Dictionary=inventory_records[actor.id]
+			var item_ids: Array=[]
+			for row in record.stacks:
+				var item_id: String=str(row.id)
+				if not item_ids.has(item_id): item_ids.append(item_id)
+			item_ids.sort()
+			for item_id in item_ids:
+				if inventory.usable(record,str(item_id),actor,statuses):
+					options.append({"kind":"USE_ITEM","actor_id":actor.id,"item_id":str(item_id)})
 	else:
 		options.append({"kind":"PASS_REACTION","actor_id":actor_id})
 	options.append_array(card_options(actor,t,reachable))
@@ -115,7 +127,7 @@ func validate(req: Dictionary) -> Dictionary:
 	# Check types before comparisons: Variant Array == String is a runtime error in Godot.
 	var fields: Dictionary={"kind":TYPE_STRING,"actor_id":TYPE_INT,"battle_id":TYPE_STRING,
 		"expected_revision":TYPE_INT,"request_version":TYPE_INT,"request_id":TYPE_STRING,"action_id":TYPE_STRING,
-		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING}
+		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"item_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING}
 	for key in fields:
 		if req.has(key) and typeof(req[key])!=int(fields[key]): return failure("MALFORMED_REQUEST","请求字段类型错误："+str(key))
 	if not req.has("kind") or not req.has("actor_id"): return failure("MALFORMED_REQUEST","缺少行动或操作者")
@@ -135,7 +147,7 @@ func validate(req: Dictionary) -> Dictionary:
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
-		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id"]:
+		for key in ["kind","card_uid","usage_id","technique_id","node_id","item_id","target_id","target_cell","link_id"]:
 			if normalized.get(key)!=o.get(key): matches=false
 		if matches:
 			canonical=o
