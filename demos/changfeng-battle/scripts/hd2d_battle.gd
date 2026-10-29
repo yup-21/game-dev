@@ -3,6 +3,8 @@ extends Node3D
 ## Run res://battle_hd2d.tscn explicitly; the original 2D scene is untouched.
 const Model = preload("res://scripts/battle_model.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
+const Scenery = preload("res://scripts/hd2d_scenery.gd")
+const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
 const COLS := 15
 const ROWS := 10
 const CELL := 1.5
@@ -15,13 +17,15 @@ var snap: Dictionary = {}
 var legals: Array = []
 var status_label: Label
 var help_label: Label
+var clash_label: Label
+var phase_label: Label
 var animation_time := 0.0
 var animation_ticket := -1
 var ai_wait := 0.0
 var hovered := Vector2i(-1, -1)
 var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
-var card_actions: VBoxContainer
+var card_actions: HFlowContainer
 var selection_label: Label
 var selected_card_uid := ""
 var selected_usage_id := ""
@@ -141,6 +145,7 @@ func _build_world() -> void:
 
     for actor in snap.get("actors", []):
         _create_actor(actor)
+    Scenery.build(self)
     _build_target_markers()
 
 func _build_target_markers() -> void:
@@ -203,6 +208,15 @@ func _create_actor(actor: Dictionary) -> void:
     sprite.transparent = true
     sprite.position.y = 0.80
     root.add_child(sprite)
+    var nameplate := Label3D.new()
+    nameplate.name = "Nameplate"
+    nameplate.text = str(actor.get("name", "江湖客"))
+    nameplate.font_size = 28
+    nameplate.pixel_size = 0.006
+    nameplate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    nameplate.modulate = Color("ccead8") if int(actor.get("team_id", 0)) == 0 else Color("f2b4a2")
+    nameplate.position.y = 1.85
+    root.add_child(nameplate)
     var cue := OmniLight3D.new()
     cue.light_color = Color("eac77e")
     cue.light_energy = 0.0
@@ -216,29 +230,80 @@ func _create_actor(actor: Dictionary) -> void:
 func _build_ui() -> void:
     var canvas := CanvasLayer.new()
     add_child(canvas)
+
+    # Upper status banner: parchment typography over translucent dark jade.
     var panel := PanelContainer.new()
-    panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
     canvas.add_child(panel)
+    panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+    panel.offset_left = 10.0
+    panel.offset_right = -10.0
+    panel.offset_top = 8.0
+    panel.offset_bottom = 108.0
+    UITheme.apply_panel(panel)
     var column := VBoxContainer.new()
     panel.add_child(column)
+    var heading := Label.new()
+    heading.text = "长风浮生录  ·  断桥论剑"
+    heading.add_theme_font_size_override("font_size", 23)
+    heading.add_theme_color_override("font_color", UITheme.GOLD)
+    column.add_child(heading)
     status_label = Label.new()
-    status_label.add_theme_font_size_override("font_size", 18)
+    status_label.add_theme_font_size_override("font_size", 16)
+    status_label.add_theme_color_override("font_color", UITheme.PAPER)
     column.add_child(status_label)
     help_label = Label.new()
-    help_label.text = "左键选目标/走位 · Q 普攻 · G 格挡 · Space Pass/结束 · R 重开 · 右键取消 · Esc 菜单"
+    help_label.text = "左键走位/选目标  ·  Q 普攻  ·  G 格挡  ·  Space Pass/结束  ·  R 重开  ·  右键取消  ·  Esc 返回"
+    help_label.add_theme_font_size_override("font_size", 12)
+    help_label.add_theme_color_override("font_color", UITheme.MUTED)
     column.add_child(help_label)
+
+    # Combat priority and response window information remain visible.
+    var sidebar := PanelContainer.new()
+    canvas.add_child(sidebar)
+    sidebar.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    sidebar.offset_left = -350.0
+    sidebar.offset_right = -12.0
+    sidebar.offset_top = 119.0
+    sidebar.offset_bottom = 236.0
+    UITheme.apply_panel(sidebar)
+    var sidebar_column := VBoxContainer.new()
+    sidebar.add_child(sidebar_column)
+    phase_label = Label.new()
+    phase_label.add_theme_font_size_override("font_size", 19)
+    phase_label.add_theme_color_override("font_color", UITheme.GOLD)
+    sidebar_column.add_child(phase_label)
+    clash_label = Label.new()
+    clash_label.add_theme_font_size_override("font_size", 14)
+    clash_label.add_theme_color_override("font_color", UITheme.PAPER)
+    sidebar_column.add_child(clash_label)
+
+    # The lower martial-arts command tray keeps the 3D battlefield visible.
     var tray := PanelContainer.new()
-    tray.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    tray.custom_minimum_size.y = 154
     canvas.add_child(tray)
+    tray.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    tray.offset_left = 12.0
+    tray.offset_right = -12.0
+    tray.offset_top = -230.0
+    tray.offset_bottom = -10.0
+    UITheme.apply_panel(tray)
+    var tray_column := VBoxContainer.new()
+    tray.add_child(tray_column)
+    var tray_heading := Label.new()
+    tray_heading.text = "武 学 招 式  /  自由行动与连锁交锋"
+    tray_heading.add_theme_font_size_override("font_size", 19)
+    tray_heading.add_theme_color_override("font_color", UITheme.GOLD)
+    tray_column.add_child(tray_heading)
+    selection_label = Label.new()
+    selection_label.text = "选择武学招式后点击合法目标；敌人响应期间可进行迎锋、闪避与截势。"
+    selection_label.add_theme_font_size_override("font_size", 14)
+    selection_label.add_theme_color_override("font_color", UITheme.MUTED)
+    tray_column.add_child(selection_label)
     var scroll := ScrollContainer.new()
-    tray.add_child(scroll)
-    card_actions = VBoxContainer.new()
+    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    tray_column.add_child(scroll)
+    card_actions = HFlowContainer.new()
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(card_actions)
-    selection_label = Label.new()
-    selection_label.text = "点击招式用法选择，再点击有效目标；可响应连锁。"
-    card_actions.add_child(selection_label)
 
 func _refresh() -> void:
     snap = model.snapshot(0)
@@ -288,6 +353,7 @@ func _rebuild_actions() -> void:
             var button := Button.new()
             var cost: Dictionary = usage.get("quoted_cost", {})
             button.text = "%s · %s (%.1f 气)" % [str(card.get("name", "招式")), str(usage.get("name", usage_id)), float(cost.get("qi", 0))]
+            UITheme.apply_button(button)
             button.pressed.connect(_select_card.bind(uid, usage_id))
             card_actions.add_child(button)
     var seen_abilities: Dictionary = {}
@@ -302,11 +368,13 @@ func _rebuild_actions() -> void:
         seen_abilities[key] = true
         var button := Button.new()
         button.text = "武学续式 %s / %s" % [technique_id, node_id]
+        UITheme.apply_button(button)
         button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
     if snap.get("phase", "") == "CLASH":
         var pass_button := Button.new()
         pass_button.text = "Pass · 交还响应权"
+        UITheme.apply_button(pass_button)
         pass_button.pressed.connect(_submit.bind("PASS_REACTION", {}))
         card_actions.add_child(pass_button)
 
@@ -356,6 +424,7 @@ func _activate_selection() -> void:
             continue
         var button := Button.new()
         button.text = "截势：选择响应层 %s" % str(action.link_id)
+        UITheme.apply_button(button)
         button.pressed.connect(_submit_legal.bind(action))
         card_actions.add_child(button)
     selection_label.text = "已选择招式：点击绿色目标格或角色；右键取消。"
@@ -381,6 +450,15 @@ func _update_status() -> void:
     if snap.get("outcome", "playing") != "playing":
         info += "    结束: %s" % str(snap.outcome)
     status_label.text = info
+    var acting: int = _decision_owner()
+    if phase_label != null:
+        phase_label.text = "交锋应变" if snap.get("phase", "") == "CLASH" else ("自由行动" if acting == 0 else "敌方行动")
+    if clash_label != null:
+        var clash: Dictionary = snap.get("clash", {})
+        if snap.get("phase", "") == "CLASH":
+            clash_label.text = "响应层 %d / 4   Pass %d / 2\n%s获得响应权" % [clash.get("stack", []).size(), int(clash.get("consecutive_passes", 0)), "我方" if acting == 0 else "敌方"]
+        else:
+            clash_label.text = "移动 · 出招 · 护体 · 连携\n按合法行动结算，不改变原规则"
 
 func _process(delta: float) -> void:
     if snap.is_empty():
@@ -398,6 +476,9 @@ func _process(delta: float) -> void:
             var node: Node3D = actor_nodes[id]
             var destination := _world(actor.cell)
             node.position = node.position.move_toward(destination, delta * 5.5)
+            var sprite: Sprite3D = node.get_node_or_null("Sprite3D") as Sprite3D
+            if sprite != null:
+                sprite.position.y = 0.80 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
     for id in cue_remaining.keys():
         cue_remaining[id] = maxf(0.0, float(cue_remaining[id]) - delta)
         if cue_lights.has(id):
