@@ -42,11 +42,15 @@ func _rows() -> Array:
 func _act(action: String) -> void:
 	var session=_session()
 	if session==null: return
+	if action=="martial":
+		session.open_management("res://inventory.tscn")
+		call_deferred("_go","res://martial_hall.tscn")
+		return
 	if action=="back":
-		call_deferred("_go",session.management_return)
+		call_deferred("_go",session.return_from_management())
 		return
 	if action=="save":
-		session.management_return="res://inventory.tscn"
+		session.open_management("res://inventory.tscn")
 		call_deferred("_go","res://save_slots.tscn")
 		return
 	if action=="next":
@@ -153,5 +157,6 @@ func _draw() -> void:
 		if selected.kind=="equipment": _button(Rect2(1043,836,195,39),"装备物品","equip")
 		if selected.kind=="consumable": _button(Rect2(1043,836,195,39),"战斗外使用","use")
 	if not notice.is_empty(): _txt(Vector2(95,884),notice.substr(0,50),17,GOLD)
+	_button(Rect2(893,895,180,42),"武学演武堂","martial")
 	_button(Rect2(1098,895,188,42),"存档 F5","save")
 	_button(Rect2(1315,895,187,42),"返回 Esc","back")
