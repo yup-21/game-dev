@@ -38,6 +38,11 @@ func _reset_battle() -> void:
 	story_encounter=session!=null and session.phase=="battle"
 	if story_encounter:
 		model.reset(session.encounter_seed(),0,"tingfeng",session.encounter_options())
+		if bool(session.flags.get("studied_fragment",false)) and model.state.outcome=="playing":
+			var player=model.state.get_actor(0)
+			if player!=null:
+				var uid: String=model.cards.create_instance(player,"taixu_open","hand")
+				if uid.is_empty(): push_error("Demo Taixu entry card not registered")
 	else:
 		model.reset(2026,0,"tingfeng",{"combatants":_roster()})
 	policy=AI.new()
