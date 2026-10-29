@@ -67,5 +67,17 @@ func _run() -> void:
         quit(1)
         return
 
+    driver.call("events", [{"type": "ATTACK_DECLARED", "actor_id": 0},
+        {"type": "HP_DAMAGED", "actor_id": 1, "defender_id": 0}])
+    if float(driver.call("remaining_seconds")) < 0.9:
+        push_error("HD2D_STARTUP: semantic animation queue too short")
+        quit(1)
+        return
+    driver.call("update", 0.65, {})
+    if hero.frame != 19:
+        push_error("HD2D_STARTUP: hit reaction did not follow attack")
+        quit(1)
+        return
+
     print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 sprites=6x4")
     quit(0)
