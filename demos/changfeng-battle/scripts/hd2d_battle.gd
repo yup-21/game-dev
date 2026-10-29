@@ -524,17 +524,10 @@ func _accept(result: Dictionary) -> void:
     _refresh_target_markers()
     _update_status()
 
-func _event_duration(events: Array) -> float:
-    var duration: float = 0.35
-    for event in events:
-        match str(event.get("type", "")):
-            "ATTACK_DECLARED", "ATTACK_HIT", "COMBO_TRIGGERED":
-                duration = maxf(duration, 0.62)
-            "MOVE":
-                duration = maxf(duration, 0.50)
-            "INTERCEPT_JUDGED", "ATTACK_INTERRUPTED":
-                duration = maxf(duration, 0.40)
-    return duration
+func _event_duration(_events: Array) -> float:
+    # Await the entire semantic event animation queue before acknowledging
+    # the model's presentation ticket and letting the next actor act.
+    return maxf(0.35, animation_driver.remaining_seconds())
 
 func _cue_events(events: Array) -> void:
     for event in events:
