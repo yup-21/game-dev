@@ -347,7 +347,10 @@ func _draw() -> void:
 		var y: float=841+row*52
 		draw_rect(Rect2(x,y,333,44),Color("f9f5e7"),false,1)
 		_text(Vector2(x+7,y+17),str(actor.name)+" · "+("友" if int(actor.team_id)==0 else "敌")+" · "+("手动" if str(actor.controller)=="PLAYER" else "AI"),14,JADE if int(actor.team_id)==0 else RED)
-		_text(Vector2(x+7,y+35),"HP %.1f  气 %.1f  集气 %d" % [float(actor.hp),float(actor.qi),int(actor.gauge)],12,INK)
+		var natural_max: float=float(actor.get("base_max_hp",actor.max_hp))
+		var hp_label: String="HP %.0f/%.0f" % [float(actor.hp),float(actor.max_hp)]
+		if float(actor.max_hp)<natural_max: hp_label+=" (基础%.0f)" % natural_max
+		_text(Vector2(x+7,y+35),"%s 气%.1f 集气%d" % [hp_label,float(actor.qi),int(actor.gauge)],12,INK)
 	if paused_ui:
 		Navigation.draw_pause(self,title_font)
 		return
