@@ -48,5 +48,24 @@ func _run() -> void:
         quit(1)
         return
 
-    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10")
+    var hero: Sprite3D = scene.get_node_or_null("Actor_0/Sprite3D") as Sprite3D
+    var foe: Sprite3D = scene.get_node_or_null("Actor_1/Sprite3D") as Sprite3D
+    if hero == null or foe == null or hero.hframes != 6 or hero.vframes != 4:
+        push_error("HD2D_STARTUP: original sprite atlas missing")
+        quit(1)
+        return
+    var texture: ImageTexture = hero.texture as ImageTexture
+    if texture == null or texture.get_image().get_pixel(0, 0).a != 0.0:
+        push_error("HD2D_STARTUP: sprite atlas is not transparent")
+        quit(1)
+        return
+    var driver: RefCounted = scene.get("animation_driver") as RefCounted
+    driver.call("play", 0, "attack")
+    driver.call("update", 0.16, {})
+    if hero.frame < 12 or hero.frame > 17:
+        push_error("HD2D_STARTUP: attack animation frame not selected")
+        quit(1)
+        return
+
+    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 sprites=6x4")
     quit(0)
