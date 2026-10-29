@@ -154,7 +154,7 @@ func _action(action: String) -> void:
 		"save":
 			_checkpoint()
 			var session=_session()
-			if session!=null: session.management_return="res://opening.tscn"
+			if session!=null: session.open_management("res://opening.tscn")
 			call_deferred("_change_scene","res://save_slots.tscn")
 		"menu":
 			story.reset()
