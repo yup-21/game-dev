@@ -18,6 +18,7 @@ var aftercare: String=""
 var character_records: Dictionary={}
 var martial_records: Dictionary={}
 var training_awarded: bool=false
+var persistent_states: Dictionary={}
 
 func start_new_game() -> void:
 	phase="story"
@@ -33,6 +34,7 @@ func start_new_game() -> void:
 	training_awarded=false
 	character_records={0:CharacterProgress.new().create_record()}
 	martial_records.clear()
+	persistent_states.clear()
 
 func study_fragment() -> bool:
 	if phase!="story" or not items.has("taixu_fragment"): return false
@@ -66,6 +68,7 @@ func encounter_options() -> Dictionary:
 	if injury_stacks>0: options["initial_statuses"]={0:{"meridian_wound":injury_stacks}}
 	options["character_progressions"]=character_records.duplicate(true)
 	options["martial_progressions"]=martial_records.duplicate(true)
+	options["persistent_states"]=persistent_states.duplicate(true)
 	return options
 
 func encounter_seed() -> int:
@@ -77,6 +80,8 @@ func capture_battle_progress(model) -> void:
 		if actor.team_id!=0: continue
 		character_records[actor.id]=CharacterProgress.new().export_record(actor)
 		martial_records[actor.id]=MartialProgress.new().export_records(actor)
+		persistent_states[actor.id]=model.statuses.export_persistent(actor.id)
+		persistent_states[actor.id].erase("meridian_wound")
 
 func allocate_training_point(stat: String) -> bool:
 	if phase not in ["aftermath","complete"] or not character_records.has(0): return false
@@ -110,6 +115,7 @@ func choose_aftercare(choice: String) -> bool:
 	aftercare=choice
 	if choice=="rest":
 		injury_stacks=0
+		if persistent_states.has(0): persistent_states[0].erase("meridian_wound")
 		flags["healed_injury"]=true
 		if bool(flags.get("helped_escort",false)): flags["escort_healing_hint"]=true
 	else:
