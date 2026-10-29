@@ -123,22 +123,41 @@ func _build_world() -> void:
             if terrain == "water":
                 continue
             var center := _world(cell)
-            var ground_color := Color("647e54") if (x + y) % 3 else Color("70875c")
+            var ground_color := Color("6b806a") if (x + y) % 3 else Color("70866c")
             if terrain == "bridge":
                 ground_color = Color("8b6746")
             elif terrain == "ford":
                 ground_color = Color("8e9d8a")
             elif terrain == "rock":
                 ground_color = Color("82887a")
-            _box("Ground_%d_%d" % [x, y], center + Vector3(0, -0.10, 0),
-                Vector3(CELL * 0.985, 0.20, CELL * 0.985), ground_color)
+            # Flush terrain plates avoid a visible block-grid; rules still use 15x10 cells.
+            _box("Ground_%d_%d" % [x, y], center + Vector3(0, -0.052, 0),
+                Vector3(CELL * 1.003, 0.105, CELL * 1.003), ground_color)
+            if terrain != "bridge" and terrain != "rock" and (x * 7 + y * 11) % 8 == 0:
+                var moss := MeshInstance3D.new()
+                var patch := CylinderMesh.new()
+                patch.top_radius = 0.34
+                patch.bottom_radius = 0.36
+                patch.height = 0.018
+                moss.mesh = patch
+                moss.material_override = _material(Color("7a9175"))
+                moss.position = center + Vector3(-0.31, 0.014, 0.28)
+                add_child(moss)
             if terrain == "bridge":
                 for plank in range(3):
                     _box("Plank", center + Vector3(0, 0.025, (plank - 1) * 0.42),
                         Vector3(1.45, 0.08, 0.36), Color("9b7955"))
             elif terrain == "bamboo" or terrain == "rock":
-                _box("Scenery", center + Vector3(0.40, 0.22, -0.38),
-                    Vector3(0.30, 0.44, 0.34), Color("405c43") if terrain == "bamboo" else Color("898d80"))
+                var ornament := MeshInstance3D.new()
+                var shape := SphereMesh.new()
+                shape.radius = 0.34 if terrain == "bamboo" else 0.40
+                shape.height = 0.66 if terrain == "bamboo" else 0.55
+                ornament.mesh = shape
+                ornament.material_override = _material(
+                    Color("476b54") if terrain == "bamboo" else Color("8c9185"))
+                ornament.position = center + Vector3(0.37, 0.28, -0.32)
+                ornament.scale = Vector3(0.90, 1.18, 0.78)
+                add_child(ornament)
 
     # A floating ground highlight; visible only for selectable cells.
     glow_material = _material(Color(0.48, 0.93, 0.77, 0.52))
