@@ -77,6 +77,15 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	turns.techniques=techniques
 	turns.resolver=resolver
 	reactions.resolver=resolver
+	if cards.load_error.is_empty():
+		var extras=options.get("card_definitions",[])
+		if not extras is Array: cards.load_error="card_definitions must be an Array"
+		else:
+			for definition in extras:
+				if not definition is Dictionary or not cards.register_definition(definition):
+					cards.load_error="Invalid extra card definition"
+					break
+		if cards.load_error.is_empty() and not cards.registry.verify(cards.definitions): cards.load_error=cards.registry.error
 	if cards.load_error.is_empty() and not techniques.load_error.is_empty(): cards.load_error=techniques.load_error
 	if not cards.load_error.is_empty():
 		state.outcome="defeat"
