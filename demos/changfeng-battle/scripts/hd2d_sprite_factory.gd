@@ -59,6 +59,20 @@ static func _draw_frame(img: Image, ox: int, oy: int, row: int, frame: int, enem
     _rect(img, px - 4, py + 15, 9, 34, cream)
     _rect(img, px - 2, py + 15, 3, 32, coat_light)
     _rect(img, px - 14, py + 11, 29, 5, sash)
+    # Layered robe folds, embroidered hems and asymmetric cloak tails.
+    _line(img, px - 13, py + 19, px - 17 - stride, py + 52, coat_light, 2)
+    _line(img, px + 11, py + 18, px + 18 + stride, py + 53, outline, 2)
+    _line(img, px - 6, py + 20, px - 8, py + 49, coat_light, 1)
+    _line(img, px + 8, py + 21, px + 10, py + 48, coat_light, 1)
+    _rect(img, px - 13, py + 52, 31, 3, sash)
+    _rect(img, px - 7, py + 10, 15, 7, outline)
+    _rect(img, px - 6, py + 11, 13, 5, sash)
+    _rect(img, px, py + 11, 3, 5, Color("e5c791"))
+    var ribbon_sway: int = 3 + frame % 3
+    _line(img, px - 12, py + 13, px - 20 - ribbon_sway, py + 33, sash, 2)
+    # Fine embroidery follows the coat rather than introducing non-pixel gradients.
+    for jewel in range(3):
+        _rect(img, px - 9 + jewel * 7, py + 22, 2, 2, Color("8cc1aa") if not enemy else Color("e4b07a"))
     # Arms and sleeves.
     var raised: bool = row == 2 and frame < 3 or row == 3 and frame in [0, 4]
     var arm_y: int = py - 7 if raised else py + 5
@@ -74,6 +88,12 @@ static func _draw_frame(img: Image, ox: int, oy: int, row: int, frame: int, enem
     _rect(img, px + 2, py - 36, 6, 7, hair)
     _rect(img, px + 1, py - 38, 9, 3, hair)
     _rect(img, px + 5, py - 20, 2, 2, outline)
+    _rect(img, px - 3, py - 15, 4, 2, Color("b67f61"))
+    if enemy:
+        _rect(img, px - 3, py - 11, 12, 4, hair)
+        _line(img, px + 4, py - 12, px + 7, py - 7, hair, 2)
+    else:
+        _rect(img, px + 1, py - 36, 3, 2, Color("76bead"))
     _line(img, px + 8, py - 22, px + 11 + frame % 2, py - 13, hair, 3)
     # Blade direction and reach encode the attack phases.
     var grip_x: int = px + 17
