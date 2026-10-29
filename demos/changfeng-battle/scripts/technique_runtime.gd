@@ -78,3 +78,24 @@ func reset(actor, id: String) -> bool:
 	actor.technique_states[id].node = definitions[id].entry
 	actor.technique_states[id].last_used_action = -1
 	return true
+
+## Reject invalid graph inputs before any action is enumerated.
+func validate_with(cards, conditions) -> bool:
+	for d in definitions.values():
+		if not d.get("hold_own_actions",2) is int or int(d.get("hold_own_actions",2)) < 0: load_error="Invalid hold duration"; return false
+		for node_def in d.nodes:
+			if node_def.get("target",{}).get("kind","") not in ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]:
+				load_error="Invalid target kind: "+str(node_def.id)
+				return false
+			for cost_value in node_def.cost.values():
+				if not (cost_value is int or cost_value is float) or not is_finite(float(cost_value)) or float(cost_value)<0 or float(cost_value)>10000:
+					load_error="Invalid node cost: "+str(node_def.id)
+					return false
+			if not conditions.valid_spec(node_def.get("when",{})):
+				load_error="Invalid node condition: "+str(node_def.id)
+				return false
+			for effect in node_def.effects:
+				if not cards.valid_effect(effect):
+					load_error="Invalid node effect: "+str(node_def.id)
+					return false
+	return true
