@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          timeout 120s godot --headless --path demos/changfeng-battle --script res://checks/test_save_inventory_martial.gd
+          timeout 25s godot --headless --path demos/changfeng-battle --script res://checks/test_save_inventory_martial.gd
       - name: Run existing combat and demo contracts
         shell: bash
         run: |
