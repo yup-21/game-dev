@@ -145,6 +145,7 @@ func _label(action: Dictionary) -> String:
 		"BASIC_ATTACK": return "普通攻击 · 选择敌人"
 		"BASIC_GUARD": return "护体防守 · 1气"
 		"PITCH_CARD": return "弃牌调息 · "+str(model.cards.canonical_definition(str(action.card_uid)).get("name",""))
+		"USE_ITEM": return "使用丹药 · "+str(model.inventory.item(str(action.item_id)).get("name",""))
 		"PLAY_CARD":
 			var d: Dictionary=model.cards.canonical_definition(str(action.card_uid))
 			var u: Dictionary=model.cards.usage(str(action.card_uid),str(action.usage_id))
