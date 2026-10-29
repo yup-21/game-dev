@@ -27,13 +27,22 @@ func _init(path: String="res://data/items.json") -> void:
 		if item.get("kind") not in ["equipment","consumable","material","quest"]: load_error="Unknown item kind"; return
 		if not item.get("weight") is float and not item.get("weight") is int: load_error="Invalid weight"; return
 		if float(item.weight)<0.0 or float(item.weight)>1000.0: load_error="Invalid weight"; return
-		if not item.get("stack_limit") is int or int(item.stack_limit)<1 or int(item.stack_limit)>999: load_error="Invalid stack limit"; return
+		var limit: Variant=item.get("stack_limit",-1)
+		if not (limit is int or limit is float) or not is_finite(float(limit)) or floor(float(limit))!=float(limit) or int(limit)<1 or int(limit)>999:
+			load_error="Invalid stack limit"
+			return
+		item["stack_limit"]=int(limit)
 		if item.kind=="equipment" and str(item.get("slot","")) not in slots+["accessory"]: load_error="Invalid equip slot"; return
 		if not item.get("modifiers",[]) is Array: load_error="Invalid modifiers"; return
 		if item.kind=="consumable":
 			var effect: Variant=item.get("use",{})
 			if not effect is Dictionary or effect.get("kind","") not in ["heal_hp","restore_qi","remove_status"]: load_error="Invalid consumable effect"; return
-			if effect.kind in ["heal_hp","restore_qi"] and (not effect.get("amount") is int or int(effect.amount)<1 or int(effect.amount)>100): load_error="Invalid healing amount"; return
+			if effect.kind in ["heal_hp","restore_qi"]:
+				var amount: Variant=effect.get("amount",-1)
+				if not (amount is float or amount is int) or not is_finite(float(amount)) or floor(float(amount))!=float(amount) or int(amount)<1 or int(amount)>100:
+					load_error="Invalid healing amount"
+					return
+				effect["amount"]=int(amount)
 			if effect.kind=="remove_status" and (not effect.get("status_id") is String or str(effect.status_id).is_empty()): load_error="Invalid status effect"; return
 		definitions[str(item.id)]=item.duplicate(true)
 
