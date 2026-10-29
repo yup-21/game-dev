@@ -5,12 +5,15 @@ const Model = preload("res://scripts/battle_model.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
 const Scenery = preload("res://scripts/hd2d_scenery.gd")
 const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
+const SpriteFactory = preload("res://scripts/hd2d_sprite_factory.gd")
+const Animator = preload("res://scripts/hd2d_animation.gd")
 const COLS := 15
 const ROWS := 10
 const CELL := 1.5
 
 var model = Model.new()
 var ai = EnemyAI.new()
+var animation_driver = Animator.new()
 var camera: Camera3D
 var actor_nodes: Dictionary = {}
 var snap: Dictionary = {}
@@ -200,14 +203,14 @@ func _create_actor(actor: Dictionary) -> void:
     shadow.material_override = _material(Color("263c34"))
     root.add_child(shadow)
     var sprite := Sprite3D.new()
-    var sprite_id := 86 if int(actor.get("team_id", 0)) == 0 else 96
-    sprite.texture = load("res://assets/kenney/characters/tile_%04d.png" % sprite_id)
-    sprite.pixel_size = 0.092
+    sprite.texture = SpriteFactory.make_sheet(int(actor.get("team_id", 0)) != 0)
+    sprite.pixel_size = 0.024
     sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
     sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     sprite.transparent = true
     sprite.position.y = 0.80
     root.add_child(sprite)
+    animation_driver.register_actor(int(actor.id), sprite)
     var nameplate := Label3D.new()
     nameplate.name = "Nameplate"
     nameplate.text = str(actor.get("name", "江湖客"))
@@ -470,15 +473,18 @@ func _process(delta: float) -> void:
     else:
         camera.position = camera_base
     _update_cursor()
+    var moving: Dictionary = {}
     for actor in snap.get("actors", []):
         var id := int(actor.id)
         if actor_nodes.has(id):
             var node: Node3D = actor_nodes[id]
             var destination := _world(actor.cell)
             node.position = node.position.move_toward(destination, delta * 5.5)
+            moving[id] = node.position.distance_to(destination) > 0.035
             var sprite: Sprite3D = node.get_node_or_null("Sprite3D") as Sprite3D
             if sprite != null:
                 sprite.position.y = 0.80 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
+    animation_driver.update(delta, moving)
     for id in cue_remaining.keys():
         cue_remaining[id] = maxf(0.0, float(cue_remaining[id]) - delta)
         if cue_lights.has(id):
@@ -509,13 +515,26 @@ func _accept(result: Dictionary) -> void:
         push_warning(str(result.get("message", "Action rejected")))
         return
     _cue_events(result.get("events", []))
+    animation_driver.events(result.get("events", []))
     _clear_selection()
     _refresh()
     if snap.get("animation_pending", false):
         animation_ticket = int(result.get("ticket", snap.get("ticket", -1)))
-        animation_time = 0.35
+        animation_time = _event_duration(result.get("events", []))
     _refresh_target_markers()
     _update_status()
+
+func _event_duration(events: Array) -> float:
+    var duration: float = 0.35
+    for event in events:
+        match str(event.get("type", "")):
+            "ATTACK_DECLARED", "ATTACK_HIT", "COMBO_TRIGGERED":
+                duration = maxf(duration, 0.62)
+            "MOVE":
+                duration = maxf(duration, 0.50)
+            "INTERCEPT_JUDGED", "ATTACK_INTERRUPTED":
+                duration = maxf(duration, 0.40)
+    return duration
 
 func _cue_events(events: Array) -> void:
     for event in events:
@@ -616,6 +635,7 @@ func _unhandled_input(event: InputEvent) -> void:
                     _submit(kind)
             KEY_R:
                 model.reset(2026)
+                animation_driver.reset()
                 _clear_selection()
                 animation_ticket = -1
                 _refresh()
