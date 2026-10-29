@@ -46,6 +46,8 @@ func _run() -> void:
 	check(session.retry_encounter(),"retry remains in chapter")
 	check(session.items.get("taixu_fragment",0)==1 and session.phase=="battle","retry retains story progress")
 	check(session.report_battle("defeat",1),"defeat has same aftermath contract")
+	check(not session.finish_demo(),"demo cannot bypass required post-battle decision")
+	check(session.choose_aftercare("rest"),"aftercare can be chosen before credits")
 	check(session.finish_demo() and session.phase=="complete","demo may reach closing credits")
 	session.return_to_menu()
 	session.start_new_game()
