@@ -5,6 +5,9 @@ config/name="长风浮生录 · 断桥听风"
 run/main_scene="res://opening.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
+[autoload]
+GameSession="*res://scripts/game_session.gd"
+
 [display]
 window/size/viewport_width=1600
 window/size/viewport_height=1000

@@ -105,11 +105,14 @@
 .\checks\verify.ps1 -Stage Lifecycle
 .\checks\verify.ps1 -Stage Opening
 .\checks\verify.ps1 -Stage Parties
+.\checks\verify.ps1 -Stage DemoFlow
 ```
 
 `Framework` 检查能力图和 JSON 整数值校验，`Generated` 检查生成卡牌与保留期限，`Lifecycle` 检查模型重开、释放及子系统引用回收。校验同时核对退出码、成功标记和 Godot 错误日志。
 
 `Opening` 检查序章数据、分支和场景脚本，`Parties` 检查多人队伍、目标、胜负及无效阵容重开。
+
+`DemoFlow` 检查剧情会话、JSON 遭遇配置、战斗与结算的衔接。
 
 以上命令同样支持 `-GodotPath` 和 `GODOT_BIN`。例如：
 

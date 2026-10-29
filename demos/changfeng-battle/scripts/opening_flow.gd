@@ -58,7 +58,12 @@ func _process(delta: float) -> void:
 			visible_characters = minf(float(str(line.get("text", "")).length()),visible_characters+delta*29.0)
 	queue_redraw()
 
+func _session():
+	return get_node_or_null("/root/GameSession")
+
 func _enter_new_game() -> void:
+	var session=_session()
+	if session!=null: session.start_new_game()
 	story.begin()
 	cinematic_elapsed = 0.0
 	visible_characters = 0.0
@@ -80,13 +85,22 @@ func _dialogue_next() -> void:
 		visible_characters = float(str(node.text).length())
 		return
 	if node.get("choices", []).is_empty() and story.advance_dialogue():
+		_sync_story_events()
 		visible_characters = 0.0
 
 func _dialogue_choice(index: int) -> void:
 	if story.phase != "dialogue": return
 	var node: Dictionary=story.current_dialogue()
 	if visible_characters < float(str(node.get("text","")).length()): return
-	if story.choose(index): visible_characters = 0.0
+	var session=_session()
+	if session!=null: session.record_choice(story.dialogue_id,index)
+	if story.choose(index):
+		_sync_story_events()
+		visible_characters=0.0
+
+func _sync_story_events() -> void:
+	var session=_session()
+	if session!=null and story.obtained_fragment: session.record_story_event("obtain_fragment")
 
 func _change_scene(path: String) -> void:
 	var err: int = get_tree().change_scene_to_file(path)
@@ -99,9 +113,19 @@ func _action(action: String) -> void:
 	match action:
 		"start": _enter_new_game()
 		"duel": call_deferred("_change_scene","res://battle.tscn")
+		"story_battle":
+			var session=_session()
+			if session!=null and session.begin_encounter():
+				call_deferred("_change_scene","res://party_battle.tscn")
+			else:
+				message="尚未获得残篇，无法进入剧情遭遇"
+				message_left=3.0
 		"party": call_deferred("_change_scene","res://party_battle.tscn")
 		"quit": get_tree().quit()
-		"menu": story.reset()
+		"menu":
+			story.reset()
+			var session=_session()
+			if session!=null: session.return_to_menu()
 		"skip": story.skip_cinematic()
 		"continue": _advance_cinematic()
 		"talk": _start_dialogue()
@@ -132,7 +156,7 @@ func _input(event: InputEvent) -> void:
 				if event.keycode in [KEY_1,KEY_2,KEY_3]:
 					_dialogue_choice(int(event.keycode-KEY_1))
 			"complete":
-				if event.keycode in [KEY_ENTER,KEY_SPACE]: _action("duel")
+				if event.keycode in [KEY_ENTER,KEY_SPACE]: _action("story_battle")
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		for button in buttons:
 			if button.rect.has_point(event.position):
@@ -374,7 +398,7 @@ func _draw_complete() -> void:
 	_center(Vector2(800,470),"一卷无名绢帛，一场未完的血案。",24,INK,true)
 	_center(Vector2(800,525),"你尚不知道，它将牵出多少江湖恩怨。",20,INK)
 	_center(Vector2(800,579),"远处的马蹄声越来越近……",19,Color("846d4e"))
-	_button(Rect2(430,639,742,70),"踏入江湖 · 进入断桥战斗","duel",true)
+	_button(Rect2(430,639,742,70),"迎战追兵 · 继续序章","story_battle",true)
 	_button(Rect2(430,734,350,58),"进入群侠战斗试玩","party",true)
 	_button(Rect2(822,734,350,58),"返回主菜单","menu",true)
 

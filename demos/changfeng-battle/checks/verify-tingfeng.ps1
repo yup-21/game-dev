@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Opening','Parties')][string]$Stage = 'All',
+    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Opening','Parties','DemoFlow')][string]$Stage = 'All',
     [string]$GodotPath
 )
 $ErrorActionPreference = 'Stop'
@@ -10,6 +10,7 @@ $resolvedGodot = Resolve-DemoGodotPath -ProjectRoot $projectRoot -GodotPath $God
 $logRoot = Join-Path $projectRoot 'captures/checks'
 [IO.Directory]::CreateDirectory($logRoot) | Out-Null
 $checks = @()
+if ($Stage -in @('All','DemoFlow')) { $checks += @{ Script = 'res://checks/test_demo_flow.gd'; Log = 'demo-flow.log'; Marker = 'DEMO FLOW FAILURES: 0' } }
 if ($Stage -in @('All','Opening')) { $checks += @{ Script = 'res://checks/test_opening_story.gd'; Log = 'opening-story.log'; Marker = 'OPENING STORY FAILURES: 0' } }
 if ($Stage -in @('All','Parties')) { $checks += @{ Script = 'res://checks/test_parties.gd'; Log = 'parties.log'; Marker = 'PARTY RULES: 0 failure\(s\)' } }
 if ($Stage -in @('All','Framework')) { $checks += @{ Script = 'res://checks/test_ability_framework.gd'; Log = 'ability-framework.log'; Marker = 'FAILURES 0' } }

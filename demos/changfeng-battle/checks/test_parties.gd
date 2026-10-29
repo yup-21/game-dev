@@ -75,6 +75,20 @@ func check_invalid_reset(encounter: Array, label: String) -> void:
 	var recovered: Array=legal(model,0,"END_ACTION")
 	check(not recovered.is_empty() and perform(model,recovered[0]),label+" accepts actions after recovery")
 
+func check_spawn_bounds() -> void:
+	var model=Model.new()
+	for coords in [[-1,4],[15,4],[6,-1],[6,10],[4294967302,4],[6,4294967300],[-4294967290,4],[6,-4294967292]]:
+		var encounter: Array=roster()
+		encounter[0].cell=coords
+		model.reset(2026,0,"tingfeng",{"combatants":encounter})
+		check(model.state.mode=="FINISHED" and not model.state.party_error.is_empty() and model.state.card_instances.is_empty() and model.legal_actions(0).is_empty(),"out-of-board spawn %s is rejected before coordinate narrowing and deck creation" % [coords])
+	for coords in [[0,0],[14,0],[0,9],[14,9]]:
+		var encounter: Array=roster()
+		encounter[0].cell=coords
+		model.reset(2026,0,"tingfeng",{"combatants":encounter})
+		var actions: Array=legal(model,0,"END_ACTION")
+		check(model.state.outcome=="playing" and model.state.get_actor(0).cell==Vector2i(coords[0],coords[1]) and not actions.is_empty() and perform(model,actions[0]),"in-board corner spawn %s remains playable" % [coords])
+
 func run() -> void:
 	var legacy=Model.new()
 	check(legacy.state.actors.size()==2 and legacy.state.get_actor(0).team_id==0 and legacy.state.get_actor(1).team_id==1,"default duel still uses two opposing combatants")
@@ -125,6 +139,7 @@ func run() -> void:
 	check_invalid_reset([],"empty roster reset")
 	check_invalid_reset(malformed,"overlapping roster reset")
 	check_invalid_reset(only_team,"single-team roster reset")
+	check_spawn_bounds()
 	var timeline=battle()
 	var scheduled: Array=[]
 	for _i in range(6):
