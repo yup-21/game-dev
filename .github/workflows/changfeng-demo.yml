@@ -28,6 +28,13 @@ jobs:
         run: |
           godot --version
           godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Check new GDScript parsers directly
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in martial_progression character_progression state_system attribute_modifier_pipeline technique_runtime; do
+            godot --headless --path demos/changfeng-battle --check-only --script "res://scripts/${script}.gd"
+          done
       - name: Run existing combat and demo contracts
         shell: bash
         run: |
