@@ -89,7 +89,7 @@ func _dialogue_choice(index: int) -> void:
 	if story.choose(index): visible_characters = 0.0
 
 func _change_scene(path: String) -> void:
-	var err: Error = get_tree().change_scene_to_file(path)
+	var err: int = get_tree().change_scene_to_file(path)
 	if err != OK:
 		message = "场景加载失败：" + path
 		message_left = 4.0
