@@ -33,6 +33,7 @@ var learned_combos: Array = []
 var attack_history: Array = []
 var combo_used: Array = []
 var card_uses: Dictionary = {}
+var technique_states: Dictionary = {}
 var hp: float:
 	get: return float(hp_u)/UNIT
 var max_hp: float:
