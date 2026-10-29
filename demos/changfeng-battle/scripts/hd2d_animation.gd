@@ -77,14 +77,16 @@ func remaining_seconds() -> float:
     return total
 
 func update(delta: float, moving: Dictionary = {}) -> void:
+    var stage_transitioned: bool = false
     if stage_left > 0.0:
         stage_left = maxf(0.0, stage_left - delta)
         if stage_left <= 0.0:
             _play_next()
+            stage_transitioned = true
     for id in tracks.keys():
         var track: Dictionary = tracks[id]
         var state: String = str(track.state)
-        track.elapsed = float(track.elapsed) + delta
+        track.elapsed = float(track.elapsed) + (0.0 if stage_transitioned else delta)
         if state != "idle" and state != "move" and float(track.elapsed) >= float(track.duration):
             state = "idle"
             track.state = state
