@@ -335,6 +335,17 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				var drawn: Array=cards.draw(a,int(effect.count))
 				visibility.refresh_intel(target_id,true)
 				emit("CARDS_DRAWN",{"actor_id":target_id,"count":drawn.size()})
+			"grant_card":
+				var receiver=state.get_actor(target_id)
+				var created: Array=[]
+				for _i in range(int(effect.get("count",1))):
+					var from_uid: String=str(choice.get("card_uid",state.attack.get("card_uid","")))
+					var uid: String=cards.create_instance(receiver,str(effect.card_id),str(effect.get("destination","hand")),from_uid)
+					if uid.is_empty(): break
+					created.append(uid)
+				if not created.is_empty():
+					if str(effect.get("destination","hand"))=="hand": visibility.refresh_intel(target_id,true)
+					emit("CARDS_GRANTED",{"actor_id":target_id,"count":created.size(),"definition_id":effect.card_id,"destination":effect.get("destination","hand")})
 			"discard_cards":
 				var a=state.get_actor(target_id)
 				for uid in effect.get("uids",[]):

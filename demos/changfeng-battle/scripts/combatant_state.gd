@@ -27,6 +27,7 @@ var hand: Array = []
 var draw_pile: Array = []
 var discard_pile: Array = []
 var resolving: Array = []
+var exile_pile: Array = []
 var statuses: Dictionary = {}
 var equipped_passives: Array = []
 var learned_combos: Array = []
@@ -57,4 +58,4 @@ func public_data(_include_hand: bool = false) -> Dictionary:
 		"attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),
 		"turns_started":turns_started,"normal_moves_used":normal_moves_used,"move_budget":stats.get("move_budget",2),
 		"basic_attack_used":basic_attack_used,"basic_guard_used":basic_guard_used,"pitch_used":pitch_used,
-		"hand_count":hand.size(),"draw_count":draw_pile.size(),"discard_count":discard_pile.size(),"resolving_count":resolving.size()}
+		"hand_count":hand.size(),"draw_count":draw_pile.size(),"discard_count":discard_pile.size(),"resolving_count":resolving.size(),"exile_count":exile_pile.size()}
