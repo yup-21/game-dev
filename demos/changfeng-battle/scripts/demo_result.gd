@@ -28,8 +28,9 @@ func _action(id: String) -> void:
 		"menu":
 			session.return_to_menu()
 			call_deferred("_go","res://opening.tscn")
-		"finish":
-			session.finish_demo()
+		"rest": session.choose_aftercare("rest")
+		"pursue": session.choose_aftercare("pursue")
+		"finish": session.finish_demo()
 		"new":
 			session.return_to_menu()
 			call_deferred("_go","res://opening.tscn")
@@ -66,10 +67,20 @@ func _draw() -> void:
 	var decision: String="你曾试着救治镖头。" if bool(session.flags.get("helped_escort",false)) else "你曾追问劫镖真相。"
 	draw_string(font,Vector2(270,446),decision,HORIZONTAL_ALIGNMENT_LEFT,-1,23,INK)
 	draw_string(font,Vector2(270,505),"这只是江湖第一幕的开端。更深的阴谋，仍藏在雨幕之后。",HORIZONTAL_ALIGNMENT_LEFT,-1,22,INK)
+	draw_string(font,Vector2(270,551),"剩余寿元：%d个月 · 暗伤：%d层 · 已过：%d个月" % [int(session.remaining_life_months),int(session.injury_stacks),int(session.elapsed_months)],HORIZONTAL_ALIGNMENT_LEFT,-1,22,INK)
 	if session.phase=="complete":
-		draw_string(font,Vector2(270,589),"序章试玩完成",HORIZONTAL_ALIGNMENT_LEFT,-1,30,GOLD)
-		_button(Rect2(270,678,380,66),"返回主菜单","new")
+		draw_string(font,Vector2(270,613),"序章试玩完成 · 江湖未完，长风未止。",HORIZONTAL_ALIGNMENT_LEFT,-1,29,GOLD)
+		_button(Rect2(270,700,450,65),"返回主菜单","new")
+	elif session.aftercare.is_empty():
+		var rest_months: int=1 if bool(session.flags.get("helped_escort",false)) else 2
+		draw_string(font,Vector2(270,605),"战后气脉受损，必须决定去留：",HORIZONTAL_ALIGNMENT_LEFT,-1,24,INK)
+		_button(Rect2(270,675,510,65),"疗伤休整 · 消耗%d个月" % rest_months,"rest")
+		_button(Rect2(820,675,515,65),"带伤追查 · 额外耗损寿元","pursue")
 	else:
-		_button(Rect2(270,650,380,66),"结束序章","finish")
-		_button(Rect2(688,650,360,66),"重新挑战","retry")
-		_button(Rect2(1082,650,300,66),"主菜单","menu")
+		var consequence: String="你静养疗伤，暗伤尽消。" if session.aftercare=="rest" else "你强撑伤势追索线索，寿元额外流失。"
+		draw_string(font,Vector2(270,608),consequence,HORIZONTAL_ALIGNMENT_LEFT,-1,24,INK)
+		if bool(session.flags.get("pursuer_token_clue",false)):
+			draw_string(font,Vector2(270,643),"得到新线索：追兵令牌",HORIZONTAL_ALIGNMENT_LEFT,-1,20,GOLD)
+		_button(Rect2(270,706,440,64),"结束序章","finish")
+		_button(Rect2(736,706,340,64),"重新挑战","retry")
+		_button(Rect2(1096,706,270,64),"主菜单","menu")

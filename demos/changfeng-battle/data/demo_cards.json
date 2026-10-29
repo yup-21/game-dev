@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "cards": [
+    {
+      "id": "taixu_open",
+      "name": "起手·探脉",
+      "lifecycle": "normal",
+      "retain_own_actions": 3,
+      "relations": {
+        "parent": "",
+        "children": [
+          "taixu_follow"
+        ],
+        "related": []
+      },
+      "usages": [
+        {
+          "id": "strike",
+          "name": "引气·起手·探脉",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 1
+          },
+          "target": {
+            "kind": "enemy_actor",
+            "min_distance": 1,
+            "max_distance": 1
+          },
+          "attack_profile": {
+            "route": "thrust",
+            "range": 1,
+            "break_bonus": 0
+          },
+          "effects": [
+            {
+              "type": "deal_damage",
+              "amount": 2
+            },
+            {
+              "type": "on_attack_hit",
+              "effects": [
+                {
+                  "type": "grant_card",
+                  "card_id": "taixu_follow",
+                  "destination": "hand",
+                  "count": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "taixu_follow",
+      "name": "续式·流云",
+      "lifecycle": "exile_on_finish",
+      "retain_own_actions": 3,
+      "relations": {
+        "parent": "taixu_open",
+        "children": [
+          "taixu_final"
+        ],
+        "related": []
+      },
+      "usages": [
+        {
+          "id": "strike",
+          "name": "引气·续式·流云",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 2
+          },
+          "target": {
+            "kind": "enemy_actor",
+            "min_distance": 1,
+            "max_distance": 1
+          },
+          "attack_profile": {
+            "route": "thrust",
+            "range": 1,
+            "break_bonus": 0
+          },
+          "effects": [
+            {
+              "type": "deal_damage",
+              "amount": 3
+            },
+            {
+              "type": "on_attack_hit",
+              "effects": [
+                {
+                  "type": "grant_card",
+                  "card_id": "taixu_final",
+                  "destination": "hand",
+                  "count": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "taixu_final",
+      "name": "收势·断空",
+      "lifecycle": "exile_on_finish",
+      "retain_own_actions": 3,
+      "relations": {
+        "parent": "taixu_follow",
+        "children": [],
+        "related": []
+      },
+      "usages": [
+        {
+          "id": "strike",
+          "name": "引气·收势·断空",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 2
+          },
+          "target": {
+            "kind": "enemy_actor",
+            "min_distance": 1,
+            "max_distance": 1
+          },
+          "attack_profile": {
+            "route": "thrust",
+            "range": 1,
+            "break_bonus": 2
+          },
+          "effects": [
+            {
+              "type": "deal_damage",
+              "amount": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

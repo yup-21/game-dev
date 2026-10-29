@@ -11,6 +11,10 @@ var items: Dictionary={}
 var encounter_id: String=""
 var battle_outcome: String=""
 var winning_team: int=-1
+var remaining_life_months: int=720 # Demonstration starting budget, not full character lifespan simulation.
+var elapsed_months: int=0
+var injury_stacks: int=0
+var aftercare: String=""
 
 func start_new_game() -> void:
 	phase="story"
@@ -21,6 +25,15 @@ func start_new_game() -> void:
 	encounter_id=""
 	battle_outcome=""
 	winning_team=-1
+	remaining_life_months=720
+	elapsed_months=0
+	injury_stacks=0
+	aftercare=""
+
+func study_fragment() -> bool:
+	if phase!="story" or not items.has("taixu_fragment"): return false
+	flags["studied_fragment"]=true
+	return true
 
 func record_choice(node_id: String, option_id: int) -> void:
 	if phase!="story": return
@@ -52,6 +65,25 @@ func report_battle(outcome: String, team: int) -> bool:
 	battle_outcome=outcome
 	winning_team=team
 	phase="aftermath"
+	# The scripted rainy-night overexertion introduces one persistent injury tag.
+	injury_stacks=maxi(injury_stacks,1)
+	aftercare=""
+	return true
+
+func choose_aftercare(choice: String) -> bool:
+	if phase!="aftermath" or not aftercare.is_empty() or choice not in ["rest","pursue"]: return false
+	aftercare=choice
+	if choice=="rest":
+		var delay: int=1 if bool(flags.get("helped_escort",false)) else 2
+		elapsed_months+=delay
+		remaining_life_months=maxi(0,remaining_life_months-delay)
+		injury_stacks=0
+		flags["healed_injury"]=true
+	else:
+		elapsed_months+=1
+		remaining_life_months=maxi(0,remaining_life_months-(1+injury_stacks*3))
+		flags["pursued_early"]=true
+		if not bool(flags.get("helped_escort",false)): flags["pursuer_token_clue"]=true
 	return true
 
 func retry_encounter() -> bool:
@@ -59,10 +91,11 @@ func retry_encounter() -> bool:
 	phase="battle"
 	battle_outcome=""
 	winning_team=-1
+	aftercare=""
 	return true
 
 func finish_demo() -> bool:
-	if phase!="aftermath": return false
+	if phase!="aftermath" or aftercare.is_empty(): return false
 	phase="complete"
 	return true
 

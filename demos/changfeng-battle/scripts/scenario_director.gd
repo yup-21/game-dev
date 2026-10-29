@@ -32,4 +32,11 @@ func battle_options(id: String) -> Dictionary:
 	var schools: Dictionary={}
 	for key in definition.get("schools",{}):
 		schools[int(key)]=str(definition.schools[key])
-	return {"combatants":definition.combatants.duplicate(true),"schools":schools}
+	var options: Dictionary={"combatants":definition.combatants.duplicate(true),"schools":schools}
+	var extra_path: String=str(definition.get("bonus_cards_file",""))
+	if not extra_path.is_empty():
+		if not FileAccess.file_exists(extra_path): return {}
+		var parsed: Variant=JSON.parse_string(FileAccess.get_file_as_string(extra_path))
+		if not parsed is Dictionary or not parsed.get("cards") is Array: return {}
+		options["card_definitions"]=parsed.cards.duplicate(true)
+	return options
