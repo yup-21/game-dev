@@ -5,6 +5,7 @@ const Model = preload("res://scripts/battle_model.gd")
 const AI = preload("res://scripts/enemy_ai.gd")
 const Navigation = preload("res://scripts/demo_navigation.gd")
 const Art = preload("res://scripts/battle_art.gd")
+const Sfx = preload("res://scripts/demo_sfx.gd")
 const INK = Color("213939")
 const PAPER = Color("e9e8da")
 const JADE = Color("3a8980")
@@ -17,6 +18,7 @@ const COMMANDS = Rect2(1090,155,474,800)
 var model = Model.new()
 var policy = AI.new()
 var art = Art.new()
+var sound = Sfx.new()
 var paused_ui: bool=false
 var font: SystemFont
 var title_font: SystemFont
@@ -78,6 +80,7 @@ func _roster() -> Array:
 	]
 
 func _ready() -> void:
+	add_child(sound)
 	font=SystemFont.new()
 	font.font_names=PackedStringArray(["Microsoft YaHei","Noto Sans CJK SC","Segoe UI"])
 	title_font=SystemFont.new()
@@ -163,6 +166,7 @@ func _submit(action: Dictionary) -> void:
 		return
 	for e in response.get("events",[]):
 		var kind: String=str(e.get("type",""))
+		sound.cue(kind)
 		if kind in ["DAMAGE","ATTACK_DECLARED","ATTACK_MISSED","SHIELD","COMBO_TRIGGERED","MOVE"]:
 			var who: int=int(e.get("defender_id",e.get("target_id",e.get("actor_id",-1))))
 			cue.append({"id":who,"kind":kind,"left":0.55})
