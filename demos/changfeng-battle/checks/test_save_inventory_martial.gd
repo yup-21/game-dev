@@ -47,10 +47,19 @@ func _run() -> void:
 	session.study_fragment()
 	check(session.equip_item(0,"soft_boots","feet"),"story session equips boots")
 	check(session.equip_item(0,"iron_sword","weapon"),"story session equips sword")
-	check(session.begin_encounter(),"story begins 3v3 encounter with equipped gear")
+	var began: bool=session.begin_encounter()
+	check(began,"story begins 3v3 encounter with equipped gear")
+	if not began:
+		print("BLOCKER: "+session.director.load_error)
+		quit(1)
+		return
 	var battle=Model.new()
 	battle.reset(session.encounter_seed(),0,"tingfeng",session.encounter_options())
 	check(battle.state.outcome=="playing","equipped encounter initializes")
+	if battle.state.outcome!="playing":
+		print("BLOCKER: "+str(battle.state.logs))
+		quit(1)
+		return
 	var actor=battle.state.get_actor(0)
 	check(actor.stats.attack==11 and actor.effective_attributes.AGI==11,"equipped sword modifies attack and agility")
 	check(actor.stats.charge_speed>100,"equipped boots affect CTB")
@@ -83,7 +92,12 @@ func _run() -> void:
 	check(saves.info(1).state=="ready","save digest validates")
 	var restored=Session.new()
 	root.add_child(restored)
-	check(saves.load(1,restored),"saved story reloads into a clean GameSession")
+	var loaded: bool=saves.load(1,restored)
+	check(loaded,"saved story reloads into a clean GameSession")
+	if not loaded:
+		print("BLOCKER: "+saves.last_error)
+		quit(1)
+		return
 	check(restored.phase=="aftermath" and restored.martial_records[0].has("taixu"),"martial progress survives reload")
 	check(restored.inventories[0].equipment.weapon=="iron_sword","equipped sword survives serialization")
 	check(inv.count(restored.inventories[0],"healing_powder")==2,"stack quantities survive serialization")
