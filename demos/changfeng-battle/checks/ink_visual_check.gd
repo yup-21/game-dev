@@ -67,7 +67,7 @@ func run(view) -> void:
 		_fail(view,"equipped stage does not appear in skill tray")
 		return
 	await view._capture("ink-ability-tray.png")
-	view._button_action("ability:test_chain:one")
+	view._button_action("ability_slot:0")
 	if view.mode!="ability":
 		_fail(view,"stage button did not open target selection")
 		return
