@@ -9,6 +9,8 @@ const SINGLE_FRAMES := {"guard": 0, "hit": 1, "evade": 2, "skill": 4, "defeat": 
 const DURATIONS := {"idle": 1.0, "move": 0.55, "attack": 0.62,
     "guard": 0.32, "hit": 0.40, "evade": 0.38, "skill": 0.55, "defeat": 1.0}
 var tracks: Dictionary = {}
+var timeline: Array = []
+var stage_left: float = 0.0
 
 func register_actor(id: int, sprite: Sprite3D) -> void:
     tracks[id] = {"sprite": sprite, "state": "idle", "elapsed": 0.0,
@@ -28,27 +30,57 @@ func play(id: int, state: String) -> void:
     tracks[id] = track
 
 func events(emitted: Array) -> void:
+    # Preserve the semantic event order; an attack, response and hit should
+    # not overwrite each other's sprites in the same frame.
+    timeline.clear()
+    stage_left = 0.0
     for event in emitted:
         var kind := str(event.get("type", ""))
         var actor_id := int(event.get("actor_id", -1))
         var target_id := int(event.get("defender_id", event.get("target_id", -1)))
+        var animation := ""
+        var id := actor_id
         match kind:
             "MOVE":
-                play(actor_id, "move")
+                animation = "move"
             "ATTACK_DECLARED":
-                play(actor_id, "attack")
+                animation = "attack"
             "COMBO_TRIGGERED":
-                play(actor_id, "skill")
+                animation = "skill"
             "SHIELD", "INTERCEPT_JUDGED":
-                play(actor_id, "guard")
+                animation = "guard"
             "ATTACK_MISSED":
-                play(target_id, "evade")
+                id = target_id
+                animation = "evade"
             "DAMAGE", "HP_DAMAGED", "SCORCH_TICK":
-                play(target_id if target_id >= 0 else actor_id, "hit")
+                id = target_id if target_id >= 0 else actor_id
+                animation = "hit"
             "ATTACK_INTERRUPTED":
-                play(actor_id, "guard")
+                animation = "guard"
+        if not animation.is_empty() and tracks.has(id):
+            timeline.append({"id": id, "state": animation,
+                "duration": float(DURATIONS.get(animation, 0.35))})
+    _play_next()
+
+func _play_next() -> void:
+    if timeline.is_empty():
+        stage_left = 0.0
+        return
+    var next: Dictionary = timeline.pop_front()
+    play(int(next.id), str(next.state))
+    stage_left = float(next.duration)
+
+func remaining_seconds() -> float:
+    var total: float = stage_left
+    for event in timeline:
+        total += float(event.duration)
+    return total
 
 func update(delta: float, moving: Dictionary = {}) -> void:
+    if stage_left > 0.0:
+        stage_left = maxf(0.0, stage_left - delta)
+        if stage_left <= 0.0:
+            _play_next()
     for id in tracks.keys():
         var track: Dictionary = tracks[id]
         var state: String = str(track.state)
@@ -74,5 +106,7 @@ func update(delta: float, moving: Dictionary = {}) -> void:
         tracks[id] = track
 
 func reset() -> void:
+    timeline.clear()
+    stage_left = 0.0
     for id in tracks.keys():
         play(int(id), "idle")
