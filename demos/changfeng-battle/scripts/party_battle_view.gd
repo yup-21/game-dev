@@ -28,6 +28,35 @@ var ai_delay: float=0.0
 var cue: Array=[]
 var mouse: Vector2=Vector2(-100,-100)
 var feedback: String=""
+var story_encounter: bool=false
+
+func _session():
+	return get_node_or_null("/root/GameSession")
+
+func _reset_battle() -> void:
+	var session=_session()
+	story_encounter=session!=null and session.phase=="battle"
+	if story_encounter:
+		model.reset(session.encounter_seed(),0,"tingfeng",session.encounter_options())
+	else:
+		model.reset(2026,0,"tingfeng",{"combatants":_roster()})
+	policy=AI.new()
+	cue.clear()
+	selected_key=""
+	_sync()
+
+func _go(path: String) -> void:
+	var err: int=get_tree().change_scene_to_file(path)
+	if err!=OK: push_error("Unable to open scene: "+path)
+
+func _go_result() -> void:
+	if story_encounter and snap.outcome!="playing":
+		call_deferred("_go","res://demo_result.tscn")
+
+func _go_menu() -> void:
+	var session=_session()
+	if session!=null: session.return_to_menu()
+	call_deferred("_go","res://opening.tscn")
 
 func _roster() -> Array:
 	return [
@@ -45,8 +74,7 @@ func _ready() -> void:
 	title_font=SystemFont.new()
 	title_font.font_names=PackedStringArray(["KaiTi","STKaiti","Microsoft YaHei"])
 	DisplayServer.window_set_min_size(Vector2i(1100,750))
-	model.reset(2026,0,"tingfeng",{"combatants":_roster()})
-	_sync()
+	_reset_battle()
 	print("PARTY_BATTLE_READY actors=",snap.actors.size()," player_units=2 allied_ai=1 enemy_ai=3")
 
 func _current_id() -> int:
@@ -82,6 +110,9 @@ func _sync() -> void:
 			seen[key]=true
 			groups.append({"key":key,"label":_label(action)})
 	page=clampi(page,0,maxi(0,ceili(groups.size()/11.0)-1))
+	var session=_session()
+	if story_encounter and snap.outcome!="playing" and session!=null and session.phase=="battle":
+		session.report_battle(str(snap.outcome),int(snap.get("winning_team",-1)))
 	if not selected_key.is_empty() and _candidates().is_empty(): selected_key=""
 
 func _key(action: Dictionary) -> String:
@@ -156,10 +187,15 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion: mouse=event.position
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode==KEY_R:
-			model.reset(2026,0,"tingfeng",{"combatants":_roster()})
-			cue.clear()
-			selected_key=""
-			_sync()
+			var session=_session()
+			if story_encounter and session!=null and session.phase=="aftermath": session.retry_encounter()
+			_reset_battle()
+			return
+		if event.keycode==KEY_ESCAPE and snap.outcome!="playing":
+			_go_menu()
+			return
+		if event.keycode in [KEY_ENTER,KEY_SPACE] and snap.outcome!="playing":
+			_go_result()
 			return
 		if not _human_turn(): return
 		if event.keycode==KEY_ESCAPE: selected_key=""; return
@@ -169,7 +205,16 @@ func _input(event: InputEvent) -> void:
 					_submit(action)
 					return
 	if not event is InputEventMouseButton: return
-	if not event.pressed or not _human_turn(): return
+	if not event.pressed: return
+	if snap.outcome!="playing":
+		if event.button_index==MOUSE_BUTTON_LEFT:
+			for button in buttons:
+				if button.rect.has_point(event.position):
+					if str(button.action)=="story_result": _go_result()
+					elif str(button.action)=="menu": _go_menu()
+					return
+		return
+	if not _human_turn(): return
 	if event.button_index==MOUSE_BUTTON_RIGHT:
 		selected_key=""
 		return
@@ -295,6 +340,15 @@ func _draw() -> void:
 	if snap.outcome!="playing":
 		_text(Vector2(1110,290),"战斗结束："+str(snap.outcome),26,GOLD,true)
 		_text(Vector2(1110,332),"获胜阵营："+str(snap.get("winning_team",-1)),17,INK)
+		if story_encounter:
+			var rect: Rect2=Rect2(1110,390,421,57)
+			draw_rect(rect,JADE)
+			_text(Vector2(1128,428),"查看剧情结算  Enter",21,Color("ffffff"))
+			buttons.append({"rect":rect,"action":"story_result"})
+		var back: Rect2=Rect2(1110,468,421,49)
+		draw_rect(back,Color("c7c9b6"))
+		_text(Vector2(1128,501),"返回主菜单  Esc",18,INK)
+		buttons.append({"rect":back,"action":"menu"})
 		return
 	if not _human_turn():
 		_text(Vector2(1110,285),"其他角色正在使用相同的规则自主行动。",15,INK)
