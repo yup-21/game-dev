@@ -178,7 +178,13 @@ func _input(event: InputEvent) -> void:
 			var action: String=str(button.action)
 			if action=="prev": page=maxi(0,page-1); return
 			if action=="next": page=mini(maxi(0,ceili(groups.size()/11.0)-1),page+1); return
-			_choose(action)
+			if action.begins_with("link:"):
+				for option in _candidates():
+					if int(option.get("link_id",-1))==int(action.substr(5)):
+						_submit(option)
+						break
+			else:
+				_choose(action)
 			return
 	if selected_key.is_empty() or not BOARD.has_point(event.position): return
 	var cell: Vector2i=screen_to_cell(event.position)
