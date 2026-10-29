@@ -5,7 +5,7 @@ const Model = preload("res://scripts/battle_model.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
 const Scenery = preload("res://scripts/hd2d_scenery.gd")
 const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
-const SpriteFactory = preload("res://scripts/hd2d_sprite_factory.gd")
+const SpriteFactory = preload("res://scripts/hd2d_illustrated_factory.gd")
 const Animator = preload("res://scripts/hd2d_animation.gd")
 const VFX = preload("res://scripts/hd2d_vfx.gd")
 const COLS := 15
@@ -44,6 +44,9 @@ var target_markers: Array = []
 var camera_base := Vector3(17, 22, 25)
 var camera_shake := 0.0
 var elapsed := 0.0
+var intro_remaining := 3.25
+var intro_title: Label
+var intro_subtitle: Label
 
 func _ready() -> void:
     model.reset(2026)
@@ -207,11 +210,11 @@ func _create_actor(actor: Dictionary) -> void:
     root.add_child(shadow)
     var sprite := Sprite3D.new()
     sprite.texture = SpriteFactory.make_sheet(int(actor.get("team_id", 0)) != 0)
-    sprite.pixel_size = 0.024
-    sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+    sprite.pixel_size = 0.010
+    sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
     sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     sprite.transparent = true
-    sprite.position.y = 0.80
+    sprite.position.y = 1.0
     root.add_child(sprite)
     animation_driver.register_actor(int(actor.id), sprite)
     var nameplate := Label3D.new()
@@ -221,7 +224,7 @@ func _create_actor(actor: Dictionary) -> void:
     nameplate.pixel_size = 0.006
     nameplate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     nameplate.modulate = Color("ccead8") if int(actor.get("team_id", 0)) == 0 else Color("f2b4a2")
-    nameplate.position.y = 1.85
+    nameplate.position.y = 2.20
     root.add_child(nameplate)
     var cue := OmniLight3D.new()
     cue.light_color = Color("eac77e")
@@ -310,6 +313,28 @@ func _build_ui() -> void:
     card_actions = HFlowContainer.new()
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(card_actions)
+
+    # Brief illustrated chapter card; visual only, no BattleModel state changes.
+    intro_title = Label.new()
+    intro_title.text = "断 桥 听 风"
+    intro_title.add_theme_font_size_override("font_size", 54)
+    intro_title.add_theme_color_override("font_color", UITheme.PAPER)
+    intro_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    intro_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    intro_title.position = Vector2(-320, -160)
+    intro_title.size = Vector2(640, 76)
+    intro_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    canvas.add_child(intro_title)
+    intro_subtitle = Label.new()
+    intro_subtitle.text = "一剑试江湖  ·  原创手绘角色 / 立体战场"
+    intro_subtitle.add_theme_font_size_override("font_size", 20)
+    intro_subtitle.add_theme_color_override("font_color", UITheme.GOLD)
+    intro_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    intro_subtitle.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    intro_subtitle.position = Vector2(-320, -90)
+    intro_subtitle.size = Vector2(640, 45)
+    intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    canvas.add_child(intro_subtitle)
 
 func _refresh() -> void:
     snap = model.snapshot(0)
@@ -470,6 +495,13 @@ func _process(delta: float) -> void:
     if snap.is_empty():
         return
     elapsed += delta
+    if intro_remaining > 0.0:
+        intro_remaining = maxf(0.0, intro_remaining - delta)
+        var reveal: float = minf(1.0, intro_remaining / 0.65)
+        intro_title.modulate.a = reveal
+        intro_subtitle.modulate.a = reveal
+        intro_title.visible = intro_remaining > 0.0
+        intro_subtitle.visible = intro_remaining > 0.0
     camera_shake = maxf(0.0, camera_shake - delta)
     if camera_shake > 0.0:
         camera.position = camera_base + Vector3(sin(elapsed * 71.0) * 0.12, sin(elapsed * 89.0) * 0.07, 0) * camera_shake
@@ -486,7 +518,7 @@ func _process(delta: float) -> void:
             moving[id] = node.position.distance_to(destination) > 0.035
             var sprite: Sprite3D = node.get_node_or_null("Sprite3D") as Sprite3D
             if sprite != null:
-                sprite.position.y = 0.80 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
+                sprite.position.y = 1.0 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
     animation_driver.update(delta, moving)
     if effects_driver != null:
         effects_driver.update(delta)
