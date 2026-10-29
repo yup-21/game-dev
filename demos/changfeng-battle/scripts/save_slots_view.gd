@@ -66,13 +66,13 @@ func _draw() -> void:
 	draw_rect(Rect2(0,0,1600,1000),Color("304a43"))
 	draw_rect(Rect2(120,84,1360,830),BG)
 	draw_rect(Rect2(136,100,1328,797),GOLD,false,2)
-	draw_string(font,Vector2(194,189),"江湖行箧 · 存档管理",44,INK)
-	draw_string(font,Vector2(194,230),"存档在本机 user://saves/ 下。战斗进行中不可保存，以免破坏行动与连锁状态。",19,INK)
+	draw_string(font,Vector2(194,189),"江湖行箧 · 存档管理",HORIZONTAL_ALIGNMENT_LEFT,-1,44,INK)
+	draw_string(font,Vector2(194,230),"存档在本机 user://saves/ 下。战斗进行中不可保存，以免破坏行动与连锁状态。",HORIZONTAL_ALIGNMENT_LEFT,-1,19,INK)
 	var session=_session()
 	for i in range(3):
 		var slot: int=i+1
 		var pos: Vector2=Vector2(185,280+i*177)
-		var rect: Rect2=Rect2(pos,1230,156)
+		var rect: Rect2=Rect2(pos,Vector2(1230,156))
 		draw_rect(rect,Color("f9f5e9"))
 		draw_rect(rect,GOLD,false,2)
 		var info: Dictionary=saves.info(slot)
