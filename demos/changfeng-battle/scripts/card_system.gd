@@ -150,10 +150,26 @@ func create_instance(actor, definition_id: String, destination: String = "hand",
 	state.next_uid+=1
 	var uid: String="card:%d:%04d" % [actor.id,state.next_uid]
 	var origin: Dictionary=instances.get(source_uid,{})
-	instances[uid]={"uid":uid,"definition_id":definition_id,"card_id":definition_id,"owner_actor_id":actor.id,"owner":actor.id,"modifications":{},"generated":not source_uid.is_empty(),"source_uid":source_uid,"parent_uid":source_uid,"root_uid":str(origin.get("root_uid",source_uid)) if not source_uid.is_empty() else uid,"lifecycle":str(definitions[definition_id].get("lifecycle","normal"))}
-	actor.get(destination).append(uid)
+	instances[uid]={"uid":uid,"definition_id":definition_id,"card_id":definition_id,"owner_actor_id":actor.id,"owner":actor.id,"modifications":{},"generated":not source_uid.is_empty(),"source_uid":source_uid,"parent_uid":source_uid,"child_uids":[],"related_uids":[],"root_uid":str(origin.get("root_uid",source_uid)) if not source_uid.is_empty() else uid,"lifecycle":str(definitions[definition_id].get("lifecycle","normal"))}
+	match destination:
+		"hand": actor.hand.append(uid)
+		"draw_pile": actor.draw_pile.append(uid)
+		"discard_pile": actor.discard_pile.append(uid)
+	if not source_uid.is_empty() and instances.has(source_uid): instances[source_uid].child_uids.append(uid)
 	if destination=="hand": actor.hand_generation+=1
 	return uid
+
+func relations(uid: String) -> Dictionary:
+	var card: Dictionary=instances.get(uid,{})
+	if card.is_empty(): return {}
+	return {"parent_uid":str(card.get("parent_uid","")),"root_uid":str(card.get("root_uid","")),"child_uids":card.get("child_uids",[]).duplicate(),"related_uids":card.get("related_uids",[]).duplicate(),"definition":definitions[str(card.definition_id)].get("relations",{}).duplicate(true)}
+
+func link_instances(a_uid: String,b_uid: String) -> bool:
+	if a_uid==b_uid or not instances.has(a_uid) or not instances.has(b_uid): return false
+	if int(instances[a_uid].owner_actor_id)!=int(instances[b_uid].owner_actor_id): return false
+	if not instances[a_uid].related_uids.has(b_uid): instances[a_uid].related_uids.append(b_uid)
+	if not instances[b_uid].related_uids.has(a_uid): instances[b_uid].related_uids.append(a_uid)
+	return true
 
 func register_definition(definition: Dictionary) -> bool:
 	if not valid_definition(definition): return false
