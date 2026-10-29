@@ -48,13 +48,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	_battle_serial+=1
 	state.battle_id="battle:%d:%d" % [seed,_battle_serial]
 	state.root_action_id=state.battle_id+":initial"
-	if options.has("combatants") and not state.configure_combatants(options.combatants):
-		state.outcome="defeat"
-		state.mode="FINISHED"
-		state.phase="FINISHED"
-		audit=Events.new(state)
-		audit.emit("RULE_ERROR",{"text":state.party_error})
-		return
+	var party_valid: bool=not options.has("combatants") or state.configure_combatants(options.combatants)
 	state.preferred_first=state.actors[0].id
 	for candidate in state.actors:
 		if candidate.team_id==0 and candidate.controller=="PLAYER":
@@ -89,6 +83,14 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	turns.techniques=techniques
 	turns.resolver=resolver
 	reactions.resolver=resolver
+	# Failed encounters still replace the whole graph and advance reset boundaries.
+	if not party_valid:
+		state.outcome="defeat"
+		state.mode="FINISHED"
+		state.phase="FINISHED"
+		audit.emit("RULE_ERROR",{"text":state.party_error})
+		_busy=false
+		return
 	if cards.load_error.is_empty():
 		var extras=options.get("card_definitions",[])
 		if not extras is Array: cards.load_error="card_definitions must be an Array"

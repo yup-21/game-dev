@@ -12,6 +12,15 @@ func check(ok: bool, label: String) -> void:
 		failures += 1
 		push_error("FAIL: "+label)
 
+func _opening_root_script_valid(scene: PackedScene) -> bool:
+	if scene == null: return false
+	var opening = scene.instantiate()
+	if opening == null: return false
+	var script = opening.get_script()
+	var valid: bool = script is Script and script.can_instantiate()
+	opening.free()
+	return valid
+
 func _finish_branch(choice: int) -> void:
 	var s = Story.new()
 	s.begin()
@@ -65,5 +74,11 @@ func _run() -> void:
 	var duel_scene=load("res://battle.tscn")
 	var party_scene=load("res://party_battle.tscn")
 	check(default_scene!=null and duel_scene!=null and party_scene!=null,"title and both existing battle scenes resolve")
+	check(_opening_root_script_valid(default_scene),"opening root script compiles and instantiates")
+	var missing_script_scene = PackedScene.new()
+	var missing_script_root = Node2D.new()
+	missing_script_scene.pack(missing_script_root)
+	missing_script_root.free()
+	check(not _opening_root_script_valid(missing_script_scene),"opening root without script fails validation")
 	print("OPENING STORY FAILURES: ",failures)
 	quit(1 if failures!=0 else 0)

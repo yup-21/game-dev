@@ -30,9 +30,11 @@
 godot --path demos/changfeng-battle
 godot --headless --path demos/changfeng-battle --script res://checks/test_opening_story.gd
 godot --path demos/changfeng-battle -- --opening-visual-check
+godot --path demos/changfeng-battle res://battle.tscn -- --tingfeng-visual-check
+godot --path demos/changfeng-battle res://battle.tscn -- --wuxue-visual-check
 ```
 
-最后一条会运行真实窗口截图检查，输出 `captures/opening-title.png`、`opening-cinematic.png`、`opening-explore.png`、`opening-dialogue.png`、`opening-choice.png`、`opening-complete.png`。另外继续运行战斗 `checks/verify.ps1` 及已有 `--tingfeng-visual-check`／`--wuxue-visual-check`，以保证切换到战斗后仍正常操作。
+`--opening-visual-check` 会运行真实窗口截图检查，输出 `captures/opening-title.png`、`opening-cinematic.png`、`opening-explore.png`、`opening-dialogue.png`、`opening-choice.png`、`opening-complete.png`。战斗图形检查需要显式指定 `res://battle.tscn`，否则默认启动的是序章菜单。还应运行战斗 `checks/verify.ps1`，以保证切换到战斗后仍正常操作。
 
 **验证状态**：GitHub 代码写入环境未安装 Godot，以上实机视觉和 headless 运行检查由本地 CI/测试人员执行，不能据此报告“已通过”。
 

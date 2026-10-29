@@ -103,9 +103,13 @@
 .\checks\verify.ps1 -Stage Framework
 .\checks\verify.ps1 -Stage Generated
 .\checks\verify.ps1 -Stage Lifecycle
+.\checks\verify.ps1 -Stage Opening
+.\checks\verify.ps1 -Stage Parties
 ```
 
 `Framework` 检查能力图和 JSON 整数值校验，`Generated` 检查生成卡牌与保留期限，`Lifecycle` 检查模型重开、释放及子系统引用回收。校验同时核对退出码、成功标记和 Godot 错误日志。
+
+`Opening` 检查序章数据、分支和场景脚本，`Parties` 检查多人队伍、目标、胜负及无效阵容重开。
 
 以上命令同样支持 `-GodotPath` 和 `GODOT_BIN`。例如：
 
@@ -117,7 +121,7 @@
 
 ```powershell
 New-Item -ItemType Directory -Path captures -Force | Out-Null
-& $env:GODOT_BIN --path . --log-file captures/tingfeng-ui-render-run.log -- --tingfeng-visual-check
+& $env:GODOT_BIN --path . --log-file captures/tingfeng-ui-render-run.log res://battle.tscn -- --tingfeng-visual-check
 ```
 
 图形检查前将 `GODOT_BIN` 指向 Godot 可执行文件。检查会自动退出。控制台检查日志生成于 `captures/checks/`，对局记录生成于 `checks/tingfeng-playthrough-results.json`，运行截图生成于 `captures/tingfeng-*.png`；这些生成文件均忽略提交。已选取的界面截图见 [docs/screenshots](docs/screenshots)，验证摘要见 [reports/validation.md](reports/validation.md)。

@@ -42,6 +42,39 @@ func perform(m, option: Dictionary) -> bool:
 	var result: Dictionary=m.submit(m.request(str(option.kind),int(option.actor_id),option))
 	return bool(result.get("success",false))
 
+func check_invalid_reset(encounter: Array, label: String) -> void:
+	var model=battle()
+	var setup: Array=legal(model,0,"END_ACTION")
+	check(not setup.is_empty() and perform(model,setup[0]),label+" starts from a played battle")
+	var actor_id: int=int(model.state.active_id)
+	var old_options: Array=legal(model,actor_id,"END_ACTION")
+	var old_request: Dictionary=model.request("END_ACTION",actor_id,old_options[0])
+	var old_battle_id: String=model.state.battle_id
+	var old_state: WeakRef=weakref(model.state)
+	var revision: int=int(model.state.revision)
+	var ticket: int=int(model.state.animation_ticket)
+	model.reset(2026,0,"tingfeng",{"combatants":encounter})
+	check(model.state.mode=="FINISHED" and not model.state.party_error.is_empty(),label+" finishes with an encounter error")
+	check(model.state.battle_id!=old_battle_id and model.state.revision==revision+1 and model.state.animation_ticket==ticket+1,label+" advances battle, revision and animation boundaries")
+	var stale: Array=[]
+	for name in ["cards","statuses","visibility","costs","rules","audit","turns","reactions","resolver","abilities"]:
+		if model.get(name).state!=model.state: stale.append(name)
+	check(stale.is_empty(),label+" binds all stateful subsystems to the new state: "+str(stale))
+	check(old_state.get_ref()==null,label+" releases the previous battle state")
+	check(model.legal_actions(0).is_empty() and model.legal_actions(actor_id).is_empty() and model.query_legal_actions(actor_id).is_empty(),label+" exposes no actions from the previous battle")
+	revision=int(model.state.revision)
+	ticket=int(model.state.animation_ticket)
+	var old_result: Dictionary=model.submit(old_request)
+	check(not old_result.success and old_result.error_code=="STALE_BATTLE",label+" rejects the previous battle request")
+	check(model.state.revision==revision and model.state.animation_ticket==ticket and not model.state.animation_pending,label+" old request leaves presentation and revision unchanged")
+	var new_result: Dictionary=model.submit(model.request("END_ACTION",0))
+	check(not new_result.success and new_result.error_code=="BATTLE_FINISHED",label+" rejects a request for the failed encounter")
+	check(model.state.revision==revision and model.state.animation_ticket==ticket and not model.state.animation_pending,label+" new request leaves presentation and revision unchanged")
+	model.reset(2026,0,"tingfeng",{"combatants":roster()})
+	check(model.state.outcome=="playing" and model.state.actors.size()==6 and model.state.revision==revision+1 and model.state.animation_ticket==ticket+1,label+" recovers through a valid reset")
+	var recovered: Array=legal(model,0,"END_ACTION")
+	check(not recovered.is_empty() and perform(model,recovered[0]),label+" accepts actions after recovery")
+
 func run() -> void:
 	var legacy=Model.new()
 	check(legacy.state.actors.size()==2 and legacy.state.get_actor(0).team_id==0 and legacy.state.get_actor(1).team_id==1,"default duel still uses two opposing combatants")
@@ -89,6 +122,9 @@ func run() -> void:
 	for entry in only_team: entry.team_id=0
 	invalid.reset(2026,0,"tingfeng",{"combatants":only_team})
 	check(invalid.state.mode=="FINISHED","single-team encounter is rejected")
+	check_invalid_reset([],"empty roster reset")
+	check_invalid_reset(malformed,"overlapping roster reset")
+	check_invalid_reset(only_team,"single-team roster reset")
 	var timeline=battle()
 	var scheduled: Array=[]
 	for _i in range(6):
