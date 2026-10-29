@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "techniques": [
+    {
+      "id": "test_chain",
+      "entry": "one",
+      "hold_own_actions": 2,
+      "nodes": [
+        {
+          "id": "one",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 1
+          },
+          "target": {
+            "kind": "enemy_actor",
+            "max_distance": 1
+          },
+          "effects": [
+            {
+              "type": "deal_damage",
+              "amount": 1
+            }
+          ],
+          "attack_profile": {
+            "route": "thrust",
+            "range": 1
+          },
+          "next": "two"
+        },
+        {
+          "id": "two",
+          "timing": "ACTION",
+          "unlock_rank": 2,
+          "cost": {
+            "qi": 1
+          },
+          "same_action_extra_qi": 2,
+          "target": {
+            "kind": "enemy_actor",
+            "max_distance": 1
+          },
+          "effects": [
+            {
+              "type": "deal_damage",
+              "amount": 1
+            }
+          ],
+          "attack_profile": {
+            "route": "sweep",
+            "range": 1
+          },
+          "next": "three"
+        },
+        {
+          "id": "three",
+          "timing": "ACTION",
+          "unlock_rank": 3,
+          "cost": {
+            "qi": 1
+          },
+          "same_action_extra_qi": 1,
+          "target": {
+            "kind": "enemy_actor",
+            "max_distance": 1
+          },
+          "effects": [
+            {
+              "type": "deal_damage",
+              "amount": 1
+            }
+          ],
+          "attack_profile": {
+            "route": "crushing",
+            "range": 1
+          },
+          "next": "one"
+        }
+      ]
+    }
+  ]
+}
