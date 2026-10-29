@@ -91,7 +91,7 @@ func battlefield(v: CanvasItem, snap: Dictionary, t: float) -> void:
 				v.draw_line(tip,tip+Vector2(4,-4),Color(0.48,0.55,0.35,0.47),1.2,true)
 
 func combatant(v: CanvasItem, pos: Vector2, actor: Dictionary, t: float, active: bool, hit: bool) -> void:
-	var own: bool=int(actor.get("id",0))==0
+	var own: bool=int(actor.get("team_id",0))==0
 	var direction: float=1.0 if own else -1.0
 	var accent: Color=JADE if own else RED
 	var cloth: Color=Color("31595c") if own else Color("704c48")

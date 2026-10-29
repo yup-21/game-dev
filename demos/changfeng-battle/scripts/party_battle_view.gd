@@ -3,6 +3,9 @@ extends Node2D
 ## The same EnemyAI policy drives allied NPCs and hostile NPCs.
 const Model = preload("res://scripts/battle_model.gd")
 const AI = preload("res://scripts/enemy_ai.gd")
+const Navigation = preload("res://scripts/demo_navigation.gd")
+const Art = preload("res://scripts/battle_art.gd")
+const Sfx = preload("res://scripts/demo_sfx.gd")
 const INK = Color("213939")
 const PAPER = Color("e9e8da")
 const JADE = Color("3a8980")
@@ -14,6 +17,9 @@ const TILE = Vector2(68,55)
 const COMMANDS = Rect2(1090,155,474,800)
 var model = Model.new()
 var policy = AI.new()
+var art = Art.new()
+var sound = Sfx.new()
+var paused_ui: bool=false
 var font: SystemFont
 var title_font: SystemFont
 var snap: Dictionary = {}
@@ -74,6 +80,7 @@ func _roster() -> Array:
 	]
 
 func _ready() -> void:
+	add_child(sound)
 	font=SystemFont.new()
 	font.font_names=PackedStringArray(["Microsoft YaHei","Noto Sans CJK SC","Segoe UI"])
 	title_font=SystemFont.new()
@@ -159,6 +166,7 @@ func _submit(action: Dictionary) -> void:
 		return
 	for e in response.get("events",[]):
 		var kind: String=str(e.get("type",""))
+		sound.cue(kind)
 		if kind in ["DAMAGE","ATTACK_DECLARED","ATTACK_MISSED","SHIELD","COMBO_TRIGGERED","MOVE"]:
 			var who: int=int(e.get("defender_id",e.get("target_id",e.get("actor_id",-1))))
 			cue.append({"id":who,"kind":kind,"left":0.55})
@@ -168,6 +176,9 @@ func _submit(action: Dictionary) -> void:
 	_sync()
 
 func _process(delta: float) -> void:
+	if paused_ui:
+		queue_redraw()
+		return
 	tick+=delta
 	for i in range(cue.size()-1,-1,-1):
 		cue[i].left-=delta
@@ -191,6 +202,13 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion: mouse=event.position
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode==KEY_F10:
+			_go_menu()
+			return
+		if event.keycode==KEY_P:
+			paused_ui=not paused_ui
+			return
+		if paused_ui: return
 		if event.keycode==KEY_R:
 			var session=_session()
 			if story_encounter and session!=null and session.phase=="aftermath": session.retry_encounter()
@@ -209,6 +227,7 @@ func _input(event: InputEvent) -> void:
 				if action.kind in ["END_ACTION","PASS_REACTION"]:
 					_submit(action)
 					return
+	if paused_ui: return
 	if not event is InputEventMouseButton: return
 	if not event.pressed: return
 	if snap.outcome!="playing":
@@ -273,12 +292,12 @@ func _tile(cell: Vector2i,color: Color) -> void:
 func _draw() -> void:
 	if snap.is_empty(): return
 	buttons.clear()
-	draw_rect(Rect2(0,0,1600,1000),PAPER)
+	art.backdrop(self,tick)
 	draw_rect(Rect2(0,0,1600,123),Color("163e3e"))
 	_text(Vector2(36,64),"长风浮生录 · 断桥群战",36,Color("f3e9d5"),true)
 	_text(Vector2(41,95),"同一套 CTB / 交锋 / 武学规则 · 多阵营战斗验证",14,Color("c0d4c2"))
 	_text(Vector2(1110,59),"t=%d  行动 %d" % [int(snap.global_tick),int(snap.action_no)],20,Color("e6cf96"))
-	_text(Vector2(1110,88),"R 重开  |  右键取消  |  空格收势 / Pass",14,Color("c0d4c2"))
+	_text(Vector2(1110,88),"R 重开  |  P 暂停  |  F10 主菜单  |  空格收势 / Pass",14,Color("c0d4c2"))
 	draw_rect(BOARD,Color("dfe7dc"))
 	for cell in snap.terrain:
 		var terrain: String=str(snap.terrain[cell])
@@ -309,16 +328,9 @@ func _draw() -> void:
 		var player_team: bool=int(actor.team_id)==0
 		var base: Color=JADE if player_team else RED
 		if not alive: base=Color("777d7d")
-		draw_set_transform(pos+Vector2(0,15),0,Vector2(1,0.33))
-		draw_circle(Vector2.ZERO,23,Color(0.10,0.17,0.16,.20))
-		draw_set_transform(Vector2.ZERO)
-		draw_circle(pos,23,base)
-		draw_arc(pos,27,0,TAU,32,Color("eee6cd"),2,true)
-		if int(actor.id)==_current_id():
-			draw_arc(pos,33,tick*.7,tick*.7+TAU*.80,30,GOLD,3,true)
+		art.combatant(self,pos,actor,tick,int(actor.id)==_current_id(),false)
 		if str(actor.controller)=="PLAYER":
-			draw_circle(pos+Vector2(17,-17),6,GOLD)
-		draw_line(pos+Vector2(-7,5),pos+Vector2(8,-8),Color("efdfbd"),3,true)
+			draw_circle(pos+Vector2(18,-18),5,GOLD)
 		_text(pos+Vector2(-30,48),str(actor.name),14,INK)
 		draw_rect(Rect2(pos+Vector2(-25,-42),Vector2(50,6)),Color("c0c2b9"))
 		draw_rect(Rect2(pos+Vector2(-25,-42),Vector2(50*clampf(float(actor.hp)/maxf(1,float(actor.max_hp)),0,1),6)),base)
@@ -335,7 +347,13 @@ func _draw() -> void:
 		var y: float=841+row*52
 		draw_rect(Rect2(x,y,333,44),Color("f9f5e7"),false,1)
 		_text(Vector2(x+7,y+17),str(actor.name)+" · "+("友" if int(actor.team_id)==0 else "敌")+" · "+("手动" if str(actor.controller)=="PLAYER" else "AI"),14,JADE if int(actor.team_id)==0 else RED)
-		_text(Vector2(x+7,y+35),"HP %.1f  气 %.1f  集气 %d" % [float(actor.hp),float(actor.qi),int(actor.gauge)],12,INK)
+		var natural_max: float=float(actor.get("base_max_hp",actor.max_hp))
+		var hp_label: String="HP %.0f/%.0f" % [float(actor.hp),float(actor.max_hp)]
+		if float(actor.max_hp)<natural_max: hp_label+=" (基础%.0f)" % natural_max
+		_text(Vector2(x+7,y+35),"%s 气%.1f 集气%d" % [hp_label,float(actor.qi),int(actor.gauge)],12,INK)
+	if paused_ui:
+		Navigation.draw_pause(self,title_font)
+		return
 	draw_rect(COMMANDS,Color("f7f3e6"))
 	draw_rect(COMMANDS,GOLD,false,2)
 	var current: Dictionary=_current_actor()

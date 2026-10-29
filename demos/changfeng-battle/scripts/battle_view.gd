@@ -2,6 +2,8 @@ extends Node2D
 ## Presentation consumes the observer projection; all gameplay enters request/submit.
 const Model = preload("res://scripts/battle_model.gd")
 const AI = preload("res://scripts/enemy_ai.gd")
+const Navigation = preload("res://scripts/demo_navigation.gd")
+const Sfx = preload("res://scripts/demo_sfx.gd")
 const Art = preload("res://scripts/battle_art.gd")
 const PAPER = Color("ede9dc")
 const INK = Color("273f3f")
@@ -15,12 +17,14 @@ const TILE = Vector2(70, 39)
 var model = Model.new()
 var enemy_ai = AI.new()
 var player_policy = AI.new()
+var sound = Sfx.new()
 var art = Art.new()
 var snap: Dictionary = {}
 var legals: Array = []
 var body_font: SystemFont
 var title_font: SystemFont
 var started = false
+var paused_ui: bool=false
 var help_open = false
 var selected_card = ""
 var selected_usage = ""
@@ -52,6 +56,7 @@ var school_picker_actor = -1
 var hand_page = 0
 
 func _ready() -> void:
+	add_child(sound)
 	body_font = SystemFont.new()
 	body_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -88,6 +93,9 @@ func _decision_actor() -> int:
 	return int(snap.get("clash",{}).get("priority_actor_id",snap.responder_id)) if snap.phase == "CLASH" else int(snap.active_id)
 
 func _process(delta: float) -> void:
+	if paused_ui:
+		queue_redraw()
+		return
 	wall += delta
 	notice_left = maxf(0,notice_left-delta)
 	for i in range(effects.size()-1,-1,-1):
@@ -121,6 +129,7 @@ func _consume(result: Dictionary) -> void:
 		return
 	for event in result.get("events",[]):
 		var kind: String=str(event.get("type",""))
+		sound.cue(kind)
 		var cue_kind: String=""
 		var cue_target: int=int(event.get("defender_id",event.get("target_id",event.get("actor_id",-1))))
 		match kind:
@@ -187,6 +196,13 @@ func _restart(_profile: String = "tingfeng") -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion: mouse = event.position
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode==KEY_F10:
+			call_deferred("_return_to_title")
+			return
+		if event.keycode==KEY_P:
+			paused_ui=not paused_ui
+			return
+		if paused_ui: return
 		if school_picker_actor>=0 and event.keycode not in [KEY_H,KEY_ESCAPE]: return
 		match event.keycode:
 			KEY_H,KEY_ESCAPE:
@@ -210,6 +226,7 @@ func _input(event: InputEvent) -> void:
 				var index: int = event.keycode-KEY_1
 				if index < snap.hand.size(): _choose_card(snap.hand[index])
 	if event is InputEventMouseButton and event.pressed:
+		if paused_ui: return
 		mouse = event.position
 		if event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN] and Rect2(1170,766,406,204).has_point(mouse):
 			log_scroll = clampi(log_scroll+(2 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -2),0,maxi(0,_visible_logs().size()-6))
@@ -244,6 +261,9 @@ func _input(event: InputEvent) -> void:
 			elif cell==snap.actors[1].cell and event.button_index==MOUSE_BUTTON_RIGHT: _submit("BASIC_ATTACK",{"target_id":1})
 			else: _submit("MOVE",{"target_cell":cell})
 
+func _return_to_title() -> void:
+	Navigation.back_to_menu(get_tree())
+
 func _advance() -> void:
 	_submit("PASS_REACTION" if snap.phase=="CLASH" else "END_ACTION")
 
@@ -251,6 +271,7 @@ func _button_action(action: String) -> void:
 	match action:
 		"start": started = true
 		"restart": _restart()
+		"menu": call_deferred("_return_to_title")
 		"help": help_open = not help_open
 		"advance": _advance()
 		"attack": _submit("BASIC_ATTACK",{"target_id":1})
@@ -423,12 +444,13 @@ func _draw() -> void:
 	if notice_left>0 and started and snap.outcome=="playing":
 		_panel(Rect2(172,621,830,28),Color("254e46"))
 		_center(Vector2(587,641),notice,14,PAPER)
-	_text(Vector2(30,991),"右键移动 / 攻击   1–5 查看用法   Q 攻击   G 格挡   C 弃牌   M 移动   Space / Enter 结束行动或 Pass   H 帮助   R 重开",13,MUTED)
+	_text(Vector2(30,991),"右键移动 / 攻击   1–5 查看用法   Q 攻击   G 格挡   C 弃牌   M 移动   Space / Enter 结束行动或 Pass   H 帮助   R 重开   P 暂停   F10 菜单",13,MUTED)
 	if not started: _draw_intro()
 	elif snap.outcome!="playing": _draw_result()
 	if help_open: _draw_help()
 	if not usage_choices.is_empty(): _draw_usage_picker()
 	if school_picker_actor>=0: _draw_school_picker()
+	if paused_ui: Navigation.draw_pause(self,title_font)
 
 func _draw_header() -> void:
 	draw_rect(Rect2(0,0,1600,126),Color("173f3d"))
@@ -508,7 +530,11 @@ func _draw_sidebar() -> void:
 		_text(rect.position+Vector2(14,25),"%s · %s  %s" % [actor.name,"你" if i==0 else "对手",actor.get("danger","")],21,color,true)
 		_text(rect.position+Vector2(245,24),"护体 %.1f" % float(actor.shield),14,GOLD)
 		_bar(Rect2(rect.position+Vector2(15,36),Vector2(245,5)),float(actor.hp)/maxf(1,float(actor.get("max_hp",20))),color)
-		_text(rect.position+Vector2(270,43),"%.1f / %.1f" % [float(actor.hp),float(actor.get("max_hp",20))],13,color)
+		var base_hp: float=float(actor.get("base_max_hp",actor.get("max_hp",20)))
+		var effective_hp: float=float(actor.get("max_hp",20))
+		var hp_label: String="%.1f / %.1f" % [float(actor.hp),effective_hp]
+		if effective_hp<base_hp: hp_label+=" (基础 %.1f)" % base_hp
+		_text(rect.position+Vector2(270,43),hp_label,13,color)
 		_text(rect.position+Vector2(15,63),"气 %.1f / %.1f · 移动余 %d · 手牌 %d" % [float(actor.qi),float(actor.get("max_qi",6)),maxi(0,int(actor.get("move_budget",2))-int(actor.get("normal_moves_used",0))),int(actor.hand_count)],13,MUTED)
 		var attrs: Dictionary = actor.get("attributes",{})
 		_text(rect.position+Vector2(15,83),"力 %s  敏 %s  体 %s  意 %s  ·  速度 %.1f" % [attrs.get("STR",10),attrs.get("AGI",10),attrs.get("CON",10),attrs.get("MND",10),float(actor.get("charge_speed",0))],12,MUTED)
@@ -601,7 +627,8 @@ func _draw_result() -> void:
 	_center(Vector2(600,345),"两败俱伤 · 平局" if snap.outcome=="draw" else ("此役告捷" if snap.outcome=="victory" else "棋差一着"),46,GOLD if snap.outcome=="draw" else (JADE if snap.outcome=="victory" else RED),true)
 	_center(Vector2(600,397),"%s 对 %s · 此局终了" % [snap.actors[0].get("school_name","听风五式"),snap.actors[1].get("school_name","听风五式")],21,INK,true)
 	_center(Vector2(600,437),"气血：你 %.1f / 对手 %.1f  ·  tick %d" % [float(snap.actors[0].hp),float(snap.actors[1].hp),int(snap.get("global_tick",0))],17,MUTED)
-	_small_button(Rect2(425,486,350,54),"相同种子再战  R","restart",true)
+	_small_button(Rect2(330,486,250,54),"相同种子再战  R","restart",true)
+	_small_button(Rect2(630,486,270,54),"主菜单  F10","menu",true)
 
 func _draw_help() -> void:
 	buttons.clear()
