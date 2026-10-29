@@ -26,6 +26,15 @@ func _act(id: String) -> void:
 		"study": session.study_fragment()
 		"battle":
 			if session.begin_encounter(): call_deferred("_go","res://party_battle.tscn")
+		"inventory":
+			session.open_management("res://study.tscn")
+			call_deferred("_go","res://inventory.tscn")
+		"martial":
+			session.open_management("res://study.tscn")
+			call_deferred("_go","res://martial_hall.tscn")
+		"save":
+			session.open_management("res://study.tscn")
+			call_deferred("_go","res://save_slots.tscn")
 		"menu":
 			session.return_to_menu()
 			call_deferred("_go","res://opening.tscn")
@@ -42,6 +51,7 @@ func _input(event: InputEvent) -> void:
 			var session=_session()
 			_act("battle" if session!=null and bool(session.flags.get("studied_fragment",false)) else "study")
 		elif event.keycode==KEY_ESCAPE: _act("menu")
+		elif event.keycode==KEY_F5: _act("save")
 
 func _button(rect: Rect2,label: String,id: String) -> void:
 	draw_rect(rect,JADE)
@@ -73,4 +83,7 @@ func _draw() -> void:
 		draw_string(font,Vector2(300,550),"后两式是临时衍生卡，可跨行动保留，使用后移除。",21,INK)
 		_button(Rect2(300,664,508,65),"迎战追兵 · 进入战斗","battle")
 	_button(Rect2(855,664,390,65),"返回主菜单","menu")
-	draw_string(font,Vector2(309,805),"按 Enter 参悟或继续；Esc 返回菜单",17,Color("897a64"))
+	_button(Rect2(300,753,291,53),"行囊装备","inventory")
+	_button(Rect2(611,753,291,53),"武学修炼","martial")
+	_button(Rect2(921,753,323,53),"存档管理 F5","save")
+	draw_string(font,Vector2(309,847),"按 Enter 参悟或继续；Esc 返回菜单",17,Color("897a64"))
