@@ -270,6 +270,7 @@ func import_save_data(data: Dictionary) -> bool:
 	persistent_states=_actor_map(data.persistent_states)
 	inventories=_actor_map(data.inventories)
 	opening_checkpoint=data.opening_checkpoint.duplicate(true)
+	management_history.clear()
 	return true
 
 func save_game(slot: int) -> bool:
