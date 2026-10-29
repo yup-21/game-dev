@@ -1,7 +1,9 @@
 extends RefCounted
 ## Definitions are copied on access. Only UID instances reside in BattleState.
 const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add_shield","gain_qi","modify_pending_damage","modify_attack_area","cancel_chain_link","contest_intercept","interrupt_root_attack","apply_status","consume_status","force_move","draw_cards","discard_cards"]
+const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 var state
+var catalog
 var definitions: Dictionary = {}
 var statuses: Dictionary = {}
 var combos: Array = []
@@ -10,7 +12,7 @@ var load_error: String = ""
 var instances: Dictionary:
 	get: return state.card_instances
 
-func _init(battle_state, path: String = "res://data/tingfeng_cards.json") -> void:
+func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school_selection: Dictionary = {}) -> void:
 	state=battle_state
 	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not data is Dictionary:
@@ -28,6 +30,36 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json") -> voi
 	for entry in deck:
 		if not definitions.has(entry.get("card_id","")) or not whole(entry.get("count"),1):
 			load_error="牌组引用不合法"
+	catalog=SchoolCatalog.new()
+	if not catalog.load_error.is_empty():
+		load_error=catalog.load_error
+		return
+	var selected: Array=[]
+	for actor in state.actors:
+		var selection=school_selection.get(actor.id,"tingfeng")
+		if not selection is String:
+			load_error="流派ID必须为字符串"
+			return
+		var school: Dictionary=catalog.get_school(selection)
+		if school.is_empty():
+			load_error="未知流派："+selection
+			return
+		actor.school_id=selection
+		actor.school_name=str(school.name)
+		if selection!="tingfeng" and not selected.has(selection): selected.append(selection)
+	if not selected.is_empty():
+		for id in catalog.statuses: statuses[id]=catalog.statuses[id].duplicate(true)
+		for definition in catalog.forms.values():
+			if str(definition.school_id) not in selected: continue
+			if definitions.has(definition.id) or not valid_definition(definition):
+				load_error="规范化武学定义不合法："+str(definition.id)
+				return
+			definitions[definition.id]=definition.duplicate(true)
+		for combo in catalog.combos:
+			var complete: bool=true
+			for step in combo.get("sequence",[]):
+				if not definitions.has(str(step.card_id)): complete=false
+			if complete: combos.append(combo.duplicate(true))
 
 func whole(value: Variant, minimum: int = 0) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and float(value)==float(int(value)) and int(value)>=minimum
@@ -93,7 +125,9 @@ func valid_definition(d: Dictionary) -> bool:
 	return not ids.is_empty()
 
 func build_deck(actor, _seed: int = 0, _deck_ids: Array = []) -> bool:
-	for entry in deck:
+	var entries: Array=catalog.deck_for(actor.school_id,deck)
+	for entry in entries:
+		if not definitions.has(str(entry.card_id)): return false
 		for _i in range(int(entry.count)):
 			state.next_uid+=1
 			var uid: String="card:%d:%04d" % [actor.id,state.next_uid]
@@ -156,6 +190,7 @@ func draw(actor, count: int) -> Array:
 		var uid: String=str(actor.draw_pile.pop_back())
 		actor.hand.append(uid)
 		drawn.append(uid)
+	if not drawn.is_empty(): actor.hand_generation+=1
 	return drawn
 
 func leave_hand(actor, uid: String, to_resolving: bool = true) -> void:

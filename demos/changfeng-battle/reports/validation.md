@@ -47,9 +47,31 @@
 
 ## 文档核对发现的已知边界
 
-2026-10-29补充框架说明时，使用当前模型做了独立核对：双方观势1／藏锋0、玩家先手，reset后已知牌数量为玩家1／敌方2；双方各完成首次起势后为2／2。这是首次起势改变刷新标记、未换牌却额外揭牌的边界，原有265条检查未覆盖该组合。代码尚未在本次文档提交中修正；详见 [框架说明第16.3节](../docs/tingfeng-engine.md#163-已确认的首次刷新边界)。
+历史文档核对曾发现：双方观势1／藏锋0、玩家先手，reset后已知牌数量为玩家1／敌方2；双方各完成首次起势后为2／2。该边界原265条检查未覆盖，已在本次V3移植中以hand_generation修复，并加入开局／首次轮转回归；详见 [框架说明第16.3节](../docs/tingfeng-engine.md#163-首次刷新边界的修复)。
 
 上述历史验收数字保持原意，表示当时列出的检查项通过，不代表已覆盖所有机制组合。
+
+## 武学V3迁入后的实际回归（2026-10-29）
+
+| 定向阶段 | 最新结果 | 本地证据 |
+| --- | --- | --- |
+| Policy | 15 PASS | captures/checks/tingfeng-policy.log |
+| Rules | 105 PASS | captures/checks/tingfeng-rules.log |
+| Edges | 145 PASS | captures/checks/tingfeng-edges.log |
+| Catalog | 198 checks / 0 failures | captures/checks/wuxue-catalog.log |
+| Schools | 342 PASS，约2.6秒 | captures/checks/wuxue-v3.log |
+| Playthrough | 原12场与重复结果一致 | captures/checks/tingfeng-playthrough.log |
+| SchoolPlaythrough | 16组结束，2783次请求无非法／守恒错误；2组重放一致，约10.4秒 | captures/checks/wuxue-playthrough.log |
+| 原图形UI | 82项通过 | captures/tingfeng-visual.log |
+| 新图形UI | 61项通过 | captures/wuxue-visual.log |
+
+目录／规则／AI／边界共805项，原生图形UI共143项。新对局为16组独立配置及2次重复运行，合计18场；原默认验收另12场。所有最终日志无运行ERROR。
+
+对局中最短8 ACTION，最长为太虚同门93 ACTION；测试能完成不代表已经平衡胜率。单个用法的合法发动和牌区证据在captures/checks/wuxue-usage-evidence.json，逐请求对局trace在同目录wuxue-playthrough-results.json，均为本地生成文件。
+
+路径枚举改为一次BFS复用全部落点，测试对两名角色分别核对150格路径与原find_path逐条相同。此前重复逐目标寻路导致整组对局超时，最终同配置约10.4秒；这是本机检查耗时。
+
+新增机制、原包保留取舍与兼容映射见 [V3分析和移植结果](../docs/wuxue-v3-integration.md)。
 
 ## UI 截图
 

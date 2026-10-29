@@ -43,6 +43,7 @@ func condition_allows(actor,u: Dictionary) -> bool:
 	return true
 
 func line_clear(from: Vector2i,to: Vector2i) -> bool:
+	if from.x!=to.x and from.y!=to.y: return false
 	var p: Vector2i=from
 	var dx: int=absi(to.x-from.x)
 	var dy: int=absi(to.y-from.y)
@@ -57,17 +58,19 @@ func line_clear(from: Vector2i,to: Vector2i) -> bool:
 		if e2<dx:
 			err+=dx
 			p.y+=sy
-		if p!=to and not state.passable(p): return false
+		if p!=to and (not state.passable(p) or state.occupied(p)): return false
 	return true
 
-func card_options(actor,t: String) -> Array:
+func card_options(actor,t: String, reachable: Dictionary = {}) -> Array:
 	var options: Array=[]
 	if state.mode=="CLASH" and (int(state.clash.counts.get(actor.id,0))>=2 or state.clash.stack.size()>=4): return options
+	if reachable.is_empty(): reachable=state.reachable_paths(actor.cell,actor.id)
 	for uid in actor.hand:
 		var d: Dictionary=cards.canonical_definition(str(uid))
 		if not cards.valid_definition(d): continue
 		for u in d.usages:
 			if str(u.timing)!=t or not condition_allows(actor,u): continue
+			if u.get("once_per_action",false) and int(actor.card_uses.get(str(d.id)+":"+str(u.id),0))>0: continue
 			var plan: Dictionary=costs.quote(actor,u.get("cost",{}),context(actor.id,{"card_uid":uid,"usage_id":u.id}))
 			if not costs.can_pay(actor,plan): continue
 			var base: Dictionary={"kind":"PLAY_CARD","actor_id":actor.id,"card_uid":uid,"card_id":uid,"usage_id":u.id}
@@ -85,7 +88,7 @@ func card_options(actor,t: String) -> Array:
 						options.append(o)
 				"reachable_cell":
 					for cell in state.terrain:
-						var path: Array=state.find_path(actor.cell,cell,actor.id)
+						var path: Array=reachable.get(cell,[])
 						if path.is_empty() or path.size()>int(u.target.get("max_distance",1)): continue
 						var valid: bool=true
 						for e in u.get("effects",[]):
@@ -109,11 +112,12 @@ func raw_actions(actor_id: int) -> Array:
 	if actor==null or actor.hp_u<=0: return options
 	var t: String=timing(actor_id)
 	if t.is_empty(): return options
+	var reachable: Dictionary=state.reachable_paths(actor.cell,actor_id)
 	if t=="ACTION":
 		options.append({"kind":"END_ACTION","actor_id":actor_id})
 		var max_move: int=int(actor.stats.move_budget)-actor.normal_moves_used
 		for cell in state.terrain:
-			var path: Array=state.find_path(actor.cell,cell,actor_id)
+			var path: Array=reachable.get(cell,[])
 			if not path.is_empty() and path.size()<=max_move and actor.qi_u>=path.size()*10000:
 				options.append({"kind":"MOVE","actor_id":actor_id,"target_cell":cell})
 		if not actor.basic_attack_used and actor.qi_u>=10000:
@@ -125,7 +129,7 @@ func raw_actions(actor_id: int) -> Array:
 			for uid in actor.hand: options.append({"kind":"PITCH_CARD","actor_id":actor_id,"card_uid":uid,"card_id":uid})
 	else:
 		options.append({"kind":"PASS_REACTION","actor_id":actor_id})
-	options.append_array(card_options(actor,t))
+	options.append_array(card_options(actor,t,reachable))
 	return options
 
 func legal_actions(actor_id: int) -> Array:

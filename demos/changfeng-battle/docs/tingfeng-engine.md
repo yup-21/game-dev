@@ -1,6 +1,6 @@
 # 《长风浮生录》断桥听风：战斗机制与框架详细说明
 
-本文面向玩法设计、卡牌配置与代码接入，说明当前 Demo 实际怎样运行。规则代码基线为 [`d70181b`](https://github.com/yup-21/game-dev/commit/d70181bab2cf57d5ed548a933ae6c523b666e37c)，核对日期为 2026-10-29。
+本文面向玩法设计、卡牌配置与代码接入，说明当前 Demo 实际怎样运行。历史五式基线为 [`d70181b`](https://github.com/yup-21/game-dev/commit/d70181bab2cf57d5ed548a933ae6c523b666e37c)，本页已同步2026-10-29的十套武学V3接入。增量分析见 [武学V3移植说明](wuxue-v3-integration.md)。
 
 当前玩法是 **CTB 集气决定行动顺序，ACTION 内自由走位出牌，每次攻击建立一场有限连锁交锋**。双方使用相同规则；玩家从 UI 选择，敌人从合法动作中选择。代码中没有第二份专供 AI 使用的伤害或资源系统。
 
@@ -54,7 +54,7 @@ flowchart LR
 | 默认先手 | 同集气、同速度时为玩家；可通过 reset 指定 |
 | 牌组 | 每人独立 12 张：探锋×3、断岳×2、游身×2、化劲×3、变锋×2 |
 | 初始手牌 | 每人 5 张，其余进入各自抽牌堆 |
-| 临时状态 | 露隙、明牌；另有统一护体池 |
+| 临时状态 | 默认露隙、明牌；V3流派再登记凝势、封气、灼痕；另有统一护体池 |
 
 “镜像牌组”指组成和规则一致。双方各自有牌实例与牌区，使用同一个战斗 RNG 依次洗牌，因此两人的开局手牌不必相同。
 
@@ -74,6 +74,7 @@ flowchart LR
 | `ReactionController` | 响应优先权、Pass、每方与总层数限制 | 根攻击 → ClashContext |
 | `CombatResolver` | 原子效果、LIFO、迎锋、空间命中、伤害与终局清理 | 已验证行动 → 状态变化／事件 |
 | `CardSystem` | 定义与实例解析、牌区迁移、专用 RNG 洗牌 | UID + usage → 定义／效果 |
+| `SchoolCatalog` | 十门目录、定义规范化、配卡与旧引用校验 | V3源数据 → 已验证定义／11项选项 |
 | `ComboResolver` | 最近主动攻击匹配、命中条件连携 | 历史／根攻击 → 奖励描述 |
 | `StatusSystem` | 状态是否有效、叠层、到期、有限条件增伤 | actor/status/condition → 判定 |
 | `VisibilitySystem` | 已知 UID、观势／藏锋／明牌和角色视图 | 权威状态 + observer → 可见投影 |
@@ -96,12 +97,12 @@ BattleState
   animation_pending, animation_ticket
 
 CombatantState
-  id, name, cell, attributes, stats, passives
+  id, name, cell, attributes, stats, passives, school_id, school_name
   hp_u/max_hp_u, qi_u/max_qi_u, shield_u/shield_expiry
   gauge, regen_qi_remainder, regen_hp_remainder
   turns_started, normal_moves_used
   basic_attack_used, basic_guard_used, pitch_used
-  hand, draw_pile, discard_pile, resolving
+  hand, draw_pile, discard_pile, resolving, hand_generation
   statuses, attack_history, combo_used
 ```
 
@@ -188,12 +189,13 @@ gauge += charge_speed × delta_tick
 0.01 点 = 100 单位
 ```
 
-时间恢复采用整数余数累积。例如回气率为 `R` 单位／100tick：
+时间恢复采用整数余数累积。例如回气率为 `R` 单位／100tick，封气减半采用统一分母200：
 
 ```text
-total = R × delta_tick + old_remainder
-gain = total 整除 100
-new_remainder = total % 100
+factor = 1（封气）或2（正常）
+total = R × delta_tick × factor + old_remainder
+gain = total 整除 200
+new_remainder = total % 200
 qi_u = min(max_qi_u, qi_u + gain)
 ```
 
@@ -235,7 +237,7 @@ raw_u = ceil(base_u × qi_cost_percent / 100)
 | `BASIC_ATTACK` | ACTION，目标相邻 | 1气；基础伤害1；进入同一交锋流程 | 1次 |
 | `BASIC_GUARD` | ACTION | 1气；护体+1、基础时效100tick | 1次 |
 | `PITCH_CARD` | ACTION，拥有所选手牌 | 弃1张，回复1气并按上限截断 | 1次 |
-| `PLAY_CARD` | usage 指定时机 | 使用该 usage 的 qi/hp 费用和效果 | 无通用主动攻击张数上限，受资源／牌区限制 |
+| `PLAY_CARD` | usage 指定时机 | 使用该 usage 的 qi/hp 费用和效果 | 无通用主动攻击张数上限；可声明once_per_action，同定义全部副本共用 |
 | `PASS_REACTION` | 当前拥有交锋优先权 | 0费用，交还优先权 | 可多次；两次连续Pass关闭窗口 |
 | `END_ACTION` | 本人 ACTION | 0费用，自动收势并交回调度器 | 结束当前行动 |
 
@@ -247,9 +249,9 @@ raw_u = ceil(base_u × qi_cost_percent / 100)
 
 - 坐标使用 `Vector2i(x,y)`，范围为 x=0–14、y=0–9；四方向相邻，距离为曼哈顿距离。
 - 第7列为河流，`(7,4)` 是桥，`(7,8)` 是浅滩；水、岩石、竹林不可通行。
-- 寻路使用 BFS，不能越界、穿障碍或穿过其他存活角色；不能把原地当作有效移动路径。
+- 寻路使用 BFS，不能越界、穿障碍或穿过其他存活角色；不能把原地当作有效移动路径。合法动作枚举用一次reachable_paths复用全部落点，保持find_path的方向顺序与结果。
 - 普通移动按实际路径长度付费；不能用直线距离替代绕路成本。
-- 现有攻击均为相邻单目标。卡牌目标查询已有最小／最大曼哈顿距离和可选视线检查；没有完整多目标范围攻击系统。
+- 原五式均为相邻单目标；V3武学支持最小／最大曼哈顿距离，最远4格。LOS限定正交直线并检查中间地形与角色阻挡，没有完整多目标范围攻击系统。
 - `exit` 目前只是可通行的地形标记，不构成撤离或自动胜利条件。
 
 攻击宣告时保存 `origin_cell`、`target_cell`、`affected_cells`，初始覆盖只有原目标格。结算时检查目标角色的实际位置是否仍在覆盖内，不根据对手新位置自动重新锁定。当前不额外按攻击者被移动后的新位置重算整套射程。
@@ -298,6 +300,8 @@ hand + draw_pile + discard_pile + resolving = 12个不同UID
 每次本人行动开始重置普通移动／基础攻防／弃牌额度，并清空本人连携历史和已触发标记。首次只保留开局5手牌；后续先弃掉上次剩余手牌，再抽5张。**起势不额外回气，也不按回合无条件清除所有护体。** 护体和状态依全局时间到期。
 
 ## 9. 五式、12种用法与配置格式
+
+本节保留默认五式清单。V3另有20核心式、41种用法、7条连携；全目录25定义、53种用法，每局按双方选择加载，详见 [流派清单](wuxue-v3-integration.md)。
 
 以下费用是 MND10、无额外 Modifier 时的基础值。
 
@@ -581,10 +585,13 @@ raw = 有效 BEFORE_DAMAGE Modifier 修正结果
 | --- | --- | --- | --- |
 | 露隙 | `opening` | 施加后150全局tick | 照胆命中时利用并消耗 |
 | 明牌 | `hand_exposed` | 施加后150全局tick | 覆盖藏锋，暴露当前和新抽手牌 |
+| 凝势 | `focus` | 250全局tick，最多2层 | 下一次根攻击宣告时全部消费，每层+1；普攻／攻击牌均可用，MISS不返还 |
+| 封气 | `qi_seal` | 150全局tick | 自然回气速度减半，主动gain_qi不受影响 |
+| 灼痕 | `scorch` | 350全局tick，最多2层 | 每100tick绕护体扣当前层数伤害，再减一层 |
 
-状态存为 `{expiry,stacks}`。`global_tick < expiry` 才有效；重复施加会刷新到期时间，并按定义 `stack_limit` 封顶。状态到期本身不会抹掉仍在手中的已知牌事实。
+状态存为 `{expiry,stacks}`，灼痕另带next_tick。`global_tick < expiry` 才有效；重复施加刷新到期时间并按stack_limit封顶。灼痕重加保留原next_tick，周期与到期同刻先扣伤减层、再移除到期状态。状态到期不抹掉仍在手中的已知牌事实。
 
-当前状态系统支持绝对tick和明确消费；没有通用持续伤害调度器、驱散标签解释器或任意“触发N次后到期”的配置语言。
+Timeline将大步时间推进切成状态／周期边界：先自然恢复，再对双方结算到点灼痕，然后统一检查死亡并消费存活情况下的Hook队列。当前实现了灼痕这一标准周期状态，尚无任意周期、驱散标签或“触发N次后到期”的通用配置语言。
 
 护体不是逐层独立的 StatusInstance。角色只有一个护体数值与一个 `shield_expiry`：叠加时增加数值，并取更晚的到期时刻；到期清空整个池。因此后加护体可能延长已有护体的有效期。
 
@@ -647,13 +654,13 @@ raw = 有效 BEFORE_DAMAGE Modifier 修正结果
 
 “危”表示对方当前手中有 `threat_level=HIGH` 的牌，不表示敌方准备使用哪一招。藏锋可能显示 `?`，即使当前实际上没有高威胁牌，也不会藉提示变化反向泄露牌情。
 
-### 16.3 已确认的首次刷新边界
+### 16.3 首次刷新边界的修复
 
-当前去重标记为“手牌列表＋目标的 turns_started”。初始化先刷新手牌，第一次 ACTION_START 又增加 `turns_started` 后刷新；虽然没有换牌，标记仍改变，观势1可能再识别一张。
+历史版本用“手牌列表＋目标的turns_started”去重，第一次起势虽未换牌，计数变化仍可能让观势1额外识别一张。该边界已在V3接入时修复。
 
-本次只读核对中，双方观势1、藏锋0、玩家先手：reset后玩家看到敌方1张、敌方看到玩家2张；玩家结束首次行动、敌方首次起势后，双方各知道2张。反复读取 snapshot 本身不会加揭牌。
+当前改用hand_generation：仅实际抽到新牌才增加批次；初始抽牌产生批次，首次ACTION_START不抽牌，因此不会再次揭牌。后续换手或额外抽牌产生新批次，允许观势1再识别一张未知牌。
 
-这是已知实现边界，尚不能把当前版本描述为“每一手牌严格只揭一次”。已有265项检查覆盖开局部分视角和重复投影，没有覆盖这一完整首次轮转组合。修复方向是将“换手批次”与“个人行动计数”分开；本次补充文档未改动该规则代码。
+V3回归已验证双方观势1／藏锋0在开局及首次轮转中各只识别一张，重复snapshot不会增加揭牌。明牌仍可合法揭示整手；新抽牌批次与首次空刷新是不同事件。
 
 ### 16.4 权限接口的范围
 
@@ -723,6 +730,8 @@ AI 只读观察者投影和自己的 `legal_actions`，返回其中一个选项�
 
 当前是确定性启发式评分：考虑主动伤害、连携、接近路径、必要护体和调息；响应中考虑截势目标、避锋覆盖、迎锋差值、卸劲和追击。它没有完整搜索未来响应树，也不保证最优。
 
+V3评分按规范化effects识别回气、抽牌、凝势、血费风险和远程最小射程；长局达到60 ACTION后降低纯防御使用以推进原型对局。该选择只影响AI策略，玩家的合法防守不受此阈值限制。
+
 策略按“本局＋全局action_no＋观察者”记录24次决策上限；到达后选择 END_ACTION 或 Pass。这是 AI 自身防卡死策略，不是玩家额外行动点上限。相同上下文重复询问返回相同决定。
 
 ### 18.2 表现流程
@@ -741,7 +750,7 @@ submit 同步完成当前可结算部分
 
 ## 19. 终局、日志与确定性
 
-任何实际伤害使一方HP归零后，状态进入 FINISHED，设置 winner_id；默认UI以玩家0为参照输出 victory/defeat。对局不以走到exit或回合数自动结束，当前没有平局、撤退与多队伍胜负协议。
+任何实际伤害使一方HP归零后，状态进入FINISHED并设置winner_id；UI以玩家0为参照输出victory/defeat。同一tick双方周期效果均结算后都归零时为draw、winner_id=-1。对局不以走到exit或行动数自动结束，尚无撤退或多队伍胜负协议。
 
 终局后不再推进时间或接受新行动。清理在当前结算调用返回到安全位置后统一进行：所有 resolving 牌入弃牌，清空挂起 attack/clash、响应权与效果队列，避免正在使用的局部攻击引用被提前清空。
 
@@ -774,7 +783,7 @@ submit 同步完成当前可结算部分
 
 ## 21. 验证范围与复现
 
-已完成的版本验收为 **105条规则、15条AI、145条边界检查，共265条**；另有82项原生图形UI操作和12场完整对局／重放。明细见 [验证记录](../reports/validation.md)。这些是已覆盖案例的结果，不等于所有配置组合或信息系统边界都已无缺陷，第16.3节问题是本次核对新确认的例子。
+当前验收为原265条规则／AI／边界，加V3目录198条、武学342条，共805条；真实UI为原82条＋新增61条，共143条。默认12场对局／重放、16组流派对局及2组重复运行均通过。明细见 [验证记录](../reports/validation.md)；这些结果覆盖已列案例，不代表任意配置组合或数值平衡均已验证。
 
 | 检查入口 | 主要覆盖 |
 | --- | --- |
@@ -783,6 +792,10 @@ submit 同步完成当前可结算部分
 | [`test_tingfeng_edges.gd`](../checks/test_tingfeng_edges.gd) | 畸形字段、拒绝后可继续、HP费用、条件伤害、强制位移、Hook嵌套限流、终局清理、时间事件广播 |
 | [`test_tingfeng_playthrough.gd`](../checks/test_tingfeng_playthrough.gd) | 三种子×双先手×重复对局，资源与牌区逐请求检查 |
 | [`tingfeng_visual_check.gd`](../checks/tingfeng_visual_check.gd) | 真实键鼠／按钮入口、分支、响应层、落点、折扣费用、重开与结局 |
+| [`test_wuxue_catalog.gd`](../checks/test_wuxue_catalog.gd) | 目录／规范化／旧ID／深拷贝／错误配置拒绝 |
+| [`test_wuxue_v3.gd`](../checks/test_wuxue_v3.gd) | 41usage、7combo、状态时钟、射程、限次、血费与路径等价 |
+| [`test_wuxue_playthrough.gd`](../checks/test_wuxue_playthrough.gd) | 16组流派与两组重复对局，逐请求不变量 |
+| [`wuxue_visual_check.gd`](../checks/wuxue_visual_check.gd) | 流派选择、分页、状态、远程和draw真实UI |
 
 ```powershell
 # 在Demo目录运行，每次选择相关的定向检查。
@@ -790,9 +803,12 @@ submit 同步完成当前可结算部分
 .\checks\verify.ps1 -Stage Policy
 .\checks\verify.ps1 -Stage Edges
 .\checks\verify.ps1 -Stage Playthrough
+.\checks\verify.ps1 -Stage Catalog
+.\checks\verify.ps1 -Stage Schools
+.\checks\verify.ps1 -Stage SchoolPlaythrough
 ```
 
-脚本支持 `-GodotPath`、`GODOT_BIN` 与PATH查找，日志写到 `captures/checks/`。图形检查命令见 [Demo操作说明](../README.md)。本次文档补充只核对源码和说明算例，未重新运行并计数全部历史验收。
+脚本支持 `-GodotPath`、`GODOT_BIN` 与PATH查找，日志写到captures/checks。图形检查命令见 [Demo操作说明](../README.md)；V3用 --wuxue-visual-check，原界面回归用 --tingfeng-visual-check。本次已对受影响的旧定向检查及新增检查分别执行验证。
 
 ## 22. 扩展路线与当前限制
 
@@ -811,6 +827,6 @@ submit 同步完成当前可结算部分
 
 目前未启用独立架势条、实时帧招、无限响应、门派养成、存档、通用脚本DSL或完整40牌混搭。`equipped_passives/learned_combos/traps` 等槽位不代表这些系统已经运行。
 
-保留旧调用形状也不意味着所有参数均已实现：reset 的 profile 当前统一为 tingfeng，query_legal_actions 的 scope 尚未提供其他查询模式，build_deck 的自定义牌组参数尚未用于替换默认五式牌组。
+保留旧调用形状也不意味着所有参数均已实现：reset的profile当前统一为tingfeng，流派由options.schools分别选择；query_legal_actions的scope尚未提供其他模式；build_deck按角色流派取固定测试配卡，尚不接受任意混搭。
 
 旧参考文档见 [五式V2原型说明](tingfeng-reference/five-forms-v2.md) 和 [十二势V1.1架构参考](tingfeng-reference/architecture-v11-reference.md)。参考中的12定义／16实例、主动观势藏锋、三类通用生命周期等条目不能直接当作当前可运行能力。

@@ -2,6 +2,8 @@
 
 默认玩法为 tingfeng。保留 15×10 地形、角色和现有绘制风格；同一个 BattleState 保存唯一真值。旧机制存档留在原 Creator 工作区，不属于本仓库运行依赖。业务逻辑不等待动画。完整规则及当前限制见 [战斗机制与框架详细说明](docs/tingfeng-engine.md)。
 
+V3已扩展双方流派选择、状态时钟、射程与限次，新增接口见 [V3接入约定](V3_CONTRACT.md) 与 [兼容性分析](docs/wuxue-v3-integration.md)。
+
 ## 当前已实现接口
 
 - `BattleModel.reset(seed=2026, first_actor=-1, profile="tingfeng", options={})`。options 可含 `attributes:{0:{STR:10,AGI:10,CON:10,MND:10},1:{...}}` 与 `passives:{0:{insight:0,conceal:0},1:{...}}`。默认双方观势/藏锋0。first_actor 仅控制相同速度/集气开局的 tie-break，不绕过 CTB。

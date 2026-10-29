@@ -21,7 +21,7 @@ func refresh_intel(target_id: int, hand_refresh: bool = true) -> void:
 			continue
 		if not hand_refresh: continue
 		var key: String="%d:%d" % [observer.id,target_id]
-		var stamp: String=str(target.hand)+":"+str(target.turns_started)
+		var stamp: String=str(target.hand_generation)
 		if refresh_seen.get(key,"")==stamp: continue
 		refresh_seen[key]=stamp
 		var skill: int=int(observer.passives.insight)

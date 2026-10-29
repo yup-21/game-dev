@@ -112,6 +112,7 @@ func play_card(actor,choice: Dictionary) -> void:
 	var uid: String=str(choice.card_uid)
 	var d: Dictionary=cards.canonical_definition(uid)
 	var u: Dictionary=cards.usage(uid,str(choice.usage_id))
+	if u.get("once_per_action",false): actor.card_uses[str(d.id)+":"+str(u.id)]=int(actor.card_uses.get(str(d.id)+":"+str(u.id),0))+1
 	cards.leave_hand(actor,uid)
 	emit("CARD_PLAYED",{"actor_id":actor.id,"definition_id":d.id,"usage_id":u.id,"text":"%s · %s" % [actor.name,u.get("name",d.name)]})
 	if state.mode=="CLASH":
@@ -134,6 +135,11 @@ func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: St
 		"card_uid":uid,"definition_id":definition_id,"usage_id":usage_id,"route":route,"break_bonus":break_bonus,
 		"origin_cell":actor.cell,"target_cell":target.cell,"affected_cells":[target.cell],
 		"base_damage":damage,"attack_bonus":0,"defense_reduction":0,"effects":effects.duplicate(true),"interrupted":false,"combo":{},"paid":true}
+	var focus: int=statuses.stacks(actor_id,"focus")
+	if focus>0:
+		attack.attack_bonus+=focus
+		statuses.remove(actor_id,"focus")
+		emit("FOCUS_CONSUMED",{"actor_id":actor_id,"amount":focus,"text":"%s 凝势 +%d" % [actor.name,focus]})
 	var combo: Dictionary=combos.declaration(actor,definition_id,usage_id)
 	if not combo.is_empty():
 		attack.combo=combo
@@ -355,14 +361,21 @@ func finish_card(actor_id: int,uid: String) -> void:
 
 func check_death() -> void:
 	if state.outcome!="playing": return
+	var living: Array=[]
 	for a in state.actors:
-		if a.hp_u>0: continue
-		for winner in state.actors:
-			if winner.id!=a.id and winner.hp_u>0:
-				state.winner_id=winner.id
-		state.outcome="victory" if state.winner_id==0 else "defeat"
-		state.mode="FINISHED"
-		state.phase="FINISHED"
-		state.hook_queue.clear()
-		audit.emit("BATTLE_FINISHED",{"winner_id":state.winner_id,"text":"对局结束"})
-		return
+		if a.hp_u>0: living.append(a.id)
+	if living.size()==state.actors.size(): return
+	state.winner_id=int(living[0]) if living.size()==1 else -1
+	state.outcome="draw" if living.is_empty() else ("victory" if state.winner_id==0 else "defeat")
+	state.mode="FINISHED"
+	state.phase="FINISHED"
+	state.hook_queue.clear()
+	audit.emit("BATTLE_FINISHED",{"winner_id":state.winner_id,"text":"同归于尽" if state.outcome=="draw" else "对局结束"})
+
+func deal_status_damage(actor_id: int,amount: int,status_id: String) -> void:
+	# Timeline batches all simultaneous periodic effects before checking terminal state.
+	var actor=state.get_actor(actor_id)
+	var lost: int=mini(actor.hp_u,maxi(0,amount)*UNIT)
+	actor.hp_u-=lost
+	emit("SCORCH_TICK",{"actor_id":actor_id,"stacks":amount,"damage":float(lost)/UNIT,"text":"%s 灼痕 −%s" % [actor.name,str(float(lost)/UNIT)]})
+	if lost>0: emit("HP_DAMAGED",{"actor_id":actor_id,"amount":float(lost)/UNIT,"damage_kind":"status","status_id":status_id})

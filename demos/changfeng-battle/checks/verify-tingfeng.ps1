@@ -1,6 +1,6 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
-    [ValidateSet('All','Policy','Rules','Edges','Playthrough')][string]$Stage = 'All',
+    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough')][string]$Stage = 'All',
     [string]$GodotPath
 )
 $ErrorActionPreference = 'Stop'
@@ -14,17 +14,24 @@ if ($Stage -in @('All','Policy')) { $checks += @{ Script = 'res://checks/test_ti
 if ($Stage -in @('All','Rules')) { $checks += @{ Script = 'res://checks/test_tingfeng.gd'; Log = 'tingfeng-rules.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - targeted tingfeng migration' } }
 if ($Stage -in @('All','Edges')) { $checks += @{ Script = 'res://checks/test_tingfeng_edges.gd'; Log = 'tingfeng-edges.log'; Marker = 'EDGE AUDIT: \d+ PASS / 0 failures' } }
 if ($Stage -in @('All','Playthrough')) { $checks += @{ Script = 'res://checks/test_tingfeng_playthrough.gd'; Log = 'tingfeng-playthrough.log'; Marker = 'RESULTS: 0 FAIL - symmetric tingfeng playthroughs and seeded replay' } }
+if ($Stage -in @('All','Schools')) { $checks += @{ Script = 'res://checks/test_wuxue_v3.gd'; Log = 'wuxue-v3.log'; Marker = 'SCHOOL TESTS: \d+ PASS / 0 FAIL' } }
+if ($Stage -in @('All','Catalog')) { $checks += @{ Script = 'res://checks/test_wuxue_catalog.gd'; Log = 'wuxue-catalog.log'; Marker = 'CATALOG CHECK: \d+ checks, 0 failures' } }
+if ($Stage -in @('All','SchoolPlaythrough')) { $checks += @{ Script = 'res://checks/test_wuxue_playthrough.gd'; Log = 'wuxue-playthrough.log'; Marker = 'SCHOOL PLAYTHROUGHS: 0 FAIL' } }
 foreach ($check in $checks) {
     $logPath = Join-Path $logRoot $check.Log
     if (Test-Path -LiteralPath $logPath) { Remove-Item -LiteralPath $logPath }
     $processArgs = @('--headless', '--path', ('"' + $projectRoot + '"'), '--log-file', ('"' + $logPath + '"'), '--script', $check.Script)
+    $checkClock = [Diagnostics.Stopwatch]::StartNew()
     $process = Start-Process -FilePath $resolvedGodot -ArgumentList $processArgs -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru
-    if (-not $process.WaitForExit(60000)) {
+    $timeoutMs = if ($check.Script -eq 'res://checks/test_wuxue_playthrough.gd') { 180000 } else { 60000 }
+    if (-not $process.WaitForExit($timeoutMs)) {
         $process.Kill()
         $process.WaitForExit()
         if (Test-Path -LiteralPath $logPath) { Write-Output (Get-Content -LiteralPath $logPath -Raw) }
-        throw "校验 $($check.Script) 超过 60 秒，已停止。日志：$logPath"
+        throw "校验 $($check.Script) 超过 $($timeoutMs / 1000) 秒，已停止。日志：$logPath"
     }
+    $checkClock.Stop()
+    Add-Content -LiteralPath $logPath -Value ("CHECK TIME: {0} {1} ms" -f $check.Script, $checkClock.ElapsedMilliseconds) -Encoding utf8
     $process.Refresh()
     $logText = if (Test-Path -LiteralPath $logPath) { Get-Content -LiteralPath $logPath -Raw } else { '' }
     if ($logText) { Write-Output $logText.TrimEnd() }

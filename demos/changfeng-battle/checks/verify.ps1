@@ -1,6 +1,6 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
-    [ValidateSet('All','Policy','Rules','Edges','Playthrough')][string]$Stage = 'All',
+    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough')][string]$Stage = 'All',
     [string]$GodotPath
 )
 $ErrorActionPreference = 'Stop'

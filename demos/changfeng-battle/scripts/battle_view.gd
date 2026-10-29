@@ -42,6 +42,9 @@ var qa_auto = false
 var qa_failed = false
 var qa_requests = 0
 var passive_settings: Dictionary = {0:{"insight":0,"conceal":0},1:{"insight":0,"conceal":0}}
+var school_settings: Dictionary = {0:"tingfeng",1:"tingfeng"}
+var school_picker_actor = -1
+var hand_page = 0
 
 func _ready() -> void:
 	body_font = SystemFont.new()
@@ -49,11 +52,13 @@ func _ready() -> void:
 	title_font = SystemFont.new()
 	title_font.font_names = PackedStringArray(["KaiTi", "STKaiti", "Microsoft YaHei"])
 	DisplayServer.window_set_min_size(Vector2i(1040,650))
-	model.reset(2026,0,"tingfeng",{"passives":passive_settings})
+	model.reset(2026,0,"tingfeng",{"passives":passive_settings,"schools":school_settings})
 	_sync()
-	check_mode = "--tingfeng-visual-check" in OS.get_cmdline_user_args()
+	check_mode = "--tingfeng-visual-check" in OS.get_cmdline_user_args() or "--wuxue-visual-check" in OS.get_cmdline_user_args()
 	print("TINGFENG_DUEL_READY seed=",snap.seed," board=15x10 mode=",snap.get("mode","ACTION"))
-	if check_mode:
+	if "--wuxue-visual-check" in OS.get_cmdline_user_args():
+		call_deferred("_wuxue_visual_check")
+	elif check_mode:
 		call_deferred("_tingfeng_visual_check")
 
 func _sync() -> void:
@@ -83,7 +88,7 @@ func _process(delta: float) -> void:
 	for id in movements.keys():
 		movements[id].elapsed += delta
 		if movements[id].elapsed >= movements[id].duration: movements.erase(id)
-	if started and not help_open:
+	if started and not help_open and school_picker_actor<0:
 		presentation_left = maxf(0,presentation_left-delta)
 		if snap.animation_pending and presentation_left <= 0:
 			_consume(model.acknowledge_animation(snap.ticket))
@@ -112,6 +117,7 @@ func _consume(result: Dictionary) -> void:
 			"DAMAGE": effects.append({"actor_id":event.get("defender_id",event.get("actor_id",0)),"left":0.85,"text":"−%.1f" % float(event.get("hp_damage",0)),"color":RED})
 			"SHIELD": effects.append({"actor_id":event.actor_id,"left":0.85,"text":"护体","color":JADE})
 			"COMBO_TRIGGERED": effects.append({"actor_id":event.actor_id,"left":1.2,"text":str(event.get("name","连携")),"color":GOLD})
+			"SCORCH_TICK": effects.append({"actor_id":event.actor_id,"left":1.2,"text":"灼痕 −%.1f" % float(event.get("damage",0)),"color":RED})
 	if not result.get("events",[]).is_empty():
 		presentation_left = 0.02 if check_mode else 0.28
 		for movement in movements.values(): presentation_left = maxf(presentation_left,movement.duration-movement.elapsed)
@@ -119,7 +125,7 @@ func _consume(result: Dictionary) -> void:
 	_sync()
 
 func _can_player() -> bool:
-	return started and not help_open and snap.outcome == "playing" and not snap.animation_pending and _decision_actor()==0
+	return started and not help_open and school_picker_actor<0 and snap.outcome == "playing" and not snap.animation_pending and _decision_actor()==0
 
 func _submit(kind: String, params: Dictionary = {}) -> void:
 	if not _can_player():
@@ -138,7 +144,7 @@ func _toast(value: String) -> void:
 	notice_left = 3.2
 
 func _restart(_profile: String = "tingfeng") -> void:
-	model.reset(int(snap.get("seed",2026)),0,"tingfeng",{"passives":passive_settings.duplicate(true)})
+	model.reset(int(snap.get("seed",2026)),0,"tingfeng",{"passives":passive_settings.duplicate(true),"schools":school_settings.duplicate(true)})
 	enemy_ai = AI.new()
 	player_policy = AI.new()
 	_clear_selection()
@@ -148,16 +154,20 @@ func _restart(_profile: String = "tingfeng") -> void:
 	next_decision = wall+0.65
 	started = true
 	help_open = false
+	school_picker_actor = -1
+	hand_page = 0
 	log_scroll = 0
 	_sync()
-	_toast("已应用双方观势 / 藏锋等级，按相同种子重新集气。")
+	_toast("已应用双方流派与观势 / 藏锋等级，按相同种子重新集气。")
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion: mouse = event.position
 	if event is InputEventKey and event.pressed and not event.echo:
+		if school_picker_actor>=0 and event.keycode not in [KEY_H,KEY_ESCAPE]: return
 		match event.keycode:
 			KEY_H,KEY_ESCAPE:
-				if not usage_choices.is_empty(): usage_choices.clear()
+				if school_picker_actor>=0: school_picker_actor=-1
+				elif not usage_choices.is_empty(): usage_choices.clear()
 				else: help_open = not help_open
 				return
 			KEY_R: _restart(); return
@@ -181,6 +191,7 @@ func _input(event: InputEvent) -> void:
 			log_scroll = clampi(log_scroll+(2 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -2),0,maxi(0,_visible_logs().size()-6))
 			return
 		if event.button_index==MOUSE_BUTTON_RIGHT:
+			if school_picker_actor>=0: school_picker_actor=-1; return
 			if not usage_choices.is_empty() or mode in ["card","link","pitch"]:
 				_clear_selection(); _toast("已取消选择。")
 				return
@@ -190,7 +201,7 @@ func _input(event: InputEvent) -> void:
 					if button.enabled: _button_action(button.action)
 					else: _toast(button.get("reason","当前时机或资源不允许"))
 					return
-		if help_open or not usage_choices.is_empty() or not _can_player(): return
+		if help_open or school_picker_actor>=0 or not usage_choices.is_empty() or not _can_player(): return
 		if BOARD.has_point(mouse):
 			var cell = screen_to_cell(mouse)
 			if Rect2(_unit_pos(1)+Vector2(-24,-45),Vector2(48,64)).has_point(mouse): cell = snap.actors[1].cell
@@ -218,8 +229,18 @@ func _button_action(action: String) -> void:
 		"move": _clear_selection(); _toast("选择高亮格普通移动；每格消耗气，预算随敏捷变化。")
 		"pitch": _clear_selection(); mode="pitch"; _toast("点击要弃置的手牌回气。")
 		"cancel": _clear_selection()
+		"school_cancel": school_picker_actor=-1
+		"hand_prev": hand_page=maxi(0,hand_page-1)
+		"hand_next": hand_page=mini(maxi(0,ceili(snap.hand.size()/5.0)-1),hand_page+1)
 		_:
-			if action.begins_with("card:"):
+			if action.begins_with("school_open:"):
+				_clear_selection()
+				school_picker_actor=int(action.substr(12))
+			elif action.begins_with("school_set:"):
+				school_settings[school_picker_actor]=action.substr(11)
+				school_picker_actor=-1
+				_toast("流派已选择；点击「应用并重开」生效。")
+			elif action.begins_with("card:"):
 				if displayed_revision==snap.revision: _choose_card(_find_hand(action.substr(5)))
 			elif action.begins_with("usage:"):
 				usage_choices.clear()
@@ -291,6 +312,7 @@ func _usage_reason(card: Dictionary, usage: Dictionary) -> String:
 	var cost = _quoted_cost(usage)
 	if float(snap.actors[0].qi)<float(cost.get("qi",0)): return "气不足（需 %.1f）" % float(cost.get("qi",0))
 	if float(snap.actors[0].hp)<=float(cost.get("hp",0)): return "气血不足"
+	if usage.get("once_per_action",false): return "每次行动限一次；或时机 / 距离 / 目标不合法"
 	return "当前时机 / 距离 / 响应目标不合法"
 
 func _reason(card: Dictionary) -> String:
@@ -313,6 +335,7 @@ func _draw() -> void:
 	_draw_actors()
 	_draw_hand()
 	_draw_sidebar()
+	_draw_status_tooltip()
 	for effect in effects:
 		var color: Color = effect.color
 		color.a = clampf(effect.left/0.85,0,1)
@@ -325,6 +348,7 @@ func _draw() -> void:
 	elif snap.outcome!="playing": _draw_result()
 	if help_open: _draw_help()
 	if not usage_choices.is_empty(): _draw_usage_picker()
+	if school_picker_actor>=0: _draw_school_picker()
 
 func _draw_header() -> void:
 	draw_rect(Rect2(0,0,1600,126),Color("173f3d"))
@@ -333,12 +357,16 @@ func _draw_header() -> void:
 	_center(Vector2(55,54),"长",23,PAPER,true)
 	_center(Vector2(55,80),"风",23,PAPER,true)
 	_text(Vector2(94,67),"长风浮生录",43,PAPER,true)
-	_text(Vector2(98,96),"断桥论剑  /  听风五式 · 自由行动",14,Color("aebfb1"))
-	_text(Vector2(460,57),"听风辨势，见招拆招。",26,Color("ded8be"),true)
-	_text(Vector2(462,88),"集气轮转  ·  一牌多用  ·  连锁逆序结算",15,Color("aebfb1"))
+	_text(Vector2(98,96),"断桥论剑  /  十一门武学 · 自由行动",14,Color("aebfb1"))
+	for who in range(2):
+		var chosen: String=str(school_settings[who])
+		var current: String=str(snap.actors[who].get("school_id","tingfeng"))
+		var label: String=("我方 " if who==0 else "敌方 ")+_school_name(chosen)
+		_small_button(Rect2(460+who*222,29,210,43),label+" ▾","school_open:%d" % who,true,true)
+		_text(Vector2(466+who*222,95),("当前流派" if current==chosen else "待应用 · 当前 "+_school_name(current)),12,Color("aebfb1"))
 	_text(Vector2(940,57),"行动 %d" % int(snap.get("action_no",1)),22,PAPER,true)
 	_text(Vector2(940,88),"tick %d  /  种子 %d" % [int(snap.get("global_tick",0)),snap.seed],13,Color("aebfb1"))
-	_small_button(Rect2(1200,35,168,48),"H  听风规则","help",true,true)
+	_small_button(Rect2(1200,35,168,48),"H  武学规则","help",true,true)
 	_small_button(Rect2(1388,35,168,48),"R  同种子重开","restart",true,true)
 
 func _draw_timeline() -> void:
@@ -346,32 +374,40 @@ func _draw_timeline() -> void:
 		var actor: Dictionary = snap.actors[i]
 		var rect = Rect2(24+i*566,146,558,48)
 		_panel(rect,Color("e1e5d7"),JADE if snap.active_id==i else Color("cbd1bf"))
-		_text(rect.position+Vector2(12,21),"%s · 集气 %.0f / 10000" % [actor.name,float(actor.get("gauge",0))],15,INK)
+		_text(rect.position+Vector2(12,21),_trim("%s / %s · 集气 %.0f" % [actor.name,actor.get("school_name","听风五式"),float(actor.get("gauge",0))],282,14),14,INK)
 		_text(rect.position+Vector2(300,21),"速度 %.1f" % float(actor.get("charge_speed",0)),14,MUTED)
-		_text(rect.position+Vector2(404,21),"交锋停表" if snap.phase=="CLASH" else ("自由行动" if snap.active_id==i else "等待集气"),14,GOLD)
+		_text(rect.position+Vector2(404,21),"此局终了" if snap.outcome!="playing" else ("交锋停表" if snap.phase=="CLASH" else ("自由行动" if snap.active_id==i else "等待集气")),14,GOLD)
 		_bar(Rect2(rect.position+Vector2(12,32),Vector2(530,6)),float(actor.get("gauge",0))/10000.0,JADE if i==0 else RED)
 
 func _draw_hand() -> void:
 	_panel(Rect2(24,678,1124,292),Color("f7f4e9"),Color("c9d1c0"))
-	_text(Vector2(44,709),"听 风 五 式",17,GOLD)
+	_text(Vector2(44,709),str(snap.actors[0].get("school_name","听风五式")),17,GOLD)
 	_text(Vector2(240,709),"手牌 %d  抽牌 %d  弃牌 %d  结算 %d · 一张牌只选一种用法" % [int(snap.actors[0].hand_count),int(snap.actors[0].draw_count),int(snap.actors[0].discard_count),int(snap.actors[0].resolving_count)],13,MUTED)
-	_text(Vector2(870,709),"选牌弃置回气" if mode=="pitch" else "点牌展开全部分支",14,JADE)
-	var count: int = maxi(5,snap.hand.size())
-	var width: float = 1100.0/count
-	for i in range(count):
-		var rect = Rect2(40+i*width,731,width-13,188)
+	var pages: int=maxi(1,ceili(snap.hand.size()/5.0))
+	hand_page=clampi(hand_page,0,pages-1)
+	if pages>1:
+		_small_button(Rect2(878,687,42,29),"‹","hand_prev",hand_page>0)
+		_center(Vector2(991,708),"第 %d / %d 页" % [hand_page+1,pages],13,JADE)
+		_small_button(Rect2(1065,687,60,29),"更多 ›","hand_next",hand_page<pages-1)
+	else: _text(Vector2(870,709),"选牌弃置回气" if mode=="pitch" else "点牌展开全部分支",14,JADE)
+	for slot in range(5):
+		var i: int=hand_page*5+slot
+		var rect = Rect2(40+slot*220,731,207,188)
 		if i>=snap.hand.size():
 			_panel(rect,Color("e8e9de")); _center(rect.position+Vector2(rect.size.x/2,100),"空",26,MUTED,true); continue
 		var card: Dictionary = snap.hand[i]
 		var enabled = _card_enabled(card)
 		_panel(rect,Color("faf7eb") if enabled else Color("e5e6dc"),GOLD if _uid(card)==selected_card else Color("c9d1c0"))
 		_text(rect.position+Vector2(14,25),"%d  招式 · %d 用法" % [i+1,card.get("usages",[]).size()],13,GOLD)
-		_text(rect.position+Vector2(14,65),str(card.name),27,INK if enabled else MUTED,true)
+		_text(rect.position+Vector2(14,65),_trim(str(card.name),rect.size.x-28,25),25,INK if enabled else MUTED,true)
 		var usages: Array = card.get("usages",[])
 		for u in range(mini(3,usages.size())):
 			var usage: Dictionary = usages[u]
 			var usable = not _usage_actions(_uid(card),str(usage.id)).is_empty()
-			_text(rect.position+Vector2(14,95+u*22),_trim("%s  %.1f气" % [usage.get("name",usage.id),float(_quoted_cost(usage).get("qi",0))],rect.size.x-25,12),12,JADE if usable else MUTED)
+			var cost: Dictionary=_quoted_cost(usage)
+			var cost_text: String="%.1f气" % float(cost.get("qi",0))
+			if float(cost.get("hp",0))>0: cost_text+=" / %.1f血" % float(cost.hp)
+			_text(rect.position+Vector2(14,95+u*22),_trim("%s  %s" % [usage.get("name",usage.id),cost_text],rect.size.x-30,12),12,JADE if usable else MUTED)
 		_text(rect.position+Vector2(14,173),_trim(_reason(card),rect.size.x-25,12),12,GOLD)
 		buttons.append({"rect":rect,"action":"card:"+_uid(card),"enabled":enabled,"reason":_reason(card)})
 	for i in range(4):
@@ -379,7 +415,7 @@ func _draw_hand() -> void:
 		var talent = "insight" if i%2==0 else "conceal"
 		var label = ("我方" if who==0 else "敌方")+("观势" if talent=="insight" else "藏锋")
 		_small_button(Rect2(40+i*209,932,198,29),"%s  %d  ↻" % [label,int(passive_settings[who][talent])],"passive:%d:%s" % [who,talent],true)
-	_small_button(Rect2(881,932,248,29),"应用等级并重新开战","restart",true)
+	_small_button(Rect2(881,932,248,29),"应用流派与等级并重开","restart",true)
 
 func _draw_sidebar() -> void:
 	for i in range(2):
@@ -399,11 +435,12 @@ func _draw_sidebar() -> void:
 			for card in actor.get("observed_hand",[]): details.append(str(card.get("name","未知")) if card.get("known",false) else "·")
 		else:
 			details.append("观势 %s / 藏锋 %s" % [actor.get("passives",{}).get("insight",0),actor.get("passives",{}).get("conceal",0)])
-		_text(rect.position+Vector2(15,103),_trim("已知敌牌："+" / ".join(details) if i==1 else " / ".join(details),374,12),12,GOLD)
+		var status_line: String=" / ".join(_status_labels(actor))
+		_text(rect.position+Vector2(15,103),_trim(status_line+" · 悬停查看时钟" if not status_line.is_empty() else ("已知敌牌："+" / ".join(details) if i==1 else " / ".join(details)),374,12),12,GOLD)
 	_panel(Rect2(1170,394,406,170),Color("e4e9dd"),Color("c3cebc"))
 	var clash: Dictionary = snap.get("clash",{})
 	var is_clash: bool = snap.phase=="CLASH"
-	_text(Vector2(1189,421),("你的优先权" if _decision_actor()==0 else "对手优先权") if is_clash else ("你的自由行动" if snap.active_id==0 else "对手自由行动"),23,JADE if _can_player() else GOLD,true)
+	_text(Vector2(1189,421),"此局终了" if snap.outcome!="playing" else (("你的优先权" if _decision_actor()==0 else "对手优先权") if is_clash else ("你的自由行动" if snap.active_id==0 else "对手自由行动")),23,JADE if _can_player() else GOLD,true)
 	_text(Vector2(1189,443),"LIFO 逆序 · 我%d/2 敌%d/2 · Pass %d/2" % [int(clash.get("counts",{}).get(0,0)),int(clash.get("counts",{}).get(1,0)),int(clash.get("consecutive_passes",0))] if is_clash else "移动、攻防、出牌可自由穿插；结束行动后集气。",12,MUTED)
 	var stack: Array = clash.get("stack",[])
 	for i in range(mini(4,stack.size())):
@@ -442,26 +479,30 @@ func _draw_usage_picker() -> void:
 	# Modal buttons supersede all underlying input regions.
 	buttons.clear()
 	draw_rect(Rect2(0,126,1600,874),Color(.08,.20,.17,.5))
-	var rect = Rect2(310,305,780,118+usage_choices.size()*82)
+	var height: float=118+usage_choices.size()*128
+	var rect = Rect2(310,maxf(168,496-height/2),780,height)
 	_panel(rect,PAPER,GOLD)
 	_text(rect.position+Vector2(26,42),"选择「%s」的用法" % usage_card.name,28,INK,true)
 	for i in range(usage_choices.size()):
 		var usage: Dictionary = usage_choices[i]
 		var usable = not _usage_actions(_uid(usage_card),str(usage.id)).is_empty() and _can_player()
 		var cost: Dictionary = _quoted_cost(usage)
-		var label = "%s  ·  %.1f气%s" % [usage.get("name",usage.id),float(cost.get("qi",0))," / %.1f气血" % float(cost.get("hp",0)) if float(cost.get("hp",0))>0 else ""]
-		_small_button(Rect2(rect.position+Vector2(26,66+i*82),Vector2(728,43)),label,"usage:"+str(usage.id),usable)
+		var label = "%s  ·  %.1f气%s%s" % [usage.get("name",usage.id),float(cost.get("qi",0))," / %.1f气血" % float(cost.get("hp",0)) if float(cost.get("hp",0))>0 else ""," · 每次行动限一次" if usage.get("once_per_action",false) else ""]
+		_small_button(Rect2(rect.position+Vector2(26,66+i*128),Vector2(728,43)),label,"usage:"+str(usage.id),usable)
 		buttons.back().reason = _usage_reason(usage_card,usage)
-		_text(rect.position+Vector2(31,128+i*82),_usage_summary(usage)+" · "+_usage_reason(usage_card,usage),13,JADE if usable else RED)
+		var summary: String=_usage_summary(usage)
+		var lines: PackedStringArray=_wrap_text(summary,712,13)
+		for line in range(mini(2,lines.size())): _text(rect.position+Vector2(31,128+i*128+line*19),lines[line],13,JADE if usable else MUTED)
+		_text(rect.position+Vector2(31,168+i*128),_usage_reason(usage_card,usage),13,JADE if usable else RED)
 	_small_button(Rect2(rect.position+Vector2(575,rect.size.y-40),Vector2(180,28)),"取消  右键 / Esc","cancel",true)
 
 func _draw_intro() -> void:
 	buttons.clear()
 	draw_rect(Rect2(0,126,1600,874),Color(.08,.20,.17,.48))
 	_panel(Rect2(337,247,926,505),Color("f4f0e1"),Color("b7bda7"))
-	_text(Vector2(382,297),"断 桥 论 剑  /  听 风 五 式",15,GOLD)
+	_text(Vector2(382,297),"断 桥 论 剑  /  十 一 门 武 学",15,GOLD)
 	_text(Vector2(379,359),"一式多变，听风而动。",44,INK,true)
-	var lines = ["集气到达阈值后自由行动：走位、出招、护身不再分阶段。","点一张手牌，选择合法分支；游身选择落点，截势选择响应层。","攻击触发 CLASH：守方先手，双方轮流响应或 Pass。","连锁后入先出；连续两次 Pass 开始结算，交锋期间全局停表。","观势 / 藏锋可在手牌下方设为 0 / 1 / 2 级，然后应用并重开。"]
+	var lines = ["集气到达阈值后自由行动：走位、出招、护身不再分阶段。","点一张手牌，选择合法分支；游身选择落点，截势选择响应层。","攻击触发 CLASH：守方先手，双方轮流响应或 Pass。","连锁后入先出；连续两次 Pass 开始结算，交锋期间全局停表。","顶部选双方流派，牌区下方调观势 / 藏锋，应用并重开后生效。"]
 	for i in range(lines.size()): _text(Vector2(384,414+i*40),lines[i],17,INK if i<3 else MUTED)
 	_small_button(Rect2(625,653,350,54),"进入战场  Enter","start",true)
 	_center(Vector2(800,735),"15 × 10 断桥  ·  四维属性决定能力与速度  ·  R 同种子重开",13,MUTED)
@@ -469,8 +510,8 @@ func _draw_intro() -> void:
 func _draw_result() -> void:
 	draw_rect(BOARD,Color(.08,.20,.17,.58))
 	_panel(Rect2(240,280,720,310),Color("f4f0e1"),Color("b7bda7"))
-	_center(Vector2(600,345),"此役告捷" if snap.outcome=="victory" else "棋差一着",46,JADE if snap.outcome=="victory" else RED,true)
-	_center(Vector2(600,397),"听风五式 · 此局终了",21,INK,true)
+	_center(Vector2(600,345),"两败俱伤 · 平局" if snap.outcome=="draw" else ("此役告捷" if snap.outcome=="victory" else "棋差一着"),46,GOLD if snap.outcome=="draw" else (JADE if snap.outcome=="victory" else RED),true)
+	_center(Vector2(600,397),"%s 对 %s · 此局终了" % [snap.actors[0].get("school_name","听风五式"),snap.actors[1].get("school_name","听风五式")],21,INK,true)
 	_center(Vector2(600,437),"气血：你 %.1f / 对手 %.1f  ·  tick %d" % [float(snap.actors[0].hp),float(snap.actors[1].hp),int(snap.get("global_tick",0))],17,MUTED)
 	_small_button(Rect2(425,486,350,54),"相同种子再战  R","restart",true)
 
@@ -478,8 +519,8 @@ func _draw_help() -> void:
 	buttons.clear()
 	draw_rect(Rect2(0,0,1600,1000),Color(.06,.14,.13,.72))
 	_panel(Rect2(295,175,1010,665),Color("f4f0e1"),Color("b7bda7"))
-	_text(Vector2(340,231),"听风五式 · 自由行动与连锁",36,INK,true)
-	var lines = ["集气阈值 10000；速度取决于敏捷。内息随全局逻辑时间恢复。","获得行动后自由移动、出牌、攻防；Space / Enter 结束行动。","攻击声明进入 CLASH，防御方先获得优先权；双方轮流响应或 Pass。","每方最多响应 2 张、总共 4 张；连续两次 Pass 后，从栈顶逆序结算。","游身可主动移动或响应避锋；变锋截势需选择敌方某一层响应。","卡牌先展开分支，灰色用法显示气不足、时机或目标限制，不扣资源。","四维属性、集气速度、气血、内息与移动预算显示在角色栏。","观势严格高于对方藏锋才识破；明牌覆盖藏锋，已见手牌保留记忆。","敌方手牌仅显示已知事实；危表示高威胁牌，？表示危险提示被隐藏。","1–5 选牌；Q 攻击 / G 格挡 / C 弃牌 / M 移动；R 重开；H / Esc 关闭。"]
+	_text(Vector2(340,231),"十一门武学 · 自由行动与连锁",36,INK,true)
+	var lines = ["集气阈值 10000；速度取决于敏捷。内息随全局逻辑时间恢复。","获得行动后自由移动、出牌、攻防；Space / Enter 结束行动。","攻击声明进入 CLASH，防御方先获得优先权；双方轮流响应或 Pass。","每方最多响应 2 张、总共 4 张；连续两次 Pass 后，从栈顶逆序结算。","游身可主动移动或响应避锋；变锋截势需选择敌方某一层响应。","卡牌先展开分支，灰色用法显示气不足、时机或目标限制，不扣资源。","四维属性、集气速度、气血、内息与移动预算显示在角色栏。","观势严格高于对方藏锋才识破；明牌覆盖藏锋，已见手牌保留记忆。","敌方手牌仅显示已知事实；危表示高威胁牌，？表示危险提示被隐藏。","远程按正交直线计算最小 / 最大距离；分支显示血费与每行动限次。","凝势强化下次根攻击，封气减慢自然回气；灼痕按时钟扣血，可同时倒下。","1–5 选牌，更多手牌点翻页；Q 攻击 / G 格挡 / C 弃牌 / M 移动；H 关闭。"]
 	for i in range(lines.size()): _text(Vector2(340,280+i*40),lines[i],16,INK if i<5 else MUTED)
 	_small_button(Rect2(625,742,350,48),"返回战场  H / Esc","help",true)
 
@@ -567,9 +608,7 @@ func _draw_actors() -> void:
 		if actor.shield>0:
 			draw_arc(pos,34,-PI*.9,-PI*.1,24,Color("d2ad69"),3,true)
 		_center(pos+Vector2(0,37),"%s  %.1f" % [actor.name,float(actor.hp)],14,color.darkened(.15))
-		var status_labels: PackedStringArray=[]
-		for status_id in actor.get("statuses",{}):
-			status_labels.append({"opening":"露隙","hand_exposed":"明牌"}.get(str(status_id),str(status_id)))
+		var status_labels: PackedStringArray=_status_labels(actor)
 		if not status_labels.is_empty(): _center(pos+Vector2(0,54)," / ".join(status_labels),12,GOLD)
 	if not snap.attack.is_empty():
 		var a = snap.attack
@@ -639,21 +678,109 @@ func _tingfeng_visual_check() -> void:
 	var check = load("res://checks/tingfeng_visual_check.gd").new()
 	await check.run(self)
 
+func _wuxue_visual_check() -> void:
+	var check = load("res://checks/wuxue_visual_check.gd").new()
+	await check.run(self)
+
+func _school_name(id: String) -> String:
+	for school in snap.get("school_catalog",[]):
+		if str(school.id)==id: return str(school.name)
+	return "听风五式" if id=="tingfeng" else id
+
+func _draw_school_picker() -> void:
+	buttons.clear()
+	draw_rect(Rect2(0,0,1600,1000),Color(.06,.14,.13,.72))
+	_panel(Rect2(320,145,960,705),PAPER,GOLD)
+	_text(Vector2(354,195),("我方" if school_picker_actor==0 else "敌方")+" · 选择武学流派",30,INK,true)
+	_text(Vector2(354,225),"选择后点击底部「应用流派与等级并重开」；双方独立选择。",14,MUTED)
+	var schools: Array=snap.get("school_catalog",[])
+	for i in range(schools.size()):
+		var school: Dictionary=schools[i]
+		var x: float=354+(i%2)*452
+		var y: float=248+floori(i/2.0)*85
+		var selected: bool=str(school_settings[school_picker_actor])==str(school.id)
+		_small_button(Rect2(x,y,420,42),("✓ " if selected else "")+str(school.name),"school_set:"+str(school.id),true)
+		_text(Vector2(x+8,y+64),_trim(str(school.get("identity","")),405,12),12,MUTED)
+	_small_button(Rect2(1050,793,194,34),"取消  Esc / 右键","school_cancel",true)
+
+func _status_name(id: String) -> String:
+	return {"opening":"露隙","hand_exposed":"明牌","focus":"凝势","qi_seal":"封气","scorch":"灼痕"}.get(id,id)
+
+func _status_labels(actor: Dictionary) -> PackedStringArray:
+	var labels: PackedStringArray=[]
+	for id in actor.get("statuses",{}):
+		var entry=actor.statuses[id]
+		labels.append(_status_name(str(id))+"×%d" % int(entry.get("stacks",1)) if entry is Dictionary else _status_name(str(id)))
+	return labels
+
+func _draw_status_tooltip() -> void:
+	if snap.outcome!="playing" or help_open or not usage_choices.is_empty() or school_picker_actor>=0: return
+	for i in range(2):
+		var actor: Dictionary=snap.actors[i]
+		if actor.get("statuses",{}).is_empty(): continue
+		if not Rect2(1170,146+i*124,406,112).has_point(mouse) and mouse.distance_to(_unit_pos(i))>43: continue
+		var rows: Array=[]
+		for id in actor.statuses:
+			var entry=actor.statuses[id]
+			var expiry: int=int(entry.get("expiry",-1)) if entry is Dictionary else int(entry)
+			var text: String=_status_name(str(id))+" · %d层" % int(entry.get("stacks",1) if entry is Dictionary else 1)
+			text+=" · 剩余%d tick" % maxi(0,expiry-int(snap.global_tick)) if expiry>=0 else " · 持续"
+			if entry is Dictionary and entry.has("next_tick"): text+=" · 下次结算%d tick" % maxi(0,int(entry.next_tick)-int(snap.global_tick))
+			rows.append(text)
+			var description: String={"focus":"下次根攻击宣告消耗，每层伤害 +1；落空不返还。","qi_seal":"自然回气减半；主动回气保持原值。","scorch":"每100 tick按层扣血，绕过护体，再减少1层。"}.get(str(id),"")
+			if not description.is_empty(): rows.append(description)
+		_panel(Rect2(690,467,450,48+rows.size()*25),PAPER,GOLD)
+		_text(Vector2(707,497),"%s · 状态时钟" % actor.name,16,INK)
+		for r in range(rows.size()): _text(Vector2(707,524+r*25),str(rows[r]),13,GOLD)
+
 func _usage_summary(usage: Dictionary) -> String:
 	var result: PackedStringArray = []
 	result.append({"ACTION":"自由行动","ATTACK_REACTION":"进攻响应","DEFENSE_REACTION":"防御响应"}.get(str(usage.get("timing","")),""))
+	var target: Dictionary=usage.get("target",{})
+	var profile: Dictionary=usage.get("attack_profile",{})
+	if target.get("kind","")=="enemy_actor" and (profile.has("range") or target.has("max_distance")):
+		result.append("正交直线 %d–%d格" % [int(target.get("min_distance",profile.get("min_range",1))),int(profile.get("range",target.get("max_distance",1)))])
 	for effect in usage.get("effects",[]):
 		match str(effect.get("type","")):
-			"deal_damage": result.append("基础伤害 %.1f" % float(effect.get("amount",0)))
+			"deal_damage":
+				result.append("基础伤害 %.1f" % float(effect.get("amount",0)))
+				var condition: Dictionary=effect.get("conditional_bonus",{})
+				if condition.has("if_target_status"): result.append("敌有%s伤害+%s" % [_status_name(str(condition.if_target_status)),condition.get("bonus",0)])
+				if condition.has("bonus_per_target_status"): result.append("敌每层%s伤害+%s" % [_status_name(str(condition.bonus_per_target_status)),condition.get("bonus_each",0)])
+				if condition.has("if_self_shield_gt"): result.append("自身护体>%s时伤害+%s" % [condition.if_self_shield_gt,condition.get("bonus",0)])
+				if condition.has("if_self_hp_pct_lt_after_cost"): result.append("付费后气血<%.0f%%伤害+%s" % [float(condition.if_self_hp_pct_lt_after_cost)*100,condition.get("bonus",0)])
+				if not str(condition.get("consume_on_hit","")).is_empty(): result.append("命中消耗%s" % _status_name(str(condition.consume_on_hit).replace("_all","")))
 			"move": result.append("移动 ≤%d 格" % int(effect.get("max_distance",1)))
+			"force_move": result.append(("击退" if effect.get("direction","")=="away_from_attacker" else "拉近")+"≤%d格" % int(effect.get("max_distance",1)))
+			"gain_qi": result.append("回气 +%s" % effect.get("amount",0))
+			"apply_status": result.append("%s%s +%d层" % ["自身" if effect.get("target","")=="self" else "目标",_status_name(str(effect.get("status_id",""))),int(effect.get("stacks",1))])
+			"consume_status": result.append("消耗%s" % _status_name(str(effect.get("status_id",""))))
+			"draw_cards": result.append("抽%d张牌" % int(effect.get("count",1)))
 			"add_shield": result.append("护体 +%.1f" % float(effect.get("amount",0)))
-			"modify_pending_damage": result.append("本击伤害 −%.1f" % float(effect.get("reduction",-float(effect.get("flat_delta",0)))))
+			"modify_pending_damage":
+				var change: float=float(effect.get("flat_delta",-float(effect.get("reduction",0))))
+				result.append("本击伤害 %s%.1f" % ["+" if change>=0 else "−",absf(change)])
 			"modify_attack_area": result.append("扩展攻击区域")
 			"cancel_chain_link": result.append("取消选定敌方响应")
 			"contest_intercept": result.append("迎击判定，成功中断攻击")
-			"on_attack_hit": result.append("命中使敌方明牌")
-			"on_attack_miss": result.append("落空时自身露隙")
+			"on_attack_hit": result.append("命中："+_nested_effect_summary(effect))
+			"on_attack_miss": result.append("落空："+_nested_effect_summary(effect))
 	return " / ".join(result)
+
+func _nested_effect_summary(effect: Dictionary) -> String:
+	var children: Dictionary={"effects":effect.get("effects",effect.get("on_hit",[]))}
+	return _usage_summary(children).trim_prefix(" / ")
+
+func _wrap_text(value: String, width: float, size: int) -> PackedStringArray:
+	var lines: PackedStringArray=[]
+	var line: String=""
+	for character in value:
+		if body_font.get_string_size(line+character,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x>width:
+			lines.append(line)
+			line=""
+		line+=character
+	if not line.is_empty(): lines.append(line)
+	return lines
 
 
 

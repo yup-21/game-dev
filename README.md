@@ -6,9 +6,11 @@
 
 [打开 Demo 目录](demos/changfeng-battle) · [操作与规则](demos/changfeng-battle/README.md) · [战斗机制与框架详细说明](demos/changfeng-battle/docs/tingfeng-engine.md) · [验证记录](demos/changfeng-battle/reports/validation.md)
 
+已迁入 [十套武学 V3](demos/changfeng-battle/docs/wuxue-v3-integration.md)：双方可独立选择听风五式或十门武学，新增20核心式、41种用法、7条连携及凝势／封气／灼痕。
+
 Godot 4.x 的 2D 武侠战棋原型，采用 **CTB 集气、自由行动、五式多用法卡牌、有限 LIFO 连锁交锋**。玩家和敌人使用相同的资源、牌区、攻击与防御规则；AI 只负责选择合法行动。
 
-![断桥听风战斗界面](demos/changfeng-battle/docs/screenshots/tingfeng-action.png)
+![断桥听风与武学V3战斗界面](demos/changfeng-battle/docs/screenshots/wuxue-action.png)
 
 ### 启动
 
@@ -19,11 +21,11 @@ Godot 4.x 的 2D 武侠战棋原型，采用 **CTB 集气、自由行动、五�
 ### 内容与验证
 
 - 保留 15×10 断桥棋盘、河流与浅滩路径、角色和事件动画。
-- 五式共 12 种用法，每人 12 张独立牌实例；支持迎锋、闪避、追击、截势和连携。
+- 原五式加十门武学共25定义、53种用法；每个测试牌组仍为每人12张独立实例，支持迎锋、闪避、追击、截势和连携。
 - 观势／藏锋等级、明牌和危险提示均按观察者权限展示。
-- 源版本已通过 265 项规则／AI／边界检查、82 项真实 UI 检查及 12 场完整对局；整理后的目录复验见验证记录。
+- 当前通过805项目录／规则／AI／边界检查、143项真实UI检查；原12场默认对局，以及16组流派对局和2组重复运行均通过，明细见验证记录。
 
-当前可玩牌组为听风五式。仓库只收录本 Demo 的当前源码、数据和检查；旧五阶段存档、旧日志、编辑器缓存与 Godot 二进制留在原工作区。
+默认仍为听风五式，可在头部选择双方武学并应用重开。当前是每门固定测试配卡，尚未实现自由混搭构筑。旧五阶段存档、旧日志、编辑器缓存与Godot二进制留在原工作区。
 
 ## 目录
 

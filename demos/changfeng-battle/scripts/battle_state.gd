@@ -127,3 +127,21 @@ func find_path(start: Vector2i, goal: Vector2i, actor_id: int = -1) -> Array:
 				return path
 			frontier.append(next)
 	return []
+
+
+func reachable_paths(start: Vector2i, actor_id: int = -1) -> Dictionary:
+	# One BFS for an entire legal-action query; preserve the same directional tie-break.
+	if not passable(start): return {}
+	var paths: Dictionary={start:[]}
+	var frontier: Array=[start]
+	var head: int=0
+	while head<frontier.size():
+		var current: Vector2i=frontier[head]
+		head+=1
+		for cell in neighbors(current):
+			if paths.has(cell) or not passable(cell) or occupied(cell,actor_id): continue
+			var path: Array=paths[current].duplicate()
+			path.append(cell)
+			paths[cell]=path
+			frontier.append(cell)
+	return paths

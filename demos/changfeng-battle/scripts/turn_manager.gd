@@ -69,10 +69,7 @@ func begin_next_action() -> void:
 			if a.hp_u<=0: continue
 			var speed: int=int(a.stats.charge_speed)
 			delta=mini(delta,ceili(float(CHARGE-a.gauge)/speed))
-			for entry in a.statuses.values():
-				var expiry: int=int(entry.get("expiry",-1)) if entry is Dictionary else int(entry)
-				if expiry>state.global_tick: delta=mini(delta,expiry-state.global_tick)
-			if a.shield_expiry>state.global_tick: delta=mini(delta,a.shield_expiry-state.global_tick)
+		delta=statuses.next_event_delta(delta)
 		if delta==2147483647: return
 		advance_time(maxi(1,delta))
 		if state.outcome!="playing": return
@@ -84,23 +81,25 @@ func begin_next_action() -> void:
 @warning_ignore("integer_division")
 func advance_time(delta: int) -> void:
 	assert(state.mode=="TIMELINE")
-	state.global_tick+=delta
-	for a in state.actors:
-		if a.hp_u<=0: continue
-		a.gauge+=int(a.stats.charge_speed)*delta
-		var qi_total: int=int(a.stats.qi_regen_u_per_100)*delta+a.regen_qi_remainder
-		a.qi_u=mini(a.max_qi_u,a.qi_u+qi_total/100)
-		a.regen_qi_remainder=qi_total%100
-		var hp_total: int=int(a.stats.hp_regen_u_per_100)*delta+a.regen_hp_remainder
-		a.hp_u=mini(a.max_hp_u,a.hp_u+hp_total/100)
-		a.regen_hp_remainder=hp_total%100
-		for id in a.statuses.keys():
-			if not statuses.has(a.id,str(id)):
-				a.statuses.erase(id)
-				resolver.emit("STATUS_EXPIRED",{"actor_id":a.id,"status_id":id})
-		if a.shield_expiry>=0 and state.global_tick>=a.shield_expiry:
-			a.shield_u=0
-			a.shield_expiry=-1
-			resolver.emit("SHIELD_EXPIRED",{"actor_id":a.id})
-	resolver.emit("TIME_ADVANCED",{"delta":delta,"tick":state.global_tick})
-	resolver.drain_hooks()
+	var remaining: int=maxi(0,delta)
+	while remaining>0 and state.outcome=="playing":
+		var step: int=maxi(1,statuses.next_event_delta(remaining))
+		# Check seal at the interval start; expiry at its endpoint still affects this interval.
+		for a in state.actors:
+			if a.hp_u<=0: continue
+			a.gauge+=int(a.stats.charge_speed)*step
+			# /200 preserves half-unit rates even for future odd qi_regen values.
+			var multiplier: int=1 if statuses.has(a.id,"qi_seal") else 2
+			var qi_total: int=int(a.stats.qi_regen_u_per_100)*step*multiplier+a.regen_qi_remainder
+			a.qi_u=mini(a.max_qi_u,a.qi_u+qi_total/200)
+			a.regen_qi_remainder=0 if a.qi_u==a.max_qi_u else qi_total%200
+			var hp_total: int=int(a.stats.hp_regen_u_per_100)*step+a.regen_hp_remainder
+			a.hp_u=mini(a.max_hp_u,a.hp_u+hp_total/100)
+			a.regen_hp_remainder=0 if a.hp_u==a.max_hp_u else hp_total%100
+		state.global_tick+=step
+		remaining-=step
+		statuses.resolve_time_boundary(resolver)
+		resolver.emit("TIME_ADVANCED",{"delta":step,"tick":state.global_tick})
+		resolver.check_death()
+		resolver.drain_hooks()
+		if state.outcome!="playing": resolver.cleanup_terminal()
