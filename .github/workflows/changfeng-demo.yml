@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p demos/changfeng-battle/build
-          godot --headless --path demos/changfeng-battle --export-release "Windows Desktop" build/ChangfengDemo.exe
+          (cd demos/changfeng-battle && godot --headless --path . --export-release "Windows Desktop" build/ChangfengDemo.exe)
           test -s demos/changfeng-battle/build/ChangfengDemo.exe
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
