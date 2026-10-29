@@ -29,6 +29,8 @@ var selected_technique := ""
 var selected_node := ""
 var selected_kind := ""
 var last_cue := ""
+var cue_lights: Dictionary = {}
+var cue_remaining: Dictionary = {}
 
 func _ready() -> void:
     model.reset(2026)
@@ -155,6 +157,14 @@ func _create_actor(actor: Dictionary) -> void:
     sprite.transparent = true
     sprite.position.y = 0.80
     root.add_child(sprite)
+    var cue := OmniLight3D.new()
+    cue.light_color = Color("eac77e")
+    cue.light_energy = 0.0
+    cue.omni_range = 3.0
+    cue.position.y = 1.15
+    root.add_child(cue)
+    cue_lights[int(actor.id)] = cue
+    cue_remaining[int(actor.id)] = 0.0
     actor_nodes[int(actor.id)] = root
 
 func _build_ui() -> void:
@@ -327,6 +337,11 @@ func _process(delta: float) -> void:
             var node: Node3D = actor_nodes[id]
             var destination := _world(actor.cell)
             node.position = node.position.move_toward(destination, delta * 5.5)
+    for id in cue_remaining.keys():
+        cue_remaining[id] = maxf(0.0, float(cue_remaining[id]) - delta)
+        if cue_lights.has(id):
+            var light: OmniLight3D = cue_lights[id]
+            light.light_energy = float(cue_remaining[id]) * 4.0
     if animation_ticket >= 0:
         animation_time -= delta
         if animation_time <= 0.0:
@@ -351,12 +366,38 @@ func _accept(result: Dictionary) -> void:
     if not result.get("success", false):
         push_warning(str(result.get("message", "Action rejected")))
         return
+    _cue_events(result.get("events", []))
     _clear_selection()
     _refresh()
     if snap.get("animation_pending", false):
         animation_ticket = int(result.get("ticket", snap.get("ticket", -1)))
         animation_time = 0.35
     _update_status()
+
+func _cue_events(events: Array) -> void:
+    for event in events:
+        var kind := str(event.get("type", ""))
+        var id := int(event.get("defender_id", event.get("target_id", event.get("actor_id", -1))))
+        if kind in ["ATTACK_DECLARED", "COMBO_TRIGGERED", "SHIELD", "MOVE"]:
+            id = int(event.get("actor_id", id))
+        if not cue_lights.has(id):
+            continue
+        var light: OmniLight3D = cue_lights[id]
+        match kind:
+            "ATTACK_DECLARED":
+                light.light_color = Color("f0bd66")
+            "COMBO_TRIGGERED":
+                light.light_color = Color("f9df8a")
+            "DAMAGE", "HP_DAMAGED", "SCORCH_TICK":
+                light.light_color = Color("f05a50")
+            "SHIELD", "INTERCEPT_JUDGED":
+                light.light_color = Color("79d9c3")
+            "MOVE":
+                light.light_color = Color("80bfc3")
+            _:
+                continue
+        cue_remaining[id] = 0.55
+        last_cue = kind
 
 func _submit(kind: String, params: Dictionary = {}) -> void:
     if animation_ticket >= 0:
