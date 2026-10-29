@@ -339,21 +339,25 @@ func _build_ui() -> void:
     intro_title.add_theme_font_size_override("font_size", 54)
     intro_title.add_theme_color_override("font_color", UITheme.PAPER)
     intro_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    intro_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-    intro_title.position = Vector2(-320, -160)
-    intro_title.size = Vector2(640, 76)
-    intro_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
     canvas.add_child(intro_title)
+    intro_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    intro_title.offset_left = -320.0
+    intro_title.offset_right = 320.0
+    intro_title.offset_top = -160.0
+    intro_title.offset_bottom = -84.0
+    intro_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
     intro_subtitle = Label.new()
     intro_subtitle.text = "一剑试江湖  ·  原创手绘角色 / 立体战场"
     intro_subtitle.add_theme_font_size_override("font_size", 20)
     intro_subtitle.add_theme_color_override("font_color", UITheme.GOLD)
     intro_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    intro_subtitle.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-    intro_subtitle.position = Vector2(-320, -90)
-    intro_subtitle.size = Vector2(640, 45)
-    intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
     canvas.add_child(intro_subtitle)
+    intro_subtitle.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    intro_subtitle.offset_left = -320.0
+    intro_subtitle.offset_right = 320.0
+    intro_subtitle.offset_top = -90.0
+    intro_subtitle.offset_bottom = -45.0
+    intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _refresh() -> void:
     snap = model.snapshot(0)
