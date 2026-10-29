@@ -4,14 +4,15 @@ var cards
 
 func _refresh_hp_limit(actor) -> void:
 	# Status-driven cap modifiers apply equally to player-controlled and AI units.
-	var base_u: int=int(actor.stats.get("max_hp",20))*10000
+	var base_u: int=actor.base_max_hp_u
 	var penalty_u: int=0
 	for status_id in actor.statuses:
 		if not cards.statuses.has(status_id): continue
 		var entry: Dictionary=actor.statuses[status_id]
 		var stacks_count: int=int(entry.get("stacks",1))
 		penalty_u+=maxi(0,int(cards.statuses[status_id].get("max_hp_penalty_per_stack",0)))*maxi(0,stacks_count)*10000
-	actor.max_hp_u=maxi(10000,base_u-penalty_u)
+	actor.max_hp_u=clampi(base_u-penalty_u,10000,base_u)
+	# Removing a debuff restores capacity, never current HP.
 	actor.hp_u=mini(actor.hp_u,actor.max_hp_u)
 
 func _init(s,c) -> void:
