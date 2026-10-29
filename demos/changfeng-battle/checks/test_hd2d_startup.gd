@@ -33,8 +33,18 @@ func _run() -> void:
         quit(1)
         return
 
-    if scene.get("card_actions") == null:
-        push_error("HD2D_STARTUP: action UI missing")
+    if scene.get("card_actions") == null or scene.get("phase_label") == null:
+        push_error("HD2D_STARTUP: themed action UI missing")
+        quit(1)
+        return
+
+    if scene.get_node_or_null("WuxiaScenery") == null:
+        push_error("HD2D_STARTUP: wuxia scenery missing")
+        quit(1)
+        return
+
+    if scene.get_node_or_null("Actor_0/Nameplate") == null:
+        push_error("HD2D_STARTUP: character nameplate missing")
         quit(1)
         return
 
