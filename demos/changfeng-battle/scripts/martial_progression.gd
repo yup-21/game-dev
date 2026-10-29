@@ -12,8 +12,8 @@ func valid(record: Variant) -> bool:
 	if not record is Dictionary or not record.get("rank") is int or not record.get("xp") is int: return false
 	if int(record.rank)<1 or int(record.rank)>MAX_RANK or int(record.xp)<0 or int(record.xp)>MAX_XP: return false
 	if not record.get("traits",[]) is Array or record.traits.size()>16: return false
-	for trait in record.traits:
-		if not trait is String or str(trait).is_empty(): return false
+	for trait_name in record.traits:
+		if not trait_name is String or str(trait_name).is_empty(): return false
 	return true
 
 func configure(actor,records: Dictionary) -> bool:
