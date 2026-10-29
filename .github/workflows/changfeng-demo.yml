@@ -1,0 +1,97 @@
+name: Changfeng Demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "demos/changfeng-battle/**"
+      - ".github/workflows/changfeng-demo.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  godot-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot 4.7.2 and export templates
+        uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: "4.7.2"
+          use-dotnet: false
+          include-templates: true
+      - name: Validate Godot project import
+        run: |
+          godot --version
+          godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Run existing combat and demo contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          project="demos/changfeng-battle"
+          for name in \
+            test_tingfeng \
+            test_tingfeng_ai \
+            test_tingfeng_edges \
+            test_tingfeng_playthrough \
+            test_wuxue_catalog \
+            test_wuxue_v3 \
+            test_wuxue_playthrough \
+            test_ability_framework \
+            test_generated_cards \
+            test_model_lifecycle \
+            test_parties \
+            test_opening_story \
+            test_demo_flow \
+            test_demo_technique
+          do
+            echo "::group::${name}"
+            godot --headless --path "$project" --script "res://checks/${name}.gd"
+            echo "::endgroup::"
+          done
+      - name: Export Windows standalone demo
+        shell: bash
+        run: |
+          mkdir -p demos/changfeng-battle/build
+          godot --headless --path demos/changfeng-battle --export-release "Windows Desktop" build/ChangfengDemo.exe
+          test -s demos/changfeng-battle/build/ChangfengDemo.exe
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: changfeng-demo-windows
+          path: |
+            demos/changfeng-battle/build/*.exe
+            demos/changfeng-battle/build/*.pck
+          if-no-files-found: error
+
+  visual-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: "4.7.2"
+          use-dotnet: false
+      - name: Install virtual X display
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1 mesa-utils
+      - name: Render and inspect screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a godot --path demos/changfeng-battle -- --opening-visual-check
+          xvfb-run -a godot --path demos/changfeng-battle res://battle.tscn -- --ink-visual-check
+          test -s demos/changfeng-battle/captures/opening-title.png
+          test -s demos/changfeng-battle/captures/opening-dialogue.png
+          test -s demos/changfeng-battle/captures/ink-action.png
+      - name: Upload evidence screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: changfeng-demo-screenshots
+          path: demos/changfeng-battle/captures/*.png
+          if-no-files-found: warn
