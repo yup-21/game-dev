@@ -6,6 +6,22 @@ const GOLD = Color("c19659")
 const RED = Color("c26754")
 const PAPER = Color("f2eedf")
 
+# Kenney CC0 originals: assets/kenney/ (see docs/asset-licenses.md).
+# Draw-only presentation cache; simulation data and RNG are never changed.
+var _textures: Dictionary={}
+
+func _asset(relative_path: String) -> Texture2D:
+	if not _textures.has(relative_path):
+		var path: String="res://assets/kenney/"+relative_path
+		_textures[relative_path]=load(path) as Texture2D
+	return _textures[relative_path] as Texture2D
+
+func _surface(v: CanvasItem,relative_path: String,rect: Rect2,alpha: float=1.0) -> void:
+	var texture: Texture2D=_asset(relative_path)
+	if texture!=null:
+		v.draw_texture_rect(texture,rect,false,Color(1,1,1,alpha))
+
+
 func _poly(v: CanvasItem, points: Array, color: Color) -> void:
 	v.draw_colored_polygon(PackedVector2Array(points), color)
 
@@ -55,6 +71,23 @@ func battlefield(v: CanvasItem, snap: Dictionary, t: float) -> void:
 	v.draw_rect(Rect2(29,211,1114,444),Color(0.97,0.91,0.75,0.18),false,1)
 	var origin: Vector2=Vector2(78,252)
 	var tile: Vector2=Vector2(70,39)
+	# Terrain decals sit over the existing authoritative board, under its overlays
+	# and units. Every colored tactical/legal-target highlight remains visible.
+	for cell in snap.get("terrain",{}):
+		var terrain: String=str(snap.terrain[cell])
+		if terrain=="water": continue
+		var id: String="tile_0000.png"
+		match terrain:
+			"bridge": id="tile_0040.png"
+			"ford": id="tile_0024.png"
+			"rock": id="tile_0050.png"
+			"bamboo": id="tile_0001.png"
+			_: id="tile_0001.png" if (int(cell.x)+int(cell.y)*3)%7==0 else "tile_0000.png"
+		var center: Vector2=origin+Vector2(cell)*tile
+		_surface(v,"terrain/"+id,Rect2(center-tile*0.5+Vector2(2,2),tile-Vector2(4,4)),0.45)
+		if terrain=="bamboo":
+			_surface(v,"terrain/tile_0016.png",Rect2(center+Vector2(-21,-57),Vector2(42,52)),0.90)
+
 	for i in range(13):
 		var y: float=217+float(i)*36
 		var points: PackedVector2Array=PackedVector2Array()
@@ -91,7 +124,7 @@ func battlefield(v: CanvasItem, snap: Dictionary, t: float) -> void:
 				v.draw_line(tip,tip+Vector2(4,-4),Color(0.48,0.55,0.35,0.47),1.2,true)
 
 func combatant(v: CanvasItem, pos: Vector2, actor: Dictionary, t: float, active: bool, hit: bool) -> void:
-	var own: bool=int(actor.get("id",0))==0
+	var own: bool=int(actor.get("team_id",0))==0
 	var direction: float=1.0 if own else -1.0
 	var accent: Color=JADE if own else RED
 	var cloth: Color=Color("31595c") if own else Color("704c48")
@@ -109,6 +142,16 @@ func combatant(v: CanvasItem, pos: Vector2, actor: Dictionary, t: float, active:
 			_diamond(v,pos+Vector2(cos(theta),sin(theta))*34,3,Color(GOLD,0.65))
 	if hit:
 		v.draw_circle(base+Vector2(0,-14),29,Color(0.95,0.39,0.26,0.16))
+	# A readable 16px character silhouette replaces the former procedural
+	# identical robed figures. Keep the old drawing as a safe fallback.
+	var sprite_ids: Array=[86,96,84,82,100,88]
+	var sprite_id: int=int(sprite_ids[absi(int(actor.id))%sprite_ids.size()])
+	var avatar: Texture2D=_asset("characters/tile_%04d.png" % sprite_id)
+	if avatar!=null:
+		v.draw_texture_rect(avatar,Rect2(base+Vector2(-29,-51),Vector2(58,66)),false)
+		v.draw_rect(Rect2(pos+Vector2(-34,27),Vector2(68,18)),Color(0.92,0.91,0.84,0.88))
+		v.draw_line(pos+Vector2(-33,26),pos+Vector2(33,26),Color(accent,0.70),1)
+		return
 	# Long hair and moving topknot.
 	_poly(v,[base+Vector2(-7,-33),base+Vector2(6,-34),base+Vector2(8,-15),base+Vector2(-12,-7)],Color("263335"))
 	_poly(v,[base+Vector2(-2,-34),base+Vector2(10,-36),base+Vector2(13,-5),base+Vector2(5,2)],Color("344347"))
@@ -141,6 +184,7 @@ func card_frame(v: CanvasItem, rect: Rect2, index: int, selected: bool, enabled:
 	var base: Color=Color("faf5e8") if enabled else Color("e4e5dc")
 	v.draw_rect(Rect2(rect.position+Vector2(3,5),rect.size),Color(0.17,0.22,0.19,0.10))
 	v.draw_rect(rect,base)
+	_surface(v,"ui/panel_brown.png",rect,0.88 if enabled else 0.53)
 	v.draw_rect(Rect2(rect.position,Vector2(6,rect.size.y)),accent)
 	v.draw_rect(rect,Color("b4b7a2") if not selected else GOLD,false,2.5 if selected else 1.0)
 	v.draw_rect(Rect2(rect.position+Vector2(9,8),rect.size-Vector2(18,16)),Color(0.67,0.60,0.42,0.21),false,1)
