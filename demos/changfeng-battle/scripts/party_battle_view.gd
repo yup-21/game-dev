@@ -3,6 +3,7 @@ extends Node2D
 ## The same EnemyAI policy drives allied NPCs and hostile NPCs.
 const Model = preload("res://scripts/battle_model.gd")
 const AI = preload("res://scripts/enemy_ai.gd")
+const Pixel = preload("res://scripts/ink_pixel_art.gd")
 const INK = Color("213939")
 const PAPER = Color("e9e8da")
 const JADE = Color("3a8980")
@@ -14,6 +15,7 @@ const TILE = Vector2(68,55)
 const COMMANDS = Rect2(1090,155,474,800)
 var model = Model.new()
 var policy = AI.new()
+var pixel = Pixel.new()
 var font: SystemFont
 var title_font: SystemFont
 var snap: Dictionary = {}
@@ -69,6 +71,7 @@ func _roster() -> Array:
 	]
 
 func _ready() -> void:
+	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 	font=SystemFont.new()
 	font.font_names=PackedStringArray(["Microsoft YaHei","Noto Sans CJK SC","Segoe UI"])
 	title_font=SystemFont.new()
@@ -152,15 +155,45 @@ func _submit(action: Dictionary) -> void:
 	if not response.get("success",false):
 		feedback=str(response.get("message","无法执行"))
 		return
-	for e in response.get("events",[]):
-		var kind: String=str(e.get("type",""))
-		if kind in ["DAMAGE","ATTACK_DECLARED","ATTACK_MISSED","SHIELD","COMBO_TRIGGERED","MOVE"]:
-			var who: int=int(e.get("defender_id",e.get("target_id",e.get("actor_id",-1))))
-			cue.append({"id":who,"kind":kind,"left":0.55})
+	_queue_events(response.get("events",[]))
 	feedback=str(action.kind)+" · "+str(model.state.get_actor(id).name)
 	left=0.16
 	selected_key=""
 	_sync()
+
+func _queue_events(events: Array) -> void:
+	for event in events:
+		var kind: String=""
+		var label: String=""
+		var source: int=int(event.get("actor_id",-1))
+		var target: int=int(event.get("defender_id",event.get("target_id",source)))
+		match str(event.get("type","")):
+			"ATTACK_DECLARED": kind="attack"
+			"DAMAGE":
+				var damage: float=float(event.get("hp_damage",0))
+				kind="damage" if damage>0 else "guard"
+				label="−%.1f" % damage if damage>0 else "格挡"
+			"SHIELD", "INTERCEPT_JUDGED":
+				kind="guard"
+				target=source
+				label="护御"
+			"ATTACK_MISSED":
+				kind="evade"
+				label="落空"
+			"MOVE":
+				kind="evade"
+				target=source
+			"COMBO_TRIGGERED":
+				kind="combo"
+				target=source
+				label=str(event.get("name","连携"))
+			"SCORCH_TICK":
+				kind="damage"
+				target=source
+				label="灼痕 −%.1f" % float(event.get("damage",0))
+		if kind.is_empty() or target<0: continue
+		cue.append({"source_id":source,"target_id":target,"kind":kind,"text":label,"left":0.55,"duration":0.55})
+		if cue.size()>32: cue.pop_front()
 
 func _process(delta: float) -> void:
 	tick+=delta
@@ -265,74 +298,115 @@ func _tile(cell: Vector2i,color: Color) -> void:
 	draw_rect(rect,color)
 	draw_rect(rect,Color(0.22,0.40,0.34,0.11),false,1)
 
+func _corners(rect: Rect2, color: Color, width: float = 2.0) -> void:
+	for point in [rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)]:
+		var inward: Vector2=Vector2(1 if point.x==rect.position.x else -1,1 if point.y==rect.position.y else -1)
+		draw_line(point,point+Vector2(inward.x*10,0),color,width)
+		draw_line(point,point+Vector2(0,inward.y*10),color,width)
+
+func _center(pos: Vector2, value: String, size: int, color: Color) -> void:
+	_text(pos-Vector2(font.get_string_size(value,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x*.5,0),value,size,color)
+
+func _pose(actor_id: int, alive: bool) -> String:
+	if not alive: return "dead"
+	var result: String="idle"
+	for effect in cue:
+		var kind: String=str(effect.kind)
+		if kind=="attack" and int(effect.source_id)==actor_id: result="attack"
+		if int(effect.target_id)!=actor_id: continue
+		if kind=="damage": result="hurt"
+		elif kind=="guard": result="guard"
+		elif kind=="evade": result="walk"
+	return result
+
+func _draw_combatant(actor: Dictionary, pos: Vector2) -> void:
+	var friendly: bool=int(actor.team_id)==0
+	var alive: bool=float(actor.hp)>0
+	var accent: Color=JADE if friendly else RED
+	var tint: Color=Color.WHITE if alive else Color(0.55,0.58,0.55,0.56)
+	draw_rect(Rect2((pos+Vector2(-20,7)).round(),Vector2(40,8)),Color(INK,0.18))
+	draw_rect(Rect2((pos+Vector2(-22,13)).round(),Vector2(44,3)),accent if alive else Color("777d7d"))
+	if int(actor.id)==_current_id() and alive:
+		_corners(Rect2(pos+Vector2(-29,-36),Vector2(58,55)),GOLD,3)
+		draw_rect(Rect2(pos+Vector2(-3,18),Vector2(6,4)),GOLD)
+	pixel.character(self,pos+Vector2(0,12),int(actor.id),tick,_pose(int(actor.id),alive),3.0,not friendly,tint)
+	if float(actor.get("shield",0))>0:
+		pixel.badge(self,Rect2(pos+Vector2(-29,-28),Vector2(14,14)),"guard",GOLD)
+
+func _draw_combatant_hud(actor: Dictionary, pos: Vector2) -> void:
+	var accent: Color=JADE if int(actor.team_id)==0 else RED
+	if float(actor.hp)<=0: accent=Color("777d7d")
+	var hp: float=clampf(float(actor.hp)/maxf(1,float(actor.max_hp)),0,1)
+	draw_rect(Rect2(pos+Vector2(-27,-45),Vector2(54,7)),INK)
+	draw_rect(Rect2(pos+Vector2(-26,-44),Vector2(52,5)),Color("d0cfba"))
+	if hp>0: draw_rect(Rect2(pos+Vector2(-26,-44),Vector2(maxf(1,floorf(52*hp)),5)),accent)
+	var manual: bool=str(actor.controller)=="PLAYER"
+	draw_rect(Rect2(pos+Vector2(17,-30),Vector2(14,14)),GOLD if manual else accent)
+	_text(pos+Vector2(18,-19),"手" if manual else "AI",10 if manual else 8,PAPER)
+	pixel.panel(self,Rect2(pos+Vector2(-34,22),Vector2(68,17)),false,accent)
+	_center(pos+Vector2(0,35),str(actor.name),12,accent.darkened(0.2))
+
+func _draw_combat_cues(positions: Dictionary) -> void:
+	for effect in cue:
+		var target: int=int(effect.target_id)
+		if not positions.has(target): continue
+		var progress: float=clampf(1.0-float(effect.left)/maxf(0.01,float(effect.duration)),0,1)
+		var kind: String=str(effect.kind)
+		var pos: Vector2=positions[target]+Vector2(0,-11)
+		var source: int=int(effect.source_id)
+		if kind=="attack" and positions.has(source):
+			var start: Vector2=positions[source]+Vector2(0,-11)
+			pixel.effect(self,start.lerp(pos,clampf(progress*2.0,0,1)),kind,progress,0.9)
+		pixel.effect(self,pos,kind,progress,0.9)
+		if not str(effect.text).is_empty():
+			var color: Color=RED if kind=="damage" else (JADE if kind=="guard" else GOLD)
+			var label_pos: Vector2=pos+Vector2(0,-43-progress*23)
+			_center(label_pos+Vector2(1,1),str(effect.text),17,Color(PAPER,1.0-progress))
+			_center(label_pos,str(effect.text),17,Color(color,1.0-progress))
+
 func _draw() -> void:
 	if snap.is_empty(): return
 	buttons.clear()
-	draw_rect(Rect2(0,0,1600,1000),PAPER)
-	draw_rect(Rect2(0,0,1600,123),Color("163e3e"))
+	pixel.landscape(self,Rect2(0,0,1600,1000),tick)
+	pixel.panel(self,Rect2(0,0,1600,123),true,GOLD)
 	_text(Vector2(36,64),"长风浮生录 · 断桥群战",36,Color("f3e9d5"),true)
-	_text(Vector2(41,95),"同一套 CTB / 交锋 / 武学规则 · 多阵营战斗验证",14,Color("c0d4c2"))
+	_text(Vector2(41,95),"江南断桥 · 点选招式后选择地图目标",14,Color("c0d4c2"))
 	_text(Vector2(1110,59),"t=%d  行动 %d" % [int(snap.global_tick),int(snap.action_no)],20,Color("e6cf96"))
 	_text(Vector2(1110,88),"R 重开  |  右键取消  |  空格收势 / Pass",14,Color("c0d4c2"))
-	draw_rect(BOARD,Color("dfe7dc"))
+	pixel.panel(self,BOARD,false,JADE)
 	for cell in snap.terrain:
-		var terrain: String=str(snap.terrain[cell])
-		var color: Color=Color("e1dfcc")
-		if terrain=="water": color=Color("88b7b2")
-		elif terrain=="bridge": color=Color("beac84")
-		elif terrain=="ford": color=Color("b1c4ad")
-		elif terrain=="bamboo": color=Color("729383")
-		elif terrain=="rock": color=Color("929b8e")
-		_tile(cell,color)
-		if terrain=="water":
-			var pos: Vector2=cell_to_screen(cell)
-			for i in range(2):
-				var offset: float=sin(tick*.65+cell.y+i)*5
-				draw_line(pos+Vector2(-15+offset,-7+i*11),pos+Vector2(15+offset,-7+i*11),Color(1,1,1,.26),1.2)
-		elif terrain=="bridge":
-			for i in range(4):
-				draw_line(cell_to_screen(cell)+Vector2(-28+i*17,-19),cell_to_screen(cell)+Vector2(-28+i*17,19),Color(0.36,0.27,0.18,.32),1)
+		pixel.terrain(self,cell_to_screen(cell),TILE,str(snap.terrain[cell]),int(cell.x)+int(cell.y)*Model.COLS,tick)
 	for option in _candidates():
 		if option.has("target_cell"):
-			draw_rect(Rect2(cell_to_screen(option.target_cell)-TILE*.5+Vector2(4,4),TILE-Vector2(8,8)),Color(JADE,.27),false,3)
+			var rect: Rect2=Rect2(cell_to_screen(option.target_cell)-TILE*.5+Vector2(4,4),TILE-Vector2(8,8))
+			draw_rect(rect,Color(JADE,.16))
+			_corners(rect,JADE,3)
 		elif option.has("target_id"):
 			var target=model.state.get_actor(int(option.target_id))
-			if target!=null: draw_arc(cell_to_screen(target.cell),32,0,TAU,36,GOLD,3,true)
+			if target!=null:
+				var rect: Rect2=Rect2(cell_to_screen(target.cell)-TILE*.5+Vector2(3,2),TILE-Vector2(6,4))
+				draw_rect(rect,Color(RED,.13))
+				_corners(rect,GOLD,3)
+	var positions: Dictionary={}
 	for actor in snap.actors:
-		var pos: Vector2=cell_to_screen(actor.cell)
-		var alive: bool=float(actor.hp)>0
-		var player_team: bool=int(actor.team_id)==0
-		var base: Color=JADE if player_team else RED
-		if not alive: base=Color("777d7d")
-		draw_set_transform(pos+Vector2(0,15),0,Vector2(1,0.33))
-		draw_circle(Vector2.ZERO,23,Color(0.10,0.17,0.16,.20))
-		draw_set_transform(Vector2.ZERO)
-		draw_circle(pos,23,base)
-		draw_arc(pos,27,0,TAU,32,Color("eee6cd"),2,true)
-		if int(actor.id)==_current_id():
-			draw_arc(pos,33,tick*.7,tick*.7+TAU*.80,30,GOLD,3,true)
-		if str(actor.controller)=="PLAYER":
-			draw_circle(pos+Vector2(17,-17),6,GOLD)
-		draw_line(pos+Vector2(-7,5),pos+Vector2(8,-8),Color("efdfbd"),3,true)
-		_text(pos+Vector2(-30,48),str(actor.name),14,INK)
-		draw_rect(Rect2(pos+Vector2(-25,-42),Vector2(50,6)),Color("c0c2b9"))
-		draw_rect(Rect2(pos+Vector2(-25,-42),Vector2(50*clampf(float(actor.hp)/maxf(1,float(actor.max_hp)),0,1),6)),base)
-		for effect in cue:
-			if int(effect.id)==int(actor.id):
-				var pulse: float=float(effect.left)/.55
-				draw_arc(pos,32+(1-pulse)*35,0,TAU,32,Color(GOLD,pulse*.7),3,true)
-	_text(Vector2(38,815),"● 金印：手动角色    ● 青色：友军    ● 朱色：敌军    ● 发光圆环：当前行动 / 应变角色",16,INK)
+		positions[int(actor.id)]=cell_to_screen(actor.cell)
+		_draw_combatant(actor,positions[int(actor.id)])
+	_draw_combat_cues(positions)
+	for actor in snap.actors: _draw_combatant_hud(actor,positions[int(actor.id)])
+	_text(Vector2(38,815),"金印：手动角色    青：友军    朱：敌军    金角框：当前行动 / 应变角色",16,PAPER)
 	for i in range(snap.actors.size()):
 		var actor: Dictionary=snap.actors[i]
 		var col: int=i%3
 		var row: int=i/3
 		var x: float=34+col*344
 		var y: float=841+row*52
-		draw_rect(Rect2(x,y,333,44),Color("f9f5e7"),false,1)
-		_text(Vector2(x+7,y+17),str(actor.name)+" · "+("友" if int(actor.team_id)==0 else "敌")+" · "+("手动" if str(actor.controller)=="PLAYER" else "AI"),14,JADE if int(actor.team_id)==0 else RED)
-		_text(Vector2(x+7,y+35),"HP %.1f  气 %.1f  集气 %d" % [float(actor.hp),float(actor.qi),int(actor.gauge)],12,INK)
-	draw_rect(COMMANDS,Color("f7f3e6"))
-	draw_rect(COMMANDS,GOLD,false,2)
+		var accent: Color=JADE if int(actor.team_id)==0 else RED
+		pixel.panel(self,Rect2(x,y,333,44),false,GOLD if int(actor.id)==_current_id() else accent)
+		draw_rect(Rect2(x,y,4,44),accent)
+		pixel.character(self,Vector2(x+24,y+36),int(actor.id),tick,"idle" if float(actor.hp)>0 else "dead",1.5,int(actor.team_id)!=0)
+		_text(Vector2(x+45,y+17),str(actor.name)+" · "+("友" if int(actor.team_id)==0 else "敌")+" · "+("手动" if str(actor.controller)=="PLAYER" else "AI"),13,accent)
+		_text(Vector2(x+45,y+35),"HP %.1f  气 %.1f  集气 %d" % [float(actor.hp),float(actor.qi),int(actor.gauge)],12,INK)
+	pixel.panel(self,COMMANDS,false,GOLD)
 	var current: Dictionary=_current_actor()
 	if current.is_empty(): return
 	_text(Vector2(1108,193),"当前优先权 · "+str(current.name),24,JADE if int(current.team_id)==0 else RED,true)
@@ -351,7 +425,7 @@ func _draw() -> void:
 		buttons.append({"rect":back,"action":"menu"})
 		return
 	if not _human_turn():
-		_text(Vector2(1110,285),"其他角色正在使用相同的规则自主行动。",15,INK)
+		_text(Vector2(1110,285),"静候对手出招，观其攻守。",15,INK)
 		return
 	_text(Vector2(1108,256),"可执行动作  %d 种 · 点击选择" % groups.size(),15,GOLD)
 	var from: int=page*11
@@ -361,7 +435,8 @@ func _draw() -> void:
 		var y: float=270+(index-from)*49
 		var rect: Rect2=Rect2(1106,y,439,42)
 		var active: bool=str(entry.key)==selected_key
-		draw_rect(rect,JADE if active else Color("e1e8dc"))
+		pixel.panel(self,rect,active,GOLD if active else JADE)
+		if active: draw_rect(Rect2(rect.position,Vector2(4,rect.size.y)),GOLD)
 		draw_rect(rect,GOLD if active or rect.has_point(mouse) else Color("a8b6a9"),false,2 if active else 1)
 		_text(Vector2(rect.position.x+12,rect.position.y+27),str(entry.label),16,Color("fff7e5") if active else INK)
 		buttons.append({"rect":rect,"action":str(entry.key)})

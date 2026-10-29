@@ -4,10 +4,13 @@ const PAPER=Color("ede7d7")
 const INK=Color("243b3b")
 const JADE=Color("37766e")
 const GOLD=Color("b8965d")
+const Pixel=preload("res://scripts/ink_pixel_art.gd")
+var pixel=Pixel.new()
 var font: SystemFont
 var buttons: Array=[]
 
 func _ready() -> void:
+	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 	font=SystemFont.new()
 	font.font_names=PackedStringArray(["KaiTi","Noto Sans CJK SC","Microsoft YaHei"])
 	if _session()==null: push_error("Demo result requires GameSession autoload")
@@ -45,15 +48,16 @@ func _input(event: InputEvent) -> void:
 				return
 
 func _button(rect: Rect2, text_value: String, id: String) -> void:
-	draw_rect(rect,JADE)
-	draw_rect(rect,GOLD,false,2)
+	pixel.panel(self,rect,true,GOLD)
 	draw_string(font,rect.position+Vector2(23,rect.size.y/2+9),text_value,HORIZONTAL_ALIGNMENT_LEFT,-1,25,PAPER)
 	buttons.append({"rect":rect,"id":id})
 
 func _draw() -> void:
 	buttons.clear()
-	draw_rect(Rect2(0,0,1600,1000),PAPER)
-	draw_rect(Rect2(130,95,1340,808),Color("f8f3e6"),false,3)
+	pixel.landscape(self,Rect2(0,0,1600,1000),0.0)
+	pixel.panel(self,Rect2(130,95,1340,808),false,GOLD)
+	pixel.character(self,Vector2(1240,854),0,0.0,"idle",5.0)
+	pixel.character(self,Vector2(1340,854),2,0.0,"idle",5.0)
 	draw_line(Vector2(290,220),Vector2(1310,220),GOLD,2)
 	var session=_session()
 	if session==null: return

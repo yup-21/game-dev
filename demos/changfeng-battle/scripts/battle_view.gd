@@ -52,6 +52,7 @@ var school_picker_actor = -1
 var hand_page = 0
 
 func _ready() -> void:
+	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 	body_font = SystemFont.new()
 	body_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -423,7 +424,7 @@ func _draw() -> void:
 	if notice_left>0 and started and snap.outcome=="playing":
 		_panel(Rect2(172,621,830,28),Color("254e46"))
 		_center(Vector2(587,641),notice,14,PAPER)
-	_text(Vector2(30,991),"右键移动 / 攻击   1–5 查看用法   Q 攻击   G 格挡   C 弃牌   M 移动   Space / Enter 结束行动或 Pass   H 帮助   R 重开",13,MUTED)
+	_text(Vector2(30,991),"右键移动 / 攻击   1–5 查看用法   Q 攻击   G 格挡   C 弃牌   M 移动   Space / Enter 结束行动或 Pass   H 帮助   R 重开",13,Color("d5d6bf"))
 	if not started: _draw_intro()
 	elif snap.outcome!="playing": _draw_result()
 	if help_open: _draw_help()
@@ -682,11 +683,11 @@ func _draw_actors() -> void:
 		var taking_hit: bool=false
 		for cue in combat_cues:
 			if str(cue.get("kind",""))=="damage" and int(cue.get("target_id",-1))==int(actor.id): taking_hit=true
-		art.combatant(self,pos,actor,wall,int(snap.active_id)==int(actor.id),taking_hit)
+		art.combatant(self,pos,actor,wall,int(snap.active_id)==int(actor.id),taking_hit,"walk" if movements.has(int(actor.id)) else "")
 		_bar(Rect2(pos+Vector2(-28,-59),Vector2(56,5)),float(actor.hp)/maxf(1,float(actor.get("max_hp",20))),color)
 		if actor.shield>0:
 			draw_arc(pos,34,-PI*.9,-PI*.1,24,Color("d2ad69"),3,true)
-		_center(pos+Vector2(0,37),"%s  %.1f" % [actor.name,float(actor.hp)],14,color.darkened(.15))
+		_center(pos+Vector2(0,37),str(actor.name),14,color.darkened(.15))
 		var status_labels: PackedStringArray=_status_labels(actor)
 		if not status_labels.is_empty(): _center(pos+Vector2(0,54)," / ".join(status_labels),12,GOLD)
 	if not snap.attack.is_empty():
@@ -698,7 +699,7 @@ func _panel(rect: Rect2, color: Color, border: Color = Color.TRANSPARENT) -> voi
 	style.bg_color = color
 	style.border_color = border
 	style.set_border_width_all(1 if border.a>0 else 0)
-	style.set_corner_radius_all(6)
+	style.set_corner_radius_all(1)
 	draw_style_box(style,rect)
 
 func _text(pos: Vector2, value: String, size: int = 18, color: Color = INK, calligraphy: bool = false) -> void:

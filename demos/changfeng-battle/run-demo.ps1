@@ -57,6 +57,21 @@ try {
     $captureRoot = Join-Path $projectRoot 'captures'
     [IO.Directory]::CreateDirectory($captureRoot) | Out-Null
     $logPath = Join-Path $captureRoot 'play.log'
+    # A fresh checkout has source PNGs but no Godot import cache yet.
+    # Import before starting the game so preloaded textures resolve on the first run.
+    $importLog = Join-Path $captureRoot 'import.log'
+    $importArguments = @('--headless', '--editor', '--path', ('"{0}"' -f $projectRoot), '--quit', '--log-file', ('"{0}"' -f $importLog))
+    $importProcess = Start-Process -FilePath $resolvedGodot -ArgumentList $importArguments -WorkingDirectory $projectRoot -PassThru -RedirectStandardOutput (Join-Path $captureRoot 'import.stdout.log') -RedirectStandardError (Join-Path $captureRoot 'import.stderr.log')
+    $nativeHandle = $importProcess.Handle
+    if (-not $importProcess.WaitForExit(60000)) {
+        $importProcess.Kill()
+        throw "资源导入超时。日志：$importLog"
+    }
+    $importProcess.WaitForExit()
+    $importText = (@($importLog, (Join-Path $captureRoot 'import.stdout.log'), (Join-Path $captureRoot 'import.stderr.log')) | ForEach-Object { if (Test-Path -LiteralPath $_) { [IO.File]::ReadAllText($_) } }) -join "`n"
+    if ($importProcess.ExitCode -ne 0 -or $importText -match '(?m)^(SCRIPT ERROR:|ERROR:)') {
+        throw "资源导入失败。日志：$importLog"
+    }
     # Native argument quoting preserves spaces and shell metacharacters; no shell is invoked.
     $nativeArguments = @('--path', ('"{0}"' -f $projectRoot), '--log-file', ('"{0}"' -f $logPath))
     Start-Process -FilePath $resolvedGodot -ArgumentList $nativeArguments -WorkingDirectory $projectRoot | Out-Null

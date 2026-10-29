@@ -1,5 +1,7 @@
 # 长风浮生录 · 断桥听风
 
+画面采用水墨像素风：六名像素角色、纸质界面、像素山水与事件驱动的战斗反馈。已接入的免费素材、许可和可继续选用的人物／动作／UI 资源见 [免费素材与画面说明](docs/free-assets.md)。
+
 > **默认启动入口已变更**：运行 Godot 项目首先进入《长风浮生录》主菜单，可选择“初入江湖”，观看可跳过的雨夜过场、行走到镖车前与镖头交谈并作出选择，再进入战斗试玩。剧情详见 [序章“雨夜残镖”说明](docs/opening-prologue.md)。旧 `battle.tscn` 与 `party_battle.tscn` 仍可独立运行。
 
 当前默认场景已经迁入听风五式：**CTB 集气 → 自由行动 → 有限连锁交锋**。保留原来的 15×10 断桥地图、河流浅滩、角色与移动/受伤表现。玩家和敌人使用同一个 BattleState、校验、费用、牌区与效果结算，仅决策来源不同。
@@ -12,7 +14,7 @@
 
 用 Godot 打开本目录的 `project.godot` 后运行，或在 Windows 双击 `run-demo.cmd`。需要自行准备 Godot 4.x；已验证的环境是本地 4.7.2 自定义版本，其他版本尚未验证。仓库不附带 Godot 二进制。
 
-脚本优先使用 `-GodotPath`，其次 `GODOT_BIN`、PATH 中的 `godot` / `godot4`；在原 Creator 工作区也可自动找到已有引擎。运行日志为 `captures/play.log`，输出目录会自动创建。
+脚本优先使用 `-GodotPath`，其次 `GODOT_BIN`、PATH 中的 `godot` / `godot4`；在原 Creator 工作区也可自动找到已有引擎。启动前自动导入素材，导入日志为 `captures/import.log`，游戏日志为 `captures/play.log`，输出目录会自动创建。
 
 ```powershell
 .\run-demo.cmd -GodotPath "C:\Tools\Godot\godot.exe"
