@@ -5,6 +5,8 @@ var cards
 var costs
 var hooks
 var statuses
+var abilities
+var conditions
 func _init(s,c,cost_system,registry,status_system) -> void:
 	state=s
 	cards=c
@@ -30,6 +32,7 @@ func context(actor_id: int,req: Dictionary = {}) -> Dictionary:
 	return {"actor_id":actor_id,"actors":actors,"request":req.duplicate(true),"mode":state.mode,"tick":state.global_tick,"attack":state.attack.duplicate(true)}
 
 func condition_allows(actor,u: Dictionary) -> bool:
+	if conditions != null and not conditions.allows(u.get("when",{}),actor,{"timing":str(u.get("timing","")),"tick":state.global_tick}): return false
 	for key in u.get("conditions",{}):
 		var value=u.conditions[key]
 		match key:
@@ -62,48 +65,7 @@ func line_clear(from: Vector2i,to: Vector2i) -> bool:
 	return true
 
 func card_options(actor,t: String, reachable: Dictionary = {}) -> Array:
-	var options: Array=[]
-	if state.mode=="CLASH" and (int(state.clash.counts.get(actor.id,0))>=2 or state.clash.stack.size()>=4): return options
-	if reachable.is_empty(): reachable=state.reachable_paths(actor.cell,actor.id)
-	for uid in actor.hand:
-		var d: Dictionary=cards.canonical_definition(str(uid))
-		if not cards.valid_definition(d): continue
-		for u in d.usages:
-			if str(u.timing)!=t or not condition_allows(actor,u): continue
-			if u.get("once_per_action",false) and int(actor.card_uses.get(str(d.id)+":"+str(u.id),0))>0: continue
-			var plan: Dictionary=costs.quote(actor,u.get("cost",{}),context(actor.id,{"card_uid":uid,"usage_id":u.id}))
-			if not costs.can_pay(actor,plan): continue
-			var base: Dictionary={"kind":"PLAY_CARD","actor_id":actor.id,"card_uid":uid,"card_id":uid,"usage_id":u.id}
-			match str(u.target.kind):
-				"self", "pending_root_attack": options.append(base)
-				"enemy_actor":
-					for target in state.actors:
-						if target.id==actor.id or target.hp_u<=0: continue
-						var max_range: int=int(u.get("attack_profile",{}).get("range",u.target.get("max_distance",1)))
-						var min_range: int=int(u.target.get("min_distance",1))
-						var dist: int=distance(actor.cell,target.cell)
-						if dist<min_range or dist>max_range or (u.target.get("line_of_sight",false) and not line_clear(actor.cell,target.cell)): continue
-						var o: Dictionary=base.duplicate(true)
-						o.target_id=target.id
-						options.append(o)
-				"reachable_cell":
-					for cell in state.terrain:
-						var path: Array=reachable.get(cell,[])
-						if path.is_empty() or path.size()>int(u.target.get("max_distance",1)): continue
-						var valid: bool=true
-						for e in u.get("effects",[]):
-							if e.type=="move" and path.size()>int(e.max_distance): valid=false
-						if valid:
-							var o: Dictionary=base.duplicate(true)
-							o.target_cell=cell
-							options.append(o)
-				"opponent_unresolved_response_link":
-					for link in state.clash.get("stack",[]):
-						if int(link.actor_id)==actor.id or link.canceled or link.get("resolved",false): continue
-						var o: Dictionary=base.duplicate(true)
-						o.link_id=int(link.id)
-						options.append(o)
-	return options
+	return abilities.options(actor,t,reachable)
 
 func raw_actions(actor_id: int) -> Array:
 	var options: Array=[]
@@ -130,6 +92,10 @@ func raw_actions(actor_id: int) -> Array:
 	else:
 		options.append({"kind":"PASS_REACTION","actor_id":actor_id})
 	options.append_array(card_options(actor,t,reachable))
+	if t=="ACTION" and abilities != null:
+		for id in actor.technique_states:
+			if str(actor.technique_states[id].node) != str(abilities.techniques.definitions[id].entry):
+				options.append({"kind":"RESET_TECHNIQUE","actor_id":actor_id,"technique_id":str(id)})
 	return options
 
 func legal_actions(actor_id: int) -> Array:
@@ -149,7 +115,7 @@ func validate(req: Dictionary) -> Dictionary:
 	# Check types before comparisons: Variant Array == String is a runtime error in Godot.
 	var fields: Dictionary={"kind":TYPE_STRING,"actor_id":TYPE_INT,"battle_id":TYPE_STRING,
 		"expected_revision":TYPE_INT,"request_version":TYPE_INT,"request_id":TYPE_STRING,"action_id":TYPE_STRING,
-		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_id":TYPE_INT,"link_id":TYPE_INT}
+		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING}
 	for key in fields:
 		if req.has(key) and typeof(req[key])!=int(fields[key]): return failure("MALFORMED_REQUEST","请求字段类型错误："+str(key))
 	if not req.has("kind") or not req.has("actor_id"): return failure("MALFORMED_REQUEST","缺少行动或操作者")
@@ -169,7 +135,7 @@ func validate(req: Dictionary) -> Dictionary:
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
-		for key in ["kind","card_uid","usage_id","target_id","target_cell","link_id"]:
+		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id"]:
 			if normalized.get(key)!=o.get(key): matches=false
 		if matches:
 			canonical=o
@@ -183,9 +149,10 @@ func validate(req: Dictionary) -> Dictionary:
 	if canonical.kind in ["BASIC_ATTACK","BASIC_GUARD"]: cost={"qi":1}
 	if canonical.kind=="MOVE": cost={"qi":state.find_path(actor.cell,canonical.target_cell,actor.id).size()}
 	if canonical.kind=="PLAY_CARD": cost=cards.usage(str(canonical.card_uid),str(canonical.usage_id)).get("cost",{})
+	if canonical.kind=="USE_ABILITY": cost=abilities.techniques.cost(actor,str(canonical.technique_id),str(canonical.node_id))
 	var quote: Dictionary=costs.quote(actor,cost,ctx)
 	# Ordinary movement and basic actions have fixed costs; card techniques receive attribute modifiers.
-	if canonical.kind!="PLAY_CARD":
+	if canonical.kind not in ["PLAY_CARD","USE_ABILITY"]:
 		quote={"qi_u":roundi(float(cost.qi)*10000),"hp_u":0,"valid":true}
 	if not costs.can_pay(actor,quote): return failure("INSUFFICIENT_RESOURCE","内息不足或气血费用无法支付")
 	return {"success":true,"plan":quote,"action":canonical}
