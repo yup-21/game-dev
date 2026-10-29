@@ -1,8 +1,8 @@
 extends RefCounted
 ## Deterministic, original 6x4 pixel-art atlas. No dependency on external art.
-## Every 64x80 cell is truly transparent outside the figure; rows: idle,
+## Every 96x80 cell is truly transparent outside the figure; rows: idle,
 ## run, attack, guard/hit/evade/skill. One character palette per team.
-const WIDTH := 64
+const WIDTH := 96
 const HEIGHT := 80
 const FRAMES := 6
 const ROWS := 4
