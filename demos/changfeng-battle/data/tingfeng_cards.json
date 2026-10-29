@@ -114,8 +114,21 @@
         "kind": "permanent",
         "duration": -1
       },
-      "max_hp_penalty_per_stack": 2,
-      "description": "经脉受损，每层降低2点气血上限；疗伤可解除。"
+      "description": "经脉受损，每层降低2点气血上限；疗伤可解除。",
+      "scope": "character",
+      "stacking": "add",
+      "modifiers": [
+        {
+          "stat": "max_hp",
+          "op": "flat",
+          "value": -2
+        },
+        {
+          "stat": "AGI",
+          "op": "percent",
+          "value": -5
+        }
+      ]
     }
   ],
   "combos": [
