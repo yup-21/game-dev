@@ -542,6 +542,7 @@ func _build_ui() -> void:
 
     character_card = CharacterCardUI.new()
     hud.add_child(character_card)
+    character_card.switch_requested.connect(_on_character_school_switch)
 
     # Chapter reveal is visual only, and cannot swallow user mouse input.
     intro_title = Label.new()
@@ -576,6 +577,14 @@ func _on_roster_avatar_input(event: InputEvent, id: int) -> void:
 func _open_character_card(id: int) -> void:
     if character_card != null:
         character_card.call("open_actor",model,id)
+
+func _on_character_school_switch(id: int, school_id: String) -> void:
+    if character_card == null or not character_card.visible:
+        return
+    if id != _decision_owner() or not _player_decision():
+        return
+    character_card.call("close_card")
+    _submit("SWITCH_SCHOOL",{"school_id":school_id})
 
 func _refresh() -> void:
     # Read priority from the NEW state before choosing hand visibility.
@@ -719,16 +728,21 @@ func _rebuild_actions() -> void:
         "END_ACTION": "收势 · 结束行动",
         "PASS_REACTION": "按兵 · 交还响应",
         "PITCH_CARD": "弃牌 · 调息",
-        "RESET_TECHNIQUE": "收招 · 复位"
+        "RESET_TECHNIQUE": "收招 · 复位",
+        "SWITCH_SCHOOL": "切换武学"
     }
     var command_seen: Dictionary = {}
     var pitch_actions: Array = []
+    var school_switch_available := false
     for action in legals:
         var kind := str(action.get("kind", ""))
         if not commands.has(kind):
             continue
         if kind == "PITCH_CARD":
             pitch_actions.append(action)
+            continue
+        if kind == "SWITCH_SCHOOL":
+            school_switch_available = true
             continue
         var key := kind + ":" + str(action.get("card_uid", action.get("technique_id", "")))
         if command_seen.has(key):
@@ -741,6 +755,13 @@ func _rebuild_actions() -> void:
         UITheme.apply_button(command_button)
         command_button.pressed.connect(_submit_legal.bind(action))
         command_actions.add_child(command_button)
+    if school_switch_available:
+        var schools_button := Button.new()
+        schools_button.name = "SwitchSchoolMenu"
+        schools_button.text = "武学 · 切换  ▸"
+        UITheme.apply_button(schools_button)
+        schools_button.pressed.connect(_open_character_card.bind(_decision_owner()))
+        command_actions.add_child(schools_button)
     if not pitch_actions.is_empty():
         # Present one contextual command instead of N technical card-UID rows.
         var pitch_toggle := Button.new()
@@ -846,7 +867,7 @@ func _selected_actions() -> Array:
 
 func _submit_legal(action: Dictionary) -> void:
     var params: Dictionary = {}
-    for key in ["card_uid", "card_id", "usage_id", "technique_id", "node_id", "target_cell", "target_id", "link_id"]:
+    for key in ["card_uid", "card_id", "usage_id", "technique_id", "node_id", "target_cell", "target_id", "link_id", "school_id"]:
         if action.has(key):
             params[key] = action[key]
     _clear_selection()
