@@ -118,7 +118,7 @@ func validate(req: Dictionary) -> Dictionary:
 	# Check types before comparisons: Variant Array == String is a runtime error in Godot.
 	var fields: Dictionary={"kind":TYPE_STRING,"actor_id":TYPE_INT,"battle_id":TYPE_STRING,
 		"expected_revision":TYPE_INT,"request_version":TYPE_INT,"request_id":TYPE_STRING,"action_id":TYPE_STRING,
-		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
+		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
 	for key in fields:
 		if req.has(key) and typeof(req[key])!=int(fields[key]): return failure("MALFORMED_REQUEST","请求字段类型错误："+str(key))
 	if not req.has("kind") or not req.has("actor_id"): return failure("MALFORMED_REQUEST","缺少行动或操作者")
@@ -135,6 +135,10 @@ func validate(req: Dictionary) -> Dictionary:
 	var normalized: Dictionary=req.duplicate(true)
 	if normalized.get("kind","")=="END_PHASE": normalized.kind="END_ACTION"
 	if normalized.has("card_id") and not normalized.has("card_uid"): normalized.card_uid=normalized.card_id
+	# Arbitrary continuous targets cannot be enumerated in legal_actions().
+	# They must instead pass the same authoritative, precommit checks.
+	if str(normalized.get("kind",""))=="MOVE_FREE":
+		return _validate_free_move(normalized)
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
@@ -159,3 +163,50 @@ func validate(req: Dictionary) -> Dictionary:
 		quote={"qi_u":roundi(float(cost.qi)*10000),"hp_u":0,"valid":true}
 	if not costs.can_pay(actor,quote): return failure("INSUFFICIENT_RESOURCE","内息不足或气血费用无法支付")
 	return {"success":true,"plan":quote,"action":canonical}
+
+## MOVE_FREE is deliberately separate from MOVE during legacy-rule migration.
+## No state is mutated and no Qi is spent unless BattleModel.submit accepts this plan.
+func _validate_free_move(req: Dictionary) -> Dictionary:
+	if state.spatial == null:
+		return failure("SPATIAL_UNAVAILABLE","当前战场不支持自由移动")
+	if not req.has("target_position") or req.has("target_cell"):
+		return failure("MALFORMED_REQUEST","自由移动仅接受 target_position")
+	if timing(int(req.actor_id))!="ACTION":
+		return failure("ILLEGAL_ACTION","当前并非该角色的行动阶段")
+	var actor=state.get_actor(int(req.actor_id))
+	if actor==null or actor.hp_u<=0:
+		return failure("INVALID_ACTOR","角色不存在或已失去行动能力")
+	var goal: Vector2=req.target_position
+	if not is_finite(goal.x) or not is_finite(goal.y) or absf(goal.x)>100000.0 or absf(goal.y)>100000.0:
+		return failure("INVALID_POSITION","移动目标坐标无效")
+	# A fixed quarter-unit grid is subpixel precision, not a gameplay tile.
+	# Quantization keeps logical positions stable across save/replay boundaries.
+	goal=Vector2(roundf(goal.x*4.0)*0.25,roundf(goal.y*4.0)*0.25)
+	var destination_cell: Vector2i=state.spatial.bake.cell_at_screen(goal,true)
+	if destination_cell==Vector2i(-1,-1) or state.occupied(destination_cell,actor.id):
+		return failure("INVALID_POSITION","落脚点不可通行或与旧战棋单位冲突")
+	var positions: Dictionary={}
+	for other in state.actors:
+		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
+	state.spatial.set_actors(positions)
+	var path: PackedVector2Array=state.spatial.find_path(actor.position,goal,8.0,actor.id)
+	if path.size()<2:
+		return failure("UNREACHABLE_POSITION","落脚点无法通过当前地形到达")
+	var distance: float=state.spatial.path_length(path)
+	if distance<0.25:
+		return failure("NO_MOVEMENT","角色已经位于此落点")
+	var unit_distance: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var units: int=ceili((distance-0.0001)/unit_distance)
+	var remaining: int=int(actor.stats.get("move_budget",2))-actor.normal_moves_used
+	if units>remaining or remaining<=0:
+		return failure("MOVE_BUDGET_EXCEEDED","移动路线超过本回合剩余距离")
+	var quote: Dictionary={"qi_u":units*10000,"hp_u":0,"valid":true,
+		"move_units":units,"move_distance":distance,"continuous_path":path}
+	if not costs.can_pay(actor,quote):
+		return failure("INSUFFICIENT_RESOURCE","内息不足，无法完成自由移动")
+	var action: Dictionary={"kind":"MOVE_FREE","actor_id":actor.id,
+		"target_position":goal,"target_cell":destination_cell}
+	var checked: Dictionary=hooks.validate(context(actor.id,req))
+	if not checked.get("success",false):
+		return failure("HOOK_REJECTED",str(checked.get("message","行动被规则禁止")))
+	return {"success":true,"action":action,"plan":quote}
