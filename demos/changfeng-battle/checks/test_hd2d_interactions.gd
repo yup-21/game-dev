@@ -190,11 +190,13 @@ func _run() -> void:
     var before := _view()
     for cell in [Vector2i(7, 3), Vector2i(8, 4)]:
         await _click(_screen(cell))
+        print("MAP_INPUT_DEBUG target=",cell," screen=",_screen(cell)," pointer=",root.get_mouse_position()," hover=",scene.call("_hover_cell")," revision=",_view().revision," hero_cell=",_actor(_view(),0).cell)
         check(int(_view().revision) == int(before.revision) and _actor(_view(), 0).cell == _actor(before, 0).cell, "mouse rejects water/occupied cell " + str(cell))
     await _mouse(_screen(Vector2i(7, 4)))
     check(scene.get("hovered") == Vector2i(7, 4), "mouse motion and painterly 2D projection resolve the bridge cell")
     check(bool(scene.get("illustrated_map").selection.visible), "legal bridge move displays the 2D cursor")
     await _click(_screen(Vector2i(7, 4)))
+    print("MAP_INPUT_DEBUG bridge pointer=",root.get_mouse_position()," hover=",scene.call("_hover_cell")," revision=",_view().revision," hero_cell=",_actor(_view(),0).cell)
     var moved := _view()
     check(_actor(moved, 0).cell == Vector2i(7, 4) and int(moved.revision) == int(before.revision) + 1, "left click submits exactly one legal MOVE through scene input")
     check(moved.animation_pending and int(scene.get("animation_ticket")) == int(moved.ticket), "MOVE opens a matching presentation ticket")
