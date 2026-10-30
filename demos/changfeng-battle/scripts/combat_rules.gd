@@ -200,6 +200,11 @@ func _validate_free_move(req: Dictionary) -> Dictionary:
 	for other in state.actors:
 		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
 	state.spatial.set_actors(positions)
+	goal=state.spatial.safe_landing(actor.position,goal,8.0,actor.id)
+	goal=Vector2(roundf(goal.x*4.0)*0.25,roundf(goal.y*4.0)*0.25)
+	destination_cell=state.spatial.bake.cell_at_screen(goal,true)
+	if destination_cell==Vector2i(-1,-1):
+		return failure("INVALID_POSITION","没有可用的角色落脚位置")
 	var path: PackedVector2Array=state.spatial.find_path(actor.position,goal,8.0,actor.id)
 	if path.size()<2:
 		return failure("UNREACHABLE_POSITION","落脚点无法通过当前地形到达")
@@ -461,6 +466,10 @@ func _validate_free_card_move(req: Dictionary) -> Dictionary:
 	for other in state.actors:
 		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
 	state.spatial.set_actors(positions)
+	point=state.spatial.safe_landing(actor.position,point,8.0,actor.id)
+	point=Vector2(roundf(point.x*4.0)*0.25,roundf(point.y*4.0)*0.25)
+	dest_cell=state.spatial.bake.cell_at_screen(point,true)
+	if dest_cell==Vector2i(-1,-1): return failure("INVALID_POSITION","步法没有可用落脚位置")
 	var path: PackedVector2Array=state.spatial.find_path(actor.position,point,8.0,actor.id)
 	if path.size()<2: return failure("UNREACHABLE_POSITION","步法目标不可达")
 	var distance: float=state.spatial.path_length(path)
