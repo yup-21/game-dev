@@ -216,7 +216,7 @@ func _has_status(actor: Dictionary, status_id: String) -> bool:
 	return false
 
 func _response_score(context: Dictionary, option: Dictionary) -> float:
-	if str(option.get("kind", "")) != "PLAY_CARD": return 0
+	if str(option.get("kind", "")) not in ["PLAY_CARD","PLAY_CARD_FREE_MOVE"]: return 0
 	var attack: Dictionary = context.get("attack", {})
 	if attack.is_empty(): return 0
 	var own: Dictionary = _actor(context, int(context.observer_id))
@@ -232,6 +232,10 @@ func _response_score(context: Dictionary, option: Dictionary) -> float:
 				return 55.0 + float(link.get("link_id", link.get("id", 0))) * 0.01
 	if defender:
 		if loss <= 0: return 0
+		if (usage_id=="evasion" or not _effect(usage,"move").is_empty()) and option.has("target_position") and str(context.get("spatial_mode","GRID"))=="FREE":
+			var lock: Vector2=Vector2(attack.get("target_position",own.get("position",Vector2.ZERO)))
+			if Vector2(option.target_position).distance_to(lock)>maxf(8.0,float(attack.get("area_radius",0.0))):
+				return 45.0+loss
 		if (usage_id == "evasion" or not _effect(usage, "move").is_empty()) and option.has("target_cell"):
 			var affected: Array = attack.get("affected_cells", [attack.get("target_cell", own.cell)])
 			if not affected.has(option.target_cell): return 45.0 + loss
