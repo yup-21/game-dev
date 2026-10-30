@@ -823,7 +823,7 @@ func _update_status() -> void:
     var priority = model.state.get_actor(_decision_owner())
     var active_name := str(priority.name) if priority != null else "等待结算"
     var school_name := str(priority.school_name) if priority != null else ""
-    var stance_ready := priority != null and priority.technique_states.has("tf_change_stage") and str(priority.technique_states.tf_change_stage.node) == "ready"
+    var stance_ready: bool = priority != null and priority.technique_states.has("tf_change_stage") and str(priority.technique_states.tf_change_stage.node) == "ready"
     status_label.text = "%s    /    %s    /    第 %d 拍    /    %s · %s%s" % [
         mode, str(snap.get("phase", "")), int(snap.get("global_tick", 0)),
         active_name, school_name, "    ◈ 变锋待发" if stance_ready else ""]
