@@ -1343,7 +1343,12 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
         owner = int(snap.get("clash", {}).get("priority_actor_id", -1))
     if not _player_decision():
         return
-    # Reject stale UI commands; only the authoritative legal set may execute.
+    # Position-dependent commands are not finite legal-action enumerations.
+    # Their complete legality is checked transactionally by CombatRules.
+    if kind in ["MOVE_FREE", "MOVE_AND_ATTACK"]:
+        _accept(model.submit(model.request(kind, owner, params)))
+        return
+    # Enumerated legacy commands still require an exact legal-action match.
     for candidate in model.legal_actions(owner):
         if str(candidate.get("kind", "")) != kind:
             continue
