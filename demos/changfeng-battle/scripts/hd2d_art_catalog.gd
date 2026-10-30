@@ -3,36 +3,42 @@ extends RefCounted
 ## The 6x4 sheets contain 256x256 pose cells; clean only edge-connected pale matte
 ## so white clothing inside a silhouette is not blindly keyed out.
 const IllustratedFallback = preload("res://scripts/hd2d_illustrated_factory.gd")
+const Registry = preload("res://scripts/character_registry.gd")
 const FRAME_SIZE := 256
 const COLS := 6
 const ROWS := 4
 ## Literal preloads make the supplied images dependencies of exported Godot builds.
-const ACTOR_SHEETS := {
-    2: preload("res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png"),
-    3: preload("res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png"),
-    4: preload("res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png"),
-    5: preload("res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png")
+# Preload every used image for Godot exports, but resolve their *identity*
+# via CharacterRegistry instead of duplicating actor numeric IDs.
+const SHEETS_BY_PATH := {
+    "res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png": preload("res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png"),
+    "res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png": preload("res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png"),
+    "res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png": preload("res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png"),
+    "res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png": preload("res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png"),
+    "res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg": preload("res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg"),
+    "res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg": preload("res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg")
 }
-## Character-style pose studies fill the two missing story-combat slots.
-## Their white-background JPG cells are cropped and keyed at runtime.
-const CONCEPT_POSE_SHEETS := {
-    0: preload("res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg"),
-    1: preload("res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg")
-}
-const PORTRAITS := {
-    "沈长风": preload("res://assets/characters/concepts/shen_changfeng_portrait.png"),
-    "老镖头": preload("res://assets/characters/concepts/escort_captain_portrait.png"),
-    "顾清霜": preload("res://assets/characters/concepts/gu_qingshuang_portrait_v1.png")
+const PORTRAITS_BY_PATH := {
+    "res://assets/characters/concepts/shen_changfeng_portrait.png": preload("res://assets/characters/concepts/shen_changfeng_portrait.png"),
+    "res://assets/characters/concepts/escort_captain_portrait.png": preload("res://assets/characters/concepts/escort_captain_portrait.png"),
+    "res://assets/characters/concepts/gu_qingshuang_portrait_v1.png": preload("res://assets/characters/concepts/gu_qingshuang_portrait_v1.png")
 }
 const SCENES := {
     "mountain": preload("res://assets/concepts/2026-10-30/scenes/mountain_herbal_workshop_day.jpg"),
     "snow": preload("res://assets/concepts/2026-10-30/scenes/snowy_sword_sect_courtyard.jpg"),
     "rainy_bridge": preload("res://assets/concepts/2026-10-30/scenes/rainy_broken_bridge_battle_v1.jpg")
 }
+static var _registry = Registry.new()
 static var _sheets: Dictionary = {}
 
+static func portrait_for_character(character_id: String) -> Texture2D:
+    var profile: Dictionary = _registry.get_profile(character_id)
+    var path: String = str(profile.get("art",{}).get("portrait",""))
+    return PORTRAITS_BY_PATH.get(path,null) as Texture2D
+
 static func portrait(speaker: String) -> Texture2D:
-    return PORTRAITS.get(speaker, null) as Texture2D
+    var profile: Dictionary = _registry.for_name(speaker)
+    return portrait_for_character(str(profile.get("id","")))
 
 static func scenery(name: String) -> Texture2D:
     return SCENES.get(name, null) as Texture2D
@@ -84,12 +90,14 @@ static func _clear_edge_matte(frame: Image) -> void:
             queue.append(index + FRAME_SIZE)
 
 static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
-    if not ACTOR_SHEETS.has(actor_id) and not CONCEPT_POSE_SHEETS.has(actor_id):
+    var profile: Dictionary = _registry.for_actor(actor_id)
+    var path: String = str(profile.get("art",{}).get("sprite_sheet",""))
+    if not SHEETS_BY_PATH.has(path):
         return IllustratedFallback.make_sheet(enemy)
-    if _sheets.has(actor_id):
-        return _sheets[actor_id]
-    var uses_concept_cells: bool = CONCEPT_POSE_SHEETS.has(actor_id)
-    var source_texture: Texture2D = CONCEPT_POSE_SHEETS.get(actor_id, ACTOR_SHEETS.get(actor_id)) as Texture2D
+    if _sheets.has(path):
+        return _sheets[path]
+    var uses_concept_cells: bool = path.ends_with(".jpg")
+    var source_texture: Texture2D = SHEETS_BY_PATH[path] as Texture2D
     var source: Image = source_texture.get_image() if source_texture != null else null
     if source == null or source.is_empty():
         push_warning("Invalid 6x4 artwork for actor %d" % actor_id)
@@ -116,19 +124,19 @@ static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
             _clear_edge_matte(frame)
             atlas.blit_rect(frame, Rect2i(Vector2i.ZERO, Vector2i(FRAME_SIZE, FRAME_SIZE)), origin)
     var texture := ImageTexture.create_from_image(atlas)
-    _sheets[actor_id] = texture
+    _sheets[path] = texture
     return texture
 
 static func avatar(actor_id: int, enemy: bool = false) -> Texture2D:
-    var name := "沈长风" if actor_id == 0 else ("顾清霜" if actor_id == 2 else "")
-    var painting := portrait(name)
-    if painting != null:
-        return painting
+    var definition: Dictionary = _registry.for_actor(actor_id)
+    var painting := portrait_for_character(str(definition.get("id","")))
+    if painting != null: return painting
     var atlas := AtlasTexture.new()
-    var sheet := sheet_for_actor(actor_id, enemy)
+    var sheet := sheet_for_actor(actor_id,enemy)
     atlas.atlas = sheet
-    atlas.region = Rect2(Vector2.ZERO, Vector2(sheet.get_width() / 6.0, sheet.get_height() / 4.0))
+    atlas.region = Rect2(Vector2.ZERO,Vector2(sheet.get_width()/6.0,sheet.get_height()/4.0))
     return atlas
 
 static func uses_supplied_sheet(actor_id: int) -> bool:
-    return ACTOR_SHEETS.has(actor_id) or CONCEPT_POSE_SHEETS.has(actor_id)
+    var profile: Dictionary = _registry.for_actor(actor_id)
+    return SHEETS_BY_PATH.has(str(profile.get("art",{}).get("sprite_sheet","")))

@@ -6,6 +6,9 @@ var encounters: Dictionary = {}
 var load_error: String = ""
 
 func _init(path: String = "res://data/demo_scenario.json") -> void:
+	if not characters.load_error.is_empty():
+		load_error=characters.load_error
+		return
 	if not FileAccess.file_exists(path):
 		load_error="Encounter catalog missing: "+path
 		return

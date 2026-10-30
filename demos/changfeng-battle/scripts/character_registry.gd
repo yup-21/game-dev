@@ -21,7 +21,7 @@ func _init(index_path: String = BASE + "index.json") -> void:
         load_error = schools.load_error
         return
     for entry in index.characters:
-        if not entry is String or "/" in entry or ".." in entry or not entry.ends_with(".json"):
+        if not entry is String or entry.contains("/") or entry.contains("..") or not entry.ends_with(".json"):
             load_error = "Unsafe character file path"
             return
         var path: String = BASE + entry
@@ -40,13 +40,18 @@ func _init(index_path: String = BASE + "index.json") -> void:
         if int(d.battle_actor_id) >= 0:
             by_actor[int(d.battle_actor_id)] = str(d.id)
 
+func _whole(value: Variant, lo: int, hi: int) -> bool:
+    if not (value is int or value is float): return false
+    var number: float = float(value)
+    return is_finite(number) and floor(number)==number and number>=float(lo) and number<=float(hi)
+
 func _valid(d: Variant, schools) -> bool:
     if not d is Dictionary or d.get("schema_version") != 1:
         return false
     for key in ["id","name","title","role","faction","weapon","personality","biography","team_hint","school_id"]:
         if not d.get(key) is String:
             return false
-    if str(d.id).is_empty() or str(d.name).is_empty() or not d.get("battle_actor_id") is int:
+    if str(d.id).is_empty() or str(d.name).is_empty() or not _whole(d.get("battle_actor_id"),-1,1023):
         return false
     var actor_id: int = int(d.battle_actor_id)
     if actor_id < -1 or actor_id > 1023:
@@ -58,10 +63,10 @@ func _valid(d: Variant, schools) -> bool:
     if not d.get("attributes") is Dictionary or not d.get("passives") is Dictionary or not d.get("techniques") is Dictionary or not d.get("art") is Dictionary:
         return false
     for stat in ["STR","AGI","CON","MND"]:
-        if not d.attributes.get(stat) is int or int(d.attributes[stat]) < 1 or int(d.attributes[stat]) > 100:
+        if not _whole(d.attributes.get(stat),1,100):
             return false
     for key in ["insight","conceal"]:
-        if not d.passives.get(key) is int or int(d.passives[key]) < 0 or int(d.passives[key]) > 2:
+        if not _whole(d.passives.get(key),0,2):
             return false
     for art_key in ["portrait","sprite_sheet","sheet_quality","portrait_quality"]:
         if not d.art.get(art_key) is String:
@@ -71,7 +76,7 @@ func _valid(d: Variant, schools) -> bool:
         if not location.is_empty() and (not location.begins_with("res://assets/") or ".." in location):
             return false
     for technique in d.techniques:
-        if not d.techniques[technique] is int or int(d.techniques[technique]) < 1 or int(d.techniques[technique]) > 10:
+        if not _whole(d.techniques[technique],1,10):
             return false
     return true
 
