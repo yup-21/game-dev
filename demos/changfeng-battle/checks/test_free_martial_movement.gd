@@ -25,10 +25,10 @@ func _run() -> void:
     var actor=m.state.get_actor(0)
     var uid: String=m.cards.create_instance(actor,"tf_step","hand")
     var legacy_cell: Vector2i=Vector2i(5,4)
-    var legacy_actions: Array=m.legal_actions(actor.id).filter(func(action):
-        return str(action.get("kind",""))=="PLAY_CARD"
-            and str(action.get("card_uid",""))==uid
-            and action.has("target_cell"))
+    var legacy_actions: Array=[]
+    for action in m.legal_actions(actor.id):
+        if str(action.get("kind",""))=="PLAY_CARD" and str(action.get("card_uid",""))==uid and action.has("target_cell"):
+            legacy_actions.append(action)
     _check(legacy_actions.is_empty(),
         "FREE mode must not enumerate grid-based movement card destinations")
     var forbidden: Dictionary=m.submit(m.request("PLAY_CARD",actor.id,{
@@ -62,10 +62,10 @@ func _run() -> void:
 
     var grid=_new_mode("GRID")
     var grid_uid: String=grid.cards.create_instance(grid.state.get_actor(0),"tf_step","hand")
-    var grid_options: Array=grid.legal_actions(0).filter(func(action):
-        return str(action.get("kind",""))=="PLAY_CARD"
-            and str(action.get("card_uid",""))==grid_uid
-            and action.has("target_cell"))
+    var grid_options: Array=[]
+    for action in grid.legal_actions(0):
+        if str(action.get("kind",""))=="PLAY_CARD" and str(action.get("card_uid",""))==grid_uid and action.has("target_cell"):
+            grid_options.append(action)
     _check(not grid_options.is_empty(),
         "GRID mode still supports legacy reachable-cell movement cards")
     var denied: Dictionary=grid.submit(grid.request("PLAY_CARD_FREE_MOVE",0,{
