@@ -6,6 +6,7 @@ const CHARGE := 10000.0
 const TOP := 49.0
 const BOTTOM := 42.0
 const PORTRAIT := 36.0
+const GLIDE_SECONDS := 0.32
 const ALLY := Color("83d6bc")
 const ENEMY := Color("d28c80")
 const GOLD := Color("e8c989")
@@ -16,6 +17,9 @@ var _actors: Array = []
 var _priority_id := -1
 var _markers: Dictionary = {}
 var _marker_y: Dictionary = {}
+var _target_y: Dictionary = {}
+var _start_y: Dictionary = {}
+var _glide_elapsed: Dictionary = {}
 var _round_avatar_material: ShaderMaterial
 
 func _ready() -> void:
@@ -25,7 +29,7 @@ func _ready() -> void:
     round_shader.code = "shader_type canvas_item;\nvoid fragment() {\n    vec2 d = UV - vec2(0.5);\n    if (dot(d, d) > 0.210) discard;\n    COLOR = texture(TEXTURE, UV);\n}\n"
     _round_avatar_material = ShaderMaterial.new()
     _round_avatar_material.shader = round_shader
-    resized.connect(_layout_markers)
+    resized.connect(func(): _layout_markers(true))
     _caption("出手", true)
     _caption("集气", false)
 
@@ -68,6 +72,7 @@ func set_state(actors: Array, priority_id: int) -> void:
         var frame: Panel = _markers[id]
         frame.visible = float(actor.get("hp", 0.0)) > 0.0
         frame.modulate = Color.WHITE if id == _priority_id else Color(1, 1, 1, 0.88)
+        frame.z_index = 2 if id == _priority_id else 1
         var rim := frame.get_node_or_null("Rim") as TextureRect
         if rim != null:
             rim.modulate = GOLD if id == _priority_id else (ENEMY if enemy else ALLY)
@@ -116,43 +121,62 @@ func _make_marker(id: int, enemy: bool) -> Panel:
     add_child(frame)
     return frame
 
-func _layout_markers() -> void:
+func _layout_markers(snap_immediately: bool = false) -> void:
     if size.y <= TOP + BOTTOM:
         return
-    _marker_y.clear()
-    for side in range(2):
-        var entries: Array = []
-        for actor in _actors:
-            var enemy := int(actor.get("team_id", 0)) != 0
-            if enemy != (side == 1) or float(actor.get("hp", 0.0)) <= 0.0:
-                continue
-            entries.append({
-                "id": int(actor.get("id", -1)),
-                "actual": gauge_y(float(actor.get("gauge", 0.0)))
-            })
-        entries.sort_custom(func(a, b): return float(a["actual"]) < float(b["actual"]))
-        # Separate portraits that share a charge value. The small dots on
-        # the centre line remain at their exact, unmodified gauge positions.
-        var shifted: Array = []
-        var previous := -100000.0
-        for entry in entries:
-            var y := maxf(float(entry["actual"]), previous + 39.0)
-            shifted.append(y)
-            previous = y
-        if not shifted.is_empty() and float(shifted[-1]) > size.y - BOTTOM:
-            var excess := float(shifted[-1]) - (size.y - BOTTOM)
-            for i in range(shifted.size()):
-                shifted[i] = float(shifted[i]) - excess
-        for i in range(entries.size()):
-            var id: int = entries[i]["id"]
-            if not _markers.has(id):
-                continue
-            var placed := float(shifted[i])
-            _marker_y[id] = placed
-            var frame: Panel = _markers[id]
-            frame.position = Vector2(7.0 if side == 0 else size.x - PORTRAIT - 7.0,
-                placed - PORTRAIT * 0.5)
+    var live: Dictionary = {}
+    for actor in _actors:
+        var id := int(actor.get("id", -1))
+        if id < 0 or not _markers.has(id) or float(actor.get("hp", 0.0)) <= 0.0:
+            continue
+        live[id] = true
+        var target := gauge_y(float(actor.get("gauge", 0.0)))
+        # All portraits occupy the exact same horizontal rail. Equal charge
+        # values intentionally overlap; neither team nor arrival order offsets
+        # the authoritative position.
+        if snap_immediately or not _marker_y.has(id):
+            _marker_y[id] = target
+            _target_y[id] = target
+            _start_y[id] = target
+            _glide_elapsed[id] = GLIDE_SECONDS
+        elif not is_equal_approx(float(_target_y.get(id, target)), target):
+            # Retarget from the current rendered position, not an old goal.
+            # Repeated identical snapshots must not restart the animation.
+            _start_y[id] = float(_marker_y[id])
+            _target_y[id] = target
+            _glide_elapsed[id] = 0.0
+        var frame: Panel = _markers[id]
+        frame.position = Vector2((size.x - PORTRAIT) * 0.5,
+            float(_marker_y[id]) - PORTRAIT * 0.5)
+    for id in _marker_y.keys():
+        if live.has(id):
+            continue
+        _marker_y.erase(id)
+        _target_y.erase(id)
+        _start_y.erase(id)
+        _glide_elapsed.erase(id)
     queue_redraw()
+
+func _process(delta: float) -> void:
+    var changed := false
+    for id in _target_y.keys():
+        if not _markers.has(id):
+            continue
+        var elapsed := minf(GLIDE_SECONDS,
+            float(_glide_elapsed.get(id, GLIDE_SECONDS)) + maxf(delta, 0.0))
+        _glide_elapsed[id] = elapsed
+        var t := elapsed / GLIDE_SECONDS
+        var ease_out := 1.0 - pow(1.0 - t, 3.0)
+        var y := lerpf(float(_start_y[id]), float(_target_y[id]), ease_out)
+        if is_equal_approx(y, float(_marker_y[id])):
+            continue
+        _marker_y[id] = y
+        var frame: Panel = _markers[id]
+        frame.position = Vector2((size.x - PORTRAIT) * 0.5,
+            y - PORTRAIT * 0.5)
+        changed = true
+    if changed:
+        queue_redraw()
 
 func _draw() -> void:
     var bottom := size.y - BOTTOM
@@ -169,12 +193,16 @@ func _draw() -> void:
         var id := int(actor.get("id", -1))
         if not _marker_y.has(id):
             continue
-        var y := gauge_y(float(actor.get("gauge", 0.0)))
+        var y := float(_marker_y[id])
         var enemy := int(actor.get("team_id", 0)) != 0
         var tint := ENEMY if enemy else ALLY
         if id == _priority_id:
             tint = GOLD
-        var end_x := size.x - PORTRAIT - 7.0 if enemy else 7.0 + PORTRAIT
-        draw_line(Vector2(cx, y), Vector2(end_x, float(_marker_y[id])),
-            Color(tint, 0.55), 1.0, true)
-        draw_circle(Vector2(cx, y), 4.2 if id == _priority_id else 3.0, tint)
+        # A subtle vertical travel cue sits behind the moving portrait.
+        # There are no horizontal connectors or anti-overlap offsets.
+        var target := float(_target_y.get(id, y))
+        if absf(target - y) > 1.0:
+            draw_line(Vector2(cx, y), Vector2(cx, target),
+                Color(tint, 0.25), 2.0, true)
+        draw_circle(Vector2(cx, y), PORTRAIT * 0.5 + 2.0,
+            Color(tint, 0.17))
