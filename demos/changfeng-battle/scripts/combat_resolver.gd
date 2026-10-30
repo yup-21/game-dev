@@ -79,6 +79,14 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 	if int(plan.hp_u)>0: emit("HP_COST",{"actor_id":actor.id,"amount":float(plan.hp_u)/UNIT,"damage_kind":"cost"})
 	match str(action.kind):
 		"END_ACTION": turns.end_action()
+		"SET_SPATIAL_MODE":
+			var previous_mode: String=state.spatial_mode
+			state.spatial_mode=str(action.spatial_mode)
+			if state.spatial_mode=="GRID" and state.spatial!=null:
+				for combatant in state.actors:
+					combatant.position=state.spatial.bake.cell_center(combatant.cell)
+			emit("BATTLE_MODE_CHANGED",{"actor_id":actor.id,"from":previous_mode,
+				"to":state.spatial_mode,"text":"战场规则 · %s" % ("自由落点" if state.spatial_mode=="FREE" else "方格战棋")})
 		"SWITCH_SCHOOL":
 			var previous: String=str(actor.school_id)
 			if cards.equip_school(actor,str(action.school_id)):
@@ -185,10 +193,15 @@ func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: St
 	var target=state.get_actor(target_id)
 	# Attacks (basic, martial cards and staged abilities) all turn toward
 	# their selected target before opening the LIFO response window.
-	actor.facing=Facing.from_delta(target.cell-actor.cell,actor.facing)
+	if state.spatial_mode=="FREE" and state.spatial!=null:
+		var delta: Vector2=target.position-actor.position
+		actor.facing=Facing.from_delta(Vector2i(roundi(delta.x),roundi(delta.y)),actor.facing)
+	else:
+		actor.facing=Facing.from_delta(target.cell-actor.cell,actor.facing)
 	var attack: Dictionary={"attack_id":state.root_action_id,"attacker_id":actor_id,"defender_id":target_id,
 		"card_uid":uid,"definition_id":definition_id,"usage_id":usage_id,"route":route,"break_bonus":break_bonus,
 		"origin_cell":actor.cell,"target_cell":target.cell,"affected_cells":[target.cell],
+		"origin_position":actor.position,"target_position":target.position,"area_radius":0.0,
 		"base_damage":damage,"attack_bonus":0,"defense_reduction":0,"effects":effects.duplicate(true),"interrupted":false,"combo":{},"paid":true,"technique_id":technique_id,"node_id":node_id}
 	var focus: int=statuses.stacks(actor_id,"focus")
 	if focus>0:
@@ -261,7 +274,12 @@ func resolve_attack() -> void:
 		emit("ATTACK_INTERRUPTED",{"actor_id":source.id,"text":"招式被迎锋中断"})
 		record_attack(false,true)
 		return
-	if not a.affected_cells.has(target.cell):
+	var missed: bool=not a.affected_cells.has(target.cell)
+	if state.spatial_mode=="FREE" and state.spatial!=null:
+		var locked: Vector2=Vector2(a.get("target_position",target.position))
+		var radius: float=maxf(8.0,float(a.get("area_radius",0.0)))
+		missed=target.position.distance_to(locked)>radius+0.001
+	if missed:
 		emit("ATTACK_MISSED",{"actor_id":source.id,"target_id":target.id,"text":"落空 · 对手离开攻击范围"})
 		apply_attack_effects("on_attack_miss",source.id)
 		record_attack(false)
@@ -359,6 +377,9 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				state.attack.defense_reduction+=maxi(0,int(effect.get("reduction",0)))
 			"modify_attack_area":
 				if state.attack.is_empty(): continue
+				if state.spatial_mode=="FREE" and state.spatial!=null:
+					state.attack.area_radius=maxf(float(state.attack.get("area_radius",0.0)),
+						maxf(state.spatial.bake.step.x,state.spatial.bake.step.y))
 				var lock: Vector2i=state.attack.target_cell
 				for cell in [lock]+state.neighbors(lock):
 					if state.passable(cell) and not state.attack.affected_cells.has(cell): state.attack.affected_cells.append(cell)
@@ -444,6 +465,9 @@ func move_actor(actor_id: int,dest: Vector2i,path: Array) -> void:
 
 func force_move(source: int,target_id: int,effect: Dictionary) -> void:
 	var actor=state.get_actor(target_id)
+	if state.spatial_mode=="FREE" and state.spatial!=null:
+		_force_move_free(source,target_id,effect)
+		return
 	var delta: Vector2i=actor.cell-state.get_actor(source).cell
 	if abs(delta.x)>=abs(delta.y): delta=Vector2i(signi(delta.x),0)
 	else: delta=Vector2i(0,signi(delta.y))
@@ -456,6 +480,33 @@ func force_move(source: int,target_id: int,effect: Dictionary) -> void:
 		path.append(next)
 		dest=next
 	if not path.is_empty(): move_actor(target_id,dest,path)
+
+## Continuous knockback is performed along the push axis, not by teleports
+## between legacy cells. Stop at the last legal position before collision.
+func _force_move_free(source: int,target_id: int,effect: Dictionary) -> void:
+	var actor=state.get_actor(target_id)
+	var attacker=state.get_actor(source)
+	if actor==null or attacker==null: return
+	var direction: Vector2=actor.position-attacker.position
+	if direction.length_squared()<0.0001: return
+	direction=direction.normalized()
+	if str(effect.get("direction",""))=="towards_attacker": direction=-direction
+	var positions: Dictionary={}
+	for other in state.actors:
+		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
+	state.spatial.set_actors(positions)
+	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var start: Vector2=actor.position
+	var end: Vector2=start
+	for i in range(1,maxi(0,int(effect.get("max_distance",0)))*24+1):
+		var candidate: Vector2=start+direction*(float(i)*unit/24.0)
+		if not state.spatial.is_valid_position(candidate,8.0,target_id): break
+		end=candidate
+	if end.distance_to(start)<0.25: return
+	end=Vector2(roundf(end.x*4.0)*0.25,roundf(end.y*4.0)*0.25)
+	var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(end)
+	if dest_cell==Vector2i(-1,-1): return
+	move_actor_free(target_id,end,dest_cell,PackedVector2Array([start,end]))
 
 func add_shield(actor_id: int,amount: float,duration: int) -> void:
 	var a=state.get_actor(actor_id)
