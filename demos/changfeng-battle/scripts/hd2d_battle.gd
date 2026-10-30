@@ -42,6 +42,8 @@ var roster_bars: Dictionary = {}
 var animation_time := 0.0
 var animation_ticket := -1
 var ai_wait := 0.0
+var auto_battle := false
+var auto_button: Button
 var hovered := Vector2i(-1, -1)
 var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
@@ -275,7 +277,7 @@ func _refresh_target_markers() -> void:
                 if int(actor.id) == int(action.target_id):
                     target_cells[actor.cell] = true
     if illustrated_map!=null:
-        illustrated_map.set_highlights(target_cells,animation_ticket<0 and _player_decision())
+        illustrated_map.set_highlights(target_cells,animation_ticket<0 and _player_decision() and not auto_battle)
         return
     for x in range(COLS):
         for y in range(ROWS):
@@ -420,6 +422,18 @@ func _build_ui() -> void:
     phase_label.offset_right = -138.0
     phase_label.offset_top = 15.0
     phase_label.offset_bottom = 42.0
+    auto_button = Button.new()
+    auto_button.name = "AutoBattleToggle"
+    auto_button.text = "自动战斗 · 关"
+    auto_button.tooltip_text = "托管我方行动；按 A 随时恢复手动"
+    ribbon.add_child(auto_button)
+    auto_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    auto_button.offset_left = -138.0
+    auto_button.offset_right = -12.0
+    auto_button.offset_top = 11.0
+    auto_button.offset_bottom = 45.0
+    UITheme.apply_button(auto_button)
+    auto_button.pressed.connect(_toggle_auto_battle)
     help_label = Label.new()
     help_label.text = "左键选目标 · C 角色卡 · Q 攻击 · G 格挡 · Space 收势/Pass · Esc 返回"
     help_label.visible = false
@@ -665,6 +679,21 @@ func _on_roster_avatar_input(event: InputEvent, id: int) -> void:
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         _open_character_card(id)
 
+func _toggle_auto_battle() -> void:
+    _set_auto_battle(not auto_battle)
+
+func _set_auto_battle(enabled: bool) -> void:
+    if auto_battle == enabled:
+        return
+    auto_battle = enabled
+    ai_wait = 0.0
+    _clear_selection()
+    if enabled and character_card != null and character_card.visible:
+        character_card.call("close_card")
+    _rebuild_actions()
+    _refresh_target_markers()
+    _update_status()
+
 func _open_character_card(id: int) -> void:
     if character_card != null:
         character_card.call("open_actor",model,id)
@@ -749,7 +778,7 @@ func _rebuild_actions() -> void:
         child.queue_free()
     for child in command_actions.get_children():
         child.queue_free()
-    var available: bool = _player_decision() and not bool(snap.get("animation_pending", false)) and str(snap.get("outcome", "playing")) == "playing"
+    var available: bool = _player_decision() and not auto_battle and not bool(snap.get("animation_pending", false)) and str(snap.get("outcome", "playing")) == "playing"
     var owner = model.state.get_actor(_decision_owner())
     var actor_name := str(owner.name) if owner != null else "等待"
     var pass_only := str(snap.get("phase", "")) == "CLASH" and ResponsePolicy.should_auto_pass(
@@ -782,7 +811,9 @@ func _rebuild_actions() -> void:
             _add_visible_hand_card(card, fallback, false)
         displayed_count += 1
     var hint := "%s · 手牌 %d 张" % [actor_name, displayed_count]
-    if available and not pass_only:
+    if auto_battle:
+        hint += "    自动托管中 · 按 A 恢复手动"
+    elif available and not pass_only:
         hint += "    选择亮起的招式，再点击目标" if playable_count > 0 else "    灰色牌已抽到，靠近目标或满足条件后可出"
     else:
         hint += "    当前等待应变／动画，手牌仍保留"
@@ -1009,6 +1040,8 @@ func _update_status() -> void:
     status_label.text = "第 %d 拍  ·  %s%s" % [
         int(snap.get("global_tick", 0)), active_name,
         "  ◈ 变锋待发" if stance_ready else ""]
+    if auto_button != null:
+        auto_button.text = "自动战斗 · 开" if auto_battle else "自动战斗 · 关"
     status_label.tooltip_text = "%s / %s / %s" % [mode,
         str(snap.get("phase", "")), school_name]
     if str(snap.get("outcome", "playing")) != "playing":
@@ -1176,7 +1209,7 @@ func _process(delta: float) -> void:
     if snap.get("phase", "") == "CLASH":
         decision_id = int(snap.get("clash", {}).get("priority_actor_id", -1))
     var decision_actor = model.state.get_actor(decision_id)
-    if decision_actor != null and decision_actor.controller != "PLAYER":
+    if decision_actor != null and (decision_actor.controller != "PLAYER" or auto_battle):
         ai_wait -= delta
         if ai_wait <= 0:
             var request: Dictionary = ai.choose_action(model.decision_context(decision_id))
@@ -1243,7 +1276,7 @@ func _cue_events(events: Array) -> void:
             camera_shake = 0.20
 
 func _submit(kind: String, params: Dictionary = {}) -> void:
-    if animation_ticket >= 0:
+    if auto_battle or animation_ticket >= 0:
         return
     var owner := int(snap.get("active_id", -1))
     if snap.get("phase", "") == "CLASH":
@@ -1306,10 +1339,18 @@ func _update_cursor() -> void:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
 
 func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_A:
+        _toggle_auto_battle()
+        get_viewport().set_input_as_handled()
+        return
     if character_card != null and character_card.visible:
         if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
             character_card.call("close_card")
             get_viewport().set_input_as_handled()
+        return
+    if auto_battle and event is InputEventMouseButton:
+        return
+    if auto_battle and event is InputEventKey and event.keycode in [KEY_C, KEY_Q, KEY_G, KEY_SPACE, KEY_ENTER]:
         return
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
         _clear_selection()
@@ -1347,6 +1388,7 @@ func _unhandled_input(event: InputEvent) -> void:
                 if story_encounter:
                     return
                 model.reset(2026, -1, "tingfeng", _quick_character_options())
+                _set_auto_battle(false)
                 animation_driver.reset()
                 if effects_driver != null:
                     effects_driver.clear()

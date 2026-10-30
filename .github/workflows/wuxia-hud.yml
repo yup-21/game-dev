@@ -6,6 +6,9 @@ on:
       - 'demos/changfeng-battle/assets/ui/**'
       - 'demos/changfeng-battle/scripts/hd2d_card_ui.gd'
       - 'demos/changfeng-battle/scripts/opening_flow.gd'
+      - 'demos/changfeng-battle/scripts/opening_role_sprite.gd'
+      - 'demos/changfeng-battle/assets/characters/concepts/escort_elder_injured.svg'
+      - 'demos/changfeng-battle/checks/test_opening_sprites.gd'
       - 'demos/changfeng-battle/scripts/demo_result.gd'
       - 'demos/changfeng-battle/checks/test_single_battle_entry.gd'
       - 'demos/changfeng-battle/checks/opening_visual_check.gd'
@@ -32,6 +35,7 @@ on:
       - 'demos/changfeng-battle/scripts/hd2d_ctb_rail.gd'
       - 'demos/changfeng-battle/scripts/hd2d_response_policy.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_auto_pass.gd'
+      - 'demos/changfeng-battle/checks/test_bridge_auto_battle.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_wuxia_ui.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_ui_assets.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_unified_hud.gd'
@@ -68,6 +72,8 @@ jobs:
           use-dotnet: false
       - name: Import PNG and SVG art
         run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Validate first-act Sprite2D characters, real assets, movement and elder dialogue
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_opening_sprites.gd
       - name: Assert only the illustrated battle is player-facing
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_single_battle_entry.gd
       - name: Verify 150 baked orthographic cells, river-blocked hitboxes and 3v3 paths
@@ -92,6 +98,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
       - name: Verify automatic empty-response skips and authoritative clash resolution
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_auto_pass.gd
+      - name: Play seeded six-character bridge battles through production AI
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_bridge_auto_battle.gd
       - name: Validate generated martial cards and actor-specific schools
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_derived_wuxue_decks.gd
       - name: Check original multi-school V3 mechanics
@@ -134,10 +142,19 @@ jobs:
           test -s demos/changfeng-battle/captures/hd2d-validation/02-card-selection.png
           test -s demos/changfeng-battle/captures/hd2d-validation/03-character-dossier.png
           test -s demos/changfeng-battle/captures/hd2d-validation/04-baked-grid.png
+      - name: Capture real first-act story and injured elder
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a -s " -screen 0 1600x1000x24" godot --path demos/changfeng-battle -- --opening-visual-check
+          test -s demos/changfeng-battle/captures/opening-explore.png
+          test -s demos/changfeng-battle/captures/opening-dialogue.png
       - name: Upload screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unified-wuxia-hud-visual-evidence
-          path: demos/changfeng-battle/captures/hd2d-validation/*.png
+          path: |
+            demos/changfeng-battle/captures/hd2d-validation/*.png
+            demos/changfeng-battle/captures/opening-*.png
           if-no-files-found: warn
