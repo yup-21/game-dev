@@ -27,7 +27,7 @@ func _run() -> void:
     view._enter_new_game()
     view.story.skip_cinematic()
     _check(view.story.phase=="explore","first act reaches real exploration phase")
-    _check(view._temple_background(),"backdrop is available in exploration/draw helper")
+    _check(view.temple_backdrop!=null,"cached backdrop remains available for exploration draw")
     print("STORY_BACKGROUND_PASS checks=%d failures=%d fallback=%s" % [
         checks,failures,str(view.temple_uses_fallback)])
     quit(1 if failures else 0)
