@@ -27,6 +27,7 @@ var status_label: Label
 var help_label: Label
 var clash_label: Label
 var phase_label: Label
+var roster_labels: Dictionary = {}
 var animation_time := 0.0
 var animation_ticket := -1
 var ai_wait := 0.0
@@ -315,6 +316,30 @@ func _build_ui() -> void:
     help_label.add_theme_color_override("font_color", UITheme.MUTED)
     column.add_child(help_label)
 
+    # Multi-party CTB and status HUD.
+    var roster_panel := PanelContainer.new()
+    canvas.add_child(roster_panel)
+    roster_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    roster_panel.offset_left = 12.0
+    roster_panel.offset_right = 294.0
+    roster_panel.offset_top = 120.0
+    roster_panel.offset_bottom = 490.0
+    UITheme.apply_panel(roster_panel)
+    var roster_column := VBoxContainer.new()
+    roster_panel.add_child(roster_column)
+    var roster_heading := Label.new()
+    roster_heading.text = "阵 容  /  CTB 集气"
+    roster_heading.add_theme_color_override("font_color", UITheme.GOLD)
+    roster_heading.add_theme_font_size_override("font_size", 18)
+    roster_column.add_child(roster_heading)
+    for actor in snap.get("actors", []):
+        var entry := Label.new()
+        entry.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        entry.add_theme_font_size_override("font_size", 14)
+        entry.add_theme_color_override("font_color", UITheme.JADE if int(actor.get("team_id", 0)) == 0 else UITheme.RED)
+        roster_column.add_child(entry)
+        roster_labels[int(actor.id)] = entry
+
     # Combat priority and response window information remain visible.
     var sidebar := PanelContainer.new()
     canvas.add_child(sidebar)
@@ -570,6 +595,17 @@ func _update_status() -> void:
         if story_encounter:
             info += "    Esc 查看剧情结算"
     status_label.text = info
+    for actor in snap.get("actors", []):
+        var id := int(actor.id)
+        if not roster_labels.has(id):
+            continue
+        var marker := "◆" if id == _decision_owner() else "◇"
+        var role := "手动" if str(actor.get("controller", "")) == "PLAYER" else "自动"
+        var hp := float(actor.get("hp", 0.0))
+        var max_hp := maxf(1.0, float(actor.get("max_hp", 1.0)))
+        var gauge := int(actor.get("gauge", 0))
+        roster_labels[id].text = "%s %s  [%s]  集气 %d\n    血 %.0f/%.0f  ·  气 %.1f" % [
+            marker, str(actor.get("name", "江湖客")), role, gauge, hp, max_hp, float(actor.get("qi", 0.0))]
     var acting: int = _decision_owner()
     if phase_label != null:
         phase_label.text = "交锋应变" if snap.get("phase", "") == "CLASH" else ("我方行动" if _player_decision() else "敌方行动")
