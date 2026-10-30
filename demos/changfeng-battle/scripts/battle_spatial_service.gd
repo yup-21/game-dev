@@ -113,13 +113,37 @@ func attack_in_range(source: Vector2, target: Vector2, min_range: float, max_ran
     var gap := maxf(0.0, source.distance_to(target) - source_radius - target_radius)
     return gap + EPSILON >= min_range and gap <= max_range + EPSILON
 
+## Visibility is independent of movement collision: attacker and defender
+## themselves are endpoints, while terrain and other living actors can block.
+func attack_line_clear(start: Vector2, finish: Vector2, ignore_ids: Array = []) -> bool:
+    if bake.error != "" or not is_finite(start.x) or not is_finite(start.y) or not is_finite(finish.x) or not is_finite(finish.y):
+        return false
+    var separation := start.distance_to(finish)
+    var stride: float = maxf(2.0, minf(bake.step.x, bake.step.y) * 0.15)
+    var count := maxi(1, ceili(separation / stride))
+    for step_index in range(count + 1):
+        var point: Vector2 = start.lerp(finish, float(step_index) / float(count))
+        if bake.cell_at_screen(point, true) == Vector2i(-1, -1):
+            return false
+        for actor_id in actor_positions:
+            if ignore_ids.has(int(actor_id)):
+                continue
+            var actor: Dictionary = actor_positions[actor_id]
+            if not bool(actor.get("alive", true)):
+                continue
+            if point.distance_to(Vector2(actor.get("position", Vector2.ZERO))) < float(actor.get("radius", 0.0)):
+                return false
+    return true
+
 func find_attack_approach(source: Vector2, target: Vector2, min_range: float,
         max_range: float, move_budget: float, radius: float = 0.0,
-        target_radius: float = 0.0, ignore_id: int = -1) -> Dictionary:
+        target_radius: float = 0.0, ignore_id: int = -1,
+        target_id: int = -1, require_line_of_sight: bool = false) -> Dictionary:
     if move_budget < 0.0 or min_range < 0.0 or max_range < min_range:
         return {}
     if attack_in_range(source, target, min_range, max_range, radius, target_radius):
-        return {"position": source, "path": PackedVector2Array([source]), "cost": 0.0}
+        if not require_line_of_sight or attack_line_clear(source, target, [ignore_id,target_id]):
+            return {"position": source, "path": PackedVector2Array([source]), "cost": 0.0}
     var best: Dictionary = {}
     # Sample the legal attack annulus deterministically. A future navigation
     # mesh can replace this candidate generator without changing the API.
@@ -132,6 +156,8 @@ func find_attack_approach(source: Vector2, target: Vector2, min_range: float,
             if not is_valid_position(point, radius, ignore_id):
                 continue
             if not attack_in_range(point, target, min_range, max_range, radius, target_radius):
+                continue
+            if require_line_of_sight and not attack_line_clear(point,target,[ignore_id,target_id]):
                 continue
             var path := find_path(source, point, radius, ignore_id)
             if path.is_empty():
