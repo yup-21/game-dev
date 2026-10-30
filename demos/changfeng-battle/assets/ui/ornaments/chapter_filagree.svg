@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="54" viewBox="0 0 600 54">
+<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#977c4c" stop-opacity="0"/><stop offset=".38" stop-color="#bfa46d"/><stop offset=".68" stop-color="#ead4a1"/><stop offset="1" stop-color="#957b4c" stop-opacity="0"/></linearGradient></defs>
+<g fill="none" stroke="url(#gold)" stroke-linecap="round">
+<path d="M4 27H207M393 27H596" stroke-width="1.5"/>
+<path d="M110 24h94M396 24h94" stroke-width=".8" opacity=".55"/>
+<path d="M207 27c16 0 15-11 27-11 8 0 8 8 3 10-8 3-12-8-2-13 7-3 17 4 20 11M393 27c-16 0-15-11-27-11-8 0-8 8-3 10 8 3 12-8 2-13-7-3-17 4-20 11" stroke-width="1.5"/>
+<path d="M211 28c12 2 16 15 27 13 8-2 8-10 1-12M389 28c-12 2-16 15-27 13-8-2-8-10-1-12" opacity=".75"/>
+</g>
+<g fill="#d7be8a" stroke="#866c42" stroke-width=".8"><path d="M256 27l8-8 8 8-8 8z"/><path d="M344 27l-8-8-8 8 8 8z"/><path d="M191 27l4-4 4 4-4 4z"/><path d="M409 27l-4-4-4 4 4 4z"/></g>
+<g fill="#d8bd87" opacity=".85"><circle cx="183" cy="27" r="1.8"/><circle cx="417" cy="27" r="1.8"/><circle cx="248" cy="27" r="1.5"/><circle cx="352" cy="27" r="1.5"/></g>
+</svg>

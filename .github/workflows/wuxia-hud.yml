@@ -26,6 +26,7 @@ on:
       - 'demos/changfeng-battle/checks/test_hd2d_ui_assets.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_unified_hud.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_ctb_rail.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_ornament_hud.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_hand_visibility.gd'
       - 'demos/changfeng-battle/scripts/hd2d_card_art.gd'
       - 'demos/changfeng-battle/scripts/card_system.gd'
@@ -71,6 +72,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_hand_visibility.gd
       - name: Check the right-side authoritative charge track
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_ctb_rail.gd
+      - name: Check ornate fan tray, portraits and genuine CTB presentation
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_ornament_hud.gd
       - name: Check clickable hand and animation request lifecycle
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
       - name: Verify automatic empty-response skips and authoritative clash resolution
