@@ -34,7 +34,9 @@ func _run() -> void:
         for child in actions.get_children():
             if child is Button and child.has_meta("card_uid"):
                 painted_buttons += 1
-                _check(child.get_child_count() > 0 and child.get_child(0) is TextureRect\n                    and (child.get_child(0) as TextureRect).texture != null,\n                    "legal card button missing illustrated texture")
+                _check(child.get_child_count() > 0 and child.get_child(0) is TextureRect
+                    and (child.get_child(0) as TextureRect).texture != null,
+                    "legal card button missing illustrated texture")
     _check(painted_buttons > 0, "no playable illustrated cards")
     _check(scene.get("roster_bars").size() == scene.get("snap").get("actors", []).size(),
         "roster meter count does not match actors")
