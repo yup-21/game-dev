@@ -1,0 +1,34 @@
+name: Original Wuxia HUD regression
+
+on:
+  pull_request:
+    paths:
+      - 'demos/changfeng-battle/assets/ui/**'
+      - 'demos/changfeng-battle/scripts/hd2d_card_ui.gd'
+      - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
+      - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_wuxia_ui.gd'
+      - '.github/workflows/wuxia-hud.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  godot-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: '4.7.2'
+          use-dotnet: false
+      - name: Import PNG and SVG art
+        run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Check original UI atlas and model-backed HUD
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_wuxia_ui.gd
+      - name: Check clickable hand and animation request lifecycle
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
+      - name: Check six-actor prologue encounter
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd

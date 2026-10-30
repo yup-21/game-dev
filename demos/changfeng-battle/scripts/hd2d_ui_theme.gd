@@ -8,6 +8,7 @@ const GOLD = Color("d0af75")
 const PAPER = Color("efe7d1")
 const MUTED = Color("b8c6b8")
 const RED = Color("d78a79")
+const PANEL_ART: Texture2D = preload("res://assets/ui/jade_panel_frame.svg")
 
 static func panel(background: Color = PANEL, outline: Color = GOLD) -> StyleBoxFlat:
     var box := StyleBoxFlat.new()
@@ -24,7 +25,31 @@ static func panel(background: Color = PANEL, outline: Color = GOLD) -> StyleBoxF
     return box
 
 static func apply_panel(container: PanelContainer) -> void:
-    container.add_theme_stylebox_override("panel", panel())
+    # Nine-slice original filigree: corner details remain sharp at every panel size.
+    var frame := StyleBoxTexture.new()
+    frame.texture = PANEL_ART
+    frame.texture_margin_left = 24.0
+    frame.texture_margin_right = 24.0
+    frame.texture_margin_top = 24.0
+    frame.texture_margin_bottom = 24.0
+    frame.content_margin_left = 16.0
+    frame.content_margin_right = 16.0
+    frame.content_margin_top = 12.0
+    frame.content_margin_bottom = 12.0
+    container.add_theme_stylebox_override("panel", frame)
+
+static func apply_meter(meter: ProgressBar, fill_color: Color) -> void:
+    meter.show_percentage = false
+    meter.custom_minimum_size = Vector2(0, 7)
+    var background := StyleBoxFlat.new()
+    background.bg_color = Color("102522")
+    background.set_corner_radius_all(3)
+    var fill := StyleBoxFlat.new()
+    fill.bg_color = fill_color
+    fill.set_corner_radius_all(3)
+    meter.add_theme_stylebox_override("background", background)
+    meter.add_theme_stylebox_override("fill", fill)
+
 
 static func apply_button(button: Button) -> void:
     button.add_theme_stylebox_override("normal", panel(PANEL_LIGHT, Color("587568")))
@@ -39,26 +64,23 @@ static func apply_button(button: Button) -> void:
 
 static func card_style(selected: bool = false, hover: bool = false) -> StyleBoxFlat:
     var box := StyleBoxFlat.new()
-    box.bg_color = Color("345348") if hover else Color("203b37")
-    box.border_color = Color("efd397") if selected else (GOLD if hover else Color("759886"))
+    box.bg_color = Color("18342f") if hover else Color("102a27")
+    box.border_color = Color("f2d99c") if selected else (GOLD if hover else Color("648477"))
     box.set_border_width_all(3 if selected else 2)
     box.set_corner_radius_all(12)
-    box.content_margin_left = 16
-    box.content_margin_top = 14
-    box.content_margin_right = 16
-    box.content_margin_bottom = 13
-    box.shadow_color = Color(0.01, 0.04, 0.04, 0.62)
-    box.shadow_size = 10 if selected else 6
+    box.shadow_color = Color(0.02, 0.05, 0.05, 0.72)
+    box.shadow_size = 12 if selected else 7
     box.shadow_offset = Vector2(0, 5)
     return box
 
 static func apply_card(button: Button, selected: bool = false) -> void:
-    button.custom_minimum_size = Vector2(185, 129)
+    button.custom_minimum_size = Vector2(176, 184)
     button.add_theme_stylebox_override("normal", card_style(selected))
     button.add_theme_stylebox_override("hover", card_style(selected, true))
     button.add_theme_stylebox_override("pressed", card_style(true, true))
-    button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-    button.add_theme_color_override("font_color", PAPER)
-    button.add_theme_color_override("font_hover_color", Color.WHITE)
-    button.add_theme_font_size_override("font_size", 17)
-    button.add_theme_constant_override("outline_size", 1)
+    button.add_theme_stylebox_override("focus", card_style(true, true))
+    # The underlying Button retains a readable .text for the input/automation
+    # contract; its visual text is supplied by child Labels in hd2d_card_ui.
+    for state in ["font_color", "font_hover_color", "font_pressed_color",
+                  "font_focus_color", "font_disabled_color"]:
+        button.add_theme_color_override(state, Color.TRANSPARENT)
