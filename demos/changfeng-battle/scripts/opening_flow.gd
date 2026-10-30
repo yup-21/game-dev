@@ -2,8 +2,8 @@ extends Node2D
 ## Data-driven title screen, ink-wash prologue, walkable vignette and classic wuxia dialogue.
 ## Presentation only: chapter flow is in OpeningStory; existing battles are separate scenes.
 const Story = preload("res://scripts/opening_story.gd")
-const CharacterArt = preload("res://scripts/hd2d_illustrated_factory.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
+const RoleSprite = preload("res://scripts/opening_role_sprite.gd")
 ## Only player-facing combat scene. Legacy battle demos remain for regression tests.
 const ACTIVE_BATTLE_SCENE := "res://battle_hd2d.tscn"
 const PAPER = Color("eee9dc")
@@ -20,6 +20,9 @@ var clock: float = 0.0
 var cinematic_elapsed: float = 0.0
 var visible_characters: float = 0.0
 var player_pos: Vector2 = Vector2(350, 705)
+var characters_layer: Node2D
+var player_sprite: Node2D
+var escort_sprite: Node2D
 var mouse_pos: Vector2 = Vector2(-100, -100)
 var buttons: Array = []
 var message: String = ""
@@ -34,6 +37,20 @@ func _ready() -> void:
 	if not story.load_error.is_empty():
 		push_error(story.load_error)
 		return
+	# In-world roles are actual Sprite2D nodes. Only painted scenery and
+	# interface text are still drawn by the opening canvas.
+	characters_layer = Node2D.new()
+	characters_layer.name = "StoryCharacters"
+	add_child(characters_layer)
+	player_sprite = RoleSprite.new()
+	if not player_sprite.configure("shen_changfeng"):
+		push_error("Cannot load Shen Changfeng story sprite")
+	characters_layer.add_child(player_sprite)
+	escort_sprite = RoleSprite.new()
+	if not escort_sprite.configure("escort_elder"):
+		push_error("Cannot load dedicated escort NPC portrait")
+	characters_layer.add_child(escort_sprite)
+	_sync_story_sprites(Vector2.ZERO,0.0)
 	print("CHANGFENG_OPENING_READY chapter=", story.data.id)
 	if "--opening-visual-check" in OS.get_cmdline_user_args():
 		call_deferred("_run_visual_check")
@@ -58,10 +75,28 @@ func _process(delta: float) -> void:
 			if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): vector.x += 1
 			if vector.length_squared() > 0:
 				player_pos = (player_pos+vector.normalized()*195.0*delta).clamp(Vector2(155,345),Vector2(1415,755))
+			_sync_story_sprites(vector,delta)
 		"dialogue":
 			var line: Dictionary = story.current_dialogue()
 			visible_characters = minf(float(str(line.get("text", "")).length()),visible_characters+delta*29.0)
+	if story.phase != "explore":
+		_sync_story_sprites(Vector2.ZERO,delta)
 	queue_redraw()
+
+func _sync_story_sprites(motion: Vector2, delta: float) -> void:
+	if player_sprite == null or escort_sprite == null:
+		return
+	# Story cinematics and dialogue draw their authored static portraits
+	# separately. Do not let in-world sprites paint over dialogue controls.
+	var exploring: bool = story.phase == "explore"
+	characters_layer.visible = exploring
+	player_sprite.position = player_pos
+	escort_sprite.position = ESCORT + Vector2(0,10)
+	player_sprite.set_motion(motion,delta)
+	escort_sprite.set_motion(Vector2.ZERO,delta)
+	# Tile feet anchor sorting, not fixed painter's layers.
+	player_sprite.z_index = int(player_pos.y/100.0)
+	escort_sprite.z_index = int((ESCORT.y+10.0)/100.0)
 
 func _session():
 	return get_node_or_null("/root/GameSession")
@@ -73,6 +108,7 @@ func _enter_new_game() -> void:
 	cinematic_elapsed = 0.0
 	visible_characters = 0.0
 	player_pos = Vector2(350,705)
+	_sync_story_sprites(Vector2.ZERO,0.0)
 	message = ""
 
 func _advance_cinematic() -> void:
@@ -278,19 +314,6 @@ func _carriage(pos: Vector2) -> void:
 	draw_line(pos+Vector2(99,14),pos+Vector2(205,55),Color("765a40"),5)
 	draw_circle(pos+Vector2(-91,27),7,Color("a94e47"))
 
-func _portrait(pos: Vector2, old: bool, scale_factor: float = 1.0) -> void:
-	# Render the same transparent high-resolution character frames as the battle.
-	# The escort uses the warm robe variant; no nearest filtering or pixel grid.
-	var sheet: Texture2D = CharacterArt.make_sheet(old)
-	var width: float = 158.0 * scale_factor
-	var height: float = 198.0 * scale_factor
-	draw_ellipse_ink(pos + Vector2(0, 85.0 * scale_factor),
-		Vector2(68.0 * scale_factor, 13.0 * scale_factor), Color(0.01, 0.06, 0.06, 0.25))
-	draw_texture_rect_region(sheet,
-		Rect2(pos - Vector2(width * 0.5, height * 0.58), Vector2(width, height)),
-		Rect2(0, 0, CharacterArt.FRAME_W, CharacterArt.FRAME_H))
-
-
 func _cover_texture(texture: Texture2D, area: Rect2, tint: Color = Color.WHITE) -> void:
 	# Crop, never stretch: wide backdrops and vertical paintings retain proportion.
 	var size := Vector2(texture.get_size())
@@ -360,8 +383,7 @@ func _draw_menu() -> void:
 	draw_rect(Rect2(0,0,1600,1000),Color(0.04,0.12,0.13,0.31))
 	draw_rect(Rect2(0,0,665,1000),Color(0.07,0.16,0.16,0.84))
 	_panel(Rect2(855,91,510,813),Color(0.07,0.15,0.15,0.62),Color(GOLD,0.7))
-	if not _painted_portrait("沈长风",Rect2(865,101,490,792)):
-		_portrait(Vector2(1010,700),false,2.10)
+	_painted_portrait("沈长风",Rect2(865,101,490,792))
 	draw_circle(Vector2(800,370),105,Color(0.93,0.86,0.67,0.10))
 	_text(Vector2(132,250),"MORTAL DAO  /  江 湖 浮 生",19,GOLD)
 	_text(Vector2(118,384),"长风浮生录",77,PAPER,true)
@@ -398,11 +420,9 @@ func _draw_cinematic() -> void:
 		_carriage(Vector2(800+sin(clock*.24)*7.0,743))
 		_lantern_light(Vector2(1250 + drift,724),clock)
 	if story.cinematic_index >= 1:
-		if not _painted_portrait("沈长风",Rect2(80-drift,235,375,635),Color(1,1,1,0.76)):
-			_portrait(Vector2(315 - drift,730),false,1.80)
+		_painted_portrait("沈长风",Rect2(80-drift,235,375,635),Color(1,1,1,0.76))
 	if story.cinematic_index >= 2:
-		if not _painted_portrait("老镖头",Rect2(1285,395,260,455),Color(1,1,1,0.70)):
-			_portrait(Vector2(1400,753),true,1.40)
+		_painted_portrait("老镖头",Rect2(1285,395,260,455),Color(1,1,1,0.70))
 	draw_rect(Rect2(0,0,1600,1000),Color(0.05,0.11,0.12,0.43))
 	_cinema_bars()
 	_center(Vector2(800,382),caption,32,Color(GOLD,opacity),true)
@@ -430,19 +450,8 @@ func _paint_exploration() -> void:
 		_paint_pavilion(Vector2(1280,570),0.9)
 		_carriage(Vector2(837,625))
 	_rain(clock,110)
-	# The playable hero uses the exact existing 6x4 animation atlas seen in
-	# combat; no figure is baked into the painted temple texture.
-	var atlas: Texture2D=ArtCatalog.sheet_for_actor(0,false)
-	if atlas!=null:
-		var walking: bool=Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_UP) or Input.is_key_pressed(KEY_DOWN) or Input.is_key_pressed(KEY_LEFT) or Input.is_key_pressed(KEY_RIGHT)
-		var frame := int(clock*9.0)%6 if walking else 0
-		var source := Rect2(float(frame*256),256.0 if walking else 0.0,256.0,256.0)
-		draw_texture_rect_region(atlas,Rect2(player_pos+Vector2(-60,-130),Vector2(120,130)),source)
-	else:
-		_portrait(player_pos,false)
-	# The escort elder currently has an independent illustrated portrait,
-	# but no combat pose sheet. Keep the existing narrative NPC renderer.
-	_portrait(ESCORT+Vector2(0,10),true)
+	# Shen Changfeng and the escort elder are now Sprite2D scene children.
+	# Never paint character frames through this CanvasItem.
 
 func _draw_explore() -> void:
 	_paint_exploration()
@@ -469,8 +478,7 @@ func _draw_dialogue() -> void:
 	_panel(Rect2(124,665,1352,292),Color("eae3cf"),GOLD)
 	# Classic wuxia character frame / nameplate.
 	_panel(Rect2(153,574,227,308),Color("38534c"),GOLD)
-	if not _painted_portrait(speaker,Rect2(161,582,211,291)):
-		_portrait(Vector2(266,738),speaker=="老镖头",1.18)
+	_painted_portrait(speaker,Rect2(161,582,211,291))
 	_panel(Rect2(385,628,264,63),Color("25483f"),GOLD)
 	_center(Vector2(517,671),speaker,27,PAPER,true)
 	var clipped: String=full_text.substr(0,mini(full_text.length(),int(visible_characters)))

@@ -6,6 +6,8 @@ on:
       - 'demos/changfeng-battle/assets/ui/**'
       - 'demos/changfeng-battle/scripts/hd2d_card_ui.gd'
       - 'demos/changfeng-battle/scripts/opening_flow.gd'
+      - 'demos/changfeng-battle/scripts/opening_role_sprite.gd'
+      - 'demos/changfeng-battle/checks/test_opening_sprites.gd'
       - 'demos/changfeng-battle/scripts/demo_result.gd'
       - 'demos/changfeng-battle/checks/test_single_battle_entry.gd'
       - 'demos/changfeng-battle/checks/opening_visual_check.gd'
@@ -68,6 +70,8 @@ jobs:
           use-dotnet: false
       - name: Import PNG and SVG art
         run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Validate first-act Sprite2D characters, real assets, movement and elder dialogue
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_opening_sprites.gd
       - name: Assert only the illustrated battle is player-facing
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_single_battle_entry.gd
       - name: Verify 150 baked orthographic cells, river-blocked hitboxes and 3v3 paths

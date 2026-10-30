@@ -1,6 +1,5 @@
 extends RefCounted
 ## Windowed presentation smoke check. Captures actual Godot frames, not mock screenshots.
-const Illustration = preload("res://scripts/hd2d_illustrated_factory.gd")
 func _wait(view, frames: int = 3) -> void:
 	for _i in range(frames): await view.get_tree().process_frame
 
@@ -27,9 +26,14 @@ func run(view) -> void:
 	if menu_actions != ["start", "hd2d", "quit"]:
 		_fail(view,"menu must expose only story + one illustrated battle + quit")
 		return
-	var sheet: Texture2D = Illustration.make_sheet(false)
-	if sheet == null or sheet.get_size() != Vector2(960, 800):
-		_fail(view,"opening character illustration sheet not loaded")
+	if view.player_sprite == null or view.escort_sprite == null:
+		_fail(view,"story scene missing registered Sprite2D actors")
+		return
+	if not view.player_sprite.has_real_sprite or not view.escort_sprite.has_real_sprite:
+		_fail(view,"character sprites cannot load")
+		return
+	if not view.player_sprite.body is Sprite2D or not view.escort_sprite.body is Sprite2D:
+		_fail(view,"story characters must be genuine Sprite2D instances")
 		return
 	if not await _capture(view,"opening-title.png"):
 		_fail(view,"title screenshot write")
@@ -45,6 +49,9 @@ func run(view) -> void:
 	view.story.skip_cinematic()
 	view.player_pos=Vector2(1037,570)
 	await _wait(view)
+	if not view.characters_layer.visible or view.player_sprite.body.texture == null or view.escort_sprite.body.texture == null:
+		_fail(view,"exploration must display both registered characters")
+		return
 	if not await _capture(view,"opening-explore.png"):
 		_fail(view,"exploration screenshot write")
 		return
