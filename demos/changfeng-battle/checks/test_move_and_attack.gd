@@ -92,6 +92,15 @@ func _run() -> void:
     _check(not bool(poor.get("success",false)) and b_actor.position==unchanged
         and b_actor.qi_u==10000 and not b_actor.basic_attack_used,
         "combined Qi shortage cannot move or attack")
+    var bake=blocked.state.spatial.bake
+    _check(not blocked.state.spatial.attack_line_clear(
+        bake.cell_center(Vector2i(4,3)),bake.cell_center(Vector2i(12,3))),
+        "line of sight cannot pass through the authored river bank")
+    var forbidden_position: Dictionary=blocked.submit(blocked.request("MOVE_AND_ATTACK",b_id,{
+        "attack_kind":"BASIC_ATTACK","target_id":b_target.id,
+        "target_position":b_actor.position}))
+    _check(str(forbidden_position.get("error_code",""))=="MALFORMED_REQUEST",
+        "client cannot inject a forged composite landing position")
     var ally: Dictionary=blocked.submit(blocked.request("MOVE_AND_ATTACK",b_id,
         {"attack_kind":"BASIC_ATTACK","target_id":b_id}))
     _check(str(ally.get("error_code",""))=="INVALID_TARGET","self-attack rejected")
