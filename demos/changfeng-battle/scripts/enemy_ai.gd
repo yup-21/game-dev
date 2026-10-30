@@ -49,10 +49,10 @@ func _enemy(context: Dictionary, option: Dictionary = {}) -> Dictionary:
 		var selected: Dictionary=_actor(context,int(option.target_id))
 		if not selected.is_empty() and int(selected.get("team_id",0))!=own_team and float(selected.get("hp",0))>0: return selected
 	var best: Dictionary={}
-	var best_dist: float=INF
+	var best_dist: int=2147483647
 	for actor in context.get("actors",[]):
 		if int(actor.get("team_id",0))==own_team or float(actor.get("hp",0))<=0: continue
-		var d: float=Vector2(actor.get("position",Vector2(actor.cell))).distance_to(Vector2(own.get("position",Vector2(own.cell)))) if str(context.get("spatial_mode","GRID"))=="FREE" else float(absi(int(actor.cell.x)-int(own.cell.x))+absi(int(actor.cell.y)-int(own.cell.y)))
+		var d: int=absi(int(actor.cell.x)-int(own.cell.x))+absi(int(actor.cell.y)-int(own.cell.y))
 		if d<best_dist or (d==best_dist and int(actor.id)<int(best.get("id",2147483647))):
 			best=actor
 			best_dist=d
@@ -95,16 +95,6 @@ func _action_score(context: Dictionary, option: Dictionary, _record: Dictionary)
 	var enemy: Dictionary = _enemy(context,option)
 	if enemy.is_empty(): return 0
 	var kind: String = str(option.get("kind", ""))
-	if str(context.get("spatial_mode","GRID"))=="FREE" and kind=="MOVE_FREE":
-		if not option.has("target_position"): return 0.0
-		var start: Vector2=Vector2(own.get("position",Vector2(own.cell)))
-		var finish: Vector2=Vector2(option.target_position)
-		var target: Vector2=Vector2(enemy.get("position",Vector2(enemy.cell)))
-		var improvement: float=start.distance_to(target)-finish.distance_to(target)
-		return 18.0+minf(12.0,improvement/30.0) if improvement>5.0 else 0.0
-	var composite: bool=kind=="MOVE_AND_ATTACK"
-	if composite:
-		kind=str(option.get("attack_kind","BASIC_ATTACK"))
 	var usage: Dictionary = _usage_for(context, option)
 	var usage_id: String = str(option.get("usage_id", ""))
 	var last_attack: String = ""
@@ -119,7 +109,6 @@ func _action_score(context: Dictionary, option: Dictionary, _record: Dictionary)
 		var hp_cost: float = float(usage.get("cost", {}).get("hp", 0))
 		if hp_cost > 0 and float(own.get("hp", 20)) - hp_cost <= 3 and damage < float(enemy.get("hp", 20)): return 1
 		var score: float = 30.0 + damage * 3.0 - cost * 2.0 - hp_cost * 2.0
-		if composite: score-=float(option.get("spatial_move_units",0))*2.0
 		score += _status_stacks(own, "focus") * 3.0
 		if usage_id == "probe" and last_attack != "probe": score += 2
 		if usage_id == "expose" and not _has_status(enemy, "hand_exposed"): score += 1
@@ -216,7 +205,7 @@ func _has_status(actor: Dictionary, status_id: String) -> bool:
 	return false
 
 func _response_score(context: Dictionary, option: Dictionary) -> float:
-	if str(option.get("kind", "")) not in ["PLAY_CARD","PLAY_CARD_FREE_MOVE"]: return 0
+	if str(option.get("kind", "")) != "PLAY_CARD": return 0
 	var attack: Dictionary = context.get("attack", {})
 	if attack.is_empty(): return 0
 	var own: Dictionary = _actor(context, int(context.observer_id))
@@ -232,10 +221,6 @@ func _response_score(context: Dictionary, option: Dictionary) -> float:
 				return 55.0 + float(link.get("link_id", link.get("id", 0))) * 0.01
 	if defender:
 		if loss <= 0: return 0
-		if (usage_id=="evasion" or not _effect(usage,"move").is_empty()) and option.has("target_position") and str(context.get("spatial_mode","GRID"))=="FREE":
-			var lock: Vector2=Vector2(attack.get("target_position",own.get("position",Vector2.ZERO)))
-			if Vector2(option.target_position).distance_to(lock)>maxf(8.0,float(attack.get("area_radius",0.0))):
-				return 45.0+loss
 		if (usage_id == "evasion" or not _effect(usage, "move").is_empty()) and option.has("target_cell"):
 			var affected: Array = attack.get("affected_cells", [attack.get("target_cell", own.cell)])
 			if not affected.has(option.target_cell): return 45.0 + loss

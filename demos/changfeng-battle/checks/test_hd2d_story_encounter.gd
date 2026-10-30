@@ -36,13 +36,8 @@ func _run() -> void:
     for actor in snap.get("actors", []):
         if str(actor.get("controller", "")) == "PLAYER":
             player_count += 1
-        var battle_map=scene.get("illustrated_map")
-        var id: int=int(actor.id)
-        if battle_map==null or not battle_map.actors.has(id) or not battle_map.actors[id] is Node2D:
-            _fail("native 2D actor missing: %d" % id)
-            return
-        if battle_map.actors[id].get_node_or_null("ActionSprite") == null:
-            _fail("Sprite2D visual missing for actor: %d" % id)
+        if scene.get_node_or_null("Actor_%d" % int(actor.id)) == null:
+            _fail("3D actor missing: %d" % int(actor.id))
             return
     if player_count < 2:
         _fail("expected multiple player-controlled units")

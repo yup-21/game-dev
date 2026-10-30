@@ -2,8 +2,6 @@ extends Node3D
 ## HD-2D vertical slice. All tactical state and legality remain in BattleModel.
 ## Run res://battle_hd2d.tscn explicitly; the original 2D scene is untouched.
 const Model = preload("res://scripts/battle_model.gd")
-const ContinuousSpace = preload("res://scripts/battle_spatial_service.gd")
-const ContinuousPreview = preload("res://scripts/continuous_move_preview.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
 const Scenery = preload("res://scripts/hd2d_scenery.gd")
 const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
@@ -28,15 +26,11 @@ var result_reported := false
 var ai = EnemyAI.new()
 var animation_driver = Animator.new()
 var effects_driver
-var continuous_space
-var continuous_preview
-var continuous_preview_enabled := false
 var illustrated_map: CanvasLayer
 var camera: Camera3D
 var actor_nodes: Dictionary = {}
 var visual_cells: Dictionary = {}
 var movement_paths: Dictionary = {}
-var continuous_paths: Dictionary = {}
 var snap: Dictionary = {}
 var legals: Array = []
 var status_label: Label
@@ -50,7 +44,6 @@ var animation_ticket := -1
 var ai_wait := 0.0
 var auto_battle := false
 var auto_button: Button
-var spatial_mode_button: Button
 var hovered := Vector2i(-1, -1)
 var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
@@ -89,13 +82,9 @@ func _ready() -> void:
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(_decision_owner())
     _build_world()
-    if illustrated_map != null:
-        continuous_space = ContinuousSpace.new()
-        continuous_preview = ContinuousPreview.new()
-        illustrated_map.scene_root.add_child(continuous_preview)
     # 3D terrain, procedural scenery, and far-away backdrop are removed.
     # Only 2D painted ground and 2D sprite action frames are visible.
-    effects_driver = VFX.new(self, camera, illustrated_map.scene_root if illustrated_map != null else null)
+    effects_driver = VFX.new(self, camera)
     _build_ui()
     _refresh()
     _update_status()
@@ -103,9 +92,6 @@ func _ready() -> void:
 func _quick_character_options() -> Dictionary:
     var configured: Dictionary=CharacterRegistry.new().battle_options([], {0:"shen_changfeng",1:"pursuer_captain"})
     configured["map_definition_path"]="res://data/maps/rainy_bridge.json"
-    var session=get_node_or_null("/root/GameSession")
-    if session != null:
-        configured["spatial_mode"]=str(session.get("battle_spatial_mode"))
     return configured
 
 func _session():
@@ -285,16 +271,12 @@ func _refresh_target_markers() -> void:
     for action in actions:
         if selected_kind.is_empty() and str(action.get("kind", "")) != "MOVE":
             continue
-        if action.has("target_cell") and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id)):
+        if action.has("target_cell"):
             target_cells[action.target_cell] = true
         if action.has("target_id"):
             for actor in snap.get("actors", []):
                 if int(actor.id) == int(action.target_id):
                     target_cells[actor.cell] = true
-    if not selected_kind.is_empty() and ((selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node))):
-        for target in model.state.actors:
-            if target.hp_u>0 and model.state.is_hostile(_decision_owner(),target.id):
-                target_cells[target.cell]=true
     if illustrated_map!=null:
         illustrated_map.set_highlights(target_cells,animation_ticket<0 and _player_decision() and not auto_battle)
         return
@@ -438,8 +420,8 @@ func _build_ui() -> void:
     phase_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     ribbon.add_child(phase_label)
     phase_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-    phase_label.offset_left = -460.0
-    phase_label.offset_right = -285.0
+    phase_label.offset_left = -380.0
+    phase_label.offset_right = -138.0
     phase_label.offset_top = 15.0
     phase_label.offset_bottom = 42.0
     auto_button = Button.new()
@@ -454,19 +436,8 @@ func _build_ui() -> void:
     auto_button.offset_bottom = 45.0
     UITheme.apply_button(auto_button)
     auto_button.pressed.connect(_toggle_auto_battle)
-    spatial_mode_button = Button.new()
-    spatial_mode_button.name = "BattleSpatialModeToggle"
-    spatial_mode_button.tooltip_text = "网格 / 无网格双模式；按 M 切换（行动阶段生效）"
-    ribbon.add_child(spatial_mode_button)
-    spatial_mode_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-    spatial_mode_button.offset_left = -280.0
-    spatial_mode_button.offset_right = -145.0
-    spatial_mode_button.offset_top = 11.0
-    spatial_mode_button.offset_bottom = 45.0
-    UITheme.apply_button(spatial_mode_button)
-    spatial_mode_button.pressed.connect(_toggle_spatial_mode)
     help_label = Label.new()
-    help_label.text = "M 切换网格/无网格 · P 显示路径 · 左键落点或点敌自动接近 · C 角色卡 · Space 收势"
+    help_label.text = "左键选目标 · C 角色卡 · Q 攻击 · G 格挡 · Space 收势/Pass · Esc 返回"
     help_label.visible = false
     ribbon.add_child(help_label)
 
@@ -710,12 +681,6 @@ func _on_roster_avatar_input(event: InputEvent, id: int) -> void:
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         _open_character_card(id)
 
-func _toggle_spatial_mode() -> void:
-    if illustrated_map == null or model.state.spatial == null or auto_battle or animation_ticket >= 0 or not _player_decision():
-        return
-    var target_mode: String = "FREE" if model.state.spatial_mode == "GRID" else "GRID"
-    _submit("SET_SPATIAL_MODE", {"spatial_mode": target_mode})
-
 func _toggle_auto_battle() -> void:
     _set_auto_battle(not auto_battle)
 
@@ -771,98 +736,6 @@ func _find_actions(uid: String, usage: String) -> Array:
         if str(action.get("kind", "")) == "PLAY_CARD" and str(action.get("card_uid", action.get("card_id", ""))) == uid and str(action.get("usage_id", "")) == usage:
             choices.append(action)
     return choices
-
-## A card can be chosen before entering range; the authoritative composite
-## validator determines whether a particular enemy is actually reachable.
-func _has_attack_damage(usage: Dictionary) -> bool:
-    for effect in usage.get("effects", []):
-        if str(effect.get("type", "")) == "deal_damage":
-            return true
-    return false
-
-func _can_approach_card(uid: String, usage_id: String) -> bool:
-    if model.state.spatial == null or model.state.spatial_mode!="FREE" or str(snap.get("phase", "")) != "ACTION":
-        return false
-    var actor = model.state.get_actor(_decision_owner())
-    if actor == null or actor.hp_u <= 0 or not actor.hand.has(uid):
-        return false
-    var usage: Dictionary = model.cards.usage(uid,usage_id)
-    if usage.is_empty() or str(usage.get("timing", "")) != "ACTION" or str(usage.get("target", {}).get("kind", "")) != "enemy_actor" or not _has_attack_damage(usage):
-        return false
-    if not model.rules.condition_allows(actor,usage):
-        return false
-    var definition: Dictionary = model.cards.canonical_definition(uid)
-    if not model.cards.valid_definition(definition):
-        return false
-    if bool(usage.get("once_per_action",false)) and int(actor.card_uses.get(str(definition.id)+":"+usage_id,0)) > 0:
-        return false
-    var attack: Dictionary = {"kind":"PLAY_CARD","actor_id":actor.id,"target_id":-1,"card_uid":uid,"usage_id":usage_id}
-    var quote: Dictionary = model.costs.quote(actor,usage.get("cost",{}),model.rules.context(actor.id,attack))
-    return model.costs.can_pay(actor,quote)
-
-func _can_approach_technique(technique_id: String, node_id: String) -> bool:
-    if model.state.spatial == null or model.state.spatial_mode!="FREE" or str(snap.get("phase", "")) != "ACTION":
-        return false
-    var actor = model.state.get_actor(_decision_owner())
-    if actor == null or actor.hp_u <= 0:
-        return false
-    for usage in model.techniques.available_nodes(actor,technique_id,"ACTION"):
-        if str(usage.get("id", "")) != node_id or str(usage.get("target", {}).get("kind", "")) != "enemy_actor" or not _has_attack_damage(usage):
-            continue
-        var current: bool=int(actor.technique_states[technique_id].last_used_action)==actor.turns_started
-        if not model.conditions.allows(actor,usage.get("when",{}),{"timing":"ACTION","tick":model.state.global_tick,"same_action":current}):
-            return false
-        var attack: Dictionary={"kind":"USE_ABILITY","actor_id":actor.id,"technique_id":technique_id,"node_id":node_id}
-        var quote: Dictionary=model.costs.quote(actor,model.techniques.cost(actor,technique_id,node_id),model.rules.context(actor.id,attack))
-        return model.costs.can_pay(actor,quote)
-    return false
-
-func _can_free_movement_card(uid: String, usage_id: String) -> bool:
-    if model.state.spatial_mode!="FREE" or model.state.spatial==null:
-        return false
-    var actor=model.state.get_actor(_decision_owner())
-    if actor==null or actor.hp_u<=0 or not actor.hand.has(uid):
-        return false
-    var usage: Dictionary=model.cards.usage(uid,usage_id)
-    if usage.is_empty() or str(usage.get("timing",""))!=model.rules.timing(actor.id):
-        return false
-    if str(usage.get("target",{}).get("kind",""))!="reachable_cell":
-        return false
-    var available:=false
-    for effect in usage.get("effects",[]):
-        if str(effect.get("type",""))=="move" and int(effect.get("max_distance",0))>0:
-            available=true
-    if not available or not model.rules.condition_allows(actor,usage):
-        return false
-    if model.state.mode=="CLASH" and (int(model.state.clash.counts.get(actor.id,0))>=2 or model.state.clash.stack.size()>=4):
-        return false
-    var definition: Dictionary=model.cards.canonical_definition(uid)
-    if bool(usage.get("once_per_action",false)) and int(actor.card_uses.get(str(definition.get("id",""))+":"+usage_id,0))>0:
-        return false
-    var quote: Dictionary=model.costs.quote(actor,usage.get("cost",{}),
-        model.rules.context(actor.id,{"kind":"PLAY_CARD_FREE_MOVE","card_uid":uid,"usage_id":usage_id}))
-    return model.costs.can_pay(actor,quote)
-
-func _enemy_at(cell: Vector2i) -> int:
-    var owner: int = _decision_owner()
-    for target in model.state.actors:
-        if target.cell == cell and target.hp_u > 0 and model.state.is_hostile(owner, target.id):
-            return target.id
-    return -1
-
-func _submit_selected_approach(target_id: int) -> void:
-    if target_id < 0 or selected_kind.is_empty():
-        return
-    var params: Dictionary={"attack_kind":selected_kind,"target_id":target_id}
-    if selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id):
-        params["card_uid"]=selected_card_uid
-        params["usage_id"]=selected_usage_id
-    elif selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node):
-        params["technique_id"]=selected_technique
-        params["node_id"]=selected_node
-    else:
-        return
-    _submit("MOVE_AND_ATTACK",params)
 
 func _clear_selection() -> void:
     selected_card_uid = ""
@@ -921,8 +794,7 @@ func _rebuild_actions() -> void:
         var displayed := false
         if available and not pass_only:
             for usage in card.get("usages", []):
-                var usage_id: String = str(usage.get("id", ""))
-                if _find_actions(uid,usage_id).is_empty() and not _can_approach_card(uid,usage_id) and not _can_free_movement_card(uid,usage_id):
+                if _find_actions(uid, str(usage.get("id", ""))).is_empty():
                     continue
                 _add_visible_hand_card(card, usage, true)
                 displayed = true
@@ -975,28 +847,6 @@ func _rebuild_actions() -> void:
         button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
         _bind_card_feedback(button)
-
-    # Make ranged-out staged martial attacks selectable as well.
-    if owner != null:
-        for technique_id in owner.technique_states:
-            for stage_def in model.techniques.available_nodes(owner,str(technique_id),"ACTION"):
-                var node_id: String=str(stage_def.get("id",""))
-                var key: String=str(technique_id)+":"+node_id
-                if seen_abilities.has(key) or not _can_approach_technique(str(technique_id),node_id):
-                    continue
-                seen_abilities[key]=true
-                var technique_def: Dictionary=model.techniques.definitions.get(str(technique_id),{})
-                var button := CardUI.make_card(key,
-                    "tf_change" if str(technique_id)=="tf_change_stage" else str(technique_id),
-                    str(technique_def.get("name","武学续式")),
-                    str(stage_def.get("name",node_id)),
-                    model.techniques.cost(owner,str(technique_id),node_id),
-                    selected_technique==str(technique_id) and selected_node==node_id)
-                button.set_meta("technique_id",str(technique_id))
-                button.set_meta("node_id",node_id)
-                button.pressed.connect(_select_technique.bind(str(technique_id),node_id))
-                card_actions.add_child(button)
-                _bind_card_feedback(button)
 
     var commands := {
         "BASIC_GUARD": "守势 · 格挡",
@@ -1152,24 +1002,7 @@ func _submit_legal(action: Dictionary) -> void:
 func _activate_selection() -> void:
     var actions := _selected_actions()
     if actions.is_empty():
-        if selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id):
-            selection_label.text="已选择身法：点击地图任意合法位置，按路径距离施展步法；右键取消。"
-            _paint_selection()
-            _refresh_target_markers()
-            return
-        if (selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node)):
-            selection_label.text="已选择攻击招式：点击敌方角色自动寻路接近并出招；右键取消。"
-            _paint_selection()
-            _refresh_target_markers()
-            return
         _clear_selection()
-        return
-    # In FREE, a movement card targets arbitrary world coordinates, including
-    # the defensive-reaction dodge; do not silently snap it to a cell.
-    if selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id):
-        selection_label.text="已选择身法：点击地图任意合法位置；右键取消。"
-        _paint_selection()
-        _refresh_target_markers()
         return
     # Untargeted effects execute immediately. Link-targeted responses get buttons.
     if not actions[0].has("target_cell") and not actions[0].has("target_id") and not actions[0].has("link_id"):
@@ -1183,7 +1016,7 @@ func _activate_selection() -> void:
         UITheme.apply_button(button)
         button.pressed.connect(_submit_legal.bind(action))
         command_actions.add_child(button)
-    selection_label.text = "已选择招式：点击敌方角色直接出招，或自动接近后出招；右键取消。"
+    selection_label.text = "已选择招式：点击绿色目标格或角色；右键取消。"
     _paint_selection()
     _refresh_target_markers()
 
@@ -1211,9 +1044,6 @@ func _update_status() -> void:
         "  ◈ 变锋待发" if stance_ready else ""]
     if auto_button != null:
         auto_button.text = "自动战斗 · 开" if auto_battle else "自动战斗 · 关"
-    if spatial_mode_button != null:
-        spatial_mode_button.text = "无网格 · 自由" if model.state.spatial_mode=="FREE" else "网格 · 战棋"
-        spatial_mode_button.disabled = model.state.spatial==null or auto_battle or not _player_decision() or animation_ticket>=0 or bool(snap.get("animation_pending",false))
     status_label.tooltip_text = "%s / %s / %s" % [mode,
         str(snap.get("phase", "")), school_name]
     if str(snap.get("outcome", "playing")) != "playing":
@@ -1314,34 +1144,14 @@ func _process(delta: float) -> void:
     else:
         camera.position = camera_base
     _update_cursor()
-    _update_continuous_preview()
     var moving: Dictionary = {}
     for actor in snap.get("actors", []):
         var id := int(actor.id)
         if actor_nodes.has(id):
             var node: Node2D = actor_nodes[id] if illustrated_map != null else null
             if illustrated_map != null:
-                if continuous_paths.has(id):
-                    var free_steps: Array = continuous_paths[id]
-                    var next_position: Vector2 = Vector2(free_steps[0])
-                    if node.position.distance_to(next_position) <= 1.0:
-                        free_steps.pop_front()
-                    else:
-                        var heading: Vector2 = next_position - node.position
-                        animation_driver.set_facing(id, Facing.from_delta(Vector2i(roundi(heading.x), roundi(heading.y)), animation_driver.facing_for(id)))
-                        node.position = node.position.move_toward(next_position, delta * 160.0)
-                        if node.position.distance_to(next_position) <= 1.0:
-                            node.position = next_position
-                            free_steps.pop_front()
-                    if free_steps.is_empty():
-                        continuous_paths.erase(id)
-                        visual_cells[id] = Vector2i(actor.cell)
-                    else:
-                        continuous_paths[id] = free_steps
-                    moving[id] = continuous_paths.has(id)
-                    continue
                 var path2: Array = movement_paths.get(id, [])
-                var dest2: Vector2 = Vector2(actor.get("position", illustrated_map.point_for_cell(Vector2i(actor.cell))))
+                var dest2: Vector2 = illustrated_map.point_for_cell(Vector2i(actor.cell))
                 if not path2.is_empty():
                     var step2 := Vector2i(path2[0])
                     animation_driver.set_facing(id, Facing.from_delta(step2 - Vector2i(visual_cells.get(id, actor.cell)), animation_driver.facing_for(id)))
@@ -1397,7 +1207,7 @@ func _process(delta: float) -> void:
         animation_time -= delta
         # The semantic queue can span several frame boundaries. Its remaining
         # stages must finish even when the initial wall-clock estimate expires.
-        if animation_time <= 0.0 and animation_driver.remaining_seconds() <= 0.0 and movement_paths.is_empty() and continuous_paths.is_empty():
+        if animation_time <= 0.0 and animation_driver.remaining_seconds() <= 0.0:
             var ticket := animation_ticket
             animation_ticket = -1
             _accept(model.acknowledge_animation(ticket))
@@ -1427,27 +1237,8 @@ func _process(delta: float) -> void:
 
 func _accept(result: Dictionary) -> void:
     if not result.get("success", false):
-        var warning: String = str(result.get("message", "行动无法执行"))
-        push_warning(warning)
-        if selection_label != null:
-            selection_label.text = "无法执行：%s" % warning
+        push_warning(str(result.get("message", "Action rejected")))
         return
-    for event in result.get("events", []):
-        if str(event.get("type",""))=="BATTLE_MODE_CHANGED":
-            movement_paths.clear()
-            continuous_paths.clear()
-            continuous_preview_enabled = str(event.get("to","GRID"))=="FREE"
-            var session=get_node_or_null("/root/GameSession")
-            if session!=null and session.has_method("set_battle_spatial_mode"):
-                session.call("set_battle_spatial_mode",str(event.get("to","GRID")))
-            if continuous_preview != null:
-                continuous_preview.clear_preview()
-            if illustrated_map != null:
-                for role_id in actor_nodes:
-                    var combatant=model.state.get_actor(int(role_id))
-                    if combatant!=null:
-                        actor_nodes[role_id].position=combatant.position
-                        visual_cells[role_id]=Vector2i(combatant.cell)
     _cue_events(result.get("events", []))
     # Presentation follows each real path waypoint, rather than the straight
     # chord between old and final grid cells. Facing tracks each segment.
@@ -1455,20 +1246,8 @@ func _accept(result: Dictionary) -> void:
         if str(event.get("type", "")) == "MOVE":
             var id: int=int(event.get("actor_id",-1))
             if actor_nodes.has(id):
-                continuous_paths.erase(id)
                 visual_cells[id]=Vector2i(event.get("from",Vector2i.ZERO))
                 movement_paths[id]=event.get("path",[]).duplicate()
-        elif str(event.get("type", "")) == "MOVE_FREE":
-            var id: int=int(event.get("actor_id",-1))
-            if actor_nodes.has(id) and illustrated_map != null:
-                movement_paths.erase(id)
-                var steps: Array = []
-                for point in event.get("path", PackedVector2Array()):
-                    steps.append(Vector2(point))
-                if not steps.is_empty():
-                    steps.pop_front()
-                if not steps.is_empty():
-                    continuous_paths[id] = steps
     animation_driver.events(result.get("events", []))
     if effects_driver != null:
         effects_driver.handle_events(result.get("events", []), actor_nodes)
@@ -1522,12 +1301,7 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
         owner = int(snap.get("clash", {}).get("priority_actor_id", -1))
     if not _player_decision():
         return
-    # Position-dependent commands are not finite legal-action enumerations.
-    # Their complete legality is checked transactionally by CombatRules.
-    if kind in ["MOVE_FREE", "MOVE_AND_ATTACK", "SET_SPATIAL_MODE", "PLAY_CARD_FREE_MOVE"]:
-        _accept(model.submit(model.request(kind, owner, params)))
-        return
-    # Enumerated legacy commands still require an exact legal-action match.
+    # Reject stale UI commands; only the authoritative legal set may execute.
     for candidate in model.legal_actions(owner):
         if str(candidate.get("kind", "")) != kind:
             continue
@@ -1575,10 +1349,6 @@ func _hover_cell() -> Vector2i:
 func _update_cursor() -> void:
     hovered = _hover_cell()
     var usable := not _action_at(hovered).is_empty() if not selected_kind.is_empty() else not _legal("MOVE", hovered).is_empty()
-    if not selected_kind.is_empty() and _enemy_at(hovered)>=0:
-        usable=usable or (selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node))
-    if model.state.spatial_mode=="FREE" and selected_kind.is_empty():
-        usable = false
     if illustrated_map!=null:
         illustrated_map.set_cursor(hovered,usable and animation_ticket<0)
         return
@@ -1586,49 +1356,7 @@ func _update_cursor() -> void:
     if cursor_mesh.visible:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
 
-func _update_continuous_preview() -> void:
-    if model.state.spatial_mode!="FREE" or (not continuous_preview_enabled and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id))) or continuous_space == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
-        if continuous_preview != null:
-            continuous_preview.clear_preview()
-        return
-    var martial_step: bool=selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id)
-    if not selected_kind.is_empty() and not martial_step:
-        continuous_preview.clear_preview()
-        return
-    var actor = model.state.get_actor(_decision_owner())
-    if actor == null:
-        continuous_preview.clear_preview()
-        return
-    var goal: Vector2 = get_viewport().get_mouse_position()
-    var path: PackedVector2Array = model.preview_free_path(actor.id, goal)
-    if path.size() < 2:
-        continuous_preview.clear_preview()
-        return
-    var cost: float = model.state.spatial.path_length(path)
-    var unit: float = maxf(model.state.spatial.bake.step.x, model.state.spatial.bake.step.y)
-    var units: int = ceili((cost - 0.0001) / unit)
-    var remaining: int = int(actor.stats.get("move_budget", 2)) - actor.normal_moves_used
-    var reachable: bool = units > 0 and units <= remaining and actor.qi_u >= units * 10000
-    if martial_step:
-        var usage: Dictionary=model.cards.usage(selected_card_uid,selected_usage_id)
-        remaining=int(usage.get("target",{}).get("max_distance",0))
-        for effect in usage.get("effects",[]):
-            if str(effect.get("type",""))=="move": remaining=mini(remaining,int(effect.get("max_distance",0)))
-        reachable=cost>0.25 and cost<=float(remaining)*unit+0.001
-    continuous_preview.show_preview(path, cost, reachable)
-
 func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M:
-        _toggle_spatial_mode()
-        get_viewport().set_input_as_handled()
-        return
-    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_P:
-        if model.state.spatial_mode!="FREE": return
-        continuous_preview_enabled = not continuous_preview_enabled
-        if not continuous_preview_enabled and continuous_preview != null:
-            continuous_preview.clear_preview()
-        get_viewport().set_input_as_handled()
-        return
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_A:
         _toggle_auto_battle()
         get_viewport().set_input_as_handled()
@@ -1648,24 +1376,10 @@ func _unhandled_input(event: InputEvent) -> void:
         _refresh_target_markers()
         return
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        if selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id):
-            _submit("PLAY_CARD_FREE_MOVE",{"card_uid":selected_card_uid,"usage_id":selected_usage_id,
-                "target_position":get_viewport().get_mouse_position()})
-            get_viewport().set_input_as_handled()
-        elif not selected_kind.is_empty():
+        if not selected_kind.is_empty():
             var selected := _action_at(_hover_cell())
             if not selected.is_empty():
                 _submit_legal(selected)
-            else:
-                _submit_selected_approach(_enemy_at(_hover_cell()))
-            get_viewport().set_input_as_handled()
-        elif model.state.spatial_mode=="FREE" and illustrated_map != null and _player_decision():
-            var enemy_id: int=_enemy_at(_hover_cell())
-            if enemy_id>=0:
-                _submit("MOVE_AND_ATTACK",{"attack_kind":"BASIC_ATTACK","target_id":enemy_id})
-            else:
-                _submit("MOVE_FREE", {"target_position": get_viewport().get_mouse_position()})
-            get_viewport().set_input_as_handled()
         else:
             var move := _legal("MOVE", _hover_cell())
             if not move.is_empty():
@@ -1701,7 +1415,6 @@ func _unhandled_input(event: InputEvent) -> void:
                 _refresh()
                 _refresh_target_markers()
                 movement_paths.clear()
-                continuous_paths.clear()
                 for actor in snap.get("actors", []):
                     var id: int=int(actor.id)
                     actor_nodes[id].position = illustrated_map.point_for_cell(Vector2i(actor.cell)) if illustrated_map != null else _world(actor.cell)
