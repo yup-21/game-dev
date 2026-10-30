@@ -668,7 +668,7 @@ func _update_status() -> void:
     if status_label == null or snap.is_empty():
         return
     var mode := "雨夜追兵 · 多人交锋" if story_encounter else "断桥论剑 · HD-2D"
-    var priority := model.state.get_actor(_decision_owner())
+    var priority = model.state.get_actor(_decision_owner())
     var active_name := str(priority.name) if priority != null else "等待结算"
     status_label.text = "%s    /    %s    /    第 %d 拍    /    执剑者：%s" % [
         mode, str(snap.get("phase", "")), int(snap.get("global_tick", 0)), active_name]
