@@ -15,11 +15,11 @@ var stage_left: float = 0.0
 
 func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector2i.RIGHT) -> void:
     tracks[id] = {"sprite": sprite, "state": "idle", "elapsed": 0.0,
-        "duration": 1.0, "loop": true, "facing": Facing.from_delta(initial_facing),
-        "base_scale": sprite.scale}
+        "duration": 1.0, "loop": true, "facing": Facing.from_delta(initial_facing)}
     sprite.hframes = 6
     sprite.vframes = 4
     sprite.frame = 0
+    sprite.scale = Vector2.ONE
     sprite.flip_h = initial_facing == Facing.WEST
 
 func set_facing(id: int, facing: Vector2i) -> void:
@@ -57,7 +57,7 @@ func events(emitted: Array) -> void:
         if kind == "CHAIN_LINK_ADDED" and tracks.has(actor_id):
             set_facing(actor_id,Vector2i(event.get("facing",facing_for(actor_id))))
         match kind:
-            "MOVE", "MOVE_FREE":
+            "MOVE":
                 animation = "move"
             "ATTACK_DECLARED":
                 animation = "attack"
@@ -79,19 +79,12 @@ func events(emitted: Array) -> void:
             if kind == "MOVE":
                 var path: Array=event.get("path",[])
                 duration=maxf(duration,float(path.size()) * 0.33)
+                # Show the direction of the FIRST step immediately; view
+                # updates the orientation again at every corner.
                 if not path.is_empty():
                     presentation_facing=Facing.from_delta(
                         Vector2i(path[0])-Vector2i(event.get("from",Vector2i.ZERO)),
                         presentation_facing)
-            elif kind == "MOVE_FREE":
-                var route: PackedVector2Array=event.get("path",PackedVector2Array())
-                var distance: float=0.0
-                for index in range(1,route.size()):
-                    distance+=route[index-1].distance_to(route[index])
-                duration=maxf(duration,distance/160.0)
-                if route.size()>1:
-                    var heading: Vector2=route[1]-route[0]
-                    presentation_facing=Facing.from_delta(Vector2i(roundi(heading.x),roundi(heading.y)),presentation_facing)
             timeline.append({"id": id, "state": animation,
                 "facing": presentation_facing,
                 "duration": duration})
@@ -160,7 +153,7 @@ func update(delta: float, moving: Dictionary = {}) -> void:
                     tilt = thrust * 0.15
                 "evade":
                     tilt = thrust * 0.14
-            sprite.scale = sprite.scale.lerp(Vector2(track.base_scale) * target_scale, minf(1.0, delta * 18.0))
+            sprite.scale = sprite.scale.lerp(target_scale, minf(1.0, delta * 18.0))
             sprite.rotation = lerpf(sprite.rotation, tilt, minf(1.0, delta * 17.0))
         tracks[id] = track
 

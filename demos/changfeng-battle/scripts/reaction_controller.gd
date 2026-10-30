@@ -25,11 +25,7 @@ func add(actor_id: int,uid: String,definition_id: String,u: Dictionary,choice: D
 	var responder=state.get_actor(actor_id)
 	var opponent=state.get_actor(other(actor_id))
 	if responder!=null and opponent!=null:
-		if state.spatial_mode=="FREE" and state.spatial!=null:
-			var offset: Vector2=opponent.position-responder.position
-			responder.facing=Facing.from_delta(Vector2i(roundi(offset.x),roundi(offset.y)),responder.facing)
-		else:
-			responder.facing=Facing.from_delta(opponent.cell-responder.cell,responder.facing)
+		responder.facing=Facing.from_delta(opponent.cell-responder.cell,responder.facing)
 	state.next_link+=1
 	var link: Dictionary={"id":state.next_link,"link_id":state.next_link,"actor_id":actor_id,"uid":uid,"definition_id":definition_id,"usage_id":u.id,"name":u.get("name",definition_id),"effects":u.get("effects",[]).duplicate(true),"choice":choice.duplicate(true),"canceled":false,"resolved":false}
 	state.clash.stack.append(link)

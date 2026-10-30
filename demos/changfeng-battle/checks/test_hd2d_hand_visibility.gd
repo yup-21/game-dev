@@ -1,7 +1,6 @@
 extends SceneTree
 ## Hand visibility is sourced from the private owner snapshot, not the set
-## of currently legal actions. Eligible distant attacks now stay clickable
-## for automatic approach; other unavailable attacks remain visible and disabled.
+## of currently legal actions (which can be empty outside attack range).
 var checks := 0
 var failures := 0
 
@@ -49,24 +48,6 @@ func _run() -> void:
                 attack_uids[uid] = true
     _check(drawn.size() == 5, "first draw has five actual card instances")
     _check(attack_uids.size() > 0, "seeded 12-card school deck draws actual attacks")
-    _check(model.state.spatial_mode=="GRID","legacy grid mode remains default")
-    var grid_rendered: Dictionary = _rendered_cards(view)
-    var grey_attacks := 0
-    for uid in attack_uids:
-        for button in grid_rendered.get(uid,[]):
-            if button.disabled: grey_attacks+=1
-    _check(grey_attacks>0,"grid mode still greys out-of-range attacks")
-    var mode_change: Dictionary=model.submit(model.request("SET_SPATIAL_MODE",0,{"spatial_mode":"FREE"}))
-    _check(bool(mode_change.get("success",false)),"switch to free mode through the battle model")
-    if not bool(mode_change.get("success",false)):
-        view.queue_free()
-        quit(1)
-        return
-    view.call("_accept",mode_change)
-    var acknowledged: Dictionary=model.acknowledge_animation(int(mode_change.ticket))
-    view.set("animation_ticket",-1)
-    view.call("_accept",acknowledged)
-    _check(model.state.spatial_mode=="FREE","free geometry mode active")
     var before_revision := int(model.state.revision)
     var before_hand: Array = model.state.get_actor(0).hand.duplicate()
     view.call("_refresh")
@@ -76,28 +57,27 @@ func _run() -> void:
         "every drawn UID is shown, including cards without legal targets")
     for uid in drawn:
         _check(rendered.has(uid), "hidden drawn hand UID: " + str(uid))
-    var approachable := 0
+    var ranged_out := 0
     for uid in attack_uids:
         if not rendered.has(uid):
             continue
         var visible: Array = rendered[uid]
+        var locked := true
         for button in visible:
             if not button.disabled:
-                var usage_id: String = str(button.get_meta("usage_id", ""))
-                _check(bool(view.call("_can_approach_card", str(uid), usage_id)),
-                    "out-of-range selectable attacks must be eligible for auto-approach")
-                approachable += 1
-            else:
+                locked = false
+            if button.disabled:
                 _check(button.tooltip_text.contains("靠近敌人"),
-                    "unavailable attack cards must explain their limits")
-    _check(approachable > 0,
-        "two-cell opening gap must show at least one selectable auto-approach attack")
+                    "attack card must explain range/availability")
+        if locked:
+            ranged_out += 1
+    _check(ranged_out > 0,
+        "two-cell opening gap must display attacks as grey cards, not hide them")
     _check(model.state.get_actor(0).cell.distance_squared_to(model.state.get_actor(1).cell) == 4,
         "regression is built on the real two-cell opening gap")
     # Simulate a legal adjacency without submitting an action; move only the
     # enemy fixture from (8,4) to the free bridge cell (7,4).
     model.state.get_actor(1).cell = Vector2i(7, 4)
-    model.state.get_actor(1).position=model.state.spatial.bake.cell_center(Vector2i(7,4))
     view.call("_refresh")
     await process_frame
     rendered = _rendered_cards(view)
