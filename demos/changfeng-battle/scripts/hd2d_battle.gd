@@ -1365,7 +1365,10 @@ func _process(delta: float) -> void:
 
 func _accept(result: Dictionary) -> void:
     if not result.get("success", false):
-        push_warning(str(result.get("message", "Action rejected")))
+        var warning: String = str(result.get("message", "行动无法执行"))
+        push_warning(warning)
+        if selection_label != null:
+            selection_label.text = "无法执行：%s" % warning
         return
     _cue_events(result.get("events", []))
     # Presentation follows each real path waypoint, rather than the straight
