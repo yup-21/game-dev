@@ -24,6 +24,19 @@ func _run() -> void:
     var m=_new_mode("FREE")
     var actor=m.state.get_actor(0)
     var uid: String=m.cards.create_instance(actor,"tf_step","hand")
+    var legacy_cell: Vector2i=Vector2i(5,4)
+    var legacy_actions: Array=m.legal_actions(actor.id).filter(func(action):
+        return str(action.get("kind",""))=="PLAY_CARD"
+            and str(action.get("card_uid",""))==uid
+            and action.has("target_cell"))
+    _check(legacy_actions.is_empty(),
+        "FREE mode must not enumerate grid-based movement card destinations")
+    var forbidden: Dictionary=m.submit(m.request("PLAY_CARD",actor.id,{
+        "card_uid":uid,"usage_id":"step","target_cell":legacy_cell}))
+    _check(str(forbidden.get("error_code",""))=="ILLEGAL_ACTION",
+        "direct legacy cell movement request cannot bypass continuous collision")
+    _check(actor.hand.has(uid) and actor.normal_moves_used==0,
+        "rejected grid-style request retains card and movement budget")
     var origin: Vector2=actor.position
     var goal: Vector2=origin+Vector2(20.25,0)
     var req: Dictionary=m.request("PLAY_CARD_FREE_MOVE",actor.id,{
@@ -49,6 +62,12 @@ func _run() -> void:
 
     var grid=_new_mode("GRID")
     var grid_uid: String=grid.cards.create_instance(grid.state.get_actor(0),"tf_step","hand")
+    var grid_options: Array=grid.legal_actions(0).filter(func(action):
+        return str(action.get("kind",""))=="PLAY_CARD"
+            and str(action.get("card_uid",""))==grid_uid
+            and action.has("target_cell"))
+    _check(not grid_options.is_empty(),
+        "GRID mode still supports legacy reachable-cell movement cards")
     var denied: Dictionary=grid.submit(grid.request("PLAY_CARD_FREE_MOVE",0,{
         "card_uid":grid_uid,"usage_id":"step","target_position":grid.state.get_actor(0).position+Vector2(20,0)}))
     _check(str(denied.get("error_code",""))=="WRONG_SPATIAL_MODE",
