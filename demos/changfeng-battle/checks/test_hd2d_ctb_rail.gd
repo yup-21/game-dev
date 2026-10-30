@@ -45,6 +45,52 @@ func _run() -> void:
                 "dead actors must not have a live CTB marker")
     _check(float(rail.call("gauge_y", 10000.0)) < float(rail.call("gauge_y", 0.0)),
         "higher gauge must appear nearer the top")
+
+    # Everyone at zero charge must sit directly ON the rail, even when
+    # the portraits overlap across teams. No side lanes or collision spacing.
+    var shared_charge: Array = actors.duplicate(true)
+    for actor in shared_charge:
+        actor["gauge"] = 0
+    rail.call("set_state", shared_charge, int(original.get("active_id", -1)))
+    rail.call("_process", 1.0)
+    var live_portraits: Array[Control] = []
+    for actor in shared_charge:
+        if float(actor.get("hp", 0.0)) <= 0.0:
+            continue
+        var marker := rail.get_node_or_null("Charge_%d" % int(actor.id)) as Control
+        if marker == null:
+            continue
+        live_portraits.append(marker)
+        _check(absf(marker.position.x + marker.size.x * 0.5 - rail.size.x * 0.5) < 0.1,
+            "portrait must be horizontally centered on the vertical axis")
+        _check(absf(marker.position.y + marker.size.y * 0.5 -
+            float(rail.call("gauge_y", 0.0))) < 0.1,
+            "equal charge must use its exact unshifted rail position")
+    _check(live_portraits.size() >= 2, "overlap test requires two live portraits")
+    if live_portraits.size() >= 2:
+        _check(live_portraits[0].position.distance_to(live_portraits[1].position) < 0.1,
+            "matching charge values must allow overlapping portraits")
+
+        # CTB model updates provide targets; the visual cursor glides to them
+        # without mutating model time or teleporting instantaneously.
+        var moved: Array = shared_charge.duplicate(true)
+        var moving_id := int(live_portraits[0].get_meta("actor_id"))
+        for actor in moved:
+            if int(actor.get("id", -1)) == moving_id:
+                actor["gauge"] = 10000
+        var moving_marker := rail.get_node_or_null("Charge_%d" % moving_id) as Control
+        var initial_y := moving_marker.position.y
+        rail.call("set_state", moved, int(original.get("active_id", -1)))
+        _check(absf(moving_marker.position.y - initial_y) < 0.1,
+            "new CTB value must start animating from the displayed position")
+        rail.call("_process", 0.1)
+        var halfway_y := moving_marker.position.y
+        var finish_y := float(rail.call("gauge_y", 10000.0)) - moving_marker.size.y * 0.5
+        _check(halfway_y < initial_y and halfway_y > finish_y,
+            "portrait must glide vertically between old and new gauge values")
+        rail.call("_process", 1.0)
+        _check(absf(moving_marker.position.y - finish_y) < 0.1,
+            "portrait glide must finish at the exact authoritative gauge")
     _check(int(model.snapshot(0).get("revision", -1)) == int(original.get("revision", -2)),
         "rendering or testing the axis must not advance game time")
     print("CHARGE_RAIL_RESULT checks=%d failures=%d" % [checks, failures])
