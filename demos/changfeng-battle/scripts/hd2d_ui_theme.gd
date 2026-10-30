@@ -74,7 +74,7 @@ static func apply_card(button: Button, selected: bool = false) -> void:
     button.add_theme_constant_override("h_separation", 8)
     button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
     button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-    button.icon_max_width = 93
+    button.add_theme_constant_override("icon_max_width", 93)
     button.expand_icon = true
     button.clip_text = true
     button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
