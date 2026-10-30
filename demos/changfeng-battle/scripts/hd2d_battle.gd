@@ -4,7 +4,6 @@ extends Node2D
 const Model = preload("res://scripts/battle_model.gd")
 const BattleCommandController = preload("res://scripts/battle_command_controller.gd")
 const BattleInputController = preload("res://scripts/battle_input_controller.gd")
-const ContinuousSpace = preload("res://scripts/battle_spatial_service.gd")
 const ContinuousPreview = preload("res://scripts/continuous_move_preview.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
 const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
@@ -29,7 +28,6 @@ var ai = EnemyAI.new()
 var animation_driver = Animator.new()
 var presentation = PresentationCoordinator.new()
 var effects_driver
-var continuous_space
 var continuous_preview
 var continuous_preview_enabled := false
 var illustrated_map: CanvasLayer
@@ -85,7 +83,6 @@ func _ready() -> void:
     legals = model.legal_actions(_decision_owner())
     _build_world()
     if illustrated_map != null:
-        continuous_space = ContinuousSpace.new()
         continuous_preview = ContinuousPreview.new()
         illustrated_map.scene_root.add_child(continuous_preview)
     # 3D terrain, procedural scenery, and far-away backdrop are removed.
@@ -1247,7 +1244,7 @@ func _update_cursor() -> void:
     illustrated_map.set_cursor(hovered, usable and animation_ticket < 0)
 
 func _update_continuous_preview() -> void:
-    if model.state.spatial_mode!="FREE" or (not continuous_preview_enabled and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id))) or continuous_space == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
+    if model.state.spatial_mode!="FREE" or (not continuous_preview_enabled and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id))) or model.state.spatial == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
         if continuous_preview != null:
             continuous_preview.clear_preview()
         return

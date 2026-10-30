@@ -17,6 +17,11 @@ if ($Stage -in @('All','Framework')) { $checks += @{ Script = 'res://checks/test
 if ($Stage -in @('All','Generated')) { $checks += @{ Script = 'res://checks/test_generated_cards.gd'; Log = 'generated-cards.log'; Marker = 'RESULTS 0 failures' } }
 if ($Stage -in @('All','Lifecycle')) { $checks += @{ Script = 'res://checks/test_model_lifecycle.gd'; Log = 'model-lifecycle.log'; Marker = 'MODEL LIFECYCLE: \d+ PASS / 0 FAIL' } }
 if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_command_dispatcher.gd'; Log = 'battle-command-dispatch.log'; Marker = '^COMMAND_DISPATCH_PASS\b' } }
+if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_input_controller.gd'; Log = 'battle-input.log'; Marker = '^BATTLE_INPUT_PASS\b' } }
+if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_hand_view.gd'; Log = 'battle-hand.log'; Marker = '^BATTLE_HUD_PASS\b' } }
+if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_presentation_coordinator.gd'; Log = 'battle-presentation.log'; Marker = '^PRESENTATION_TICKET_PASS\b' } }
+if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_pure_2d.gd'; Log = 'battle-2d.log'; Marker = '^PURE_BATTLE_2D_PASS\b' } }
+if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_spatial_facade.gd'; Log = 'battle-spatial.log'; Marker = '^SPATIAL_FACADE_PASS\b' } }
 if ($Stage -in @('All','Policy')) { $checks += @{ Script = 'res://checks/test_tingfeng_ai.gd'; Log = 'tingfeng-policy.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - context-only tingfeng policy' } }
 if ($Stage -in @('All','Rules')) { $checks += @{ Script = 'res://checks/test_tingfeng.gd'; Log = 'tingfeng-rules.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - targeted tingfeng migration' } }
 if ($Stage -in @('All','Edges')) { $checks += @{ Script = 'res://checks/test_tingfeng_edges.gd'; Log = 'tingfeng-edges.log'; Marker = 'EDGE AUDIT: \d+ PASS / 0 failures' } }

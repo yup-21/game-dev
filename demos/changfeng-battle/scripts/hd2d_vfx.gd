@@ -1,4 +1,6 @@
 extends RefCounted
+## DEPRECATED: historical compatibility/fixture module, not the player-facing battle.
+## Retain until all res:// consumers and legacy tests are migrated.
 ## Original 3D wuxia VFX. Pure presentation driven by BattleModel events.
 ## No RNG, damage, status or hit logic lives here.
 var host: Node3D

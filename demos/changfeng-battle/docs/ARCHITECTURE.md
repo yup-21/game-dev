@@ -1,77 +1,53 @@
-# 《长风浮生录》Demo 技术架构（当前基线）
+# 《长风浮生录》Demo 当前架构
 
-> 状态：R1 源码架构契约。基线 `main@8d1486b4b27dd06aaae78739ca13740a5169074d`（含 PR #65）。
-> 本文区分**现有实现**和**计划重构**，不能把未完成的目标写成已上线能力。
+> 单一正式入口：`opening.tscn` → `battle_hd2d.tscn`；基础版本 `main@8d1486b4`，重构工作在 `refactor/battle-architecture-consolidation`（Draft PR #67）。
+> 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
-## 1. 唯一正式入口
-
-- Godot 项目：`demos/changfeng-battle/project.godot`，运行入口 `opening.tscn`，Autoload：`GameSession`。
-- 唯一正式战斗场景：`battle_hd2d.tscn`。主菜单直达与序章追兵均使用它；前者主要做 1v1 验证，剧情支持多人遭遇。
-- `battle.tscn` 和 `party_battle.tscn` 是 **DEPRECATED / 规则或旧视图回归入口**，不可继续扩展为第二套正式战斗 UI，也不可未经迁移直接删除。
-- `demo_result.tscn` 是结果页；剧情重试由 `GameSession` 协调返回正式场景。
-
-## 2. 实际数据流
+## 运行结构
 
 ```mermaid
 flowchart TD
-    A["GameSession / ScenarioDirector / CharacterRegistry"] --> B["hd2d_battle.gd（当前巨型控制器）"]
-    B --> C["BattleModel.request / submit"]
-    C --> D["CombatRules 校验"]
-    D --> E["CombatResolver + State / Card / CTB / Chain"]
-    E --> F["events / revision / ticket / snapshot"]
-    F --> B
-    B --> G["2D插画/Actor/Sprite/VFX + 手牌/CTB HUD"]
-    B --> H["EnemyAI（decision_context）"]
+    A["GameSession / ScenarioDirector / CharacterRegistry"] --> B["BattleInputController / BattleCommandController"]
+    B --> C["BattleCommandDispatcher"]
+    C --> D["BattleModel (唯一规则真值)"]
+    D --> E["CombatRules / Resolver / CTB / Chain / Cards"]
+    E --> F["BattleSpatialFacade → GRID / FREE"]
+    D --> G["snapshot / events / ticket"]
+    G --> H["BattleHUD / Hand / CTB / CharacterCard"]
+    G --> I["PresentationCoordinator / Animator / VFX2D"]
+    I --> C
 ```
 
-**唯一权威真值：`BattleModel` 与它拥有的 `BattleState`。** 所有 UI、AI、剧情控制器只能提交版本化命令或读取只读投影；画面物理碰撞不得直接扣血、移动牌区或结算卡牌。
+## 真值与提交顺序
 
-## 3. 模块所有权
+- `BattleModel.request/validate/submit` 以 `battle_id`、`revision` 与类型检查拒绝过期、非法输入；`CombatResolver` 唯一提交资源与规则效果。
+- `BattleCommandController.from_view` 禁止 AI 托管、非玩家、未结束演出时的人工输入；`BattleCommandDispatcher.dispatch` 对枚举动作严格匹配，对 FREE 连续坐标命令交给 `CombatRules` 原子验证。
+- UI 的物理手牌列表来自 `snapshot.hand`，不会因合法目标暂时缺失而消失。出招/阶段派生资源、连携、装备武学、交锋 LIFO 与 CTB 仍由原领域模块处理。
+- `PresentationCoordinator` 维护待播放 ticket 的唯一消费标记；正常结束和跳过都调用 `acknowledge_animation(ticket)`，不会重复触发伤害。Esc/重试和新战斗重置演出状态。
+- AI 通过 `decision_context` 查询权限约束下的候选动作；表现层不能推断敌方隐藏手牌。
 
-| 模块 | 当前文件 | 权责 |
-| --- | --- | --- |
-| 战斗入口与事务 | `battle_model.gd` | `reset/request/validate/submit/acknowledge_animation/legal_actions/snapshot/decision_context` |
-| 战斗状态 | `battle_state.gd`、`combatant_state.gd` | 角色位置、队伍、生命/内息、阶段、牌区引用、请求版本、动画票据 |
-| 校验与执行 | `combat_rules.gd`、`combat_resolver.gd`、`cost_resolver.gd` | 时机/费用/合法性检查、唯一结果执行、伤害/移动/状态事件 |
-| 行动调度与交锋 | `turn_manager.gd`、`reaction_controller.gd`、`combo_resolver.gd` | CTB、同一 ACTION 连携、有限 LIFO 响应 |
-| 武学、卡牌与状态 | `card_system.gd`、`school_catalog.gd`、`technique_runtime.gd`、`ability_system.gd`、`status_system.gd` | 定义校验、派生卡/阶段能力、武学切换、状态生命周期 |
-| 信息权限与 AI | `visibility_system.gd`、`enemy_ai.gd` | 观察者投影、合法策略，不读取未知对手牌 |
-| 空间 | `map_bake.gd`、`battle_spatial_service.gd`、`battle_spatial_waypoint.gd` | GRID/FREE 路径、连续位置/碰撞、预算、距离/LOS、自动接近 |
-| 应用/剧情/人物 | `game_session.gd`、`scenario_director.gd`、`character_registry.gd`、`opening_flow.gd` | 会话、剧情路由、遭遇数据、人物绑定 |
-| 正式显示 | `hd2d_battle.gd`、`illustrated_battle_map.gd`、`hd2d_animation.gd`、`hd2d_vfx.gd` 等 | 玩家输入、2D地图、演员、动画、特效、HUD，目前耦合较深 |
+## 2D 场景
 
-## 4. 空间模式约束
+正式 `battle_hd2d.tscn` 已是 `Node2D` 根与 `Camera2D`；`illustrated_battle_map.gd` 的 CanvasLayer 将插画、格子调试层、脚点演员共享在同一 Node2D 世界；`battle_vfx_2d.gd` 消费语义事件；`hd2d_animation.gd` 播放 6×4 动作图集。相机震动通过绘制世界偏移，鼠标坐标由 `to_battle_point` 校正。表现层只改 Sprite/VFX，不直接改 HP、Qi、CTB 和牌区。
 
-- **GRID**：保留 15×10 原规则、格子移动与攻击距离、旧测试。
-- **FREE**：连续 `Vector2` 脚点、角色圆形碰撞、实际路径长度预算、连续攻击距离/LOS、自动接近、卡牌自由步法。
-- 当前 FREE **不是独立 NavigationPolygon 路网**：遇障碍仍依赖 `MapBake` 的15×10遮挡数据和 `AStarGrid2D` 绕障，再进行线段可见性平滑。重构先抽象接口，不偷偷改变地形算法。
-- `SET_SPATIAL_MODE` 是权威版本化请求；不消耗行动资源，且拒绝不能安全回格的 FREE→GRID 请求。
-- PR #65 已修正角色朝向、拥挤情况下的 FREE 寻路/靠近与第一幕空白背景。重构必须将其作为新回归基线。
+## GRID / FREE 的真实约束
 
-## 5. 卡牌、时间和派生的不变量
+- `GRID`：保留 15×10 正交格、原移动预算与 Manhattan 基本攻击距离。
+- `FREE`：连续 `Vector2`、圆形碰撞、真实路径长度、自动接近攻击与自由身法落点。
+- `BattleSpatialFacade` 统一回答 `can_land / safe_landing / find_path / path_cost / can_attack / find_attack_approach / forced_move_preview`。当前 `CombatRules` 的基础攻击、FREE 攻击用法与自动接近走 facade；`BattleModel.preview_free_path` 也使用它。部分旧校验仍直接调用 `BattleSpatialService`，属于后续收敛点。
+- FREE 底层仍是 `MapBake` 的障碍 mask 与 `AStarGrid2D` 路径平滑，**不是** `NavigationPolygon` 独立导航网格。重构不修改寻路算法。
+- `forced_move_preview` 仅返回几何建议；真实强制位移仍需经 CombatResolver 授权。GRID/FREE 切换失败不能产生资源与 revision 的副作用。
 
-1. CTB 只负责行动权，`ACTION` 和 `CLASH` 停表；动画时间不得触发额外内息恢复。
-2. `Combo` 是同角色本次 ACTION 的主动攻击链；`Chain` 是一次根攻击双方的交替响应，仍有原最大深度与 LIFO 规则。
-3. “探锋·试探”产生真正的“追风”衍生牌；“变锋”是额外阶段能力，不能被错误地当成手牌。
-4. 手牌显示来自 `snapshot(observer_id).hand`；`legal_actions()` 只控制可用状态，不能用它过滤已抽到但暂时射程不足的攻击牌。
-5. 多套武学属于 `learned_schools`；`school_id` 是当前装备的一套。切换受合法时机限制，消耗行动，不能混用旧衍生卡。
-6. `submit` 拒绝时不得修改资源、牌区、位置或 revision。已承诺的动作不因演出失败而二次扣费。
-7. 每个版本化动画 ticket 只确认一次；跳过/取消演出不得重复结算结果。
+## 保留入口、资产与已知限制
 
-## 6. 当前表现层债务（尚未重构）
+- 玩家入口唯一 `battle_hd2d.tscn`；`battle.tscn` / `party_battle.tscn` 作为历史规则视图保留，不触发删除。
+- `hd2d_vfx.gd`、`hd2d_scenery.gd` 是历史兼容实现，不再是正式演出依赖。
+- 美术素材既有 Kenney CC0，也有用户上传原画和生成的概念稿；用途/授权分开记录，未确认原创素材的许可证不能宣称 CC0。
+- 完整四方向逐帧图集、姿态条、动作型绝招、交锋慢镜头和音效编排不是这轮重构已完成的功能，属于结构稳定后的新增玩法；旧 6×4 图仅提供动作类别与水平镜像。
+- 目前仍有 UI 创建/AI 更新时间循环留在 `hd2d_battle.gd` 中；R2–R5 优先提取重要行为边界，后续可以继续迁移纯视图而不改规则。
 
-- `hd2d_battle.gd` 同时承担世界创建、UI、输入、AI 调度、路径跟随、动画票据和状态展示；后续将逐项抽出。
-- `battle_hd2d.tscn` 根仍是 `Node3D`；可见战场却由 `illustrated_battle_map.gd` 使用 `CanvasLayer` 与 `Sprite2D` 绘制。`_build_world()` 在创建 2D 地图后直接返回，后续保留不可达的旧 3D 地形构造代码。
-- `hd2d_vfx.gd` 同时兼容 2D 和 3D 特效；`hd2d_animation.gd`、`hd2d_battle.gd` 均参与演出时序。应逐步收敛到单一 2D 表现控制器。
-- `battle_view.gd`、`party_battle_view.gd` 仍用于历史测试；不要简单删除。
-- 最终目标：应用层 / 战斗控制层 / 规则领域层 / 空间层 / 表现与 UI 层。**当前目录结构不是已完成的目标分层。**
+## 验证
 
-## 7. 安全修改原则
+GitHub Actions `Original Wuxia HUD regression` 对 PR 的正式场景、FREE/GRID 切换、旧战斗、武学与剧情执行 Godot 4.7.2 headless 回归。Windows 使用 `checks/verify.ps1 -Stage Refactor` 和 `-Stage All`。当前执行结果见 [路线图](REFACTOR_ROADMAP.md)；实际截图与人工操作不能由规则测试替代。
 
-- 优先“提取职责而不改行为”；原公开 API、事件名、场景入口和测试保持兼容。
-- 首轮不得同时修改伤害公式、费用、武学牌组、CTB、AI 情报权限与 UI 重构。
-- 移动 `res://` 文件时先列出所有 `preload` / scene / test 依赖；一次只迁移一小组。
-- 每次提交保留可复现 seed、headless 规则检查和真实图形集成检查。
-- **架构文档的已验证含义仅为源码核查**，如无 Godot 实机运行，不写“测试已通过”。
-
-相关背景：[PR #62](https://github.com/yup-21/game-dev/pull/62) · [PR #65](https://github.com/yup-21/game-dev/pull/65) · [历史场景状态](battle-entry-status.md) · [迁移计划](REFACTOR_ROADMAP.md)。
+[历史场景约束](LEGACY_COMPAT.md) · [美术/路径审计](REFACTOR_ASSET_AUDIT.md) · [路线图](REFACTOR_ROADMAP.md)

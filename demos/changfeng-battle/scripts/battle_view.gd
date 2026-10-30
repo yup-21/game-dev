@@ -1,4 +1,6 @@
 extends Node2D
+## DEPRECATED: historical compatibility/fixture module, not the player-facing battle.
+## Retain until all res:// consumers and legacy tests are migrated.
 ## DEPRECATED (not player-facing): legacy 2D duel retained only for historical tests.
 ## Launch the illustrated battle via res://battle_hd2d.tscn instead.
 ## Presentation consumes the observer projection; all gameplay enters request/submit.

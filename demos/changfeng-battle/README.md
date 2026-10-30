@@ -4,7 +4,9 @@
 
 ## 唯一战斗入口与美术接入
 
-**当前正式战场以完整手绘地图和原生 `Sprite2D` 角色为可见画面**：`illustrated_battle_map.gd` 负责地图/脚点，`hd2d_art_catalog.gd` 选择 6×4 武侠动作图集，`hd2d_animation.gd` 和 `hd2d_vfx.gd` 消费战斗事件。序章追兵和独立试玩共用 `battle_hd2d.tscn`，保留 CTB、武学卡牌、连携与 CLASH 响应。旧的 `Node3D/Camera3D` 容器和不可达 3D 地形构造代码尚待重构清理，**不代表当前仍在屏幕上渲染 3D 棋盘**。
+**正式战斗现已使用原生 2D 场景**：`battle_hd2d.tscn` 为 `Node2D + Camera2D`；`illustrated_battle_map.gd` 持有完整插画、共享脚点与 `Sprite2D` 演员；`battle_vfx_2d.gd` 只负责战斗特效。旧的 3D 地形构造已从正式场景删除，`hd2d_vfx.gd` / `hd2d_scenery.gd` 暂保留为历史模块，不参与玩家战斗。规则仍统一由 `BattleModel` 管理，支持 1v1 / 序章 3v3、CTB、武学卡牌、连携和 CLASH。
+
+**已拆分的职责**：`BattleInputController` 处理 FREE/GRID 点击意图，`BattleCommandController` 做人类输入门控，`BattleCommandDispatcher` 统一投递请求；`BattleHandView`、`BattleHUDStatus`、`ChargeRail` 与 `CharacterCardUI` 只消费投影；`BattlePresentationCoordinator` 管理 animation ticket 的完成、跳过和取消；`BattleSpatialFacade` 提供统一几何查询。上述改动保留原有数值、卡牌、派生与敌方 AI。
 
 **素材覆盖边界**：角色 ID 2–5 使用已提交的24姿态动作图；沈长风（ID 0）和追兵首领（ID 1）仍有插画 atlas 回退。精细逐帧动画尚不完整，新增素材应替换角色表现资源，不应新增第二套规则战场。
 
@@ -42,6 +44,9 @@
 | 结束行动 / 交锋 Pass | Space 或 Enter；没有合法应变牌或武学时自动 Pass，无须点击 |
 | 取消已选择的招式 | 右键 |
 | 重新开始独立战斗 | R（剧情战斗不能重置会话） |
+| GRID/FREE 模式切换 | M（须轮到我方且无未完成演出） |
+| FREE 路线预览 | P |
+| 跳过当前动作演出 | S（只确认已有 ticket，不重复结算） |
 | 返回菜单或剧情结算 | Esc（剧情需战斗结束后返回结算页） |
 
 更多旧版战斗 Demo 的专用按键说明保留在历史文档，不再属于当前正式 UI。
@@ -122,7 +127,7 @@
 
 `DemoFlow` 检查剧情会话、JSON 遭遇配置、战斗与结算的衔接。
 
-`HD2DStartup` 直接加载插画立体战场，检查模型、当前相机、界面、角色图集、动画队列与剑光特效。`HD2DInteractions` 检查该场景的按钮、棋盘鼠标、键盘操作和动画／AI衔接。`-Stage HD2D` 合并运行这两项；`All` 也包含这两项，避免仅检查默认序章而漏掉可选场景。
+`HD2DStartup` 直接加载纯 2D 插画战场，检查模型、当前相机、界面、角色图集、动画队列与剑光特效。`HD2DInteractions` 检查该场景的按钮、棋盘鼠标、键盘操作和动画／AI衔接。`-Stage HD2D` 合并运行这两项；`All` 也包含这两项，避免仅检查默认序章而漏掉可选场景。
 
 以上命令同样支持 `-GodotPath` 和 `GODOT_BIN`。例如：
 
@@ -180,12 +185,12 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 
 ## 四方向角色朝向
 
-正式 HD-2D 战斗在 `CombatantState.facing` 记录东、西、南、北四方向，并通过只读快照暴露。成功移动（包括击退）按真实寻路**最后一格方向**转身；普通攻击、武学卡与阶段攻击在声明招式时面向目标。演出沿移动路径逐格走位，左右使用原有 Sprite3D 素材水平翻转，脚下小型方向标记提示南北朝向。由于现有 6×4 图集只有动作种类而非四方位逐帧素材，暂不虚称已经提供完整四方向人物立绘；未来可替换为原生分方向图集。朝向目前仅影响表现/状态，不额外叠加背刺伤害或攻击范围判定，CTB、费用、连携保持原规则。可运行 `checks/test_actor_facing.gd` 回归测试。
+正式 HD-2D 战斗在 `CombatantState.facing` 记录东、西、南、北四方向，并通过只读快照暴露。成功移动（包括击退）按真实寻路**最后一格方向**转身；普通攻击、武学卡与阶段攻击在声明招式时面向目标。演出沿移动路径逐格走位，左右使用 Sprite2D 动作图集水平翻转，脚下小型方向标记提示南北朝向。由于现有 6×4 图集只有动作种类而非四方位逐帧素材，暂不虚称已经提供完整四方向人物立绘；未来可替换为原生分方向图集。朝向目前仅影响表现/状态，不额外叠加背刺伤害或攻击范围判定，CTB、费用、连携保持原规则。可运行 `checks/test_actor_facing.gd` 回归测试。
 
 
 ## 第一幕插画地图（2D）
 
-`opening_flow.gd` 将首幕探索／对白共用同一张完整破庙插画；主角画面由现有 6×4 动作图集单独绘制，交互仍由 `OpeningStory` 状态机控制。正式雨夜追兵与练习入口的 `hd2d_battle.gd` 现使用 `illustrated_battle_map.gd` 创建 2D `CanvasLayer` 的**完整地图 + 2D Sprite2D 角色 + 二维目标落点**。不再创建可见的 3D 棋盘块体、河流 Shader 与叠在背后的远景 Sprite3D；保留旧 `BattleModel`、CTB、卡牌、多武学、事件动画与六人角色图集。战场 Node3D 用于兼容现有独立的动画帧驱动和自动化测试，场景显示层不再渲染 3D 地形。
+`opening_flow.gd` 将首幕探索／对白共用同一张完整破庙插画；主角画面由现有 6×4 动作图集单独绘制，交互仍由 `OpeningStory` 状态机控制。正式雨夜追兵与练习入口的 `hd2d_battle.gd` 现使用 `illustrated_battle_map.gd` 创建 2D `CanvasLayer` 的**完整地图 + 2D Sprite2D 角色 + 二维目标落点**。不再创建可见的 3D 棋盘块体、河流 Shader 与叠在背后的远景 Sprite3D；保留旧 `BattleModel`、CTB、卡牌、多武学、事件动画与六人角色图集。战场已迁为 Node2D + Camera2D，动作脚点与鼠标落点共用屏幕坐标；旧 3D 测试假设已迁移为 Sprite2D 校验。
 
 原画入库目标路径：
 
@@ -211,3 +216,12 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_i
 ## 第一幕角色正式 Sprite2D 替换
 
 `opening_flow.gd` 的破庙探索角色改由 `scripts/opening_role_sprite.gd` 创建真正的 `Sprite2D` 节点，人物身份从 `CharacterRegistry` 查询；沈长风使用战斗同一套6×4动画图，WASD时更新行走帧、左右转向，停止时回到待机。老镖头使用专门绘制的透明 SVG 静态受伤矢量角色姿态（倚石坐地、肩部绷带、旧镖服、手护残卷），通过人物档案 `art.static_pose` 加载为 `Sprite2D`。目前不需要逐帧 NPC 动画，也不再绘制旧运行时 SVG；对白仍使用已有高清立绘。角色以地面脚底作为锚点，按Y深度排序；对白和过场隐藏世界角色，继续使用已有的人物精细立绘。旧 `_portrait()` SVG 人物回退已移除。该次改动**没有改变**第一幕移动范围和镖头交互判定（场景碰撞烘焙属于后续独立任务）。
+
+
+## 架构重构（长期分支）
+
+全部重构提交持续进入 `refactor/battle-architecture-consolidation`，对应 [Draft PR #67](https://github.com/yup-21/game-dev/pull/67)。独立运行 `checks/verify.ps1 -Stage Refactor`（或见 [重构路线图](docs/REFACTOR_ROADMAP.md) 的 Godot 命令）。`main` 在合并前不会因该分支修改。
+
+- [当前真实架构与接口边界](docs/ARCHITECTURE.md)
+- [遗留场景与测试保护](docs/LEGACY_COMPAT.md)
+- [素材来源、引用与遗留审计](docs/REFACTOR_ASSET_AUDIT.md)

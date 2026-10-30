@@ -15,7 +15,7 @@
 - [x] 从最新 `main` 创建长期重构分支。
 - [x] 新增 [ARCHITECTURE.md](ARCHITECTURE.md)，明确定义唯一正式入口、权威模型、GRID/FREE 实情、派生/CTB/Chain 契约。
 - [x] 新增此路线图，梳理后续模块和验收。
-- [ ] 验证完整 CI/本机 Godot 测试，并记录本次真实结果（不可继承旧 PR 的 PASS）。
+- [x] GitHub Actions Godot 4.7.2 自动化已验证（R6 head `d8363d19`，运行 #41092291979 的 `godot-ui` 为 success）；本地手动 GUI 不在本项内。
 - [ ] 做一次 1v1 + 序章 3v3 人工回归录像，确认 PR #65 的修复没有倒退。
 
 退出标准：有明确契约文档、完整当前基线 SHA，测试不再以历史 Demo 的截图代替正式战斗验证。
@@ -95,3 +95,21 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_demo_f
 粗估 R1–R7 约20–34个工作日（依赖 Godot 测试与美术项目现状）。优先 R1→R2→R3→R4→R5→R6→R7，每一个阶段形成可审核提交。架势条、绝招、动作型连续技属于完成结构治理后的新功能，另开功能提交。
 
 参考：[ARCHITECTURE.md](ARCHITECTURE.md) · [项目入口](../README.md)。
+
+
+## R2–R7 实施结果（2026-10-31）
+
+| 阶段 | 接入代码 | 对应回归 |
+| --- | --- | --- |
+| R2 | `battle_input_controller.gd`、`battle_command_controller.gd`、`battle_command_dispatcher.gd` 统一点击意图、人类输入门控及版本化动作投递 | `test_battle_input_controller.gd`、`test_battle_command_dispatcher.gd` |
+| R3 | `battle_hand_view.gd` 实际手牌可见性/置灰与扇形布局；`battle_hud_status.gd` 状态、CTB、交锋投影；原 `hd2d_ctb_rail.gd`、`character_card_ui.gd` 保留职责 | `test_battle_hand_view.gd` 与旧 HUD/CTB 用例 |
+| R4 | `battle_presentation_coordinator.gd` 管理单次动画 ticket、S 跳过和取消，规则已结算后不二次执行 | `test_battle_presentation_coordinator.gd` + 自动 Pass/交互 |
+| R5 | `Node2D + Camera2D` 正式场景、`battle_vfx_2d.gd`、`Sprite2D` 演员、震动偏移坐标校正；旧 3D 构图从正式路径删除 | `test_battle_pure_2d.gd`、`test_hd2d_startup.gd` |
+| R6 | `battle_spatial_facade.gd` 统一 GRID/FREE 查询，基础攻击、自由攻击、自动接近和移动预览接入；不更换 MapBake/AStarGrid2D | `test_battle_spatial_facade.gd` + 已有双模式测试 |
+| R7 | 文档、历史模块标记、静态 `res://` 资源及授权核查、PowerShell `-Stage Refactor` 回归集 | [审计](REFACTOR_ASSET_AUDIT.md) · [遗留边界](LEGACY_COMPAT.md) |
+
+**现有自动化证据**：R6 提交 `d8363d19` 对应 GitHub Actions [#41092291979](https://github.com/yup-21/game-dev/actions/runs/41092291979) 的 `godot-ui` 已全部通过。后续 R7 提交必须重新执行完整 CI，不得沿用旧结果。
+
+**仍未验收的人工工作**：1v1 和序章 3v3 的手动鼠标/键盘全流程录像、动画/美术质量、音效时序。视觉截图工作流不能替代人工试玩；因此 R1 的「人工回归录像」保持未打勾，PR 在视觉验收前维持 Draft。
+
+架势条、无敌帧、连续技打断、终式和完整四方向逐帧素材属于新增玩法与美术制作，**不属于**本次结构 R1–R7 可宣称完成的功能。
