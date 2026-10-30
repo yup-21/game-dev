@@ -1299,6 +1299,8 @@ func _update_cursor() -> void:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
 
 func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventMouseButton and event.pressed and illustrated_map != null:
+        print("MAP_EVENT_DEBUG event=", event.position, " pointer=", get_viewport().get_mouse_position(), " hover=", _hover_cell(), " direct=", illustrated_map.cell_from_screen(event.position, snap.get("terrain", {})))
     if character_card != null and character_card.visible:
         if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
             character_card.call("close_card")
