@@ -518,6 +518,8 @@ func _build_ui() -> void:
     hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     card_actions = HBoxContainer.new()
     card_actions.name = "CardActions"
+    # Center short hands; once cards overflow, normal scroll starts at the left.
+    card_actions.alignment = BoxContainer.ALIGNMENT_CENTER
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     card_actions.add_theme_constant_override("separation", 12)
     hand_scroll.add_child(card_actions)
@@ -641,9 +643,13 @@ func _rebuild_actions() -> void:
         "RESET_TECHNIQUE": "收招 · 复位"
     }
     var command_seen: Dictionary = {}
+    var pitch_actions: Array = []
     for action in legals:
         var kind := str(action.get("kind", ""))
         if not commands.has(kind):
+            continue
+        if kind == "PITCH_CARD":
+            pitch_actions.append(action)
             continue
         var key := kind + ":" + str(action.get("card_uid", action.get("technique_id", "")))
         if command_seen.has(key):
@@ -651,25 +657,49 @@ func _rebuild_actions() -> void:
         command_seen[key] = true
         var command_button := Button.new()
         command_button.text = str(commands[kind])
-        if kind == "PITCH_CARD":
-            var discard_uid := str(action.get("card_uid", ""))
-            var discard_name := "手牌"
-            for held in snap.get("hand", []):
-                if str(held.get("uid", held.get("card_id", ""))) == discard_uid:
-                    discard_name = str(held.get("name", "手牌"))
-                    break
-            command_button.text = "调息 · " + discard_name
-        elif kind == "RESET_TECHNIQUE":
+        if kind == "RESET_TECHNIQUE":
             command_button.text = "复位 · " + str(action.get("technique_id", ""))
         UITheme.apply_button(command_button)
         command_button.pressed.connect(_submit_legal.bind(action))
         command_actions.add_child(command_button)
+    if not pitch_actions.is_empty():
+        # Present one contextual command instead of N technical card-UID rows.
+        var pitch_toggle := Button.new()
+        pitch_toggle.name = "PitchToggle"
+        pitch_toggle.text = "调息 · 弃牌  ▸"
+        UITheme.apply_button(pitch_toggle)
+        pitch_toggle.pressed.connect(_toggle_pitch_choices.bind(pitch_actions, pitch_toggle))
+        command_actions.add_child(pitch_toggle)
     if snap.get("phase", "") == "CLASH" and not command_seen.has("PASS_REACTION:"):
         var pass_button := Button.new()
         pass_button.text = "按兵 · 交还响应"
         UITheme.apply_button(pass_button)
         pass_button.pressed.connect(_submit.bind("PASS_REACTION", {}))
         command_actions.add_child(pass_button)
+
+func _toggle_pitch_choices(actions: Array, toggle: Button) -> void:
+    var existing := command_actions.get_node_or_null("PitchChoices")
+    if existing != null:
+        existing.queue_free()
+        toggle.text = "调息 · 弃牌  ▸"
+        return
+    toggle.text = "调息 · 收起  ▾"
+    var choices := VBoxContainer.new()
+    choices.name = "PitchChoices"
+    choices.add_theme_constant_override("separation", 3)
+    command_actions.add_child(choices)
+    for action in actions:
+        var card_uid := str(action.get("card_uid", ""))
+        var card_name := "手牌"
+        for card in snap.get("hand", []):
+            if str(card.get("uid", card.get("card_id", ""))) == card_uid:
+                card_name = str(card.get("name", "手牌"))
+                break
+        var choice := Button.new()
+        choice.text = "弃 · " + card_name
+        UITheme.apply_button(choice)
+        choice.pressed.connect(_submit_legal.bind(action))
+        choices.add_child(choice)
 
 func _bind_card_feedback(button: Button) -> void:
     # Scale changes do not affect the HBox layout or the legal action data.

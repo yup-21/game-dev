@@ -52,6 +52,19 @@ func _run() -> void:
                 _check(child.get_meta("usage_id") != null, "missing per-usage action metadata")
                 _check(child.custom_minimum_size.y >= 210.0, "full-length card artwork is clipped")
         _check(illustrated > 0, "the opening hand has no playable illustrated cards")
+    if commands != null:
+        var toggles := 0
+        var toggle_button: Button
+        for child in commands.get_children():
+            if child is Button and child.name == "PitchToggle":
+                toggles += 1
+                toggle_button = child
+        _check(toggles <= 1, "discard choices must be grouped behind one action")
+        if toggle_button != null:
+            toggle_button.pressed.emit()
+            var list := commands.get_node_or_null("PitchChoices")
+            _check(list != null and list.get_child_count() > 0,
+                "grouped discard menu does not reveal legitimate card choices")
     var roster: Dictionary = battle.get("roster_bars")
     _check(roster.size() == battle.get("snap").get("actors", []).size(),
         "roster must reflect every actor")
