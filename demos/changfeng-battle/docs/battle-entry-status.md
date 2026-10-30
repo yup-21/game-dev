@@ -3,7 +3,7 @@
 | 场景 | 状态 | 当前用途 |
 | --- | --- | --- |
 | `opening.tscn` | 保留（启动/剧情） | 唯一公开主菜单；序章与游戏流程 |
-| `battle_hd2d.tscn` | **唯一正式战斗场景** | 原创武侠角色 Sprite3D、场景素材、统一 HUD、双人独立演示、序章多人遭遇、战后重试 |
+| `battle_hd2d.tscn` | **唯一正式战斗场景** | 手绘战场 + Sprite2D 角色、统一 HUD、独立双人演示、序章多人遭遇、战后重试（Node3D 兼容容器尚待清理） |
 | `battle.tscn` | **DEPRECATED** | 旧双人 2D 引擎显示测试；不再暴露玩家入口 |
 | `party_battle.tscn` | **DEPRECATED** | 旧多人 2D 模型/界面测试；不再暴露玩家入口 |
 | `demo_result.tscn` | 保留（剧情结算） | 剧情战斗结束后展示结算；「重新挑战」回到 HD-2D |
@@ -15,6 +15,10 @@
 - 结算页的「重新挑战」必须经 `GameSession.retry_encounter()` 并加载 `battle_hd2d.tscn`，绝不能掉回旧多人战斗。
 - 保留旧 `.tscn`、旧视图脚本与其独立回归，方便核对 CTB/卡牌规则及后续迁移，不主动删除资源或引擎代码。
 - 正式战斗逻辑唯一由 `BattleModel` 管理，HUD 不实现第二份状态真值。
+
+## 运行时渲染与重构边界
+
+当前正式场景可见地形由 `illustrated_battle_map.gd` 的 2D 插画构建，角色为 `Sprite2D`；`battle_hd2d.tscn` 仍保留 Node3D 根节点、Camera3D 和历史兼容代码，不能据此误判当前画面使用 3D 棋盘。后续纯 2D 化须单独回归脚点、目标落点、特效、角色朝向及 3v3。参考 [技术架构](ARCHITECTURE.md) 与 [重构路线图](REFACTOR_ROADMAP.md)。
 
 ## 美术覆盖现状与缺口
 
