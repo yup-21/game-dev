@@ -14,7 +14,7 @@ func _check(condition: bool, label: String) -> void:
 
 func _new_model():
     var m = Model.new()
-    m.reset(2026,-1,"tingfeng",{"map_definition_path":MapBake.DEFAULT_PATH})
+    m.reset(2026,-1,"tingfeng",{"map_definition_path":MapBake.DEFAULT_PATH,"spatial_mode":"FREE"})
     return m
 
 func _attack_card(m,actor) -> Dictionary:
