@@ -12,7 +12,7 @@ func _fail(message: String) -> void:
     quit(1)
 
 func _run() -> void:
-    for actor_id in [2, 3, 4, 5]:
+    for actor_id in [0, 1, 2, 3, 4, 5]:
         if not Catalog.uses_supplied_sheet(actor_id):
             _fail("no art mapping for actor %d" % actor_id)
             return
@@ -34,7 +34,7 @@ func _run() -> void:
         if portrait == null or portrait.get_width() < 512:
             _fail("portrait unavailable: " + name)
             return
-    for scene_id in ["mountain", "snow"]:
+    for scene_id in ["mountain", "snow", "rainy_bridge"]:
         var landscape: Texture2D = Catalog.scenery(scene_id)
         if landscape == null or landscape.get_width() < 1024:
             _fail("landscape unavailable: " + scene_id)
@@ -43,7 +43,7 @@ func _run() -> void:
     var standalone: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(standalone)
     await process_frame
-    if standalone.get_node_or_null("WuxiaScenery/IllustratedBackdrop") == null:
+    if standalone.find_child("IllustratedBackdrop", true, false) == null:
         _fail("standalone battle does not render the snowy sword-sect backdrop")
         return
     standalone.queue_free()
@@ -61,10 +61,11 @@ func _run() -> void:
     var battle: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(battle)
     await process_frame
-    if battle.get_node_or_null("WuxiaScenery/IllustratedBackdrop") != null:
-        _fail("snowy preview leaked into the rainy prologue")
+    var story_backdrop: Sprite3D = battle.find_child("IllustratedBackdrop", true, false) as Sprite3D
+    if story_backdrop == null or story_backdrop.texture != Catalog.scenery("rainy_bridge"):
+        _fail("rainy story scene is not displaying its matching illustrated backdrop")
         return
-    for actor_id in [2, 3, 4, 5]:
+    for actor_id in [0, 1, 2, 3, 4, 5]:
         var sprite: Sprite3D = battle.get_node_or_null("Actor_%d/Sprite3D" % actor_id) as Sprite3D
         if sprite == null or sprite.texture != Catalog.sheet_for_actor(actor_id, actor_id > 3):
             _fail("story actor %d is not displaying the supplied atlas" % actor_id)
@@ -75,5 +76,17 @@ func _run() -> void:
     if battle.get("model").state.seed != session.encounter_seed():
         _fail("presentation changed authoritative encounter seed")
         return
-    print("HD2D_ART_PASS 4 pose sheets, 3 portraits, 2 scenery images, 6-actor story bridge")
+    if OS.get_cmdline_user_args().has("--capture"):
+        if DisplayServer.get_name() == "headless":
+            _fail("--capture requires a graphical display")
+            return
+        await RenderingServer.frame_post_draw
+        var path := "res://captures/hd2d-validation/05-story-art.png"
+        DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path.get_base_dir()))
+        var screenshot: Image = root.get_viewport().get_texture().get_image()
+        if screenshot == null or screenshot.is_empty() or screenshot.save_png(path) != OK:
+            _fail("story battle screenshot could not be saved")
+            return
+        print("HD2D_CAPTURE ", ProjectSettings.globalize_path(path))
+    print("HD2D_ART_PASS 6 pose sheets, 3 portraits, 3 scenery images, 6-actor story bridge")
     quit(0)

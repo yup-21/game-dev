@@ -209,7 +209,7 @@ func _build_world() -> void:
 
     for actor in snap.get("actors", []):
         _create_actor(actor)
-    Scenery.build(self, story_encounter)
+    Scenery.build(self, story_encounter, camera)
     _build_target_markers()
 
 func _build_target_markers() -> void:

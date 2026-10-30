@@ -13,6 +13,12 @@ const ACTOR_SHEETS := {
     4: preload("res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png"),
     5: preload("res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png")
 }
+## Character-style pose studies fill the two missing story-combat slots.
+## Their white-background JPG cells are cropped and keyed at runtime.
+const CONCEPT_POSE_SHEETS := {
+    0: preload("res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg"),
+    1: preload("res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg")
+}
 const PORTRAITS := {
     "沈长风": preload("res://assets/characters/concepts/shen_changfeng_portrait.png"),
     "老镖头": preload("res://assets/characters/concepts/escort_captain_portrait.png"),
@@ -20,7 +26,8 @@ const PORTRAITS := {
 }
 const SCENES := {
     "mountain": preload("res://assets/concepts/2026-10-30/scenes/mountain_herbal_workshop_day.jpg"),
-    "snow": preload("res://assets/concepts/2026-10-30/scenes/snowy_sword_sect_courtyard.jpg")
+    "snow": preload("res://assets/concepts/2026-10-30/scenes/snowy_sword_sect_courtyard.jpg"),
+    "rainy_bridge": preload("res://assets/concepts/2026-10-30/scenes/rainy_broken_bridge_battle_v1.jpg")
 }
 static var _sheets: Dictionary = {}
 
@@ -77,13 +84,17 @@ static func _clear_edge_matte(frame: Image) -> void:
             queue.append(index + FRAME_SIZE)
 
 static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
-    if not ACTOR_SHEETS.has(actor_id):
+    if not ACTOR_SHEETS.has(actor_id) and not CONCEPT_POSE_SHEETS.has(actor_id):
         return IllustratedFallback.make_sheet(enemy)
     if _sheets.has(actor_id):
         return _sheets[actor_id]
-    var source_texture: Texture2D = ACTOR_SHEETS[actor_id] as Texture2D
+    var uses_concept_cells: bool = CONCEPT_POSE_SHEETS.has(actor_id)
+    var source_texture: Texture2D = CONCEPT_POSE_SHEETS.get(actor_id, ACTOR_SHEETS.get(actor_id)) as Texture2D
     var source: Image = source_texture.get_image() if source_texture != null else null
-    if source == null or source.get_size() != Vector2i(FRAME_SIZE * COLS, FRAME_SIZE * ROWS):
+    if source == null or source.is_empty():
+        push_warning("Invalid 6x4 artwork for actor %d" % actor_id)
+        return IllustratedFallback.make_sheet(enemy)
+    if not uses_concept_cells and source.get_size() != Vector2i(FRAME_SIZE * COLS, FRAME_SIZE * ROWS):
         push_warning("Invalid 6x4 artwork for actor %d" % actor_id)
         return IllustratedFallback.make_sheet(enemy)
     source.convert(Image.FORMAT_RGBA8)
@@ -92,7 +103,16 @@ static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
     for row in range(ROWS):
         for column in range(COLS):
             var origin := Vector2i(column * FRAME_SIZE, row * FRAME_SIZE)
-            var frame := source.get_region(Rect2i(origin, Vector2i(FRAME_SIZE, FRAME_SIZE)))
+            var frame: Image
+            if uses_concept_cells:
+                var x0: int = floori(float(column) * source.get_width() / COLS)
+                var x1: int = floori(float(column + 1) * source.get_width() / COLS)
+                var y0: int = floori(float(row) * source.get_height() / ROWS)
+                var y1: int = floori(float(row + 1) * source.get_height() / ROWS)
+                frame = source.get_region(Rect2i(x0, y0, x1 - x0, y1 - y0))
+                frame.resize(FRAME_SIZE, FRAME_SIZE, Image.INTERPOLATE_LANCZOS)
+            else:
+                frame = source.get_region(Rect2i(origin, Vector2i(FRAME_SIZE, FRAME_SIZE)))
             _clear_edge_matte(frame)
             atlas.blit_rect(frame, Rect2i(Vector2i.ZERO, Vector2i(FRAME_SIZE, FRAME_SIZE)), origin)
     var texture := ImageTexture.create_from_image(atlas)
@@ -111,4 +131,4 @@ static func avatar(actor_id: int, enemy: bool = false) -> Texture2D:
     return atlas
 
 static func uses_supplied_sheet(actor_id: int) -> bool:
-    return ACTOR_SHEETS.has(actor_id)
+    return ACTOR_SHEETS.has(actor_id) or CONCEPT_POSE_SHEETS.has(actor_id)

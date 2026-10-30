@@ -119,15 +119,12 @@ func _visible_rect(control: Control) -> Rect2:
     return visible
 
 func _card_button(action: Dictionary) -> Button:
-    var prefix := ""
-    for card in _view().hand:
-        if str(card.get("uid", card.get("card_id", ""))) != str(action.get("card_uid", action.get("card_id", ""))):
-            continue
-        for usage in card.usages:
-            if str(usage.id) == str(action.usage_id):
-                prefix = str(card.name) + " · " + str(usage.get("name", usage.id))
+    var card_uid := str(action.get("card_uid", action.get("card_id", "")))
+    var usage_id := str(action.get("usage_id", ""))
     for child in scene.get("card_actions").get_children():
-        if child is Button and not prefix.is_empty() and child.text.begins_with(prefix):
+        if child is Button and child.has_meta("card_uid") and child.has_meta("usage_id") \
+                and str(child.get_meta("card_uid")) == card_uid \
+                and str(child.get_meta("usage_id")) == usage_id:
             return child
     return null
 
