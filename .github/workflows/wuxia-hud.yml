@@ -88,6 +88,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_move_and_attack_ui.gd
       - name: Validate two authoritative spatial modes and live transitions
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_dual_spatial_mode.gd
+      - name: Exercise in-battle M toggle and mode preference persistence
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_dual_spatial_mode_ui.gd
       - name: Verify free martial step and LIFO evasive response
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_martial_movement.gd
       - name: Validate continuous AI duel and six-character encounter
