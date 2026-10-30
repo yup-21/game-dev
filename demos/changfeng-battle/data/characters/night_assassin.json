@@ -27,5 +27,9 @@
     "sprite_sheet": "res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png",
     "portrait_quality": "sprite_fallback",
     "sheet_quality": "24_pose_preview"
-  }
+  },
+  "learned_schools": [
+    "needle",
+    "step"
+  ]
 }

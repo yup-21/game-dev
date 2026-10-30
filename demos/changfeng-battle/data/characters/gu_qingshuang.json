@@ -27,5 +27,9 @@
     "sprite_sheet": "res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png",
     "portrait_quality": "integrated",
     "sheet_quality": "24_pose_preview"
-  }
+  },
+  "learned_schools": [
+    "tide",
+    "wind_sword"
+  ]
 }

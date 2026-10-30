@@ -60,6 +60,18 @@ func _valid(d: Variant, schools) -> bool:
         return false
     if actor_id < 0 and not str(d.school_id).is_empty():
         return false
+    var learned: Variant = d.get("learned_schools",[])
+    if not learned is Array:
+        return false
+    if actor_id >= 0 and (learned.is_empty() or not learned.has(str(d.school_id))):
+        return false
+    if actor_id < 0 and not learned.is_empty():
+        return false
+    var seen: Dictionary = {}
+    for school_id in learned:
+        if not school_id is String or seen.has(school_id) or schools.get_school(str(school_id)).is_empty():
+            return false
+        seen[school_id]=true
     if not d.get("attributes") is Dictionary or not d.get("passives") is Dictionary or not d.get("techniques") is Dictionary or not d.get("art") is Dictionary:
         return false
     for stat in ["STR","AGI","CON","MND"]:
@@ -96,7 +108,7 @@ func battle_options(roster: Array, character_ids: Dictionary) -> Dictionary:
     ## Materialize defaults for the encounter. Dynamic stats never return to
     ## this catalog and all callers receive deep copies.
     var output: Dictionary = {"character_ids": {}, "schools": {}, "attributes": {},
-        "passives": {}, "techniques": {}, "character_names": {}}
+        "passives": {}, "techniques": {}, "character_names": {}, "learned_schools": {}}
     if not roster.is_empty():
         output["combatants"] = []
     for actor_id in character_ids:
@@ -106,6 +118,7 @@ func battle_options(roster: Array, character_ids: Dictionary) -> Dictionary:
             return {}
         output.character_ids[id] = str(profile.id)
         output.schools[id] = str(profile.school_id)
+        output.learned_schools[id] = profile.learned_schools.duplicate(true)
         output.attributes[id] = profile.attributes.duplicate(true)
         output.passives[id] = profile.passives.duplicate(true)
         output.techniques[id] = {}

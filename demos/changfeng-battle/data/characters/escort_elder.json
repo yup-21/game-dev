@@ -27,5 +27,6 @@
     "sprite_sheet": "",
     "portrait_quality": "integrated",
     "sheet_quality": "none"
-  }
+  },
+  "learned_schools": []
 }

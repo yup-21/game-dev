@@ -1,4 +1,5 @@
 extends Control
+signal switch_requested(actor_id: int, school_id: String)
 ## Interactive character dossier. CharacterRegistry owns identity and art;
 ## BattleModel's CombatantState is the sole authority for mutable values.
 const Registry = preload("res://scripts/character_registry.gd")
@@ -11,6 +12,7 @@ var title_label: Label
 var identity_label: Label
 var bio_label: Label
 var martial_label: Label
+var schools_column: VBoxContainer
 var stats_label: Label
 var status_label: Label
 var art_label: Label
@@ -97,7 +99,12 @@ func _ready() -> void:
     identity_label = _label(details,"",16,UITheme.JADE)
     bio_label = _label(details,"",15,UITheme.PAPER)
     bio_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    _label(details,"武 学 · 招 式",19,UITheme.GOLD)
+    _label(details,"已 学 武 学 · 切 换",19,UITheme.GOLD)
+    schools_column = VBoxContainer.new()
+    schools_column.name = "LearnedSchools"
+    schools_column.add_theme_constant_override("separation",6)
+    details.add_child(schools_column)
+    _label(details,"当 前 招 式",19,UITheme.GOLD)
     martial_label = _label(details,"",14,UITheme.PAPER)
     martial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     _label(details,"气 血 · 属 性",19,UITheme.GOLD)
@@ -121,6 +128,9 @@ func _on_backdrop_input(event: InputEvent) -> void:
 func close_card() -> void:
     visible = false
 
+func _request_switch(id: int, school_id: String) -> void:
+    switch_requested.emit(id,school_id)
+
 func open_actor(battle_model, id: int) -> bool:
     var actor = battle_model.state.get_actor(id)
     if actor == null:
@@ -142,6 +152,23 @@ func open_actor(battle_model, id: int) -> bool:
     frame.region = Rect2(0,0,sheet.get_width()/6.0,sheet.get_height()/4.0)
     preview.texture = frame
     art_label.text = ("角色立绘已接入" if portrait.texture != null else "精细立绘待制作") + "\n动作素材：" + str(definition.art.sheet_quality)
+    for child in schools_column.get_children():
+        child.queue_free()
+    var can_switch: Dictionary = {}
+    for choice in battle_model.legal_actions(id):
+        if str(choice.get("kind","")) == "SWITCH_SCHOOL":
+            can_switch[str(choice.school_id)] = true
+    for school_id in actor.learned_schools:
+        var definition_school: Dictionary = battle_model.cards.catalog.get_school(str(school_id))
+        var selected: bool = str(school_id) == actor.school_id
+        var button := Button.new()
+        button.name = "School_" + str(school_id)
+        button.text = ("◆  " if selected else "◇  ") + str(definition_school.get("name",school_id)) + ("  · 当前" if selected else "  · 切换并结束行动")
+        UITheme.apply_button(button)
+        button.disabled = selected or not can_switch.has(str(school_id))
+        button.tooltip_text = "当前装备" if selected else ("切换武学将重新装配牌组并消耗本次行动" if not button.disabled else "仅可在本角色的行动阶段切换")
+        button.pressed.connect(_request_switch.bind(id,str(school_id)))
+        schools_column.add_child(button)
     var descriptions: Array = [str(actor.school_name)]
     var school: Dictionary = battle_model.cards.catalog.get_school(str(actor.school_id))
     for form_id in school.get("core_forms",[]):

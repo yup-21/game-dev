@@ -27,5 +27,9 @@
     "sprite_sheet": "res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg",
     "portrait_quality": "sprite_fallback",
     "sheet_quality": "provisional_concept"
-  }
+  },
+  "learned_schools": [
+    "saber",
+    "ember"
+  ]
 }

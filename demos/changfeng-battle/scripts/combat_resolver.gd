@@ -78,6 +78,14 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 	if int(plan.hp_u)>0: emit("HP_COST",{"actor_id":actor.id,"amount":float(plan.hp_u)/UNIT,"damage_kind":"cost"})
 	match str(action.kind):
 		"END_ACTION": turns.end_action()
+		"SWITCH_SCHOOL":
+			var previous: String=str(actor.school_id)
+			if cards.equip_school(actor,str(action.school_id)):
+				for id in actor.technique_states:
+					if techniques!=null: techniques.reset(actor,str(id))
+				visibility.refresh_intel(actor.id,true)
+				emit("SCHOOL_SWITCHED",{"actor_id":actor.id,"from_school":previous,"school_id":actor.school_id,"text":"%s 换用 %s" % [actor.name,actor.school_name]})
+				turns.end_action()
 		"MOVE":
 			var path: Array=state.find_path(actor.cell,action.target_cell,actor.id)
 			actor.normal_moves_used+=path.size()
