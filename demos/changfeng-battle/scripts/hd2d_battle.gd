@@ -9,6 +9,7 @@ const CardUI = preload("res://scripts/hd2d_card_ui.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Animator = preload("res://scripts/hd2d_animation.gd")
 const VFX = preload("res://scripts/hd2d_vfx.gd")
+const ResponsePolicy = preload("res://scripts/hd2d_response_policy.gd")
 const COLS := 15
 const ROWS := 10
 const CELL := 1.5
@@ -599,6 +600,11 @@ func _rebuild_actions() -> void:
     selection_label.text = ("执剑者 · " + actor_name + "    选择招式后点击亮起的目标；右键取消") if available else "静候敌方应变 / 动画结算"
     if not available:
         return
+    # A pass-only reaction is handled by the automatic priority protocol,
+    # not exposed as a manual button that the player must click.
+    if str(snap.get("phase", "")) == "CLASH" and ResponsePolicy.should_auto_pass(
+            "CLASH", false, legals):
+        return
 
     for card in snap.get("hand", []):
         var uid := str(card.get("uid", card.get("card_id", "")))
@@ -860,6 +866,39 @@ func _update_status() -> void:
         else:
             clash_label.text = "走位  /  出招  /  护体  /  连携\n所有指令由原有规则与合法动作校验"
 
+func _auto_pass_unavailable_reactions() -> bool:
+    # Work entirely through the authoritative, versioned submit pipeline.
+    # Both human and AI participants are skipped when they have no viable
+    # response card or technique; do not consume time for an empty pass.
+    if str(snap.get("phase", "")) != "CLASH" or animation_ticket >= 0:
+        return false
+    var owner := _decision_owner()
+    var legal: Array = model.legal_actions(owner)
+    if not ResponsePolicy.should_auto_pass("CLASH",
+            bool(model.state.animation_pending), legal):
+        return false
+    var result: Dictionary = model.submit(model.request("PASS_REACTION", owner))
+    if not bool(result.get("success", false)):
+        push_warning("Unable to auto-pass unavailable reaction: " + str(result.get("message", "")))
+        return false
+    # Normal-pass events contain only PRIORITY_PASSED. When this is the
+    # second pass, combat resolution can emit damage/attack events: preserve
+    # those animation tickets so the result is still shown in the arena.
+    var presentation_needed := false
+    for event in result.get("events", []):
+        if str(event.get("type", "")) != "PRIORITY_PASSED":
+            presentation_needed = true
+            break
+    _accept(result)
+    if not presentation_needed and bool(model.state.animation_pending):
+        var ticket := int(result.get("ticket", -1))
+        var acknowledged: Dictionary = model.acknowledge_animation(ticket)
+        if bool(acknowledged.get("success", false)):
+            animation_ticket = -1
+            animation_time = 0.0
+            _accept(acknowledged)
+    return true
+
 func _process(delta: float) -> void:
     if snap.is_empty():
         return
@@ -907,6 +946,13 @@ func _process(delta: float) -> void:
         return
     if snap.get("outcome", "playing") != "playing":
         return
+    # Resolve up to both priority passes without any human prompt or AI
+    # thinking delay. Stop immediately if damage/response animation begins.
+    for _auto_step in range(2):
+        if not _auto_pass_unavailable_reactions():
+            break
+        if animation_ticket >= 0:
+            return
     var decision_id := int(snap.get("active_id", -1))
     if snap.get("phase", "") == "CLASH":
         decision_id = int(snap.get("clash", {}).get("priority_actor_id", -1))
