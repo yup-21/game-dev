@@ -9,6 +9,19 @@ const EPSILON := 0.001
 var bake
 var actor_positions: Dictionary = {}
 var waypoint_compat
+## Disabled in regular play. Enable only for headless diagnostics; counters
+## themselves add overhead and must not be used for timing comparisons.
+var diagnostics_enabled: bool = false
+var diagnostics: Dictionary = {}
+
+func reset_diagnostics() -> void:
+    diagnostics = {"path_queries":0, "failed_paths":0, "graph_builds":0,
+        "max_nodes":0, "candidate_pairs":0, "segment_queries":0,
+        "total_us":0, "max_us":0}
+
+func diagnostic_snapshot() -> Dictionary:
+    return diagnostics.duplicate()
+
 ## Compatibility with the public clearance property exposed by PR #57.
 var clearance: float:
     get:
@@ -20,6 +33,7 @@ var clearance: float:
 func _init(map_path: String = MapBake.DEFAULT_PATH, actor_clearance: float = 10.0) -> void:
     bake = MapBake.new(map_path)
     waypoint_compat = WaypointCompatibility.new(map_path, actor_clearance)
+    reset_diagnostics()
 
 func set_actors(positions: Dictionary) -> void:
     actor_positions = positions.duplicate()
@@ -63,6 +77,8 @@ func is_valid_position(point: Vector2, radius: float = 0.0, ignore_id: int = -1)
     return true
 
 func clear_segment(start: Vector2, finish: Vector2, radius_or_occupied: Variant = 0.0, ignore_id: int = -1) -> bool:
+    if diagnostics_enabled:
+        diagnostics["segment_queries"] = int(diagnostics.segment_queries) + 1
     if radius_or_occupied is Array:
         return waypoint_compat.clear_segment(start, finish, radius_or_occupied, ignore_id)
     var radius: float = float(radius_or_occupied)
@@ -93,6 +109,19 @@ func clear_segment(start: Vector2, finish: Vector2, radius_or_occupied: Variant 
 ## *terrain*, not occupiable tactical squares. A character standing at a cell
 ## centre must never make that entire tile impassable to another character.
 func find_path(start: Vector2, finish: Vector2, radius: float = 0.0, ignore_id: int = -1) -> PackedVector2Array:
+    if not diagnostics_enabled:
+        return _find_path_impl(start, finish, radius, ignore_id)
+    var started_us: int = Time.get_ticks_usec()
+    diagnostics["path_queries"] = int(diagnostics.path_queries) + 1
+    var path: PackedVector2Array = _find_path_impl(start, finish, radius, ignore_id)
+    var elapsed_us: int = Time.get_ticks_usec() - started_us
+    diagnostics["total_us"] = int(diagnostics.total_us) + elapsed_us
+    diagnostics["max_us"] = maxi(int(diagnostics.max_us), elapsed_us)
+    if path.size() < 2:
+        diagnostics["failed_paths"] = int(diagnostics.failed_paths) + 1
+    return path
+
+func _find_path_impl(start: Vector2, finish: Vector2, radius: float = 0.0, ignore_id: int = -1) -> PackedVector2Array:
     if not is_valid_position(start, radius, ignore_id) or not is_valid_position(finish, radius, ignore_id):
         return PackedVector2Array()
     if clear_segment(start, finish, radius, ignore_id):
@@ -123,6 +152,10 @@ func find_path(start: Vector2, finish: Vector2, radius: float = 0.0, ignore_id: 
             var candidate: Vector2 = centre + Vector2(cos(theta), sin(theta)) * detour_radius
             if is_valid_position(candidate, radius, ignore_id):
                 points.append(candidate)
+    if diagnostics_enabled:
+        diagnostics["graph_builds"] = int(diagnostics.graph_builds) + 1
+        diagnostics["max_nodes"] = maxi(int(diagnostics.max_nodes), points.size())
+        diagnostics["candidate_pairs"] = int(diagnostics.candidate_pairs) + points.size() * (points.size() - 1) / 2
     var graph := AStar2D.new()
     for index in range(points.size()):
         graph.add_point(index, points[index])

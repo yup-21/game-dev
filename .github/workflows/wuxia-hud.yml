@@ -23,6 +23,7 @@ on:
       - 'demos/changfeng-battle/scripts/battle_hud_view.gd'
       - 'demos/changfeng-battle/checks/test_battle_r8_components.gd'
       - 'demos/changfeng-battle/checks/test_battle_spatial_r9.gd'
+      - 'demos/changfeng-battle/checks/test_battle_spatial_benchmark.gd'
       - 'demos/changfeng-battle/scripts/battle_action_timeline.gd'
       - 'demos/changfeng-battle/data/action_timelines.json'
       - 'demos/changfeng-battle/checks/test_battle_action_timeline.gd'
@@ -120,6 +121,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_facade.gd
       - name: Validate unified R9 free landing, LOS, forced movement and cache
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_r9.gd
+      - name: Measure FREE path baseline and verify profiling counters
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_benchmark.gd
       - name: Validate committed free movement and rollback
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_move_command.gd
       - name: Validate atomic auto approach and martial card attacks
