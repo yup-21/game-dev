@@ -329,7 +329,8 @@ func _create_actor(actor: Dictionary) -> void:
     facing_arrow.rotation.y = Facing.yaw(Vector2i(actor.get("facing",Vector2i.RIGHT)))
     root.add_child(facing_arrow)
     visual_cells[actor_id] = Vector2i(actor.cell)
-    animation_driver.register_actor(int(actor.id), sprite, Vector2i(actor.get("facing",Vector2i.RIGHT)))
+    # Legacy 3D geometry is unreachable in illustrated-map mode.
+    # Native Sprite2D registration happens in the painted-map branch.
     var nameplate := Label3D.new()
     nameplate.name = "Nameplate"
     nameplate.text = str(actor.get("name", "江湖客"))
