@@ -14,8 +14,10 @@ func _capture(view, name: String) -> bool:
 ## The previous screenshot smoke test only checked that a PNG existed.
 ## A fully WHITE first-act scene satisfied that check and shipped broken.
 func _background_visible(view) -> bool:
-    var image: Image = view.get_viewport().get_texture().get_image()
-    if image == null or image.is_empty():
+    # Read the PNG we already captured; a second immediate GPU readback
+    # from the same render frame may stall software/CI render backends.
+    var image := Image.new()
+    if image.load(ProjectSettings.globalize_path("res://captures/opening-explore.png")) != OK or image.is_empty():
         return false
     var scenic := 0
     for sample_y in [0.24, 0.41, 0.59, 0.72]:
