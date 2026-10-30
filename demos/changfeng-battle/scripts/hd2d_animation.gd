@@ -2,6 +2,7 @@ extends RefCounted
 ## Event-driven Sprite2D playback. Owns only animation cursors, never battle state.
 ## 6x4 atlas: idle, walk, attack, special (guard/hit/dodge/skill).
 const Facing = preload("res://scripts/actor_facing.gd")
+const ActionTimeline = preload("res://scripts/battle_action_timeline.gd")
 const FRAME_RATE := 9.0
 const FRAMES_PER_ROW := 6
 const STATE_ROW := {"idle": 0, "move": 1, "attack": 2, "guard": 3,
@@ -12,6 +13,11 @@ const DURATIONS := {"idle": 1.0, "move": 0.55, "attack": 0.62,
 var tracks: Dictionary = {}
 var timeline: Array = []
 var stage_left: float = 0.0
+var stage_profile: String = ""
+var stage_elapsed: float = 0.0
+var stage_duration: float = 0.0
+var pending_cues: Array = []
+var action_timeline = ActionTimeline.new()
 
 func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector2i.RIGHT) -> void:
     var initial: Vector2i = Facing.from_delta(initial_facing)
@@ -50,7 +56,7 @@ func play(id: int, state: String) -> void:
     var track: Dictionary = tracks[id]
     track.state = state
     track.elapsed = 0.0
-    track.duration = float(DURATIONS.get(state, 0.40))
+    track.duration = action_timeline.duration_for(state, float(DURATIONS.get(state, 0.40)))
     track.loop = state == "idle" or state == "move"
     tracks[id] = track
 
@@ -59,6 +65,7 @@ func events(emitted: Array) -> void:
     # not overwrite each other's sprites in the same frame.
     timeline.clear()
     stage_left = 0.0
+    pending_cues.clear()
     for event in emitted:
         var kind := str(event.get("type", ""))
         var actor_id := int(event.get("actor_id", -1))
@@ -67,25 +74,12 @@ func events(emitted: Array) -> void:
         var id := actor_id
         if kind == "CHAIN_LINK_ADDED" and tracks.has(actor_id):
             set_facing(actor_id,Vector2i(event.get("facing",facing_for(actor_id))))
-        match kind:
-            "MOVE", "MOVE_FREE":
-                animation = "move"
-            "ATTACK_DECLARED":
-                animation = "attack"
-            "COMBO_TRIGGERED":
-                animation = "combo"
-            "SHIELD", "INTERCEPT_JUDGED":
-                animation = "guard"
-            "ATTACK_MISSED":
-                id = target_id
-                animation = "evade"
-            "DAMAGE", "HP_DAMAGED", "SCORCH_TICK":
-                id = target_id if target_id >= 0 else actor_id
-                animation = "hit"
-            "ATTACK_INTERRUPTED":
-                animation = "guard"
+        animation = action_timeline.animation_for_event(kind)
+        if kind in ["ATTACK_MISSED", "DAMAGE", "HP_DAMAGED", "SCORCH_TICK"]:
+            id = target_id if target_id >= 0 else actor_id
         if not animation.is_empty() and tracks.has(id):
-            var duration: float=float(DURATIONS.get(animation, 0.35))
+            var duration: float=action_timeline.duration_for(animation,
+                float(DURATIONS.get(animation, 0.35)))
             var presentation_facing: Vector2i=Vector2i(event.get("facing",facing_for(id)))
             if kind == "MOVE":
                 var path: Array=event.get("path",[])
@@ -104,18 +98,24 @@ func events(emitted: Array) -> void:
                     var heading: Vector2=route[1]-route[0]
                     presentation_facing=Facing.from_delta(Vector2i(roundi(heading.x),roundi(heading.y)),presentation_facing)
             timeline.append({"id": id, "state": animation,
-                "facing": presentation_facing,
+                "facing": presentation_facing, "profile": animation,
                 "duration": duration})
     _play_next()
 
 func _play_next() -> void:
     if timeline.is_empty():
         stage_left = 0.0
+        stage_profile = ""
+        stage_duration = 0.0
+        stage_elapsed = 0.0
         return
     var next: Dictionary = timeline.pop_front()
     set_facing(int(next.id),Vector2i(next.facing))
     play(int(next.id), str(next.state))
     stage_left = float(next.duration)
+    stage_profile = str(next.get("profile", next.state))
+    stage_duration = float(next.duration)
+    stage_elapsed = 0.0
 
 func remaining_seconds() -> float:
     var total: float = stage_left
@@ -126,6 +126,10 @@ func remaining_seconds() -> float:
 func update(delta: float, moving: Dictionary = {}) -> void:
     var stage_transitioned: bool = false
     if stage_left > 0.0:
+        var previous: float = stage_elapsed
+        stage_elapsed = minf(stage_duration, stage_elapsed + maxf(0.0, delta))
+        pending_cues.append_array(action_timeline.cues_between(
+            stage_profile, previous, stage_elapsed, stage_duration))
         stage_left = maxf(0.0, stage_left - delta)
         if stage_left <= 0.0:
             _play_next()
@@ -178,5 +182,22 @@ func update(delta: float, moving: Dictionary = {}) -> void:
 func reset() -> void:
     timeline.clear()
     stage_left = 0.0
+    stage_profile = ""
+    stage_duration = 0.0
+    stage_elapsed = 0.0
+    pending_cues.clear()
     for id in tracks.keys():
         play(int(id), "idle")
+
+## Queryable visual metadata. BattleModel remains the ONLY rule authority.
+func action_phase() -> String:
+    return action_timeline.phase_at(stage_profile, stage_elapsed, stage_duration)
+
+func visual_window_open(kind: String) -> bool:
+    return action_timeline.window_open(stage_profile, kind,
+        stage_elapsed, stage_duration)
+
+func drain_action_cues() -> Array:
+    var delivered: Array = pending_cues.duplicate(true)
+    pending_cues.clear()
+    return delivered

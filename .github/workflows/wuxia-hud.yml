@@ -23,6 +23,9 @@ on:
       - 'demos/changfeng-battle/scripts/battle_hud_view.gd'
       - 'demos/changfeng-battle/checks/test_battle_r8_components.gd'
       - 'demos/changfeng-battle/checks/test_battle_spatial_r9.gd'
+      - 'demos/changfeng-battle/scripts/battle_action_timeline.gd'
+      - 'demos/changfeng-battle/data/action_timelines.json'
+      - 'demos/changfeng-battle/checks/test_battle_action_timeline.gd'
       - 'demos/changfeng-battle/scripts/battle_command_dispatcher.gd'
       - 'demos/changfeng-battle/scripts/battle_command_controller.gd'
       - 'demos/changfeng-battle/scripts/battle_input_controller.gd'
@@ -141,6 +144,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_pure_2d.gd
       - name: Validate R8 world, HUD and presentation components
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_r8_components.gd
+      - name: Validate data-driven R10 action timing and non-authoritative cues
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_action_timeline.gd
       - name: Validate legacy startup suite against canonical Sprite2D
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_startup.gd
       - name: Check original character art in painted battle

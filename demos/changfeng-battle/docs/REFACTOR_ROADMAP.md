@@ -128,3 +128,11 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_demo_f
 - `forced_displacement` 与 `forced_move_preview` 统一为轴向遇阻停止的几何方案，并由 `CombatResolver` 直接消费，避免界面预览与真实击退走不同路径。
 - `BattleModel.preview_free_path` 使用 battle ID、revision、actor ID 与量化落点作为单条缓存键，避免静止鼠标每帧重建可见性图；提交或重开战斗后自动失效。
 - 新增 `checks/test_battle_spatial_r9.gd` 和 CI 检查。当前 FREE 实现为 MapBake + AStar2D 可见性图，不是 AStarGrid2D 或 NavigationPolygon。
+
+## R10 — 数据驱动动作时序（2026-10-31）
+
+- `data/action_timelines.json` 定义九种基础表现动作的起手、有效、收招和视觉窗口，并声明语义事件到动作段的映射。
+- `BattleActionTimeline` 验证总时长、阶段、cancel/reaction/visual-invulnerable 窗口与关键帧 cue，兼容已有动画长度。
+- `HD2DAnimation` 消费统一动作配置并公开 `action_phase()`、`visual_window_open()` 与 `drain_action_cues()`；`BattlePresentationPlayer` 维护有界 cue 缓冲。
+- **明确约束**：所有时间窗当前仅用于演出、调试与未来技法配置，绝不自行授权实战无敌帧、格挡命中、派生卡或实时输入。真正带规则的动作反应必须另经 BattleModel 版本化动作协议设计和测试。
+- 新增 `checks/test_battle_action_timeline.gd` 和 CI 步骤；保持 CTB、卡牌、费用、交锋结算、原场景和角色素材不变。

@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "note": "Presentation timing only. No combat authority, i-frame or input permissions are granted by this file.",
+  "profiles": {
+    "idle": {
+      "duration": 1,
+      "startup": 0,
+      "active": 1,
+      "recovery": 0
+    },
+    "move": {
+      "duration": 0.55,
+      "startup": 0,
+      "active": 0.55,
+      "recovery": 0
+    },
+    "attack": {
+      "duration": 0.62,
+      "startup": 0.16,
+      "active": 0.2,
+      "recovery": 0.26,
+      "cancel": [
+        0.38,
+        0.56
+      ],
+      "reaction": [
+        0.14,
+        0.34
+      ],
+      "cues": [
+        {
+          "at": 0.16,
+          "name": "strike_active"
+        },
+        {
+          "at": 0.36,
+          "name": "strike_recovery"
+        }
+      ]
+    },
+    "guard": {
+      "duration": 0.38,
+      "startup": 0.05,
+      "active": 0.2,
+      "recovery": 0.13,
+      "reaction": [
+        0.05,
+        0.25
+      ],
+      "cues": [
+        {
+          "at": 0.05,
+          "name": "guard_active"
+        }
+      ]
+    },
+    "hit": {
+      "duration": 0.46,
+      "startup": 0.04,
+      "active": 0.22,
+      "recovery": 0.2
+    },
+    "evade": {
+      "duration": 0.38,
+      "startup": 0.05,
+      "active": 0.21,
+      "recovery": 0.12,
+      "invulnerable": [
+        0.07,
+        0.25
+      ],
+      "cues": [
+        {
+          "at": 0.07,
+          "name": "evade_visual_start"
+        }
+      ]
+    },
+    "skill": {
+      "duration": 0.55,
+      "startup": 0.18,
+      "active": 0.18,
+      "recovery": 0.19,
+      "cancel": [
+        0.36,
+        0.5
+      ],
+      "cues": [
+        {
+          "at": 0.18,
+          "name": "skill_visual_active"
+        }
+      ]
+    },
+    "combo": {
+      "duration": 0.78,
+      "startup": 0.16,
+      "active": 0.33,
+      "recovery": 0.29,
+      "cancel": [
+        0.45,
+        0.67
+      ],
+      "cues": [
+        {
+          "at": 0.16,
+          "name": "combo_visual_active"
+        }
+      ]
+    },
+    "defeat": {
+      "duration": 1,
+      "startup": 0.1,
+      "active": 0.6,
+      "recovery": 0.3
+    }
+  },
+  "events": {
+    "MOVE": "move",
+    "MOVE_FREE": "move",
+    "ATTACK_DECLARED": "attack",
+    "COMBO_TRIGGERED": "combo",
+    "SHIELD": "guard",
+    "INTERCEPT_JUDGED": "guard",
+    "ATTACK_MISSED": "evade",
+    "DAMAGE": "hit",
+    "HP_DAMAGED": "hit",
+    "SCORCH_TICK": "hit",
+    "ATTACK_INTERRUPTED": "guard"
+  }
+}
