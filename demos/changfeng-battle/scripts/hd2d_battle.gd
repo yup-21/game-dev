@@ -50,6 +50,7 @@ var animation_ticket := -1
 var ai_wait := 0.0
 var auto_battle := false
 var auto_button: Button
+var spatial_mode_button: Button
 var hovered := Vector2i(-1, -1)
 var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
@@ -434,8 +435,8 @@ func _build_ui() -> void:
     phase_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     ribbon.add_child(phase_label)
     phase_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-    phase_label.offset_left = -380.0
-    phase_label.offset_right = -138.0
+    phase_label.offset_left = -460.0
+    phase_label.offset_right = -285.0
     phase_label.offset_top = 15.0
     phase_label.offset_bottom = 42.0
     auto_button = Button.new()
@@ -450,8 +451,19 @@ func _build_ui() -> void:
     auto_button.offset_bottom = 45.0
     UITheme.apply_button(auto_button)
     auto_button.pressed.connect(_toggle_auto_battle)
+    spatial_mode_button = Button.new()
+    spatial_mode_button.name = "BattleSpatialModeToggle"
+    spatial_mode_button.tooltip_text = "网格 / 无网格双模式；按 M 切换（行动阶段生效）"
+    ribbon.add_child(spatial_mode_button)
+    spatial_mode_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    spatial_mode_button.offset_left = -280.0
+    spatial_mode_button.offset_right = -145.0
+    spatial_mode_button.offset_top = 11.0
+    spatial_mode_button.offset_bottom = 45.0
+    UITheme.apply_button(spatial_mode_button)
+    spatial_mode_button.pressed.connect(_toggle_spatial_mode)
     help_label = Label.new()
-    help_label.text = "左键选目标 · P 自由移步 · C 角色卡 · Q 攻击 · G 格挡 · Space 收势 · Esc 返回"
+    help_label.text = "M 切换网格/无网格 · P 显示路径 · 左键落点或点敌自动接近 · C 角色卡 · Space 收势"
     help_label.visible = false
     ribbon.add_child(help_label)
 
@@ -695,6 +707,12 @@ func _on_roster_avatar_input(event: InputEvent, id: int) -> void:
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         _open_character_card(id)
 
+func _toggle_spatial_mode() -> void:
+    if illustrated_map == null or model.state.spatial == null or auto_battle or animation_ticket >= 0 or not _player_decision():
+        return
+    var target_mode: String = "FREE" if model.state.spatial_mode == "GRID" else "GRID"
+    _submit("SET_SPATIAL_MODE", {"spatial_mode": target_mode})
+
 func _toggle_auto_battle() -> void:
     _set_auto_battle(not auto_battle)
 
@@ -760,7 +778,7 @@ func _has_attack_damage(usage: Dictionary) -> bool:
     return false
 
 func _can_approach_card(uid: String, usage_id: String) -> bool:
-    if model.state.spatial == null or str(snap.get("phase", "")) != "ACTION":
+    if model.state.spatial == null or model.state.spatial_mode!="FREE" or str(snap.get("phase", "")) != "ACTION":
         return false
     var actor = model.state.get_actor(_decision_owner())
     if actor == null or actor.hp_u <= 0 or not actor.hand.has(uid):
@@ -780,7 +798,7 @@ func _can_approach_card(uid: String, usage_id: String) -> bool:
     return model.costs.can_pay(actor,quote)
 
 func _can_approach_technique(technique_id: String, node_id: String) -> bool:
-    if model.state.spatial == null or str(snap.get("phase", "")) != "ACTION":
+    if model.state.spatial == null or model.state.spatial_mode!="FREE" or str(snap.get("phase", "")) != "ACTION":
         return false
     var actor = model.state.get_actor(_decision_owner())
     if actor == null or actor.hp_u <= 0:
@@ -1152,6 +1170,9 @@ func _update_status() -> void:
         "  ◈ 变锋待发" if stance_ready else ""]
     if auto_button != null:
         auto_button.text = "自动战斗 · 开" if auto_battle else "自动战斗 · 关"
+    if spatial_mode_button != null:
+        spatial_mode_button.text = "无网格 · 自由" if model.state.spatial_mode=="FREE" else "网格 · 战棋"
+        spatial_mode_button.disabled = model.state.spatial==null or auto_battle or not _player_decision() or animation_ticket>=0 or bool(snap.get("animation_pending",false))
     status_label.tooltip_text = "%s / %s / %s" % [mode,
         str(snap.get("phase", "")), school_name]
     if str(snap.get("outcome", "playing")) != "playing":
@@ -1370,6 +1391,19 @@ func _accept(result: Dictionary) -> void:
         if selection_label != null:
             selection_label.text = "无法执行：%s" % warning
         return
+    for event in result.get("events", []):
+        if str(event.get("type",""))=="BATTLE_MODE_CHANGED":
+            movement_paths.clear()
+            continuous_paths.clear()
+            continuous_preview_enabled = str(event.get("to","GRID"))=="FREE"
+            if continuous_preview != null:
+                continuous_preview.clear_preview()
+            if illustrated_map != null:
+                for role_id in actor_nodes:
+                    var combatant=model.state.get_actor(int(role_id))
+                    if combatant!=null:
+                        actor_nodes[role_id].position=combatant.position
+                        visual_cells[role_id]=Vector2i(combatant.cell)
     _cue_events(result.get("events", []))
     # Presentation follows each real path waypoint, rather than the straight
     # chord between old and final grid cells. Facing tracks each segment.
@@ -1499,7 +1533,7 @@ func _update_cursor() -> void:
     var usable := not _action_at(hovered).is_empty() if not selected_kind.is_empty() else not _legal("MOVE", hovered).is_empty()
     if not selected_kind.is_empty() and _enemy_at(hovered)>=0:
         usable=usable or (selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node))
-    if continuous_preview_enabled and selected_kind.is_empty():
+    if model.state.spatial_mode=="FREE" and selected_kind.is_empty():
         usable = false
     if illustrated_map!=null:
         illustrated_map.set_cursor(hovered,usable and animation_ticket<0)
@@ -1509,7 +1543,7 @@ func _update_cursor() -> void:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
 
 func _update_continuous_preview() -> void:
-    if not continuous_preview_enabled or continuous_space == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
+    if model.state.spatial_mode!="FREE" or not continuous_preview_enabled or continuous_space == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
         if continuous_preview != null:
             continuous_preview.clear_preview()
         return
@@ -1533,7 +1567,12 @@ func _update_continuous_preview() -> void:
     continuous_preview.show_preview(path, cost, reachable)
 
 func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M:
+        _toggle_spatial_mode()
+        get_viewport().set_input_as_handled()
+        return
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_P:
+        if model.state.spatial_mode!="FREE": return
         continuous_preview_enabled = not continuous_preview_enabled
         if not continuous_preview_enabled and continuous_preview != null:
             continuous_preview.clear_preview()
@@ -1565,7 +1604,7 @@ func _unhandled_input(event: InputEvent) -> void:
             else:
                 _submit_selected_approach(_enemy_at(_hover_cell()))
             get_viewport().set_input_as_handled()
-        elif continuous_preview_enabled and illustrated_map != null and _player_decision():
+        elif model.state.spatial_mode=="FREE" and illustrated_map != null and _player_decision():
             var enemy_id: int=_enemy_at(_hover_cell())
             if enemy_id>=0:
                 _submit("MOVE_AND_ATTACK",{"attack_kind":"BASIC_ATTACK","target_id":enemy_id})
