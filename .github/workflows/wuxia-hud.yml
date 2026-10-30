@@ -35,6 +35,7 @@ on:
       - 'demos/changfeng-battle/checks/test_hd2d_ctb_rail.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_ornament_hud.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_hand_visibility.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_interactions.gd'
       - 'demos/changfeng-battle/scripts/hd2d_card_art.gd'
       - 'demos/changfeng-battle/scripts/card_system.gd'
       - 'demos/changfeng-battle/scripts/combat_resolver.gd'
