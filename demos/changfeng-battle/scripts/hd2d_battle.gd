@@ -103,6 +103,9 @@ func _ready() -> void:
 func _quick_character_options() -> Dictionary:
     var configured: Dictionary=CharacterRegistry.new().battle_options([], {0:"shen_changfeng",1:"pursuer_captain"})
     configured["map_definition_path"]="res://data/maps/rainy_bridge.json"
+    var session=get_node_or_null("/root/GameSession")
+    if session != null:
+        configured["spatial_mode"]=str(session.get("battle_spatial_mode"))
     return configured
 
 func _session():
@@ -1396,6 +1399,9 @@ func _accept(result: Dictionary) -> void:
             movement_paths.clear()
             continuous_paths.clear()
             continuous_preview_enabled = str(event.get("to","GRID"))=="FREE"
+            var session=get_node_or_null("/root/GameSession")
+            if session!=null and session.has_method("set_battle_spatial_mode"):
+                session.call("set_battle_spatial_mode",str(event.get("to","GRID")))
             if continuous_preview != null:
                 continuous_preview.clear_preview()
             if illustrated_map != null:
