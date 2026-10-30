@@ -392,6 +392,8 @@ func _build_ui() -> void:
     intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _refresh() -> void:
+    # Read priority from the NEW state before choosing hand visibility.
+    snap = model.snapshot(observer_id)
     var owner := _decision_owner()
     var actor = model.state.get_actor(owner)
     if actor != null and actor.controller == "PLAYER":
