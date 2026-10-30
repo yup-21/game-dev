@@ -292,7 +292,8 @@ func _validate_move_and_attack(req: Dictionary) -> Dictionary:
 	var available_distance: float=maxf(0.0,float(remaining)*world_unit)
 	var min_distance: int=1
 	var max_distance: int=1
-	var line_required: bool=false
+	# Basic melee attacks may never strike through blocked bridge/rock terrain.
+	var line_required: bool=kind=="BASIC_ATTACK"
 	if kind!="BASIC_ATTACK":
 		min_distance=maxi(1,int(usage.target.get("min_distance",1)))
 		max_distance=int(usage.get("attack_profile",{}).get("range",usage.target.get("max_distance",1)))
