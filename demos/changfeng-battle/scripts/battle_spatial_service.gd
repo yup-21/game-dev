@@ -16,17 +16,29 @@ func set_actors(positions: Dictionary) -> void:
 func is_valid_position(point: Vector2, radius: float = 0.0, ignore_id: int = -1) -> bool:
     if not is_finite(point.x) or not is_finite(point.y) or radius < 0.0:
         return false
-    if bake.error != "" or bake.cell_at_screen(point, true) == Vector2i(-1, -1):
+    if bake.error != "":
         return false
-    # Check the entire footprint against authored blocked cells, not just its centre.
-    for cell in bake.tiles:
-        if bool(bake.tiles[cell].walkable):
-            continue
-        var rect: Rect2 = bake.cell_rect(cell)
-        var nearest := Vector2(clampf(point.x, rect.position.x, rect.end.x),
-            clampf(point.y, rect.position.y, rect.end.y))
-        if point.distance_to(nearest) < radius + EPSILON:
-            return false
+    var base: Vector2i = bake.cell_at_screen(point,true)
+    if base==Vector2i(-1,-1): return false
+    # The footprint must remain INSIDE the calibrated battlefield bounds.
+    var bounds_min: Vector2=bake.cell_rect(Vector2i.ZERO).position
+    var bounds_max: Vector2=bake.cell_rect(Vector2i(bake.width-1,bake.height-1)).end
+    if point.x-radius < bounds_min.x-EPSILON or point.y-radius < bounds_min.y-EPSILON or point.x+radius > bounds_max.x+EPSILON or point.y+radius > bounds_max.y+EPSILON:
+        return false
+    # Only obstacles within one footprint radius can collide. Iterating all
+    # 150 baked cells for every A* sample makes AI approach search O(cells).
+    var nearby_x: int=maxi(1,ceili(radius/bake.step.x)+1)
+    var nearby_y: int=maxi(1,ceili(radius/bake.step.y)+1)
+    for y in range(base.y-nearby_y,base.y+nearby_y+1):
+        for x in range(base.x-nearby_x,base.x+nearby_x+1):
+            var cell:=Vector2i(x,y)
+            if not bake.tiles.has(cell) or bool(bake.tiles[cell].walkable):
+                continue
+            var rect: Rect2=bake.cell_rect(cell)
+            var nearest:=Vector2(clampf(point.x,rect.position.x,rect.end.x),
+                clampf(point.y,rect.position.y,rect.end.y))
+            if point.distance_to(nearest)<radius+EPSILON:
+                return false
     for id in actor_positions:
         if int(id) == ignore_id:
             continue
@@ -156,6 +168,14 @@ func find_attack_approach(source: Vector2, target: Vector2, min_range: float,
             if not is_valid_position(point, radius, ignore_id):
                 continue
             if not attack_in_range(point, target, min_range, max_range, radius, target_radius):
+                continue
+            # Euclidean length is a lower bound for every legal walking route.
+            # Skip expensive path search when the candidate cannot beat budget
+            # or a shorter legal route already found.
+            var straight: float=source.distance_to(point)
+            if straight>move_budget+EPSILON:
+                continue
+            if not best.is_empty() and straight>=float(best.cost)-EPSILON:
                 continue
             if require_line_of_sight and not attack_line_clear(point,target,[ignore_id,target_id]):
                 continue
