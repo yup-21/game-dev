@@ -3,6 +3,7 @@ extends RefCounted
 const State = preload("res://scripts/battle_state.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
 const Spatial = preload("res://scripts/battle_spatial_service.gd")
+const Geometry = preload("res://scripts/battle_spatial_facade.gd")
 const Cards = preload("res://scripts/card_system.gd")
 const Attributes = preload("res://scripts/attribute_system.gd")
 const Statuses = preload("res://scripts/status_system.gd")
@@ -381,13 +382,10 @@ func preview_free_path(actor_id: int, target_position: Vector2) -> PackedVector2
 	var actor=state.get_actor(actor_id)
 	if actor==null or actor.hp_u<=0:
 		return PackedVector2Array()
-	var positions: Dictionary={}
-	for combatant in state.actors:
-		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
-	state.spatial.set_actors(positions)
-	var landing: Vector2=state.spatial.safe_landing(actor.position,target_position,8.0,actor.id)
+	var geometry=Geometry.new(state)
+	var landing: Vector2=geometry.safe_landing(actor,target_position)
 	landing=Vector2(roundf(landing.x*4.0)*0.25,roundf(landing.y*4.0)*0.25)
-	return state.spatial.find_path(actor.position,landing,8.0,actor.id)
+	return PackedVector2Array(geometry.find_path(actor,landing))
 
 func distance(a: Vector2i,b: Vector2i) -> int:
 	return rules.distance(a,b)

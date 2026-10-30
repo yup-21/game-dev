@@ -37,6 +37,9 @@ on:
       - 'demos/changfeng-battle/scripts/battle_presentation_coordinator.gd'
       - 'demos/changfeng-battle/checks/test_battle_presentation_coordinator.gd'
       - 'demos/changfeng-battle/scripts/battle_spatial_service.gd'
+      - 'demos/changfeng-battle/scripts/battle_spatial_facade.gd'
+      - 'demos/changfeng-battle/checks/test_battle_spatial_facade.gd'
+      - 'demos/changfeng-battle/scripts/combat_rules.gd'
       - 'demos/changfeng-battle/checks/test_free_crowd_navigation.gd'
       - 'demos/changfeng-battle/checks/test_story_background_content.gd'
       - 'demos/changfeng-battle/scripts/battle_state.gd'
@@ -103,6 +106,8 @@ jobs:
         run: timeout --signal=TERM 40s godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_battle_space.gd
       - name: Validate both spatial APIs after restoring reverted PR62
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_spatial_api_coexistence.gd
+      - name: Validate unified GRID and FREE spatial geometry facade
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_facade.gd
       - name: Validate committed free movement and rollback
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_move_command.gd
       - name: Validate atomic auto approach and martial card attacks

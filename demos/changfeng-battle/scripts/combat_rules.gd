@@ -1,4 +1,5 @@
 extends RefCounted
+const Geometry = preload("res://scripts/battle_spatial_facade.gd")
 ## Pure action enumeration and complete precommit validation.
 var state
 var cards
@@ -318,12 +319,8 @@ func _validate_move_and_attack(req: Dictionary) -> Dictionary:
 		return failure("INVALID_TARGET","武学攻击距离定义无效")
 	var min_range: float=float(min_distance-1)*world_unit
 	var max_range: float=float(max_distance)*world_unit
-	var positions: Dictionary={}
-	for other in state.actors:
-		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
-	state.spatial.set_actors(positions)
-	var approach: Dictionary=state.spatial.find_attack_approach(actor.position,target.position,
-		min_range,max_range,available_distance,8.0,8.0,actor.id,target.id,line_required)
+	var approach: Dictionary=Geometry.new(state).find_attack_approach(actor,target,
+		min_range,max_range,available_distance,line_required)
 	if approach.is_empty():
 		return failure("NO_ATTACK_POSITION","本回合移动距离内没有可用的攻击站位")
 	var final_position: Vector2=Vector2(approach.position)
@@ -376,31 +373,16 @@ func _can_reanchor_to_grid() -> bool:
 	return true
 
 func _basic_attack_in_range(actor,target) -> bool:
-	if state.spatial_mode!="FREE" or state.spatial==null:
-		return distance(actor.cell,target.cell)==1
-	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
-	var spatial=state.spatial
-	var positions: Dictionary={}
-	for combatant in state.actors:
-		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
-	spatial.set_actors(positions)
-	return spatial.attack_in_range(actor.position,target.position,0.0,unit,8.0,8.0) and spatial.attack_line_clear(actor.position,target.position,[actor.id,target.id])
+	return Geometry.new(state).can_attack(actor,target,0.0,1.0,true)
 
-## Geometry used by directly played cards and abilities in FREE mode.
-## `MOVE_AND_ATTACK` uses the same range convention for approach plans.
+## Target geometry for FREE cards and abilities; costs remain here.
 func free_target_legal(actor,target,usage: Dictionary) -> bool:
 	if state.spatial_mode!="FREE" or state.spatial==null: return false
 	if not state.is_hostile(actor.id,target.id) or target.hp_u<=0: return false
 	var maximum: int=int(usage.get("attack_profile",{}).get("range",usage.get("target",{}).get("max_distance",1)))
 	var minimum: int=int(usage.get("target",{}).get("min_distance",1))
 	if minimum<1 or maximum<minimum: return false
-	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
-	var spatial=state.spatial
-	var positions: Dictionary={}
-	for combatant in state.actors:
-		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
-	spatial.set_actors(positions)
-	return spatial.attack_in_range(actor.position,target.position,float(minimum-1)*unit,float(maximum)*unit,8.0,8.0) and spatial.attack_line_clear(actor.position,target.position,[actor.id,target.id])
+	return Geometry.new(state).can_attack(actor,target,float(minimum-1),float(maximum),true)
 
 ## Changing rules never consumes movement, card uses, CTB or Qi. It is still
 ## an authoritative revisioned command, blocked during attacks and animations.
