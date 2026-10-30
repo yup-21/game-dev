@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "purpose": "Original HD-2D high-detail wuxia art exploration, not runtime Sprite3D assets",
+  "created": "2026-10-30",
+  "scene": "escort_ambush",
+  "authoritative_roster": "res://data/demo_scenario.json",
+  "state": "concept_only",
+  "runtime_imported": false,
+  "background_removal_verified": false,
+  "cell_layout": {
+    "columns": 4,
+    "rows": 2,
+    "width": 384,
+    "height": 512,
+    "source_width": 1536,
+    "source_height": 1024,
+    "order": "row_major"
+  },
+  "common_poses": [
+    "idle",
+    "walk_contact",
+    "walk_passing",
+    "windup_or_dash",
+    "attack",
+    "guard",
+    "hit",
+    "combo_finish"
+  ],
+  "art_direction": "High-detail non-pixel painted characters; HD-2D staging applies to depth, lighting, camera and 3D terrain.",
+  "characters": [
+    {
+      "id": 2,
+      "name": "顾清霜",
+      "team": 0,
+      "sheet": "gu_qingshuang_pose_sheet_v1.png",
+      "portrait": "gu_qingshuang_portrait_v1.png",
+      "weapon": "jian",
+      "palette": [
+        "moon white",
+        "mist lavender",
+        "cold silver"
+      ],
+      "visual_note": "female swordswoman, moonlight robes, silver hair detail"
+    },
+    {
+      "id": 3,
+      "name": "青衫客",
+      "team": 0,
+      "sheet": "green_robed_wanderer_pose_sheet_v1.png",
+      "weapon": "jian",
+      "palette": [
+        "olive",
+        "warm parchment",
+        "copper"
+      ],
+      "visual_note": "middle-aged wanderer, gray hair, travel gear"
+    },
+    {
+      "id": 4,
+      "name": "黑衣刀客",
+      "team": 1,
+      "sheet": "black_blade_fighter_pose_sheet_v1.png",
+      "weapon": "heavy dao",
+      "palette": [
+        "charcoal",
+        "iron",
+        "rust"
+      ],
+      "visual_note": "broad-shouldered short-haired bruiser"
+    },
+    {
+      "id": 5,
+      "name": "夜行刺客",
+      "team": 1,
+      "sheet": "night_stalker_pose_sheet_v1.png",
+      "weapon": "paired short sabers",
+      "palette": [
+        "dark indigo",
+        "violet",
+        "silver"
+      ],
+      "visual_note": "masked agile assassin"
+    }
+  ],
+  "acceptance": [
+    "clean alpha for every pose",
+    "consistent face and costume across poses",
+    "no limb or sword crosses cell bounds",
+    "common foot anchors per character",
+    "in-betweens for gait and strike timing",
+    "Godot Sprite3D proof",
+    "no changes to BattleModel through presentation"
+  ]
+}
