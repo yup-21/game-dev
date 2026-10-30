@@ -5,6 +5,10 @@ on:
     paths:
       - 'demos/changfeng-battle/assets/ui/**'
       - 'demos/changfeng-battle/scripts/hd2d_card_ui.gd'
+      - 'demos/changfeng-battle/scripts/opening_flow.gd'
+      - 'demos/changfeng-battle/scripts/demo_result.gd'
+      - 'demos/changfeng-battle/checks/test_single_battle_entry.gd'
+      - 'demos/changfeng-battle/checks/opening_visual_check.gd'
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_wuxia_ui.gd'
@@ -29,6 +33,10 @@ jobs:
           use-dotnet: false
       - name: Import PNG and SVG art
         run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Assert only the illustrated battle is player-facing
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_single_battle_entry.gd
+      - name: Check existing original art is actually used in 3D battle
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_art_integration.gd
       - name: Check original UI atlas and model-backed HUD
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_wuxia_ui.gd
       - name: Check additional card mappings and HUD compatibility

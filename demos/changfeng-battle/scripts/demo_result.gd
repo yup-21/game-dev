@@ -4,6 +4,8 @@ const PAPER=Color("ede7d7")
 const INK=Color("243b3b")
 const JADE=Color("37766e")
 const GOLD=Color("b8965d")
+## The retry path must never reopen deprecated 2D party combat.
+const ACTIVE_BATTLE_SCENE := "res://battle_hd2d.tscn"
 var font: SystemFont
 var buttons: Array=[]
 
@@ -24,7 +26,7 @@ func _action(id: String) -> void:
 	if session==null: return
 	match id:
 		"retry":
-			if session.retry_encounter(): call_deferred("_go","res://party_battle.tscn")
+			if session.retry_encounter(): call_deferred("_go", ACTIVE_BATTLE_SCENE)
 		"menu":
 			session.return_to_menu()
 			call_deferred("_go","res://opening.tscn")

@@ -1,4 +1,6 @@
 extends Node2D
+## DEPRECATED (not player-facing): legacy 2D party battle retained for test coverage.
+## Story encounters and retries now use res://battle_hd2d.tscn.
 ## Multi-combatant tactics view: all commands use BattleModel.request/submit.
 ## The same EnemyAI policy drives allied NPCs and hostile NPCs.
 const Model = preload("res://scripts/battle_model.gd")
