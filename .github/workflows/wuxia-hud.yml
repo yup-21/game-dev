@@ -204,6 +204,7 @@ jobs:
           test -s demos/changfeng-battle/captures/hd2d-validation/02-card-selection.png
           test -s demos/changfeng-battle/captures/hd2d-validation/03-character-dossier.png
           test -s demos/changfeng-battle/captures/hd2d-validation/04-baked-grid.png
+          test -s demos/changfeng-battle/captures/hd2d-validation/05-prologue-3v3.png
       - name: Capture true first-act and elder dialogue frames
         shell: bash
         run: |
