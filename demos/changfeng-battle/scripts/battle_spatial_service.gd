@@ -9,6 +9,13 @@ const EPSILON := 0.001
 var bake
 var actor_positions: Dictionary = {}
 var waypoint_compat
+## Compatibility with the public clearance property exposed by PR #57.
+var clearance: float:
+    get:
+        return float(waypoint_compat.clearance) if waypoint_compat != null else 10.0
+    set(value):
+        if waypoint_compat != null:
+            waypoint_compat.clearance = maxf(0.0, value)
 
 func _init(map_path: String = MapBake.DEFAULT_PATH, actor_clearance: float = 10.0) -> void:
     bake = MapBake.new(map_path)
