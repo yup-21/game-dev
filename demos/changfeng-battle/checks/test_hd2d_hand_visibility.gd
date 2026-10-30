@@ -1,6 +1,7 @@
 extends SceneTree
 ## Hand visibility is sourced from the private owner snapshot, not the set
-## of currently legal actions (which can be empty outside attack range).
+## of currently legal actions. Eligible distant attacks now stay clickable
+## for automatic approach; other unavailable attacks remain visible and disabled.
 var checks := 0
 var failures := 0
 
@@ -57,22 +58,22 @@ func _run() -> void:
         "every drawn UID is shown, including cards without legal targets")
     for uid in drawn:
         _check(rendered.has(uid), "hidden drawn hand UID: " + str(uid))
-    var ranged_out := 0
+    var approachable := 0
     for uid in attack_uids:
         if not rendered.has(uid):
             continue
         var visible: Array = rendered[uid]
-        var locked := true
         for button in visible:
             if not button.disabled:
-                locked = false
-            if button.disabled:
+                var usage_id: String = str(button.get_meta("usage_id", ""))
+                _check(bool(view.call("_can_approach_card", str(uid), usage_id)),
+                    "out-of-range selectable attacks must be eligible for auto-approach")
+                approachable += 1
+            else:
                 _check(button.tooltip_text.contains("靠近敌人"),
-                    "attack card must explain range/availability")
-        if locked:
-            ranged_out += 1
-    _check(ranged_out > 0,
-        "two-cell opening gap must display attacks as grey cards, not hide them")
+                    "unavailable attack cards must explain their limits")
+    _check(approachable > 0,
+        "two-cell opening gap must show at least one selectable auto-approach attack")
     _check(model.state.get_actor(0).cell.distance_squared_to(model.state.get_actor(1).cell) == 4,
         "regression is built on the real two-cell opening gap")
     # Simulate a legal adjacency without submitting an action; move only the
