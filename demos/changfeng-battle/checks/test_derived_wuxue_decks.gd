@@ -123,17 +123,65 @@ func _run() -> void:
             has_follow_response = true
     _check(has_derived_response and not has_follow_response,
         "optional change stage is available; generated follow cannot answer a clash")
+    var stance_action: Dictionary = {}
+    for option in model.legal_actions(player.id):
+        if (str(option.get("kind","")) == "USE_ABILITY"
+                and str(option.get("technique_id","")) == "tf_change_stage"
+                and str(option.get("node_id","")) == "change"):
+            stance_action = option
+            break
+    _check(not stance_action.is_empty(), "ready stance has selectable 变锋·追击")
+    if not stance_action.is_empty():
+        _check(bool(_submit(model, stance_action).get("success",false)),
+            "optional stance submits as USE_ABILITY, never a generated card")
+        _check(str(player.technique_states.tf_change_stage.node) == "sealed",
+            "using one stance choice resets the stage, without consuming follow-up")
+        _check(_count(player, model, "tf_change") == 0,
+            "choosing a stance never constructs a 变锋 card UID")
+        _ack(model)
+        var defender_second: Dictionary = _first_action(model, enemy.id, "PASS_REACTION")
+        _check(bool(_submit(model, defender_second).get("success",false)),
+            "defender can pass after a real stance reaction")
+        _ack(model)
     var attacker_pass: Dictionary = _first_action(model, player.id, "PASS_REACTION")
     if not attacker_pass.is_empty():
         _check(bool(_submit(model, attacker_pass).get("success",false)),
-            "second pass resolves the ordinary attack")
+            "final pass resolves the original attack and reaction chain")
         _ack(model)
     _check(model.state.mode == "ACTION" and _count(player, model, "tf_follow") == 1,
-        "unused follow-up remains in its creator's hand until refresh")
+        "follow-up remains in hand after resolving prerequisite attack")
+    var follow_action: Dictionary = {}
+    for option in model.legal_actions(player.id):
+        if (str(option.get("kind","")) == "PLAY_CARD"
+                and str(option.get("card_uid","")) == child
+                and str(option.get("usage_id","")) == "follow"):
+            follow_action = option
+            break
+    _check(not follow_action.is_empty(),
+        "created 追风 is usable only as its own ACTION attack")
+    if not follow_action.is_empty():
+        _check(bool(_submit(model, follow_action).get("success",false)),
+            "follow-up executes as a real generated card")
+        _ack(model)
+        var pass1: Dictionary = _first_action(model, enemy.id, "PASS_REACTION")
+        _check(bool(_submit(model, pass1).get("success",false)),
+            "defender passes the follow-up clash")
+        _ack(model)
+        var pass2: Dictionary = _first_action(model, player.id, "PASS_REACTION")
+        _check(bool(_submit(model, pass2).get("success",false)),
+            "attacker finishes the follow-up clash")
+        _ack(model)
+    var combo_found := false
+    for event in model.state.logs:
+        if str(event.get("type","")) == "COMBO_TRIGGERED":
+            combo_found = true
+    _check(combo_found,
+        "probe then generated follow-up still triggers 探锋追风 combo")
     if not child.is_empty():
-        model.cards.leave_hand(player, child, false)
-        _check(player.exile_pile.has(child) and not player.discard_pile.has(child),
-            "generated follow-up exiles on exit and never reshuffles")
+        _check(player.exile_pile.has(child)
+            and not player.discard_pile.has(child)
+            and not player.draw_pile.has(child),
+            "played follow-up is exiled and never reshuffles")
 
     var configured = Scenario.new()
     var encounter: Dictionary = configured.encounter("escort_ambush")
