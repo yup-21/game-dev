@@ -4,7 +4,7 @@ extends RefCounted
 const WuxiaTheme = preload("res://scripts/hd2d_ui_theme.gd")
 const OptionalPaintings = preload("res://scripts/hd2d_card_art.gd")
 const ATLAS: Texture2D = preload("res://assets/ui/technique_art_atlas_v1.png")
-const FRAME: Texture2D = preload("res://assets/ui/jade_card_filagree.svg")
+const FRAME: Texture2D = preload("res://assets/ui/ornaments/card_frame.svg")
 const SEAL: Texture2D = preload("res://assets/ui/jade_seal.svg")
 const ATLAS_COLUMNS := 4
 const ATLAS_ROWS := 2

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="148" height="186" viewBox="0 0 148 186">
+<defs>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#8b754d"/><stop offset=".32" stop-color="#efd59e"/><stop offset=".67" stop-color="#bfa777"/><stop offset="1" stop-color="#806943"/></linearGradient>
+<linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e5d6ae" stop-opacity=".03"/><stop offset="1" stop-color="#d1b17c" stop-opacity=".16"/></linearGradient>
+</defs>
+<rect x="1.8" y="1.8" width="144.4" height="182.4" rx="7" fill="none" stroke="#071a1b" stroke-width="3"/>
+<rect x="2.7" y="2.7" width="142.6" height="180.6" rx="7" fill="none" stroke="url(#gold)" stroke-width="1.8"/>
+<rect x="6" y="6" width="136" height="174" rx="4" fill="none" stroke="#d5c18f" stroke-opacity=".53" stroke-width=".7"/>
+<path d="M7 119H141M7 157H141" stroke="url(#gold)" stroke-opacity=".62" stroke-width=".8"/>
+<path d="M8 120H140V157H8Z" fill="url(#paper)"/>
+<g fill="none" stroke="#e4ca92" stroke-linecap="round" stroke-width="1.15">
+<path d="M6 29V14Q6 6 15 6h19M142 29V14q0-8-9-8h-19M6 159v13q0 8 9 8h19M142 159v13q0 8-9 8h-19"/>
+<path d="M10 26q11-4 11-16 7 8 14 0M138 26q-11-4-11-16-7 8-14 0M10 164q11 4 11 15 7-8 14 0M138 164q-11 4-11 15-7-8-14 0" opacity=".75"/>
+</g>
+<g stroke="#c2ab7a" fill="#192d2b"><path d="M74 1l5 5-5 5-5-5zM74 175l5 5-5 5-5-5z"/></g>
+<g fill="#f1d6a0" opacity=".95"><circle cx="11" cy="11" r="1.3"/><circle cx="137" cy="11" r="1.3"/><circle cx="11" cy="175" r="1.3"/><circle cx="137" cy="175" r="1.3"/></g>
+</svg>

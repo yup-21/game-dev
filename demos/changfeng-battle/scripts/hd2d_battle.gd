@@ -41,6 +41,7 @@ var hovered := Vector2i(-1, -1)
 var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
 var card_actions: HBoxContainer
+var fan_layout_pending := false
 var command_actions: VBoxContainer
 var command_scroll: ScrollContainer
 var context_veil: TextureRect
@@ -334,6 +335,17 @@ func _build_ui() -> void:
     ribbon.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
     ribbon.offset_bottom = 61.0
     _veil(ribbon, preload("res://assets/ui/veil_top.svg"))
+    # Standalone filigree keeps the central chapter label readable.
+    var title_filagree := _veil(ribbon,
+        preload("res://assets/ui/ornaments/chapter_filagree.svg"))
+    title_filagree.anchor_left = 0.5
+    title_filagree.anchor_right = 0.5
+    title_filagree.anchor_top = 0.0
+    title_filagree.anchor_bottom = 0.0
+    title_filagree.offset_left = -300.0
+    title_filagree.offset_right = 300.0
+    title_filagree.offset_top = 0.0
+    title_filagree.offset_bottom = 54.0
     var heading := Label.new()
     heading.text = "雨夜追兵" if story_encounter else "断桥听风"
     heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -410,14 +422,16 @@ func _build_ui() -> void:
         var enemy := int(actor.get("team_id", 0)) != 0
         var actor_row := HBoxContainer.new()
         actor_row.name = "Status_%d" % actor_id
-        actor_row.custom_minimum_size = Vector2(0, 47)
+        actor_row.custom_minimum_size = Vector2(0, 65)
         actor_row.add_theme_constant_override("separation", 7)
         # Enemy progress is on the right CTB rail and over each battle sprite.
         # Keep their read-only controls for existing status consumers.
         actor_row.visible = not enemy
         roster_list.add_child(actor_row)
+        var avatar_slot := Control.new()
+        avatar_slot.custom_minimum_size = Vector2(58, 65)
+        actor_row.add_child(avatar_slot)
         var avatar := TextureRect.new()
-        avatar.custom_minimum_size = Vector2(39, 43)
         avatar.texture = ArtCatalog.avatar(actor_id, enemy)
         avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
         avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
@@ -425,7 +439,15 @@ func _build_ui() -> void:
         avatar.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
         avatar.tooltip_text = "查看 %s 的角色卡" % str(actor.name)
         avatar.gui_input.connect(_on_roster_avatar_input.bind(actor_id))
-        actor_row.add_child(avatar)
+        avatar_slot.add_child(avatar)
+        avatar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+        avatar.offset_left = 5.0
+        avatar.offset_top = 5.0
+        avatar.offset_right = -5.0
+        avatar.offset_bottom = -5.0
+        var portrait_border := _veil(avatar_slot,
+            preload("res://assets/ui/ornaments/portrait_frame.svg"))
+        portrait_border.name = "PortraitFrame"
         var detail := VBoxContainer.new()
         detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
         detail.add_theme_constant_override("separation", 3)
@@ -487,9 +509,9 @@ func _build_ui() -> void:
     hand_stage.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
     hand_stage.offset_left = 0.0
     hand_stage.offset_right = 0.0
-    hand_stage.offset_top = -262.0
+    hand_stage.offset_top = -255.0
     hand_stage.offset_bottom = 0.0
-    _veil(hand_stage, preload("res://assets/ui/veil_hand.svg"))
+    _veil(hand_stage, preload("res://assets/ui/ornaments/hand_fan_tray.svg"))
     var hand_title := Label.new()
     hand_title.text = "武 学"
     hand_title.add_theme_font_size_override("font_size", 15)
@@ -517,8 +539,8 @@ func _build_ui() -> void:
     hand_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     hand_scroll.offset_left = 75.0
     hand_scroll.offset_right = -128.0
-    hand_scroll.offset_top = 53.0
-    hand_scroll.offset_bottom = -7.0
+    hand_scroll.offset_top = 38.0
+    hand_scroll.offset_bottom = -10.0
     hand_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
     hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     card_actions = HBoxContainer.new()
@@ -526,8 +548,9 @@ func _build_ui() -> void:
     # Center short hands; once cards overflow, normal scroll starts at the left.
     card_actions.alignment = BoxContainer.ALIGNMENT_CENTER
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    card_actions.add_theme_constant_override("separation", 9)
+    card_actions.add_theme_constant_override("separation", -12)
     hand_scroll.add_child(card_actions)
+    card_actions.sort_children.connect(_request_fan_layout)
 
     # The original CTB is a real vertical charge gauge, not a stack of
     # decorative portraits or a second turn-order model.
@@ -568,6 +591,31 @@ func _build_ui() -> void:
     intro_subtitle.offset_top = -90.0
     intro_subtitle.offset_bottom = -45.0
     intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+func _request_fan_layout() -> void:
+    # Container positioning is authoritative. Rotation and slight vertical
+    # offsets only change presentation, not card order or scroll coordinates.
+    if fan_layout_pending:
+        return
+    fan_layout_pending = true
+    call_deferred("_layout_fan_cards")
+
+func _layout_fan_cards() -> void:
+    fan_layout_pending = false
+    if card_actions == null or not is_instance_valid(card_actions):
+        return
+    var cards: Array[Button] = []
+    for child in card_actions.get_children():
+        if child is Button and not child.is_queued_for_deletion():
+            cards.append(child)
+    var midpoint := (float(cards.size()) - 1.0) * 0.5
+    for i in range(cards.size()):
+        var card := cards[i]
+        var spread := float(i) - midpoint
+        card.pivot_offset = Vector2(card.size.x * 0.5, card.size.y)
+        card.rotation_degrees = clampf(spread * 5.2, -11.5, 11.5)
+        card.position.y = absf(spread) * 5.0 - (15.0 if _is_selected_card(card) else 0.0)
+        card.set_meta("fan_angle", card.rotation_degrees)
 
 func _on_roster_avatar_input(event: InputEvent, id: int) -> void:
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -687,6 +735,7 @@ func _rebuild_actions() -> void:
     else:
         hint += "    当前等待应变／动画，手牌仍保留"
     selection_label.text = hint
+    _request_fan_layout()
     if not available or pass_only:
         return
 
@@ -817,6 +866,7 @@ func _paint_selection() -> void:
 
 func _update_card_selection() -> void:
     _paint_selection()
+    _request_fan_layout()
 
 func _select_card(uid: String, usage: String) -> void:
     _clear_selection()

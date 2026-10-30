@@ -5,18 +5,26 @@ const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const CHARGE := 10000.0
 const TOP := 49.0
 const BOTTOM := 42.0
-const PORTRAIT := 32.0
+const PORTRAIT := 36.0
 const ALLY := Color("83d6bc")
 const ENEMY := Color("d28c80")
 const GOLD := Color("e8c989")
+const RAIL_ART: Texture2D = preload("res://assets/ui/ornaments/ctb_rail.svg")
+const MARKER_FRAME: Texture2D = preload("res://assets/ui/ornaments/ctb_marker_frame.svg")
 
 var _actors: Array = []
 var _priority_id := -1
 var _markers: Dictionary = {}
 var _marker_y: Dictionary = {}
+var _round_avatar_material: ShaderMaterial
 
 func _ready() -> void:
     mouse_filter = Control.MOUSE_FILTER_IGNORE
+    # Cropped avatar texture, with the original CTB actor image preserved.
+    var round_shader := Shader.new()
+    round_shader.code = "shader_type canvas_item;\nvoid fragment() {\n    vec2 d = UV - vec2(0.5);\n    if (dot(d, d) > 0.210) discard;\n    COLOR = texture(TEXTURE, UV);\n}\n"
+    _round_avatar_material = ShaderMaterial.new()
+    _round_avatar_material.shader = round_shader
     resized.connect(_layout_markers)
     _caption("出手", true)
     _caption("集气", false)
@@ -60,6 +68,9 @@ func set_state(actors: Array, priority_id: int) -> void:
         var frame: Panel = _markers[id]
         frame.visible = float(actor.get("hp", 0.0)) > 0.0
         frame.modulate = Color.WHITE if id == _priority_id else Color(1, 1, 1, 0.88)
+        var rim := frame.get_node_or_null("Rim") as TextureRect
+        if rim != null:
+            rim.modulate = GOLD if id == _priority_id else (ENEMY if enemy else ALLY)
         frame.tooltip_text = "%s\n集气 %d / %d" % [
             str(actor.get("name", "江湖客")), int(actor.get("gauge", 0)), int(CHARGE)]
     for id in _markers.keys():
@@ -77,8 +88,8 @@ func _make_marker(id: int, enemy: bool) -> Panel:
     var border := StyleBoxFlat.new()
     border.bg_color = Color("102a2b", 0.93)
     border.border_color = ENEMY if enemy else ALLY
-    border.set_border_width_all(1)
-    border.set_corner_radius_all(5)
+    border.set_border_width_all(0)
+    border.set_corner_radius_all(18)
     frame.add_theme_stylebox_override("panel", border)
     frame.set_meta("actor_id", id)
     var avatar := TextureRect.new()
@@ -87,12 +98,21 @@ func _make_marker(id: int, enemy: bool) -> Panel:
     avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
     avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    avatar.material = _round_avatar_material
     frame.add_child(avatar)
     avatar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     avatar.offset_left = 2.0
     avatar.offset_top = 2.0
     avatar.offset_right = -2.0
     avatar.offset_bottom = -2.0
+    var rim := TextureRect.new()
+    rim.name = "Rim"
+    rim.texture = MARKER_FRAME
+    rim.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    rim.stretch_mode = TextureRect.STRETCH_SCALE
+    rim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    frame.add_child(rim)
+    rim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     add_child(frame)
     return frame
 
@@ -116,7 +136,7 @@ func _layout_markers() -> void:
         var shifted: Array = []
         var previous := -100000.0
         for entry in entries:
-            var y := maxf(float(entry["actual"]), previous + 35.0)
+            var y := maxf(float(entry["actual"]), previous + 39.0)
             shifted.append(y)
             previous = y
         if not shifted.is_empty() and float(shifted[-1]) > size.y - BOTTOM:
@@ -139,9 +159,8 @@ func _draw() -> void:
     var cx := size.x * 0.5
     if bottom <= TOP:
         return
-    draw_rect(Rect2(cx - 13.0, TOP - 4.0, 26.0, bottom - TOP + 8.0),
-        Color("071a20", 0.56), true)
-    draw_line(Vector2(cx, TOP), Vector2(cx, bottom), Color("d2b47a", 0.72), 2.0, true)
+    draw_texture_rect(RAIL_ART, Rect2(Vector2.ZERO, size), false)
+    draw_line(Vector2(cx, TOP), Vector2(cx, bottom), Color("ead1a0", 0.72), 1.5, true)
     for step in range(11):
         var y := lerpf(bottom, TOP, float(step) / 10.0)
         draw_line(Vector2(cx - 5.0, y), Vector2(cx + 5.0, y),
