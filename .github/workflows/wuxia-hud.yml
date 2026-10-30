@@ -78,6 +78,26 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_single_battle_entry.gd
       - name: Verify 150 baked orthographic cells, river-blocked hitboxes and 3v3 paths
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_baked_bridge_grid.gd
+      - name: Validate continuous battle movement and attack approach
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_space.gd
+      - name: Keep PR57 visibility graph regression
+        run: timeout --signal=TERM 40s godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_battle_space.gd
+      - name: Validate both spatial APIs after restoring reverted PR62
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_spatial_api_coexistence.gd
+      - name: Validate committed free movement and rollback
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_move_command.gd
+      - name: Validate atomic auto approach and martial card attacks
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_move_and_attack.gd
+      - name: Check live Sprite2D automatic approach UI commands
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_move_and_attack_ui.gd
+      - name: Validate two authoritative spatial modes and live transitions
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_dual_spatial_mode.gd
+      - name: Exercise in-battle M toggle and mode preference persistence
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_dual_spatial_mode_ui.gd
+      - name: Verify free martial step and LIFO evasive response
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_martial_movement.gd
+      - name: Validate continuous AI duel and six-character encounter
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_space_ai.gd
       - name: Validate 2D painted terrain and story character registration
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_illustrated_maps.gd
       - name: Check original character art in painted battle

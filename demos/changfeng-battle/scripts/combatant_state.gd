@@ -6,6 +6,8 @@ var team_id: int = 0
 var controller: String = "AI"
 var name: String
 var cell: Vector2i
+## Authoritative feet position in battle-space; mapped encounters use pixel-calibrated coordinates.
+var position: Vector2 = Vector2.ZERO
 var facing: Vector2i = Vector2i.RIGHT
 var attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
 var stats: Dictionary = {}
@@ -55,9 +57,10 @@ func _init(actor_id: int = 0, actor_name: String = "", start_cell: Vector2i = Ve
 	id=actor_id
 	name=actor_name
 	cell=start_cell
+	position=Vector2(start_cell)
 
 func public_data(_include_hand: bool = false) -> Dictionary:
-	return {"id":id,"character_id":character_id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"facing":facing,"hp":hp,"max_hp":max_hp,"qi":qi,"max_qi":max_qi,
+	return {"id":id,"character_id":character_id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"position":position,"facing":facing,"hp":hp,"max_hp":max_hp,"qi":qi,"max_qi":max_qi,
 		"school_id":school_id,"school_name":school_name,"learned_schools":learned_schools.duplicate(),
 		"shield":shield,"gauge":gauge,"charge_speed":stats.get("charge_speed",100),
 		"attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),
