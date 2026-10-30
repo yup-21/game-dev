@@ -39,3 +39,32 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
+
+
+  visual-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: '4.7.2'
+          use-dotnet: false
+      - name: Prepare virtual display
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1
+      - name: Capture actual HD-2D hand and clash states
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path demos/changfeng-battle --editor --import --quit
+          xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd -- --capture
+          test -s demos/changfeng-battle/captures/hd2d-validation/01-board.png
+          test -s demos/changfeng-battle/captures/hd2d-validation/02-card-selection.png
+          test -s demos/changfeng-battle/captures/hd2d-validation/03-clash.png
+      - name: Upload screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unified-wuxia-hud-visual-evidence
+          path: demos/changfeng-battle/captures/hd2d-validation/*.png
+          if-no-files-found: warn
