@@ -64,7 +64,17 @@ func _run() -> void:
     if not await _capture("02-card-selection"):
         quit(1)
         return
-    print("HUD_CAPTURE_PASS battle + card highlight, model untouched")
+    var overlay: Control = battle.get("character_card") as Control
+    if overlay == null or not bool(overlay.call("open_actor", battle.get("model"),0)):
+        push_error("HUD_CAPTURE: cannot open real character dossier")
+        quit(1)
+        return
+    await process_frame
+    await process_frame
+    if not await _capture("03-character-dossier"):
+        quit(1)
+        return
+    print("HUD_CAPTURE_PASS battle + card highlight + live character dossier")
     battle.queue_free()
     await process_frame
     quit(0)
