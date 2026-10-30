@@ -188,7 +188,7 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 - `assets/scenes/battle/rainy_bridge_battle.webp`：雨夜断桥河谷完整战斗地图，桥头对应逻辑 `(7,4)`，浅滩对应 `(7,8)`；脚底投影在 `illustrated_battle_map.gd` 手动校准，不能直接用标准 3D 投影。
 - `assets/scenes/story/ruined_temple_story.webp`：荒道雨夜破庙探索背景，人物及对话从 `opening_flow.gd` 单独叠加。
 
-两张素材的原始图由项目所有者在对话中提供，均为 1586×992 的 RGBA PNG；优化版使用 WebP q90，不改变原始构图。**注意：GitHub 连接器本轮不支持直接上传二进制图片，PR #49 先提交渲染与交互代码，PNG/WebP 资源需要独立入库。** 在图片缺失时脚本为了兼容旧 CI 会使用旧的运行时环境图／程序化破庙作为退化画面；不可将这种 fallback 的 CI 截图误认为新插画已接入。可以从本次对话的资源包将两张文件放入上述路径。
+两张素材的原始图由项目所有者在对话中提供，均为 1586×992 的 RGBA PNG；优化版使用 WebP q90，不改变原始构图。**原画已在 PR #49 中随代码一并入库。** GitHub Git blob SHA 已与本地转换文件逐字节校验：断桥 `0aa6ed34b25a77144c10bbeef0adb51d60fbfe87`，破庙 `67cd63df2ba48b6af0fefeb07f050f7b000b33d7`。图片丢失时脚本仍可退回旧画面，但 `test_illustrated_maps.gd` 会明确失败，避免误将旧场景验收为新场景。
 
 开发检查：
 

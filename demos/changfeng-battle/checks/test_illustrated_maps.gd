@@ -14,13 +14,22 @@ func _initialize() -> void:
     call_deferred("_run")
 
 func _run() -> void:
+    var bridge_path := "res://assets/scenes/battle/rainy_bridge_battle.webp"
+    var temple_path := "res://assets/scenes/story/ruined_temple_story.webp"
+    _check(ResourceLoader.exists(bridge_path) and ResourceLoader.exists(temple_path),
+        "both user-supplied paintings must be bundled in this Git tree")
+    var bridge: Texture2D = load(bridge_path) as Texture2D
+    var temple: Texture2D = load(temple_path) as Texture2D
+    _check(bridge!=null and temple!=null and
+        bridge.get_size()==Vector2i(1586,992) and temple.get_size()==Vector2i(1586,992),
+        "both exact-layout HD paintings imported at 1586x992")
     var scene: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame
     var model = scene.get("model")
     var painted = scene.get("illustrated_map")
-    _check(painted!=null and painted.picture.texture!=null,
-        "battle must contain a complete screen-space painted scene")
+    _check(painted!=null and painted.picture.texture==bridge,
+        "battle must display the actual user-supplied full painted river map")
     _check(scene.get_node_or_null("River")==null and
         scene.get_node_or_null("WuxiaScenery")==null and
         scene.get_node_or_null("Ground_6_4")==null,
@@ -28,14 +37,14 @@ func _run() -> void:
     _check(painted.actors.size()==2 and painted.actors[0].get_node("ActionSprite").texture!=null,
         "duel actors are visual 2D Sprite2D nodes with real atlas")
     var left: Vector2=SceneMap.point_for_cell(Vector2i(6,4))
-    var bridge: Vector2=SceneMap.point_for_cell(Vector2i(7,4))
+    var bridge_point: Vector2=SceneMap.point_for_cell(Vector2i(7,4))
     var right: Vector2=SceneMap.point_for_cell(Vector2i(8,4))
-    _check(left.x<bridge.x and bridge.x<right.x,
+    _check(left.x<bridge_point.x and bridge_point.x<right.x,
         "bridge endpoints align with foot anchors of the painting")
     var crossing: Vector2=SceneMap.point_for_cell(Vector2i(7,8))
-    _check(crossing.y>bridge.y+210,
+    _check(crossing.y>bridge_point.y+210,
         "ford crossing is in the foreground, separated from the bridge")
-    _check(painted.cell_from_screen(bridge,model.state.terrain)==Vector2i(7,4),
+    _check(painted.cell_from_screen(bridge_point,model.state.terrain)==Vector2i(7,4),
         "map projection inverses the real traversable bridge")
     _check(painted.cell_from_screen(crossing,model.state.terrain)==Vector2i(7,8),
         "map projection inverses the real traversable ford")
@@ -68,6 +77,7 @@ func _run() -> void:
     root.add_child(opening)
     await process_frame
     _check(opening.story.load_error.is_empty(),"opening story loads unchanged")
+    _check(opening.call("_temple_background"),"real painted temple loads for exploration and dialogue")
     opening.call("_enter_new_game")
     opening.story.skip_cinematic()
     _check(opening.story.phase=="explore","first-act exploration uses existing dialogue mechanics")
