@@ -57,6 +57,12 @@ func gauge_y(value: float) -> float:
     return lerpf(maxf(TOP, size.y - BOTTOM), TOP,
         clampf(value / CHARGE, 0.0, 1.0))
 
+func _portrait_x(enemy: bool) -> float:
+    # Opposing lanes meet precisely at the rail: the inner edge of each
+    # portrait touches the shaft, while its vertical position stays exact.
+    var center := size.x * 0.5
+    return center if enemy else center - PORTRAIT
+
 func set_state(actors: Array, priority_id: int) -> void:
     _actors = actors.duplicate(true)
     _priority_id = priority_id
@@ -131,9 +137,9 @@ func _layout_markers(snap_immediately: bool = false) -> void:
             continue
         live[id] = true
         var target := gauge_y(float(actor.get("gauge", 0.0)))
-        # All portraits occupy the exact same horizontal rail. Equal charge
-        # values intentionally overlap; neither team nor arrival order offsets
-        # the authoritative position.
+        # Allies sit left of the shaft, enemies right. Equal charge values
+        # intentionally overlap inside a team; no collision-spacing offset
+        # ever changes their authoritative Y position.
         if snap_immediately or not _marker_y.has(id):
             _marker_y[id] = target
             _target_y[id] = target
@@ -146,7 +152,8 @@ func _layout_markers(snap_immediately: bool = false) -> void:
             _target_y[id] = target
             _glide_elapsed[id] = 0.0
         var frame: Panel = _markers[id]
-        frame.position = Vector2((size.x - PORTRAIT) * 0.5,
+        var enemy := int(actor.get("team_id", 0)) != 0
+        frame.position = Vector2(_portrait_x(enemy),
             float(_marker_y[id]) - PORTRAIT * 0.5)
     for id in _marker_y.keys():
         if live.has(id):
@@ -172,8 +179,7 @@ func _process(delta: float) -> void:
             continue
         _marker_y[id] = y
         var frame: Panel = _markers[id]
-        frame.position = Vector2((size.x - PORTRAIT) * 0.5,
-            y - PORTRAIT * 0.5)
+        frame.position = Vector2(frame.position.x, y - PORTRAIT * 0.5)
         changed = true
     if changed:
         queue_redraw()
@@ -198,11 +204,13 @@ func _draw() -> void:
         var tint := ENEMY if enemy else ALLY
         if id == _priority_id:
             tint = GOLD
-        # A subtle vertical travel cue sits behind the moving portrait.
-        # There are no horizontal connectors or anti-overlap offsets.
+        # Travel streaks stay immediately beside the shaft, while the
+        # separate ally/enemy halos follow the corresponding portraits.
         var target := float(_target_y.get(id, y))
+        var near_axis_x := cx + (3.0 if enemy else -3.0)
+        var portrait_cx := cx + (PORTRAIT * 0.5 if enemy else -PORTRAIT * 0.5)
         if absf(target - y) > 1.0:
-            draw_line(Vector2(cx, y), Vector2(cx, target),
+            draw_line(Vector2(near_axis_x, y), Vector2(near_axis_x, target),
                 Color(tint, 0.25), 2.0, true)
-        draw_circle(Vector2(cx, y), PORTRAIT * 0.5 + 2.0,
+        draw_circle(Vector2(portrait_cx, y), PORTRAIT * 0.5 + 2.0,
             Color(tint, 0.17))
