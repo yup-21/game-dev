@@ -1,6 +1,7 @@
 extends SceneTree
 ## Validate actual 2D battle presentation, role anchoring and story scene.
 const SceneMap = preload("res://scripts/illustrated_battle_map.gd")
+const BridgeLayout = preload("res://scripts/rainy_bridge_layout.gd")
 var failures := 0
 var checks := 0
 
@@ -28,6 +29,37 @@ func _run() -> void:
     await process_frame
     var model = scene.get("model")
     var painted = scene.get("illustrated_map")
+    # Golden contract: authored image anchors and blocking terrain must agree
+    # with the rules model for every one of the 15x10 logical cells.
+    var golden_terrain: Dictionary = BridgeLayout.make_terrain()
+    _check(golden_terrain == model.state.terrain,
+        "BattleState and painterly level use identical terrain topology")
+    var walkable_roundtrips := true
+    var blocked_unselectable := true
+    var anchors_inside_painting := true
+    var walkable_count := 0
+    var canvas := Rect2(Vector2.ZERO, BridgeLayout.CANVAS_SIZE)
+    for y in range(BridgeLayout.ROWS):
+        for x in range(BridgeLayout.COLS):
+            var grid := Vector2i(x, y)
+            var foot: Vector2 = BridgeLayout.point_for_cell(grid)
+            if not canvas.has_point(foot):
+                anchors_inside_painting = false
+            if BridgeLayout.is_walkable(grid, golden_terrain):
+                walkable_count += 1
+                if painted.cell_from_screen(foot, golden_terrain) != grid:
+                    walkable_roundtrips = false
+            elif painted.cell_from_screen(foot, golden_terrain) == grid:
+                blocked_unselectable = false
+    _check(anchors_inside_painting, "every foot anchor stays inside painting canvas")
+    _check(walkable_roundtrips and walkable_count > 100,
+        "all walkable anchors have a unique screen-to-grid hit target")
+    _check(blocked_unselectable,
+        "water, rocks and bamboo are never selectable at their own anchors")
+    _check(BridgeLayout.is_walkable(Vector2i(7, 4), golden_terrain)
+        and BridgeLayout.is_walkable(Vector2i(7, 8), golden_terrain)
+        and not BridgeLayout.is_walkable(Vector2i(7, 3), golden_terrain),
+        "only the authored bridge and ford connect the riverbanks")
     _check(painted!=null and painted.picture.texture==bridge,
         "battle must display the actual user-supplied full painted river map")
     _check(scene.get_node_or_null("River")==null and
