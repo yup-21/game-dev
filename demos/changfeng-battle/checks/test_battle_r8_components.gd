@@ -29,6 +29,8 @@ func _run() -> void:
     _check(presenter.animator == scene.get("animation_driver") and
         presenter.coordinator == scene.get("presentation"),
         "presentation shares one ticket and one animator")
+    _check(scene.has_node("WuxiaCombatHUD/UnifiedHUD"),
+        "HUD builder attaches the canonical CanvasLayer and controls")
     _check(hud.controls.get("status") == scene.get("status_label") and
         hud.controls.get("rail") == scene.get("charge_rail"),
         "HUD binds the authoritative controls")

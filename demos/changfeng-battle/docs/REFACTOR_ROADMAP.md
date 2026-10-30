@@ -118,7 +118,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_demo_f
 
 - `BattleWorld2D` 持有 Camera2D、手绘地图、Sprite2D 演员和已经结算的移动路径。正式场景保留旧字段别名以维持回归兼容；逻辑位置仍由 BattleModel 唯一提交。
 - `BattlePresentationPlayer` 持有动画驱动、VFX 与 ticket 协调，不允许写规则；旧 `animation_driver`、`presentation` 字段仍指向同一实例。
-- `BattleHUDView` 绑定状态栏、CTB、手牌投影与扇形排版；原布局创建与事件按钮暂留主场景以保持 UI 兼容。
+- `BattleHUDView` 创建完整的 HUD 节点树、状态栏、CTB、手牌和头像，绑定原有交互回调，并负责快照投影；正式场景仅保留兼容字段别名及命令按钮逻辑。
 - R8 live-scene 测试：`checks/test_battle_r8_components.gd`。本阶段不改变卡牌规则、GUI 素材、行动顺序或剧情。
 
 ## R9 — 统一 GRID/FREE 空间契约（2026-10-31）
@@ -136,3 +136,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_demo_f
 - `HD2DAnimation` 消费统一动作配置并公开 `action_phase()`、`visual_window_open()` 与 `drain_action_cues()`；`BattlePresentationPlayer` 维护有界 cue 缓冲。
 - **明确约束**：所有时间窗当前仅用于演出、调试与未来技法配置，绝不自行授权实战无敌帧、格挡命中、派生卡或实时输入。真正带规则的动作反应必须另经 BattleModel 版本化动作协议设计和测试。
 - 新增 `checks/test_battle_action_timeline.gd` 和 CI 步骤；保持 CTB、卡牌、费用、交锋结算、原场景和角色素材不变。
+
+### R8 HUD 收口补充
+
+HUD 的 2D CanvasLayer 创建、布局、头像/控制绑定和完整饰件节点树已由 `BattleHUDView.build()` 负责，`HD2DBattle._build_ui()` 只获取返回的兼容句柄。节点名称和事件回调与之前保持一致；真正的战斗决策仍走 Controller/Dispatcher，HUD 不修改模型。
