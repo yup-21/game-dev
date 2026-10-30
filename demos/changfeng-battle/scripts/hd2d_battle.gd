@@ -651,8 +651,16 @@ func _rebuild_actions() -> void:
         command_seen[key] = true
         var command_button := Button.new()
         command_button.text = str(commands[kind])
-        if kind == "PITCH_CARD" or kind == "RESET_TECHNIQUE":
-            command_button.text += "\n" + str(action.get("card_uid", action.get("technique_id", "")))
+        if kind == "PITCH_CARD":
+            var discard_uid := str(action.get("card_uid", ""))
+            var discard_name := "手牌"
+            for held in snap.get("hand", []):
+                if str(held.get("uid", held.get("card_id", ""))) == discard_uid:
+                    discard_name = str(held.get("name", "手牌"))
+                    break
+            command_button.text = "调息 · " + discard_name
+        elif kind == "RESET_TECHNIQUE":
+            command_button.text = "复位 · " + str(action.get("technique_id", ""))
         UITheme.apply_button(command_button)
         command_button.pressed.connect(_submit_legal.bind(action))
         command_actions.add_child(command_button)

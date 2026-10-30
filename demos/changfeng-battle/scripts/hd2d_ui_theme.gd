@@ -41,9 +41,9 @@ static func apply_meter(meter: ProgressBar, fill_color: Color) -> void:
 
 static func command_style(hovered: bool = false) -> StyleBoxFlat:
     var style := StyleBoxFlat.new()
-    style.bg_color = Color("345c52", 0.81) if hovered else Color("172f32", 0.52)
-    style.border_color = Color("d3b77e", 0.68) if hovered else Color("a8bba2", 0.17)
-    style.border_width_bottom = 1
+    style.bg_color = Color("345c52", 0.50) if hovered else Color("142e30", 0.09)
+    style.border_color = Color("d3b77e", 0.59) if hovered else Color.TRANSPARENT
+    style.border_width_bottom = 1 if hovered else 0
     style.set_corner_radius_all(18)
     style.content_margin_left = 14.0
     style.content_margin_right = 14.0
@@ -52,7 +52,7 @@ static func command_style(hovered: bool = false) -> StyleBoxFlat:
     return style
 
 static func apply_button(button: Button) -> void:
-    button.custom_minimum_size = Vector2(120, 36)
+    button.custom_minimum_size = Vector2(120, 33)
     button.add_theme_stylebox_override("normal", command_style())
     button.add_theme_stylebox_override("hover", command_style(true))
     button.add_theme_stylebox_override("pressed", command_style(true))
