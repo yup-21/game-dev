@@ -21,7 +21,7 @@ func _run() -> void:
     var bridge: Texture2D = load(bridge_path) as Texture2D
     var temple: Texture2D = load(temple_path) as Texture2D
     _check(bridge!=null and temple!=null and
-        bridge.get_size()==Vector2i(1586,992) and temple.get_size()==Vector2i(1586,992),
+        bridge.get_size()==Vector2(1586,992) and temple.get_size()==Vector2(1586,992),
         "both exact-layout HD paintings imported at 1586x992")
     var scene: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
