@@ -12,6 +12,7 @@ on:
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
       - 'demos/changfeng-battle/scripts/illustrated_battle_map.gd'
+      - 'demos/changfeng-battle/scripts/rainy_bridge_layout.gd'
       - 'demos/changfeng-battle/assets/scenes/**'
       - 'demos/changfeng-battle/checks/test_illustrated_maps.gd'
       - 'demos/changfeng-battle/scripts/actor_facing.gd'
