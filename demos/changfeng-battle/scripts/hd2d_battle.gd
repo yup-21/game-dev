@@ -587,6 +587,35 @@ func _clear_selection() -> void:
     selected_node = ""
     selected_kind = ""
 
+func _unavailable_card_hint(card: Dictionary, phase: String) -> String:
+    if phase == "CLASH":
+        return "交锋中暂无合法应变；仍然保留已抽到的手牌。"
+    if phase != "ACTION":
+        return "等待当前角色行动；手牌不会被丢弃。"
+    for usage in card.get("usages", []):
+        if str(usage.get("timing", "")) == "ACTION" and str(usage.get("target", {}).get("kind", "")) == "enemy_actor":
+            return "已抽到攻击招式。当前没有合法攻击目标；靠近敌人并检查内息和攻击条件。"
+    return "已抽到此招，当前不满足使用时机、费用或目标条件。"
+
+func _add_visible_hand_card(card: Dictionary, usage: Dictionary, playable: bool) -> void:
+    var uid := str(card.get("uid", card.get("card_id", "")))
+    var usage_id := str(usage.get("id", ""))
+    var definition_id := str(card.get("definition_id", ""))
+    var cost: Dictionary = usage.get("quoted_cost", {})
+    var button := CardUI.make_card(uid, definition_id,
+        str(card.get("name", "招式")), str(usage.get("name", usage_id)), cost,
+        playable and selected_card_uid == uid and selected_usage_id == usage_id)
+    button.set_meta("usage_id", usage_id)
+    button.set_meta("display_only", not playable)
+    if playable:
+        button.pressed.connect(_select_card.bind(uid, usage_id))
+        _bind_card_feedback(button)
+    else:
+        button.disabled = true
+        button.modulate = Color(0.75, 0.80, 0.82, 0.87)
+        button.tooltip_text += "\n" + _unavailable_card_hint(card, str(snap.get("phase", "")))
+    card_actions.add_child(button)
+
 func _rebuild_actions() -> void:
     if card_actions == null or command_actions == null:
         return
@@ -597,30 +626,43 @@ func _rebuild_actions() -> void:
     var available: bool = _player_decision() and not bool(snap.get("animation_pending", false)) and str(snap.get("outcome", "playing")) == "playing"
     var owner = model.state.get_actor(_decision_owner())
     var actor_name := str(owner.name) if owner != null else "等待"
-    selection_label.text = ("执剑者 · " + actor_name + "    选择招式后点击亮起的目标；右键取消") if available else "静候敌方应变 / 动画结算"
-    if not available:
-        return
-    # A pass-only reaction is handled by the automatic priority protocol,
-    # not exposed as a manual button that the player must click.
-    if str(snap.get("phase", "")) == "CLASH" and ResponsePolicy.should_auto_pass(
-            "CLASH", false, legals):
-        return
-
+    var pass_only := str(snap.get("phase", "")) == "CLASH" and ResponsePolicy.should_auto_pass(
+        "CLASH", false, legals)
+    # Never use legal_actions as the source of visible hand cards. That would
+    # hide drawn attacks when the opponent starts outside their attack range.
+    var displayed_count := 0
+    var playable_count := 0
     for card in snap.get("hand", []):
         var uid := str(card.get("uid", card.get("card_id", "")))
-        for usage in card.get("usages", []):
-            var usage_id := str(usage.get("id", ""))
-            if _find_actions(uid, usage_id).is_empty():
+        var displayed := false
+        if available and not pass_only:
+            for usage in card.get("usages", []):
+                if _find_actions(uid, str(usage.get("id", ""))).is_empty():
+                    continue
+                _add_visible_hand_card(card, usage, true)
+                displayed = true
+                playable_count += 1
+        if not displayed:
+            # One disabled tile per physical card, even if it defines several
+            # usages. Prefer the ACTION face over reaction-only alternatives.
+            var choices: Array = card.get("usages", [])
+            if choices.is_empty():
                 continue
-            var cost: Dictionary = usage.get("quoted_cost", {})
-            var definition_id := str(card.get("definition_id", card.get("card_id", "")))
-            var button := CardUI.make_card(uid, definition_id,
-                str(card.get("name", "招式")), str(usage.get("name", usage_id)), cost,
-                selected_card_uid == uid and selected_usage_id == usage_id)
-            button.set_meta("usage_id", usage_id)
-            button.pressed.connect(_select_card.bind(uid, usage_id))
-            card_actions.add_child(button)
-            _bind_card_feedback(button)
+            var fallback: Dictionary = choices[0]
+            for usage in choices:
+                if str(usage.get("timing", "")) == "ACTION":
+                    fallback = usage
+                    break
+            _add_visible_hand_card(card, fallback, false)
+        displayed_count += 1
+    var hint := "%s · 手牌 %d 张" % [actor_name, displayed_count]
+    if available and not pass_only:
+        hint += "    选择亮起的招式，再点击目标" if playable_count > 0 else "    灰色牌已抽到，靠近目标或满足条件后可出"
+    else:
+        hint += "    当前等待应变／动画，手牌仍保留"
+    selection_label.text = hint
+    if not available or pass_only:
+        return
 
     var seen_abilities: Dictionary = {}
     for action in legals:

@@ -16,6 +16,7 @@ on:
       - 'demos/changfeng-battle/checks/test_hd2d_wuxia_ui.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_ui_assets.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_unified_hud.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_hand_visibility.gd'
       - 'demos/changfeng-battle/scripts/hd2d_card_art.gd'
       - 'demos/changfeng-battle/scripts/card_system.gd'
       - 'demos/changfeng-battle/scripts/combat_resolver.gd'
@@ -56,6 +57,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_ui_assets.gd
       - name: Check unified borderless HUD structure
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_unified_hud.gd
+      - name: Check drawn attacks remain visible outside attack range
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_hand_visibility.gd
       - name: Check clickable hand and animation request lifecycle
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
       - name: Verify automatic empty-response skips and authoritative clash resolution
