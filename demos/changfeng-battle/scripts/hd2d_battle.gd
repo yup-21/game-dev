@@ -324,11 +324,11 @@ func _build_ui() -> void:
     heading.text = "长 风 浮 生 录     /     雨夜残镖" if story_encounter else "长 风 浮 生 录     /     断桥听风"
     heading.add_theme_font_size_override("font_size", 25)
     heading.add_theme_color_override("font_color", UITheme.GOLD)
-    banner_text.add_child(heading)
+    column.add_child(heading)
     status_label = Label.new()
     status_label.add_theme_font_size_override("font_size", 15)
     status_label.add_theme_color_override("font_color", UITheme.PAPER)
-    banner_text.add_child(status_label)
+    column.add_child(status_label)
     help_label = Label.new()
     help_label.text = "左键选目标  ·  Q 普攻  ·  G 格挡  ·  Space 收势/Pass  ·  右键取消  ·  R 重开  ·  Esc 返回"
     help_label.add_theme_font_size_override("font_size", 12)
@@ -366,7 +366,7 @@ func _build_ui() -> void:
         var actor_row := HBoxContainer.new()
         actor_row.custom_minimum_size.y = 61
         actor_row.add_theme_constant_override("separation", 9)
-        roster_column.add_child(actor_row)
+        roster_list.add_child(actor_row)
         var portrait_icon := TextureRect.new()
         portrait_icon.custom_minimum_size = Vector2(50, 54)
         portrait_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

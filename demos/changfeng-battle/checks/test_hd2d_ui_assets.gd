@@ -27,19 +27,17 @@ func _run() -> void:
     root.add_child(scene)
     await process_frame
     var actions = scene.get("card_actions")
-    _check(actions is HBoxContainer and actions.get_parent() is ScrollContainer,
-        "card hand has no horizontal scroll")
+    _check(actions is HFlowContainer and actions.get_parent() is ScrollContainer,
+        "card hand container not wired to scroll panel")
     var painted_buttons := 0
     if actions != null:
         for child in actions.get_children():
             if child is Button and child.has_meta("card_uid"):
                 painted_buttons += 1
-                _check(child.icon != null, "legal card button missing original icon")
+                _check(child.get_child_count() > 0 and child.get_child(0) is TextureRect\n                    and (child.get_child(0) as TextureRect).texture != null,\n                    "legal card button missing illustrated texture")
     _check(painted_buttons > 0, "no playable illustrated cards")
-    _check(scene.get("roster_hp_bars").size() == scene.get("snap").get("actors", []).size(),
-        "roster health bar count does not match actors")
-    _check(scene.get("roster_qi_bars").size() == scene.get("snap").get("actors", []).size(),
-        "roster qi bar count does not match actors")
+    _check(scene.get("roster_bars").size() == scene.get("snap").get("actors", []).size(),
+        "roster meter count does not match actors")
     _check(scene.get("model") != null, "original battle model was not retained")
     print("WUXIA_UI_RESULT checks=%d failures=%d painted=%d" % [
         checks, failures, painted_buttons])
