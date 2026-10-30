@@ -48,7 +48,7 @@ func _run() -> void:
     var enemy = m.state.get_actor(1)
     _check(a.learned_schools.size() == 3 and a.school_id == "wind_sword",
         "actor has learned choices but starts with own equipped school")
-    _check(m.cards.definitions.has("tf_probe") and m.cards.definitions.has("wind_slash"),
+    _check(m.cards.definitions.has("tf_probe") and m.cards.definitions.has("wind_flow"),
         "learned schools are registered before a switch")
     var legal: Array = m.legal_actions(0)
     _check(_has(legal,"SWITCH_SCHOOL","tingfeng") and _has(legal,"SWITCH_SCHOOL","step"),
