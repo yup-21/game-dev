@@ -67,6 +67,12 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 				state.terrain=baked.baked_terrain()
 				state.map_definition_path=str(options.map_definition_path)
 	var party_valid: bool=map_valid and (not options.has("combatants") or state.configure_combatants(options.combatants))
+	var configured_mode: String=str(options.get("spatial_mode","GRID"))
+	if configured_mode not in ["GRID","FREE"] or (configured_mode=="FREE" and state.map_definition_path.is_empty()):
+		party_valid=false
+		state.party_error="Invalid battle spatial mode or missing painted map"
+	else:
+		state.spatial_mode=configured_mode
 	if party_valid and not state.map_definition_path.is_empty():
 		state.spatial=Spatial.new(state.map_definition_path)
 		if not state.spatial.bake.error.is_empty():
@@ -248,7 +254,7 @@ func snapshot(observer_id: int = 0) -> Dictionary:
 		"active_id":state.active_id,"reaction":state.reaction_window,"responder_id":rules.responder_id(),
 		"battle_id":state.battle_id,"revision":state.revision,"request_version":state.revision,"event_seq":state.event_seq,
 		"animation_pending":state.animation_pending,"ticket":state.animation_ticket,"seed":state.seed,"round_no":state.round_no,
-		"outcome":state.outcome,"winner_id":state.winner_id,"winning_team":state.winning_team,"terrain":state.terrain.duplicate(true),"actors":actors,"hand":hand,
+		"outcome":state.outcome,"spatial_mode":state.spatial_mode,"winner_id":state.winner_id,"winning_team":state.winning_team,"terrain":state.terrain.duplicate(true),"actors":actors,"hand":hand,
 		"attack":state.attack.duplicate(true),"clash":clash,"logs":state.logs.duplicate(true),"phase_history":state.phase_history.duplicate(true)}
 
 func school_options() -> Array:
@@ -262,7 +268,7 @@ func decision_context(actor_id: int) -> Dictionary:
 
 ## PREVIEW only: actual MOVE_FREE requests always pass CombatRules.validate().
 func preview_free_path(actor_id: int, target_position: Vector2) -> PackedVector2Array:
-	if state.spatial == null:
+	if state.spatial == null or state.spatial_mode!="FREE":
 		return PackedVector2Array()
 	var actor=state.get_actor(actor_id)
 	if actor==null or actor.hp_u<=0:
