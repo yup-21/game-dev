@@ -80,6 +80,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_baked_bridge_grid.gd
       - name: Validate continuous battle movement and attack approach
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_space.gd
+      - name: Validate committed free movement and rollback
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_move_command.gd
       - name: Validate 2D painted terrain and story character registration
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_illustrated_maps.gd
       - name: Check original character art in painted battle
