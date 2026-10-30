@@ -20,6 +20,9 @@ const ChargeRail = preload("res://scripts/hd2d_ctb_rail.gd")
 const BattleHandView = preload("res://scripts/battle_hand_view.gd")
 const BattleHUDStatus = preload("res://scripts/battle_hud_status.gd")
 const PresentationCoordinator = preload("res://scripts/battle_presentation_coordinator.gd")
+const BattleWorld2D = preload("res://scripts/battle_world_2d.gd")
+const BattlePresenter = preload("res://scripts/battle_presentation_player.gd")
+const BattleHUDView = preload("res://scripts/battle_hud_view.gd")
 var model = Model.new()
 var story_encounter := false
 var observer_id := 0
@@ -27,6 +30,9 @@ var result_reported := false
 var ai = EnemyAI.new()
 var animation_driver = Animator.new()
 var presentation = PresentationCoordinator.new()
+var presentation_player
+var world = BattleWorld2D.new()
+var hud_view = BattleHUDView.new()
 var effects_driver
 var continuous_preview
 var continuous_preview_enabled := false
@@ -81,14 +87,21 @@ func _ready() -> void:
     observer_id = _first_player_id()
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(_decision_owner())
+    presentation_player = BattlePresenter.new(animation_driver, presentation)
     _build_world()
     if illustrated_map != null:
         continuous_preview = ContinuousPreview.new()
         illustrated_map.scene_root.add_child(continuous_preview)
     # 3D terrain, procedural scenery, and far-away backdrop are removed.
     # Only 2D painted ground and 2D sprite action frames are visible.
-    effects_driver = VFX.new(illustrated_map.scene_root)
+    presentation_player.attach(illustrated_map.scene_root)
+    effects_driver = presentation_player.effects
     _build_ui()
+    hud_view.bind_controls({"status": status_label, "auto": auto_button,
+        "spatial": spatial_mode_button, "roster_labels": roster_labels,
+        "roster_bars": roster_bars, "rail": charge_rail,
+        "commands": command_actions, "veil": context_veil,
+        "scroll": command_scroll, "clash": clash_label, "phase": phase_label})
     _refresh()
     _update_status()
 
@@ -122,30 +135,17 @@ func _report_story_result() -> void:
     result_reported = true
 
 func _build_world() -> void:
-    camera = Camera2D.new()
-    camera.name = "BattleCamera2D"
-    camera.position = Vector2.ZERO
-    add_child(camera)
-    camera.make_current()
-    illustrated_map = IllustratedMap.new(story_encounter,
-        str(model.state.map_definition_path))
-    add_child(illustrated_map)
-    for actor in snap.get("actors", []):
-        _create_actor(actor)
+    world.build(self, story_encounter, str(model.state.map_definition_path),
+        snap.get("actors", []), animation_driver)
+    camera = world.camera
+    illustrated_map = world.illustrated_map
+    actor_nodes = world.actor_nodes
+    visual_cells = world.visual_cells
+    movement_paths = world.movement_paths
+    continuous_paths = world.continuous_paths
 
 func _create_actor(actor: Dictionary) -> void:
-    if illustrated_map == null:
-        return
-    var id := int(actor.id)
-    if actor_nodes.has(id):
-        return
-    var sprite: Sprite2D = illustrated_map.add_actor(actor,
-        ArtCatalog.sheet_for_actor(id, int(actor.get("team_id", 0)) != 0))
-    sprite.set_meta("faces_left_unflipped", ArtCatalog.sheet_faces_left(id))
-    actor_nodes[id] = illustrated_map.actors[id]
-    visual_cells[id] = Vector2i(actor.cell)
-    animation_driver.register_actor(id, sprite,
-        Vector2i(actor.get("facing", Vector2i.RIGHT)))
+    world.add_actor(actor, animation_driver)
 
 func _refresh_target_markers() -> void:
     if illustrated_map == null:
@@ -494,7 +494,7 @@ func _request_fan_layout() -> void:
 
 func _layout_fan_cards() -> void:
     fan_layout_pending = false
-    BattleHandView.layout_fan(card_actions, Callable(self, "_is_selected_card"))
+    hud_view.layout_hand(card_actions, Callable(self, "_is_selected_card"))
 
 func _on_roster_avatar_input(event: InputEvent, id: int) -> void:
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -701,7 +701,7 @@ func _rebuild_actions() -> void:
         "CLASH", false, legals)
     # Never use legal_actions as the source of visible hand cards. That would
     # hide drawn attacks when the opponent starts outside their attack range.
-    var hand_counts: Dictionary = BattleHandView.render_physical_hand(
+    var hand_counts: Dictionary = hud_view.show_hand(
         snap.get("hand", []), available, pass_only,
         Callable(self, "_find_actions"), Callable(self, "_can_approach_card"),
         Callable(self, "_can_free_movement_card"),
@@ -969,15 +969,10 @@ func _action_at(cell: Vector2i) -> Dictionary:
 func _update_status() -> void:
     if status_label == null or snap.is_empty():
         return
-    BattleHUDStatus.render(snap, _decision_owner(),
+    hud_view.show_status(snap, _decision_owner(),
         model.state.get_actor(_decision_owner()),
         story_encounter, auto_battle, str(model.state.spatial_mode),
-        model.state.spatial != null, _player_decision(), animation_ticket,
-        {"status": status_label, "auto": auto_button,
-        "spatial": spatial_mode_button, "roster_labels": roster_labels,
-        "roster_bars": roster_bars, "rail": charge_rail,
-        "commands": command_actions, "veil": context_veil,
-        "scroll": command_scroll, "clash": clash_label, "phase": phase_label})
+        model.state.spatial != null, _player_decision(), animation_ticket)
 
 func _auto_pass_unavailable_reactions() -> bool:
     # Work entirely through the authoritative, versioned submit pipeline.
@@ -1031,60 +1026,10 @@ func _process(delta: float) -> void:
             sin(elapsed * 71.0) * 10.0, sin(elapsed * 89.0) * 6.0) * camera_shake
     _update_cursor()
     _update_continuous_preview()
-    var moving: Dictionary = {}
-    for actor in snap.get("actors", []):
-        var id := int(actor.id)
-        if actor_nodes.has(id):
-            var node: Node2D = actor_nodes[id] if illustrated_map != null else null
-            if illustrated_map != null:
-                if continuous_paths.has(id):
-                    var free_steps: Array = continuous_paths[id]
-                    var next_position: Vector2 = Vector2(free_steps[0])
-                    if node.position.distance_to(next_position) <= 1.0:
-                        free_steps.pop_front()
-                    else:
-                        var heading: Vector2 = next_position - node.position
-                        animation_driver.set_facing(id, Facing.from_delta(Vector2i(roundi(heading.x), roundi(heading.y)), animation_driver.facing_for(id)))
-                        node.position = node.position.move_toward(next_position, delta * 160.0)
-                        if node.position.distance_to(next_position) <= 1.0:
-                            node.position = next_position
-                            free_steps.pop_front()
-                    if free_steps.is_empty():
-                        continuous_paths.erase(id)
-                        visual_cells[id] = Vector2i(actor.cell)
-                    else:
-                        continuous_paths[id] = free_steps
-                    moving[id] = continuous_paths.has(id)
-                    continue
-                var path2: Array = movement_paths.get(id, [])
-                var dest2: Vector2 = Vector2(actor.get("position", illustrated_map.point_for_cell(Vector2i(actor.cell))))
-                if not path2.is_empty():
-                    var step2 := Vector2i(path2[0])
-                    animation_driver.set_facing(id, Facing.from_delta(step2 - Vector2i(visual_cells.get(id, actor.cell)), animation_driver.facing_for(id)))
-                    dest2 = illustrated_map.point_for_cell(step2)
-                node.position = node.position.move_toward(dest2, delta * 160.0)
-                var walking2 := node.position.distance_to(dest2) > 1.0
-                if not walking2 and not path2.is_empty():
-                    node.position = dest2
-                    visual_cells[id] = Vector2i(path2.pop_front())
-                    if path2.is_empty(): movement_paths.erase(id)
-                    else: movement_paths[id] = path2
-                moving[id] = walking2 or not path2.is_empty()
-                continue
-    animation_driver.update(delta, moving)
-    if illustrated_map != null:
-        for actor in snap.get("actors", []):
-            var id := int(actor.id)
-            var role: Node2D = actor_nodes.get(id, null)
-            if role != null:
-                role.visible = float(actor.hp) > 0
-                role.z_index = clampi(roundi(role.position.y / 20.0), 0, 100)
-    if effects_driver != null:
-        effects_driver.update(delta)
+    var moving: Dictionary = world.tick(delta, snap, animation_driver)
+    var finished_ticket: int = presentation_player.tick(delta, moving,
+        world.paths_pending())
     if animation_ticket >= 0:
-        var finished_ticket: int = presentation.advance(delta,
-            animation_driver.remaining_seconds(),
-            not movement_paths.is_empty() or not continuous_paths.is_empty())
         animation_time = presentation.wait_remaining
         if finished_ticket >= 0:
             animation_ticket = -1
@@ -1137,36 +1082,13 @@ func _accept(result: Dictionary) -> void:
                         actor_nodes[role_id].position=combatant.position
                         visual_cells[role_id]=Vector2i(combatant.cell)
     _cue_events(result.get("events", []))
-    # Presentation follows each real path waypoint, rather than the straight
-    # chord between old and final grid cells. Facing tracks each segment.
-    for event in result.get("events", []):
-        if str(event.get("type", "")) == "MOVE":
-            var id: int=int(event.get("actor_id",-1))
-            if actor_nodes.has(id):
-                continuous_paths.erase(id)
-                visual_cells[id]=Vector2i(event.get("from",Vector2i.ZERO))
-                movement_paths[id]=event.get("path",[]).duplicate()
-        elif str(event.get("type", "")) == "MOVE_FREE":
-            var id: int=int(event.get("actor_id",-1))
-            if actor_nodes.has(id) and illustrated_map != null:
-                movement_paths.erase(id)
-                var steps: Array = []
-                for point in event.get("path", PackedVector2Array()):
-                    steps.append(Vector2(point))
-                if not steps.is_empty():
-                    steps.pop_front()
-                if not steps.is_empty():
-                    continuous_paths[id] = steps
-    animation_driver.events(result.get("events", []))
-    if effects_driver != null:
-        effects_driver.handle_events(result.get("events", []), actor_nodes)
+    # The world consumes movement paths; presentation only owns visual cues.
+    world.queue_motion_events(result.get("events", []))
+    presentation_player.consume(result.get("events", []), actor_nodes)
     _clear_selection()
     _refresh()
-    if snap.get("animation_pending", false):
-        presentation.begin(int(result.get("ticket", snap.get("ticket", -1))),
-            animation_driver.remaining_seconds())
-    else:
-        presentation.cancel()
+    presentation_player.begin(int(result.get("ticket", snap.get("ticket", -1))),
+        bool(snap.get("animation_pending", false)))
     animation_ticket = presentation.ticket
     animation_time = presentation.wait_remaining
     _refresh_target_markers()
@@ -1177,17 +1099,8 @@ func _skip_presentation() -> void:
     # a second attack or apply an effect; only acknowledge the active ticket.
     if animation_ticket < 0:
         return
-    for actor in model.state.actors:
-        if not actor_nodes.has(actor.id):
-            continue
-        actor_nodes[actor.id].position = Vector2(actor.position)
-        visual_cells[actor.id] = Vector2i(actor.cell)
-    movement_paths.clear()
-    continuous_paths.clear()
-    animation_driver.reset()
-    if effects_driver != null:
-        effects_driver.clear()
-    var ticket_to_ack: int = presentation.skip()
+    world.snap_to_authority(model.state.actors, animation_driver)
+    var ticket_to_ack: int = presentation_player.skip()
     animation_ticket = -1
     animation_time = 0.0
     if ticket_to_ack >= 0:
@@ -1232,7 +1145,7 @@ func _hover_cell() -> Vector2i:
         get_viewport().get_mouse_position(), snap.get("terrain", {}))
 
 func _screen_to_battle(screen: Vector2) -> Vector2:
-    return illustrated_map.to_battle_point(screen)
+    return world.to_battle_point(screen)
 
 func _update_cursor() -> void:
     hovered = _hover_cell()
@@ -1355,23 +1268,13 @@ func _unhandled_input(event: InputEvent) -> void:
                     return
                 model.reset(2026, -1, "tingfeng", _quick_character_options())
                 _set_auto_battle(false)
-                animation_driver.reset()
-                if effects_driver != null:
-                    effects_driver.clear()
+                presentation_player.reset_battle()
                 _clear_selection()
-                presentation.reset_battle()
                 animation_ticket = -1
                 animation_time = 0.0
                 _refresh()
                 _refresh_target_markers()
-                movement_paths.clear()
-                continuous_paths.clear()
-                for actor in snap.get("actors", []):
-                    var id: int=int(actor.id)
-                    actor_nodes[id].position = (Vector2(actor.get("position",
-                        illustrated_map.point_for_cell(Vector2i(actor.cell)))))
-                    visual_cells[id]=Vector2i(actor.cell)
-                    animation_driver.set_facing(id,Vector2i(actor.facing))
+                world.snap_to_authority(model.state.actors, animation_driver)
 
             KEY_ESCAPE:
                 if story_encounter and snap.get("outcome", "playing") != "playing":
