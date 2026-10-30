@@ -2,6 +2,8 @@ extends Node3D
 ## HD-2D vertical slice. All tactical state and legality remain in BattleModel.
 ## Run res://battle_hd2d.tscn explicitly; the original 2D scene is untouched.
 const Model = preload("res://scripts/battle_model.gd")
+const ContinuousSpace = preload("res://scripts/battle_spatial_service.gd")
+const ContinuousPreview = preload("res://scripts/continuous_move_preview.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
 const Scenery = preload("res://scripts/hd2d_scenery.gd")
 const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
@@ -26,6 +28,9 @@ var result_reported := false
 var ai = EnemyAI.new()
 var animation_driver = Animator.new()
 var effects_driver
+var continuous_space
+var continuous_preview: Node2D
+var continuous_preview_enabled := false
 var illustrated_map: CanvasLayer
 var camera: Camera3D
 var actor_nodes: Dictionary = {}
@@ -82,6 +87,10 @@ func _ready() -> void:
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(_decision_owner())
     _build_world()
+    if illustrated_map != null:
+        continuous_space = ContinuousSpace.new()
+        continuous_preview = ContinuousPreview.new()
+        illustrated_map.scene_root.add_child(continuous_preview)
     # 3D terrain, procedural scenery, and far-away backdrop are removed.
     # Only 2D painted ground and 2D sprite action frames are visible.
     effects_driver = VFX.new(self, camera)
@@ -1142,6 +1151,7 @@ func _process(delta: float) -> void:
     else:
         camera.position = camera_base
     _update_cursor()
+    _update_continuous_preview()
     var moving: Dictionary = {}
     for actor in snap.get("actors", []):
         var id := int(actor.id)
@@ -1338,7 +1348,32 @@ func _update_cursor() -> void:
     if cursor_mesh.visible:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
 
+func _update_continuous_preview() -> void:
+    if not continuous_preview_enabled or continuous_space == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
+        if continuous_preview != null:
+            continuous_preview.clear_preview()
+        return
+    var actor = model.state.get_actor(_decision_owner())
+    if actor == null:
+        continuous_preview.clear_preview()
+        return
+    var start: Vector2 = illustrated_map.point_for_cell(Vector2i(actor.cell))
+    var goal: Vector2 = get_viewport().get_mouse_position()
+    var path: PackedVector2Array = continuous_space.find_path(start, goal, 8.0)
+    if path.is_empty():
+        continuous_preview.clear_preview()
+        return
+    var cost: float = continuous_space.path_length(path)
+    # Preview only: legacy MOVE commands still require a grid target.
+    continuous_preview.show_preview(path, cost, true)
+
 func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_P:
+        continuous_preview_enabled = not continuous_preview_enabled
+        if not continuous_preview_enabled and continuous_preview != null:
+            continuous_preview.clear_preview()
+        get_viewport().set_input_as_handled()
+        return
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_A:
         _toggle_auto_battle()
         get_viewport().set_input_as_handled()
