@@ -86,6 +86,10 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_move_and_attack.gd
       - name: Check live Sprite2D automatic approach UI commands
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_move_and_attack_ui.gd
+      - name: Validate two authoritative spatial modes and live transitions
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_dual_spatial_mode.gd
+      - name: Validate continuous AI duel and six-character encounter
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_space_ai.gd
       - name: Validate 2D painted terrain and story character registration
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_illustrated_maps.gd
       - name: Check original character art in painted battle
