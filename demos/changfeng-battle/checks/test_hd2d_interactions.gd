@@ -106,8 +106,7 @@ func _key(code: Key) -> void:
         await _frames()
 
 func _screen(cell: Vector2i) -> Vector2:
-    var camera: Camera3D = scene.get("camera")
-    return camera.unproject_position(Vector3((cell.x - 7.0) * CELL_SIZE, 0.0, (cell.y - 4.5) * CELL_SIZE))
+    return scene.get("illustrated_map").point_for_cell(cell)
 
 func _visible_rect(control: Control) -> Rect2:
     var visible := control.get_global_rect().intersection(root.get_visible_rect())

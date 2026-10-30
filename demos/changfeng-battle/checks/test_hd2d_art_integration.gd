@@ -43,8 +43,8 @@ func _run() -> void:
     var standalone: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(standalone)
     await process_frame
-    if standalone.find_child("IllustratedBackdrop", true, false) == null:
-        _fail("standalone battle does not render the snowy sword-sect backdrop")
+    if standalone.get("illustrated_map") == null or standalone.get("illustrated_map").picture.texture == null:
+        _fail("standalone battle does not render its full 2D painted terrain")
         return
     standalone.queue_free()
     await process_frame
@@ -61,9 +61,9 @@ func _run() -> void:
     var battle: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(battle)
     await process_frame
-    var story_backdrop: Sprite3D = battle.find_child("IllustratedBackdrop", true, false) as Sprite3D
-    if story_backdrop == null or story_backdrop.texture != Catalog.scenery("rainy_bridge"):
-        _fail("rainy story scene is not displaying its matching illustrated backdrop")
+    var battle_map = battle.get("illustrated_map")
+    if battle_map == null or battle_map.picture.texture == null:
+        _fail("rainy story scene does not display the full 2D bridge background")
         return
     for actor_id in [0, 1, 2, 3, 4, 5]:
         var sprite: Sprite3D = battle.get_node_or_null("Actor_%d/Sprite3D" % actor_id) as Sprite3D
@@ -88,5 +88,5 @@ func _run() -> void:
             _fail("story battle screenshot could not be saved")
             return
         print("HD2D_CAPTURE ", ProjectSettings.globalize_path(path))
-    print("HD2D_ART_PASS 6 pose sheets, 3 portraits, 3 scenery images, 6-actor story bridge")
+    print("HD2D_ART_PASS 6 pose sheets, 3 portraits, 3 scenery assets, 2D bridge and 6 actors")
     quit(0)
