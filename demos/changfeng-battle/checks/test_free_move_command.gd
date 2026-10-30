@@ -17,7 +17,7 @@ func _initialize() -> void:
 
 func _new_model():
     var model = Model.new()
-    model.reset(2026,-1,"tingfeng",{"map_definition_path":MapBake.DEFAULT_PATH})
+    model.reset(2026,-1,"tingfeng",{"map_definition_path":MapBake.DEFAULT_PATH,"spatial_mode":"FREE"})
     return model
 
 func _run() -> void:
