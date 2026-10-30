@@ -308,7 +308,7 @@ func _validate_move_and_attack(req: Dictionary) -> Dictionary:
 	if kind!="BASIC_ATTACK":
 		min_distance=maxi(1,int(usage.target.get("min_distance",1)))
 		max_distance=int(usage.get("attack_profile",{}).get("range",usage.target.get("max_distance",1)))
-		line_required=bool(usage.target.get("line_of_sight",false))
+		line_required=true # world-space attacks require an unobstructed sightline
 	if max_distance < min_distance:
 		return failure("INVALID_TARGET","武学攻击距离定义无效")
 	var min_range: float=float(min_distance-1)*world_unit
@@ -380,3 +380,19 @@ func _basic_attack_in_range(actor,target) -> bool:
 		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
 	spatial.set_actors(positions)
 	return spatial.attack_in_range(actor.position,target.position,0.0,unit,8.0,8.0) and spatial.attack_line_clear(actor.position,target.position,[actor.id,target.id])
+
+## Geometry used by directly played cards and abilities in FREE mode.
+## `MOVE_AND_ATTACK` uses the same range convention for approach plans.
+func free_target_legal(actor,target,usage: Dictionary) -> bool:
+	if state.spatial_mode!="FREE" or state.spatial==null: return false
+	if not state.is_hostile(actor.id,target.id) or target.hp_u<=0: return false
+	var maximum: int=int(usage.get("attack_profile",{}).get("range",usage.get("target",{}).get("max_distance",1)))
+	var minimum: int=int(usage.get("target",{}).get("min_distance",1))
+	if minimum<1 or maximum<minimum: return false
+	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var spatial=state.spatial
+	var positions: Dictionary={}
+	for combatant in state.actors:
+		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
+	spatial.set_actors(positions)
+	return spatial.attack_in_range(actor.position,target.position,float(minimum-1)*unit,float(maximum)*unit,8.0,8.0) and spatial.attack_line_clear(actor.position,target.position,[actor.id,target.id])
