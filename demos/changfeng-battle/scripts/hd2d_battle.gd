@@ -181,10 +181,11 @@ func _build_world() -> void:
     illustrated_map = IllustratedMap.new(story_encounter,str(model.state.map_definition_path))
     add_child(illustrated_map)
     for actor in snap.get("actors", []):
-        _create_actor(actor)
-        var sprite: Sprite3D=actor_nodes[int(actor.id)].get_node("Sprite3D") as Sprite3D
-        illustrated_map.add_actor(actor,sprite.texture)
-        actor_nodes[int(actor.id)].visible=false
+        var id := int(actor.id)
+        var sprite: Sprite2D = illustrated_map.add_actor(actor, ArtCatalog.sheet_for_actor(id, int(actor.get("team_id", 0)) != 0))
+        actor_nodes[id] = illustrated_map.actors[id]
+        visual_cells[id] = Vector2i(actor.cell)
+        animation_driver.register_actor(id, sprite, Vector2i(actor.get("facing", Vector2i.RIGHT)))
     return
 
     var river := _box("River", Vector3(0, -0.35, 0), Vector3(3.3, 0.18, 20), Color("397e82"), 0.22)
@@ -339,7 +340,8 @@ func _create_actor(actor: Dictionary) -> void:
     facing_arrow.rotation.y = Facing.yaw(Vector2i(actor.get("facing",Vector2i.RIGHT)))
     root.add_child(facing_arrow)
     visual_cells[actor_id] = Vector2i(actor.cell)
-    animation_driver.register_actor(int(actor.id), sprite, Vector2i(actor.get("facing",Vector2i.RIGHT)))
+    # Legacy 3D geometry is unreachable in illustrated-map mode.
+    # Native Sprite2D registration happens in the painted-map branch.
     var nameplate := Label3D.new()
     nameplate.name = "Nameplate"
     nameplate.text = str(actor.get("name", "江湖客"))
@@ -1156,7 +1158,24 @@ func _process(delta: float) -> void:
     for actor in snap.get("actors", []):
         var id := int(actor.id)
         if actor_nodes.has(id):
-            var node: Node3D = actor_nodes[id]
+            var node: Node2D = actor_nodes[id] if illustrated_map != null else null
+            if illustrated_map != null:
+                var path2: Array = movement_paths.get(id, [])
+                var dest2: Vector2 = illustrated_map.point_for_cell(Vector2i(actor.cell))
+                if not path2.is_empty():
+                    var step2 := Vector2i(path2[0])
+                    animation_driver.set_facing(id, Facing.from_delta(step2 - Vector2i(visual_cells.get(id, actor.cell)), animation_driver.facing_for(id)))
+                    dest2 = illustrated_map.point_for_cell(step2)
+                node.position = node.position.move_toward(dest2, delta * 160.0)
+                var walking2 := node.position.distance_to(dest2) > 1.0
+                if not walking2 and not path2.is_empty():
+                    node.position = dest2
+                    visual_cells[id] = Vector2i(path2.pop_front())
+                    if path2.is_empty(): movement_paths.erase(id)
+                    else: movement_paths[id] = path2
+                moving[id] = walking2 or not path2.is_empty()
+                continue
+            var legacy_node: Node3D = actor_nodes[id]
             var path: Array = movement_paths.get(id,[])
             var destination := _world(Vector2i(actor.cell))
             if not path.is_empty():
@@ -1164,28 +1183,27 @@ func _process(delta: float) -> void:
                 var previous_cell: Vector2i=Vector2i(visual_cells.get(id,Vector2i(actor.cell)))
                 animation_driver.set_facing(id,Facing.from_delta(next_cell-previous_cell,animation_driver.facing_for(id)))
                 destination=_world(next_cell)
-            node.position = node.position.move_toward(destination, delta * 5.5)
-            var still_moving: bool=node.position.distance_to(destination)>0.035
+            legacy_node.position = legacy_node.position.move_toward(destination, delta * 5.5)
+            var still_moving: bool=legacy_node.position.distance_to(destination)>0.035
             if not still_moving and not path.is_empty():
-                node.position=destination
+                legacy_node.position=destination
                 visual_cells[id]=Vector2i(path.pop_front())
                 if path.is_empty(): movement_paths.erase(id)
                 else: movement_paths[id]=path
             moving[id] = still_moving or not path.is_empty()
-            var sprite: Sprite3D = node.get_node_or_null("Sprite3D") as Sprite3D
+            var sprite: Sprite3D = legacy_node.get_node_or_null("Sprite3D") as Sprite3D
             if sprite != null:
                 sprite.position.y = 1.0 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
     animation_driver.update(delta, moving)
-    if illustrated_map!=null:
-        for actor in snap.get("actors",[]):
-            var id: int=int(actor.id)
-            var root: Node3D=actor_nodes.get(id,null)
-            if root==null: continue
-            var sprite: Sprite3D=root.get_node("Sprite3D") as Sprite3D
-            var grid := Vector2(root.position.x/CELL+7.0,root.position.z/CELL+4.5)
-            illustrated_map.update_actor(id,grid,sprite.frame,sprite.flip_h,float(actor.hp)>0)
+    if illustrated_map != null:
+        for actor in snap.get("actors", []):
+            var id := int(actor.id)
+            var role: Node2D = actor_nodes.get(id, null)
+            if role != null:
+                role.visible = float(actor.hp) > 0
+                role.z_index = clampi(roundi(role.position.y / 20.0), 0, 100)
     for id in actor_nodes:
-        var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow")
+        var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow") if illustrated_map == null else null
         if arrow != null:
             arrow.rotation.y=Facing.yaw(animation_driver.facing_for(int(id)))
     if effects_driver != null:
@@ -1434,10 +1452,10 @@ func _unhandled_input(event: InputEvent) -> void:
                 movement_paths.clear()
                 for actor in snap.get("actors", []):
                     var id: int=int(actor.id)
-                    actor_nodes[id].position = _world(actor.cell)
+                    actor_nodes[id].position = illustrated_map.point_for_cell(Vector2i(actor.cell)) if illustrated_map != null else _world(actor.cell)
                     visual_cells[id]=Vector2i(actor.cell)
                     animation_driver.set_facing(id,Vector2i(actor.facing))
-                    var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow")
+                    var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow") if illustrated_map == null else null
                     if arrow != null: arrow.rotation.y=Facing.yaw(Vector2i(actor.facing))
             KEY_ESCAPE:
                 if story_encounter and snap.get("outcome", "playing") != "playing":
