@@ -63,6 +63,10 @@ func _run() -> void:
     _check(m.state.outcome=="playing" and m.state.map_definition_path==path
         and m.state.terrain==baked.terrain,
         "BattleModel consumes the exact baked terrain, not the old implicit river")
+    # Leave bridge unoccupied for the *terrain* path test; normal occupied
+    # checks are independently enforced by the combat model.
+    m.state.get_actor(0).cell=Vector2i(2,3)
+    m.state.get_actor(1).cell=Vector2i(13,3)
     var path_across: Array=m.state.find_path(Vector2i(3,4),Vector2i(12,4))
     var crossed: bool=path_across.size()>0 and path_across.has(Vector2i(7,4))
     var all_passable := true

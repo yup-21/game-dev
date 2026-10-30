@@ -48,7 +48,7 @@ func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH)
         var tile: Dictionary = bake.tiles[cell]
         var area: Rect2 = tile.bounds
         var wire := Line2D.new()
-        var outline := bake.cell_polygon(cell)
+        var outline: PackedVector2Array = bake.cell_polygon(cell)
         outline.append(outline[0])
         wire.points = outline
         wire.width = 1.25
