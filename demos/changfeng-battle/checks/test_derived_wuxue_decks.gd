@@ -50,15 +50,15 @@ func _run() -> void:
     var starters := 0
     for entry in source.deck.cards:
         starters += int(entry.count)
-        _check(str(entry.card_id) != "tf_change",
-            "Tingfeng initial deck must exclude derivative change form")
+        _check(str(entry.card_id) != "tf_change" and str(entry.card_id) != "tf_follow",
+            "Tingfeng initial deck must exclude both change and follow derivatives")
     _check(starters == 12, "original starter deck remains twelve cards")
     for school in cat.schools:
         var n := 0
         for entry in cat.deck_for(str(school.id), []):
             n += int(entry.count)
-            _check(str(entry.card_id) != "tf_change",
-                "school " + str(school.id) + " illegally deals derivative")
+            _check(str(entry.card_id) != "tf_change" and str(entry.card_id) != "tf_follow",
+                "school " + str(school.id) + " illegally deals a derivative")
         _check(n == 12, "school " + str(school.id) + " has twelve starters")
 
     var model = Model.new()
@@ -67,8 +67,9 @@ func _run() -> void:
     var player = model.state.get_actor(0)
     var enemy = model.state.get_actor(1)
     _check(_count(player, model, "tf_change") == 0
-        and _count(enemy, model, "tf_change") == 0,
-        "neither combatant can draw a change card before prerequisite")
+        and _count(enemy, model, "tf_change") == 0
+        and _count(player, model, "tf_follow") == 0,
+        "neither change nor follow-up appears in starter draw")
     var first_uid: String = model.cards.create_instance(player, "tf_probe", "hand")
     player.cell = Vector2i(7,4)
     enemy.cell = Vector2i(8,4)
@@ -90,13 +91,13 @@ func _run() -> void:
         "attack declares root and opens response priority")
     var child := ""
     for uid in player.hand:
-        if str(model.cards.instance(str(uid)).get("definition_id", "")) == "tf_change":
+        if str(model.cards.instance(str(uid)).get("definition_id", "")) == "tf_follow":
             child = str(uid)
-    _check(not child.is_empty(), "prerequisite creates change into hand immediately")
+    _check(not child.is_empty(), "prerequisite generates follow-up token into hand immediately")
     if not child.is_empty():
         var state: Dictionary = model.cards.instance(child)
         _check(bool(state.get("generated", false)) and str(state.get("source_uid","")) == first_uid,
-            "derivative retains provenance from prerequisite")
+            "follow-up token retains provenance from prerequisite")
         _check(str(state.get("lifecycle", "")) == "exile_on_finish",
             "derivative is temporary and cannot recirculate")
         _check(model.cards.relations(first_uid).get("child_uids", []).has(child),
@@ -110,24 +111,29 @@ func _run() -> void:
         _check(bool(_submit(model, defender_pass).get("success",false)),
             "first priority pass succeeds")
         _ack(model)
+    var staged: Dictionary = player.technique_states.get("tf_change_stage",{})
+    _check(str(staged.get("node","")) == "ready", "probe arms change stage without creating a change card")
     var has_derived_response := false
+    var has_follow_response := false
     for option in model.legal_actions(player.id):
-        if str(option.get("kind", "")) == "PLAY_CARD" and str(option.get("card_uid","")) == child:
+        if (str(option.get("kind", "")) == "USE_ABILITY"
+                and str(option.get("technique_id", "")) == "tf_change_stage"):
             has_derived_response = true
-            break
-    _check(has_derived_response,
-        "created change can be used as an actual same-clash response")
+        if str(option.get("kind", "")) == "PLAY_CARD" and str(option.get("card_uid","")) == child:
+            has_follow_response = true
+    _check(has_derived_response and not has_follow_response,
+        "optional change stage is available; generated follow cannot answer a clash")
     var attacker_pass: Dictionary = _first_action(model, player.id, "PASS_REACTION")
     if not attacker_pass.is_empty():
         _check(bool(_submit(model, attacker_pass).get("success",false)),
             "second pass resolves the ordinary attack")
         _ack(model)
-    _check(model.state.mode == "ACTION" and _count(player, model, "tf_change") == 1,
-        "unused derivative remains only in its creator's hand until refresh")
+    _check(model.state.mode == "ACTION" and _count(player, model, "tf_follow") == 1,
+        "unused follow-up remains in its creator's hand until refresh")
     if not child.is_empty():
         model.cards.leave_hand(player, child, false)
         _check(player.exile_pile.has(child) and not player.discard_pile.has(child),
-            "derivative is exiled, never shuffled back into draw pile")
+            "generated follow-up exiles on exit and never reshuffles")
 
     var configured = Scenario.new()
     var encounter: Dictionary = configured.encounter("escort_ambush")
@@ -162,8 +168,8 @@ func _run() -> void:
             continue
         _check(actor.hand.size() == 5 and actor.draw_pile.size() == 7,
             "independent twelve-card school deck for actor " + str(id))
-        _check(_count(actor, story, "tf_change") == 0,
-            "actor must not start with derived cards: " + str(id))
+        _check(_count(actor, story, "tf_change") == 0 and _count(actor, story, "tf_follow") == 0,
+            "actor must not start with derived cards or stages: " + str(id))
         var core: Array = cat.get_school(expected[id]).core_forms
         _check(story.cards.definitions.has(str(core[0]))
             and story.cards.definitions.has(str(core[1])),

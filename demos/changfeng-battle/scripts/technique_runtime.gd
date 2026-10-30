@@ -26,6 +26,13 @@ func _init(path: String = "res://data/techniques.json") -> void:
 		if not ids.has(d.get("entry", "")): load_error = "Invalid entry"; return
 		for n in d.nodes:
 			if not ids.has(n.get("next", d.entry)): load_error = "Invalid transition"; return
+		var trigger: Dictionary=d.get("trigger",{})
+		if not trigger.is_empty():
+			if not trigger.get("card_id") is String or not trigger.get("usage_id") is String or not trigger.get("ready_stage") is String: load_error = "Invalid stage trigger"; return
+			var valid_stage := false
+			for n in d.nodes:
+				if str(n.get("stage",n.id)) == str(trigger.ready_stage): valid_stage=true
+			if not valid_stage: load_error = "Unknown ready stage"; return
 		definitions[d.id] = d.duplicate(true)
 
 func configure(actor, learned: Dictionary) -> bool:
@@ -36,13 +43,41 @@ func configure(actor, learned: Dictionary) -> bool:
 		actor.technique_states[id] = {"node": definitions[id].entry, "rank": learned[id], "last_used_action": -1}
 	return true
 
-func node(actor, id: String, stage: String) -> Dictionary:
+func node(actor, id: String, node_id: String) -> Dictionary:
 	if not actor.technique_states.has(id) or not definitions.has(id): return {}
-	if str(actor.technique_states[id].node) != stage: return {}
 	for n in definitions[id].nodes:
-		if str(n.id) == stage and int(n.get("unlock_rank", 1)) <= int(actor.technique_states[id].rank):
+		if str(n.id) != node_id or not bool(n.get("available",true)): continue
+		if str(n.get("stage",n.id)) != str(actor.technique_states[id].node): continue
+		if int(n.get("unlock_rank",1)) <= int(actor.technique_states[id].rank):
 			return n.duplicate(true)
 	return {}
+
+func available_nodes(actor, id: String, timing: String) -> Array:
+	var result: Array=[]
+	if not actor.technique_states.has(id) or not definitions.has(id): return result
+	for entry in definitions[id].nodes:
+		if str(entry.timing) != timing: continue
+		var n: Dictionary=node(actor,id,str(entry.id))
+		if not n.is_empty(): result.append(n)
+	return result
+
+func auto_equipped() -> Dictionary:
+	var result: Dictionary={}
+	for d in definitions.values():
+		if bool(d.get("auto_equip",false)): result[str(d.id)]=1
+	return result
+
+func arm_from_card(actor, card_id: String, usage_id: String) -> Array:
+	var armed: Array=[]
+	for id in actor.technique_states:
+		var d: Dictionary=definitions.get(id,{})
+		var activation: Dictionary=d.get("trigger",{})
+		if str(activation.get("card_id",""))!=card_id or str(activation.get("usage_id",""))!=usage_id: continue
+		if str(actor.technique_states[id].node) != str(d.entry): continue
+		actor.technique_states[id].node=str(activation.get("ready_stage",""))
+		actor.technique_states[id].last_used_action=actor.turns_started
+		armed.append(str(id))
+	return armed
 
 func cost(actor, id: String, stage: String) -> Dictionary:
 	var n = node(actor, id, stage)
@@ -86,6 +121,15 @@ func validate_with(cards, conditions) -> bool:
 		if not (hold is int or hold is float) or not is_finite(float(hold)) or hold < 0 or (hold is float and hold != floor(hold)):
 			load_error="Invalid hold duration"
 			return false
+		var trigger: Dictionary=d.get("trigger",{})
+		if not trigger.is_empty():
+			var source_def: Dictionary=cards.definitions.get(str(trigger.card_id),{})
+			var valid_usage := false
+			for u in source_def.get("usages",[]):
+				if str(u.id)==str(trigger.usage_id): valid_usage=true
+			if not valid_usage:
+				load_error="Unknown stage trigger card or usage"
+				return false
 		for node_def in d.nodes:
 			if node_def.get("target",{}).get("kind","") not in ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]:
 				load_error="Invalid target kind: "+str(node_def.id)

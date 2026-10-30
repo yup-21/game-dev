@@ -628,8 +628,13 @@ func _rebuild_actions() -> void:
         if seen_abilities.has(key):
             continue
         seen_abilities[key] = true
+        var technique_def: Dictionary = model.techniques.definitions.get(technique_id,{})
+        var stage_def: Dictionary = model.techniques.node(owner,technique_id,node_id)
         var button := CardUI.make_card(technique_id + ":" + node_id,
-            technique_id, "连携续式", node_id, {},
+            "tf_change" if technique_id == "tf_change_stage" else technique_id,
+            str(technique_def.get("name","武学续式")),
+            str(stage_def.get("name",node_id)),
+            model.techniques.cost(owner,technique_id,node_id),
             selected_technique == technique_id and selected_node == node_id)
         button.set_meta("technique_id", technique_id)
         button.set_meta("node_id", node_id)

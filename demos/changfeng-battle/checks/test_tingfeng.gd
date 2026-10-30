@@ -117,7 +117,7 @@ func run_tests() -> void:
 
 func test_schema_and_requests() -> void:
 	var model = fresh()
-	check(model.cards.definitions.size() == 5, "five canonical forms")
+	check(model.cards.definitions.size() == 6, "five core martial forms plus one generated follow-up definition")
 	var usage_count: int = 0
 	for definition in model.cards.definitions.values(): usage_count += definition.get("usages", []).size()
 	check(usage_count == 12 and model.cards.instances.size() == 24, "twelve usages and 24 mirror instances")
@@ -190,7 +190,7 @@ func test_usages_and_combos() -> void:
 	fixture(model, 0, ["tf_probe", "tf_probe", "tf_guard"])
 	fixture(model, 1, [])
 	var hp: int = int(model.state.get_actor(1).hp_u)
-	check(not option(model, 0, "PLAY_CARD", "tf_probe", "probe").is_empty() and not option(model, 0, "PLAY_CARD", "tf_probe", "follow").is_empty(), "one probe instance offers both active usages")
+	check(not option(model, 0, "PLAY_CARD", "tf_probe", "probe").is_empty() and option(model, 0, "PLAY_CARD", "tf_probe", "follow").is_empty(), "probe is one starter usage; follow-up must be generated")
 	var selected: Dictionary = option(model, 0, "PLAY_CARD", "tf_probe", "probe")
 	var uid: String = str(selected.get("card_uid", selected.get("card_id", "")))
 	check(send(model, selected).success, "probe attack declares")
@@ -198,7 +198,7 @@ func test_usages_and_combos() -> void:
 	pass_clash(model)
 	check(model.state.get_actor(0).discard_pile.has(uid) and not model.state.get_actor(0).resolving.has(uid), "root instance discards once after resolution")
 	send(model, option(model, 0, "PLAY_CARD", "tf_guard", "guard"))
-	check(send(model, option(model, 0, "PLAY_CARD", "tf_probe", "follow")).success, "follow remains available after interleaved defense")
+	check(send(model, option(model, 0, "PLAY_CARD", "tf_follow", "follow")).success, "generated follow-up is playable after interleaved defense")
 	pass_clash(model)
 	check(model.state.get_actor(1).hp_u == hp - 5 * UNIT and event_has(model, "COMBO_TRIGGERED"), "probe follow combo deals 2 plus 3 and emits event")
 	model = fresh(25)

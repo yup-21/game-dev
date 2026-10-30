@@ -3,7 +3,7 @@
   "implementation_status": "condensed_prototype",
   "meta": {
     "name": "听风五式：核心机制验证",
-    "notes": "5 招式定义 / 12 种 usage：变锋式只由探锋攻击生成，不进入起始牌库；每方12张基础卡，配合11种武学流派选择。"
+    "notes": "探锋式只有试探一个基础用法，攻击后生成一次性「追风」衍生卡；变锋式另由武学阶段状态启用为攻守应变分支，不进入任何牌堆。"
   },
   "rules": {
     "system": "CTB_ACTION_CLASH",
@@ -116,7 +116,7 @@
           "usage_id": "probe"
         },
         {
-          "card_id": "tf_probe",
+          "card_id": "tf_follow",
           "usage_id": "follow"
         }
       ],
@@ -173,10 +173,10 @@
             },
             {
               "type": "grant_card",
-              "card_id": "tf_change",
+              "card_id": "tf_follow",
               "destination": "hand",
-              "count": 1,
-              "target": "self"
+              "target": "self",
+              "count": 1
             }
           ],
           "target": {
@@ -193,45 +193,11 @@
             "target_count": 1
           },
           "name": "探锋·试探"
-        },
-        {
-          "id": "follow",
-          "timing": "ACTION",
-          "cost": {
-            "qi": 1
-          },
-          "effects": [
-            {
-              "type": "deal_damage",
-              "amount": 2
-            },
-            {
-              "type": "grant_card",
-              "card_id": "tf_change",
-              "destination": "hand",
-              "count": 1,
-              "target": "self"
-            }
-          ],
-          "target": {
-            "kind": "enemy_actor",
-            "distance": "orthogonal_exact_1",
-            "line_of_sight": true
-          },
-          "attack_profile": {
-            "route": "sweep",
-            "range": 1,
-            "base_damage": 2,
-            "break_bonus": 0,
-            "footprint": "locked_target_cell",
-            "target_count": 1
-          },
-          "name": "探锋·追风"
         }
       ],
       "relations": {
         "children": [
-          "tf_change"
+          "tf_follow"
         ],
         "related": []
       }
@@ -531,10 +497,58 @@
       "generated_only": true,
       "lifecycle": "exile_on_finish",
       "relations": {
+        "parent": "",
+        "children": [],
+        "related": []
+      },
+      "legacy_only": true
+    },
+    {
+      "id": "tf_follow",
+      "name": "探锋·追风",
+      "generated_only": true,
+      "lifecycle": "exile_on_finish",
+      "retain_own_actions": 1,
+      "relations": {
         "parent": "tf_probe",
         "children": [],
         "related": []
-      }
+      },
+      "tags": [
+        "sword",
+        "follow_up",
+        "derived"
+      ],
+      "threat_level": "NORMAL",
+      "usages": [
+        {
+          "id": "follow",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 1
+          },
+          "effects": [
+            {
+              "type": "deal_damage",
+              "amount": 2
+            }
+          ],
+          "target": {
+            "kind": "enemy_actor",
+            "distance": "orthogonal_exact_1",
+            "line_of_sight": true
+          },
+          "attack_profile": {
+            "route": "sweep",
+            "range": 1,
+            "base_damage": 2,
+            "break_bonus": 0,
+            "footprint": "locked_target_cell",
+            "target_count": 1
+          },
+          "name": "探锋·追风"
+        }
+      ]
     }
   ],
   "deck": {
