@@ -173,7 +173,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          xvfb-run -a -s " -screen 0 1600x1000x24" godot --path demos/changfeng-battle -- --opening-visual-check
+          timeout --signal=TERM 150s xvfb-run -a -s " -screen 0 1600x1000x24" godot --path demos/changfeng-battle -- --opening-visual-check
           test -s demos/changfeng-battle/captures/opening-explore.png
           test -s demos/changfeng-battle/captures/opening-dialogue.png
       - name: Upload screenshot evidence
