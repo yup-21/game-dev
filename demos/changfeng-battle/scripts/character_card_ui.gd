@@ -3,7 +3,7 @@ extends Control
 ## BattleModel's CombatantState is the sole authority for mutable values.
 const Registry = preload("res://scripts/character_registry.gd")
 const Art = preload("res://scripts/hd2d_art_catalog.gd")
-const Theme = preload("res://scripts/hd2d_ui_theme.gd")
+const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
 var registry = Registry.new()
 var actor_id: int = -1
 var model
@@ -53,12 +53,12 @@ func _ready() -> void:
     margin.add_child(column)
     var header := HBoxContainer.new()
     column.add_child(header)
-    title_label = _label(header,"",27,Theme.GOLD)
+    title_label = _label(header,"",27,UITheme.GOLD)
     title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     var close := Button.new()
     close.name = "CloseCharacterCard"
     close.text = "收起  ×"
-    Theme.apply_button(close)
+    UITheme.apply_button(close)
     header.add_child(close)
     close.pressed.connect(close_card)
     column.add_child(HSeparator.new())
@@ -82,7 +82,7 @@ func _ready() -> void:
     preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
     left.add_child(preview)
-    art_label = _label(left,"",12,Theme.MUTED)
+    art_label = _label(left,"",12,UITheme.MUTED)
     art_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     var scroll := ScrollContainer.new()
     scroll.name = "RoleDetailsScroll"
@@ -94,16 +94,16 @@ func _ready() -> void:
     details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     details.add_theme_constant_override("separation",13)
     scroll.add_child(details)
-    identity_label = _label(details,"",16,Theme.JADE)
-    bio_label = _label(details,"",15,Theme.PAPER)
+    identity_label = _label(details,"",16,UITheme.JADE)
+    bio_label = _label(details,"",15,UITheme.PAPER)
     bio_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    _label(details,"武 学 · 招 式",19,Theme.GOLD)
-    martial_label = _label(details,"",14,Theme.PAPER)
+    _label(details,"武 学 · 招 式",19,UITheme.GOLD)
+    martial_label = _label(details,"",14,UITheme.PAPER)
     martial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    _label(details,"气 血 · 属 性",19,Theme.GOLD)
-    stats_label = _label(details,"",15,Theme.MUTED)
-    _label(details,"实 时 状 态 · 装 备",19,Theme.GOLD)
-    status_label = _label(details,"",14,Theme.PAPER)
+    _label(details,"气 血 · 属 性",19,UITheme.GOLD)
+    stats_label = _label(details,"",15,UITheme.MUTED)
+    _label(details,"实 时 状 态 · 装 备",19,UITheme.GOLD)
+    status_label = _label(details,"",14,UITheme.PAPER)
     status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 func _label(parent: Node, value: String, font_size: int, color: Color) -> Label:
