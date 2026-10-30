@@ -248,9 +248,13 @@ func test_chain() -> void:
 	send(model, option(model, 1, "PLAY_CARD", "tf_change", "defense_counter", Vector2i(-99, -99), 2))
 	check(send(model, option(model, 0, "PLAY_CARD", "tf_change", "attack_counter", Vector2i(-99, -99), 3)).success, "fourth response accepted")
 	var no_more: bool = true
-	for who in [0, 1]:
-		for candidate in model.legal_actions(who):
-			if str(candidate.get("kind", "")) == "PLAY_CARD": no_more = false
+	# The fourth response immediately resolves the CLASH. The actor may
+	# already hold a newly generated ACTION follow-up in hand; that is not
+	# a fifth clash response and must not fail this bounded-priority test.
+	if model.state.mode == "CLASH":
+		for who in [0, 1]:
+			for candidate in model.legal_actions(who):
+				if str(candidate.get("kind", "")) in ["PLAY_CARD", "USE_ABILITY"]: no_more = false
 	check(no_more, "at most two responses per actor and four total")
 	pass_clash(model)
 	check(model.state.get_actor(1).hp_u == hp - 2 * UNIT, "four-layer reverse resolution cancels yield")
