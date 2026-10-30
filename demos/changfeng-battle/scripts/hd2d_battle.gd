@@ -324,11 +324,11 @@ func _build_ui() -> void:
     heading.text = "长 风 浮 生 录     /     雨夜残镖" if story_encounter else "长 风 浮 生 录     /     断桥听风"
     heading.add_theme_font_size_override("font_size", 25)
     heading.add_theme_color_override("font_color", UITheme.GOLD)
-    column.add_child(heading)
+    banner_text.add_child(heading)
     status_label = Label.new()
-    status_label.add_theme_font_size_override("font_size", 16)
+    status_label.add_theme_font_size_override("font_size", 15)
     status_label.add_theme_color_override("font_color", UITheme.PAPER)
-    column.add_child(status_label)
+    banner_text.add_child(status_label)
     help_label = Label.new()
     help_label.text = "左键选目标  ·  Q 普攻  ·  G 格挡  ·  Space 收势/Pass  ·  右键取消  ·  R 重开  ·  Esc 返回"
     help_label.add_theme_font_size_override("font_size", 12)
@@ -353,6 +353,13 @@ func _build_ui() -> void:
     roster_heading.add_theme_color_override("font_color", UITheme.GOLD)
     roster_heading.add_theme_font_size_override("font_size", 17)
     roster_column.add_child(roster_heading)
+    var roster_scroll := ScrollContainer.new()
+    roster_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    roster_column.add_child(roster_scroll)
+    var roster_list := VBoxContainer.new()
+    roster_list.add_theme_constant_override("separation", 9)
+    roster_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    roster_scroll.add_child(roster_list)
     for actor in snap.get("actors", []):
         var actor_id := int(actor.id)
         var enemy := int(actor.get("team_id", 0)) != 0
@@ -365,6 +372,7 @@ func _build_ui() -> void:
         portrait_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
         portrait_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
         portrait_icon.texture = ArtCatalog.avatar(actor_id, enemy)
+        portrait_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
         actor_row.add_child(portrait_icon)
         var details := VBoxContainer.new()
         details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -402,8 +410,10 @@ func _build_ui() -> void:
     phase_label.add_theme_font_size_override("font_size", 22)
     phase_label.add_theme_color_override("font_color", UITheme.GOLD)
     sidebar_column.add_child(phase_label)
+    var separator := HSeparator.new()
+    sidebar_column.add_child(separator)
     clash_label = Label.new()
-    clash_label.add_theme_font_size_override("font_size", 14)
+    clash_label.add_theme_font_size_override("font_size", 15)
     clash_label.add_theme_color_override("font_color", UITheme.PAPER)
     clash_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     sidebar_column.add_child(clash_label)
@@ -528,9 +538,10 @@ func _rebuild_actions() -> void:
     var available: bool = _player_decision() and not bool(snap.get("animation_pending", false)) and str(snap.get("outcome", "playing")) == "playing"
     var owner = model.state.get_actor(_decision_owner())
     var actor_name := str(owner.name) if owner != null else "等待"
-    selection_label.text = ("执剑者 · " + actor_name + "    选择武学后点击高亮目标；右键取消") if available else "等待对手行动 / 动画结算"
+    selection_label.text = ("执剑者 · " + actor_name + "    选择招式后点击亮起的目标；右键取消") if available else "静候敌方应变 / 动画结算"
     if not available:
         return
+
     for card in snap.get("hand", []):
         var uid := str(card.get("uid", card.get("card_id", "")))
         for usage in card.get("usages", []):
@@ -545,6 +556,7 @@ func _rebuild_actions() -> void:
             button.set_meta("usage_id", usage_id)
             button.pressed.connect(_select_card.bind(uid, usage_id))
             card_actions.add_child(button)
+
     var seen_abilities: Dictionary = {}
     for action in legals:
         if str(action.get("kind", "")) != "USE_ABILITY":
@@ -562,14 +574,15 @@ func _rebuild_actions() -> void:
         button.set_meta("node_id", node_id)
         button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
+
     var commands := {
         "BASIC_GUARD": "守势 · 格挡",
         "END_ACTION": "收势 · 结束行动",
-        "PASS_REACTION": "不追加 · 交还响应权",
+        "PASS_REACTION": "按兵 · 交还响应",
         "PITCH_CARD": "弃牌 · 调息",
         "RESET_TECHNIQUE": "收招 · 复位"
     }
-    var command_seen := {}
+    var command_seen: Dictionary = {}
     for action in legals:
         var kind := str(action.get("kind", ""))
         if not commands.has(kind):
@@ -587,16 +600,29 @@ func _rebuild_actions() -> void:
         command_actions.add_child(command_button)
     if snap.get("phase", "") == "CLASH" and not command_seen.has("PASS_REACTION:"):
         var pass_button := Button.new()
-        pass_button.text = "Pass · 交还响应权"
+        pass_button.text = "按兵 · 交还响应"
         UITheme.apply_button(pass_button)
         pass_button.pressed.connect(_submit.bind("PASS_REACTION", {}))
         command_actions.add_child(pass_button)
+
+func _update_card_selection() -> void:
+    # No UI element can submit anything except a legal action in BattleModel.
+    for child in card_actions.get_children():
+        if not child is Button:
+            continue
+        if child.has_meta("card_uid"):
+            UITheme.apply_card(child, selected_card_uid == str(child.get_meta("card_uid"))
+                and selected_usage_id == str(child.get_meta("usage_id")))
+        elif child.has_meta("technique_id"):
+            UITheme.apply_card(child, selected_technique == str(child.get_meta("technique_id"))
+                and selected_node == str(child.get_meta("node_id")))
 
 func _select_card(uid: String, usage: String) -> void:
     _clear_selection()
     selected_card_uid = uid
     selected_usage_id = usage
     selected_kind = "PLAY_CARD"
+    _update_card_selection()
     _activate_selection()
 
 func _select_technique(technique: String, node: String) -> void:
@@ -604,6 +630,7 @@ func _select_technique(technique: String, node: String) -> void:
     selected_technique = technique
     selected_node = node
     selected_kind = "USE_ABILITY"
+    _update_card_selection()
     _activate_selection()
 
 func _selected_actions() -> Array:

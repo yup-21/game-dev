@@ -11,18 +11,21 @@ const RED = Color("d78a79")
 const PANEL_ART: Texture2D = preload("res://assets/ui/jade_panel_frame.svg")
 
 static func panel(background: Color = PANEL, outline: Color = GOLD) -> StyleBoxFlat:
-    var box := StyleBoxFlat.new()
-    box.bg_color = background
-    box.border_color = outline
-    box.set_border_width_all(1)
-    box.set_corner_radius_all(5)
-    box.content_margin_left = 14.0
-    box.content_margin_top = 10.0
-    box.content_margin_right = 14.0
-    box.content_margin_bottom = 10.0
-    box.shadow_color = Color(0.02, 0.07, 0.06, 0.44)
-    box.shadow_size = 6
-    return box
+    var style := StyleBoxFlat.new()
+    style.bg_color = background
+    style.border_color = outline
+    style.set_border_width_all(1)
+    style.border_width_top = 2
+    style.set_corner_radius_all(9)
+    style.corner_detail = 8
+    style.content_margin_left = 15.0
+    style.content_margin_right = 15.0
+    style.content_margin_top = 12.0
+    style.content_margin_bottom = 11.0
+    style.shadow_color = Color(0.015, 0.04, 0.05, 0.69)
+    style.shadow_size = 12
+    style.shadow_offset = Vector2(0, 5)
+    return style
 
 static func apply_panel(container: PanelContainer) -> void:
     # Nine-slice original filigree: corner details remain sharp at every panel size.
@@ -52,15 +55,16 @@ static func apply_meter(meter: ProgressBar, fill_color: Color) -> void:
 
 
 static func apply_button(button: Button) -> void:
-    button.add_theme_stylebox_override("normal", panel(PANEL_LIGHT, Color("587568")))
-    button.add_theme_stylebox_override("hover", panel(Color("385e50"), GOLD))
-    button.add_theme_stylebox_override("pressed", panel(Color("446e59"), GOLD))
-    button.add_theme_stylebox_override("disabled", panel(Color("253d35"), Color("43584e")))
+    button.add_theme_stylebox_override("normal", panel(PANEL_LIGHT, Color("5c7b6d")))
+    button.add_theme_stylebox_override("hover", panel(Color("34594c"), GOLD))
+    button.add_theme_stylebox_override("pressed", panel(Color("476d58"), GOLD))
+    button.add_theme_stylebox_override("disabled", panel(Color("263531"), DIM))
+    button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
     button.add_theme_color_override("font_color", PAPER)
     button.add_theme_color_override("font_hover_color", Color.WHITE)
     button.add_theme_color_override("font_disabled_color", MUTED)
-    button.add_theme_font_size_override("font_size", 15)
-    button.custom_minimum_size = Vector2(155, 43)
+    button.add_theme_font_size_override("font_size", 14)
+    button.custom_minimum_size = Vector2(146, 44)
 
 static func card_style(selected: bool = false, hover: bool = false) -> StyleBoxFlat:
     var box := StyleBoxFlat.new()
