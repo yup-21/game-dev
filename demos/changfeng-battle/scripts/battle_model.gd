@@ -2,6 +2,7 @@ extends RefCounted
 ## Single controller and authority. UI and AI submit the same versioned requests.
 const State = preload("res://scripts/battle_state.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
+const Spatial = preload("res://scripts/battle_spatial_service.gd")
 const Cards = preload("res://scripts/card_system.gd")
 const Attributes = preload("res://scripts/attribute_system.gd")
 const Statuses = preload("res://scripts/status_system.gd")
@@ -66,6 +67,14 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 				state.terrain=baked.baked_terrain()
 				state.map_definition_path=str(options.map_definition_path)
 	var party_valid: bool=map_valid and (not options.has("combatants") or state.configure_combatants(options.combatants))
+	if party_valid and not state.map_definition_path.is_empty():
+		state.spatial=Spatial.new(state.map_definition_path)
+		if not state.spatial.bake.error.is_empty():
+			party_valid=false
+			state.party_error=state.spatial.bake.error
+		else:
+			for combatant in state.actors:
+				combatant.position=state.spatial.bake.cell_center(combatant.cell)
 	state.preferred_first=state.actors[0].id
 	for candidate in state.actors:
 		if candidate.team_id==0 and candidate.controller=="PLAYER":
@@ -250,6 +259,19 @@ func decision_context(actor_id: int) -> Dictionary:
 	ctx.observer_id=actor_id
 	ctx.legal_actions=legal_actions(actor_id)
 	return ctx
+
+## PREVIEW only: actual MOVE_FREE requests always pass CombatRules.validate().
+func preview_free_path(actor_id: int, target_position: Vector2) -> PackedVector2Array:
+	if state.spatial == null:
+		return PackedVector2Array()
+	var actor=state.get_actor(actor_id)
+	if actor==null or actor.hp_u<=0:
+		return PackedVector2Array()
+	var positions: Dictionary={}
+	for combatant in state.actors:
+		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
+	state.spatial.set_actors(positions)
+	return state.spatial.find_path(actor.position,target_position,8.0,actor.id)
 
 func distance(a: Vector2i,b: Vector2i) -> int:
 	return rules.distance(a,b)
