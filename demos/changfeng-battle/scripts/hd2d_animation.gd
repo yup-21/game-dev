@@ -54,6 +54,8 @@ func events(emitted: Array) -> void:
         var target_id := int(event.get("defender_id", event.get("target_id", -1)))
         var animation := ""
         var id := actor_id
+        if kind == "CHAIN_LINK_ADDED" and tracks.has(actor_id):
+            set_facing(actor_id,Vector2i(event.get("facing",facing_for(actor_id))))
         match kind:
             "MOVE":
                 animation = "move"

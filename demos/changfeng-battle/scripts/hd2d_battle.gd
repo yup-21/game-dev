@@ -1311,8 +1311,14 @@ func _unhandled_input(event: InputEvent) -> void:
                 animation_ticket = -1
                 _refresh()
                 _refresh_target_markers()
+                movement_paths.clear()
                 for actor in snap.get("actors", []):
-                    actor_nodes[int(actor.id)].position = _world(actor.cell)
+                    var id: int=int(actor.id)
+                    actor_nodes[id].position = _world(actor.cell)
+                    visual_cells[id]=Vector2i(actor.cell)
+                    animation_driver.set_facing(id,Vector2i(actor.facing))
+                    var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow")
+                    if arrow != null: arrow.rotation.y=Facing.yaw(Vector2i(actor.facing))
             KEY_ESCAPE:
                 if story_encounter and snap.get("outcome", "playing") != "playing":
                     get_tree().change_scene_to_file("res://demo_result.tscn")
