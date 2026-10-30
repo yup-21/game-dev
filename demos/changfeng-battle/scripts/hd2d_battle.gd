@@ -1264,6 +1264,11 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
             return
 
 func _legal(kind: String, cell: Vector2i = Vector2i(-1, -1)) -> Dictionary:
+    # Movement always requires a real target. The shared optional-cell
+    # sentinel (-1,-1) must never choose the first legal MOVE when the user
+    # clicks blocked water, cliff faces or outside the calibrated grid.
+    if kind == "MOVE" and cell.x < 0:
+        return {}
     for action in legals:
         if str(action.get("kind", "")) != kind:
             continue
