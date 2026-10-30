@@ -1237,7 +1237,7 @@ func _process(delta: float) -> void:
         animation_time -= delta
         # The semantic queue can span several frame boundaries. Its remaining
         # stages must finish even when the initial wall-clock estimate expires.
-        if animation_time <= 0.0 and animation_driver.remaining_seconds() <= 0.0:
+        if animation_time <= 0.0 and animation_driver.remaining_seconds() <= 0.0 and continuous_paths.is_empty():
             var ticket := animation_ticket
             animation_ticket = -1
             _accept(model.acknowledge_animation(ticket))
