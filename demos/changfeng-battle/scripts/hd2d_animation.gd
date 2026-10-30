@@ -1,5 +1,5 @@
 extends RefCounted
-## Event-driven Sprite3D playback. Owns only animation cursors, never battle state.
+## Event-driven Sprite2D playback. Owns only animation cursors, never battle state.
 ## 6x4 atlas: idle, walk, attack, special (guard/hit/dodge/skill).
 const Facing = preload("res://scripts/actor_facing.gd")
 const FRAME_RATE := 9.0
@@ -13,13 +13,13 @@ var tracks: Dictionary = {}
 var timeline: Array = []
 var stage_left: float = 0.0
 
-func register_actor(id: int, sprite: Sprite3D, initial_facing: Vector2i = Vector2i.RIGHT) -> void:
+func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector2i.RIGHT) -> void:
     tracks[id] = {"sprite": sprite, "state": "idle", "elapsed": 0.0,
         "duration": 1.0, "loop": true, "facing": Facing.from_delta(initial_facing)}
     sprite.hframes = 6
     sprite.vframes = 4
     sprite.frame = 0
-    sprite.scale = Vector3.ONE
+    sprite.scale = Vector2.ONE
     sprite.flip_h = initial_facing == Facing.WEST
 
 func set_facing(id: int, facing: Vector2i) -> void:
@@ -27,7 +27,7 @@ func set_facing(id: int, facing: Vector2i) -> void:
     var track: Dictionary = tracks[id]
     track.facing = Facing.from_delta(facing,track.facing)
     tracks[id] = track
-    var sprite: Sprite3D = track.sprite
+    var sprite: Sprite2D = track.sprite
     if sprite != null: sprite.flip_h = Vector2i(track.facing) == Facing.WEST
 
 func facing_for(id: int) -> Vector2i:
@@ -131,30 +131,30 @@ func update(delta: float, moving: Dictionary = {}) -> void:
                 index += mini(1, int(float(track.elapsed) / maxf(0.01, float(track.duration)) * 2.0))
         else:
             index = int(float(track.elapsed) * FRAME_RATE) % FRAMES_PER_ROW
-        var sprite: Sprite3D = track.sprite
+        var sprite: Sprite2D = track.sprite
         if sprite != null:
             sprite.frame = int(STATE_ROW.get(state, 0)) * FRAMES_PER_ROW + index
             # Pose accents stay presentation-only and never touch BattleModel.
             var phase: float = clampf(float(track.elapsed) / maxf(0.01, float(track.duration)), 0.0, 1.0)
             var thrust: float = sin(phase * PI)
-            var target_scale := Vector3.ONE
+            var target_scale := Vector2.ONE
             var tilt := 0.0
             match state:
                 "move":
                     target_scale.x = 1.0 + sin(float(track.elapsed) * 18.0) * 0.035
                     tilt = sin(float(track.elapsed) * 12.0) * 0.045
                 "attack", "combo", "skill":
-                    target_scale = Vector3(1.0 + thrust * 0.14, 1.0 - thrust * 0.09, 1.0)
+                    target_scale = Vector2(1.0 + thrust * 0.14, 1.0 - thrust * 0.09)
                     tilt = -thrust * (0.18 if state == "combo" else 0.11)
                 "guard":
-                    target_scale = Vector3(1.0 + thrust * 0.08, 1.0 - thrust * 0.13, 1.0)
+                    target_scale = Vector2(1.0 + thrust * 0.08, 1.0 - thrust * 0.13)
                 "hit":
-                    target_scale = Vector3(1.0 - thrust * 0.10, 1.0 + thrust * 0.07, 1.0)
+                    target_scale = Vector2(1.0 - thrust * 0.10, 1.0 + thrust * 0.07)
                     tilt = thrust * 0.15
                 "evade":
                     tilt = thrust * 0.14
             sprite.scale = sprite.scale.lerp(target_scale, minf(1.0, delta * 18.0))
-            sprite.rotation.z = lerpf(sprite.rotation.z, tilt, minf(1.0, delta * 17.0))
+            sprite.rotation = lerpf(sprite.rotation, tilt, minf(1.0, delta * 17.0))
         tracks[id] = track
 
 func reset() -> void:
