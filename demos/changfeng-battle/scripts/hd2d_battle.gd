@@ -95,7 +95,7 @@ func _ready() -> void:
         illustrated_map.scene_root.add_child(continuous_preview)
     # 3D terrain, procedural scenery, and far-away backdrop are removed.
     # Only 2D painted ground and 2D sprite action frames are visible.
-    effects_driver = VFX.new(self, camera)
+    effects_driver = VFX.new(self, camera, illustrated_map.scene_root if illustrated_map != null else null)
     _build_ui()
     _refresh()
     _update_status()
