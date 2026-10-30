@@ -188,6 +188,7 @@ func _build_world() -> void:
     for actor in snap.get("actors", []):
         var id := int(actor.id)
         var sprite: Sprite2D = illustrated_map.add_actor(actor, ArtCatalog.sheet_for_actor(id, int(actor.get("team_id", 0)) != 0))
+        sprite.set_meta("faces_left_unflipped", ArtCatalog.sheet_faces_left(id))
         actor_nodes[id] = illustrated_map.actors[id]
         visual_cells[id] = Vector2i(actor.cell)
         animation_driver.register_actor(id, sprite, Vector2i(actor.get("facing", Vector2i.RIGHT)))

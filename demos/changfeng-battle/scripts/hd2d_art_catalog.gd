@@ -148,6 +148,16 @@ static func avatar(actor_id: int, enemy: bool = false) -> Texture2D:
     atlas.region = Rect2(Vector2.ZERO,Vector2(sheet.get_width()/6.0,sheet.get_height()/4.0))
     return atlas
 
+## Most supplied 6x4 pose sheets are drawn looking screen-left (hair and
+## leading foot trail to the right). Generated fallback sheets face screen-right.
+## Keep sprite orientation as an ART attribute, independent from battle rules.
+## An actor profile may override this with art.faces_left when new sheets vary.
+static func sheet_faces_left(actor_id: int) -> bool:
+    var profile: Dictionary = _registry.for_actor(actor_id)
+    var art: Dictionary = profile.get("art", {})
+    var path: String = str(art.get("sprite_sheet", ""))
+    return bool(art.get("faces_left", SHEETS_BY_PATH.has(path)))
+
 static func uses_supplied_sheet(actor_id: int) -> bool:
     var profile: Dictionary = _registry.for_actor(actor_id)
     return SHEETS_BY_PATH.has(str(profile.get("art",{}).get("sprite_sheet","")))

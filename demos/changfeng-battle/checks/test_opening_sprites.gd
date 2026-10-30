@@ -66,10 +66,10 @@ func _run() -> void:
     var tex = hero.body.texture
     hero.set_motion(Vector2.RIGHT,0.15)
     _check(hero.walking and hero.body.frame_coords.y==1
-        and not hero.body.flip_h and hero.body.texture==tex,
-        "walking selects the real sprite sheet animation")
+        and hero.body.flip_h and hero.body.texture==tex,
+        "eastward walking mirrors the west-authored pose sheet")
     hero.set_motion(Vector2.LEFT,0.14)
-    _check(hero.body.flip_h,"westward movement flips the real sprite")
+    _check(not hero.body.flip_h,"westward walking uses the native unflipped pose")
     elder.set_motion(Vector2.RIGHT,1.2)
     _check(not elder.walking and elder.body.frame_coords==Vector2i.ZERO,
         "wounded elder remains a deliberate static pose")

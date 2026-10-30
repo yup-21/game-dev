@@ -14,6 +14,9 @@ const RED = Color("aa5548")
 const ESCORT = Vector2(1050, 560)
 const TEMPLE_PAINTING = "res://assets/scenes/story/ruined_temple_story.webp"
 var story = Story.new()
+var temple_backdrop: Texture2D
+var temple_uses_fallback := false
+var temple_picture: TextureRect
 var ui_font: SystemFont
 var title_font: SystemFont
 var clock: float = 0.0
@@ -29,6 +32,8 @@ var message: String = ""
 var message_left: float = 0.0
 
 func _ready() -> void:
+	_load_temple_background()
+	_build_temple_picture()
 	ui_font = SystemFont.new()
 	ui_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -81,6 +86,8 @@ func _process(delta: float) -> void:
 			visible_characters = minf(float(str(line.get("text", "")).length()),visible_characters+delta*29.0)
 	if story.phase != "explore":
 		_sync_story_sprites(Vector2.ZERO,delta)
+	if temple_picture != null:
+		temple_picture.visible = story.phase in ["explore","dialogue","complete"] or (story.phase=="cinematic" and story.cinematic_index > 0)
 	queue_redraw()
 
 func _sync_story_sprites(motion: Vector2, delta: float) -> void:
@@ -435,13 +442,68 @@ func _draw_cinematic() -> void:
 
 ## The generated painting is the entire walkable world, never a wallpaper
 ## behind a second programmatic road/carriage. Character sprites are separate.
-func _temple_background() -> bool:
-	if not ResourceLoader.exists(TEMPLE_PAINTING):
+## A file can exist and still contain an all-white placeholder.
+## Treat image content, not ResourceLoader.exists(), as the readiness test.
+## Evaluate once on scene creation rather than decoding WebP every _draw().
+func _painted_content(texture: Texture2D) -> bool:
+	if texture == null:
 		return false
-	var painting := load(TEMPLE_PAINTING) as Texture2D
-	if painting == null: return false
-	_cover_texture(painting,Rect2(0,0,1600,1000))
-	return true
+	var image: Image = texture.get_image()
+	if image == null or image.is_empty() or image.get_width() < 256 or image.get_height() < 256:
+		return false
+	var painted := 0
+	for y in range(1, 8):
+		for x in range(1, 8):
+			var pixel: Color = image.get_pixel(
+				mini(image.get_width() - 1, int(float(x) * float(image.get_width()) / 8.0)),
+				mini(image.get_height() - 1, int(float(y) * float(image.get_height()) / 8.0)))
+			if pixel.a > 0.50 and minf(pixel.r, minf(pixel.g, pixel.b)) < 0.86:
+				painted += 1
+	# A genuine full-screen backdrop must have substantial coverage, not
+	# merely a few dark border pixels around a mostly white placeholder.
+	return painted >= 20
+
+func _load_temple_background() -> void:
+	temple_uses_fallback = false
+	temple_backdrop = null
+	if ResourceLoader.exists(TEMPLE_PAINTING):
+		var original: Texture2D = load(TEMPLE_PAINTING) as Texture2D
+		if _painted_content(original):
+			temple_backdrop = original
+	if temple_backdrop == null:
+		# A visible, previously shipped HD painterly scene is better than
+		# silently drawing an opaque white WebP as the first act.
+		temple_backdrop = ArtCatalog.scenery("mountain")
+		temple_uses_fallback = true
+		push_warning("First-act painting is empty or unavailable: " + TEMPLE_PAINTING
+			+ "; using bundled illustrated scene fallback.")
+	if not _painted_content(temple_backdrop):
+		push_error("No nonblank illustrated background is available for the first act")
+
+## WebP was loaded but the previous draw_texture_rect_region() path rendered
+## white in the opening viewport. Use the same native TextureRect presentation
+## as the battle scenery, at a negative canvas Z behind UI and role sprites.
+func _build_temple_picture() -> void:
+	if temple_backdrop == null:
+		return
+	temple_picture = TextureRect.new()
+	temple_picture.name = "FirstActPaintedBackground"
+	temple_picture.texture = temple_backdrop
+	temple_picture.position = Vector2.ZERO
+	temple_picture.size = Vector2(1600,1000)
+	temple_picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	temple_picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	temple_picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	temple_picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	temple_picture.z_index = -100
+	temple_picture.modulate = Color(0.75,0.83,0.87) if temple_uses_fallback else Color.WHITE
+	temple_picture.visible = false
+	add_child(temple_picture)
+
+func _temple_background() -> bool:
+	# The painted TextureRect is a real scene child; calling drawing commands
+	# from outside Node2D._draw() is no longer necessary.
+	return temple_picture != null and temple_picture.texture != null
 
 func _paint_exploration() -> void:
 	if not _temple_background():

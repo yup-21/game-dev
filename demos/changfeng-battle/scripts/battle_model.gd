@@ -385,7 +385,9 @@ func preview_free_path(actor_id: int, target_position: Vector2) -> PackedVector2
 	for combatant in state.actors:
 		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
 	state.spatial.set_actors(positions)
-	return state.spatial.find_path(actor.position,target_position,8.0,actor.id)
+	var landing: Vector2=state.spatial.safe_landing(actor.position,target_position,8.0,actor.id)
+	landing=Vector2(roundf(landing.x*4.0)*0.25,roundf(landing.y*4.0)*0.25)
+	return state.spatial.find_path(actor.position,landing,8.0,actor.id)
 
 func distance(a: Vector2i,b: Vector2i) -> int:
 	return rules.distance(a,b)

@@ -66,50 +66,130 @@ func clear_segment(start: Vector2, finish: Vector2, radius_or_occupied: Variant 
     if radius_or_occupied is Array:
         return waypoint_compat.clear_segment(start, finish, radius_or_occupied, ignore_id)
     var radius: float = float(radius_or_occupied)
-    var length := start.distance_to(finish)
-    var stride: float = maxf(2.0, minf(bake.step.x, bake.step.y) * 0.15)
+    var vector: Vector2 = finish - start
+    var length: float = vector.length()
+    # Sampling the ground mask cannot reliably detect a thin actor collision.
+    # The exact nearest-point-to-segment check prevents tunnelling through
+    # crowded characters when the move endpoint is otherwise legal.
+    for id in actor_positions:
+        if int(id) == ignore_id:
+            continue
+        var body: Dictionary = actor_positions[id]
+        if not bool(body.get("alive", true)):
+            continue
+        var centre: Vector2 = body.get("position", Vector2.ZERO)
+        var t: float = clampf((centre - start).dot(vector) / maxf(vector.length_squared(), EPSILON), 0.0, 1.0)
+        var nearest: Vector2 = start + vector * t
+        if nearest.distance_to(centre) < radius + float(body.get("radius", 0.0)) - EPSILON:
+            return false
+    var stride: float = maxf(2.0, minf(minf(bake.step.x, bake.step.y) * 0.15, maxf(2.0, radius * 0.5)))
     var count := maxi(1, ceili(length / stride))
     for index in range(count + 1):
         if not is_valid_position(start.lerp(finish, float(index) / float(count)), radius, ignore_id):
             return false
     return true
 
+## FREE navigation uses world-space visibility edges. Baked cells describe
+## *terrain*, not occupiable tactical squares. A character standing at a cell
+## centre must never make that entire tile impassable to another character.
 func find_path(start: Vector2, finish: Vector2, radius: float = 0.0, ignore_id: int = -1) -> PackedVector2Array:
     if not is_valid_position(start, radius, ignore_id) or not is_valid_position(finish, radius, ignore_id):
         return PackedVector2Array()
     if clear_segment(start, finish, radius, ignore_id):
         return PackedVector2Array([start, finish])
-    var grid := AStarGrid2D.new()
-    grid.region = Rect2i(0, 0, bake.width, bake.height)
-    grid.cell_size = bake.step
-    grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
-    grid.update()
+    var points: Array[Vector2] = [start, finish]
+    # A grid is still an authored source of terrain waypoints, never a
+    # collision test on *characters' cells*. Include only physically legal
+    # centres so the graph does not route through an occupied foot anchor.
     for cell in bake.tiles:
-        if not is_valid_position(bake.cell_center(cell), radius, ignore_id):
-            grid.set_point_solid(cell)
-    var from_cell: Vector2i = bake.cell_at_screen(start)
-    var to_cell: Vector2i = bake.cell_at_screen(finish)
-    if grid.is_point_solid(from_cell) or grid.is_point_solid(to_cell):
+        if not bool(bake.tiles[cell].walkable):
+            continue
+        var centre: Vector2 = bake.cell_center(cell)
+        if is_valid_position(centre, radius, ignore_id):
+            points.append(centre)
+    # Polygonal approximation of each dynamic body's exclusion circle.
+    # Outward offset protects the chords BETWEEN adjacent circle vertices.
+    const SECTORS = 16
+    for id in actor_positions:
+        if int(id) == ignore_id:
+            continue
+        var body: Dictionary = actor_positions[id]
+        if not bool(body.get("alive", true)):
+            continue
+        var centre: Vector2 = body.get("position", Vector2.ZERO)
+        var detour_radius: float = (radius + float(body.get("radius", 0.0)) + 3.0) / cos(PI / float(SECTORS))
+        for sector in range(SECTORS):
+            var theta: float = TAU * float(sector) / float(SECTORS)
+            var candidate: Vector2 = centre + Vector2(cos(theta), sin(theta)) * detour_radius
+            if is_valid_position(candidate, radius, ignore_id):
+                points.append(candidate)
+    var graph := AStar2D.new()
+    for index in range(points.size()):
+        graph.add_point(index, points[index])
+    # Only local visibility edges are needed: the fixed terrain waypoints
+    # bridge long routes, while circle waypoints permit close-quarter sidesteps.
+    var max_edge: float = maxf(bake.step.x, bake.step.y) * 2.1
+    for i in range(points.size()):
+        for j in range(i + 1, points.size()):
+            if points[i].distance_to(points[j]) > max_edge:
+                continue
+            if clear_segment(points[i], points[j], radius, ignore_id):
+                graph.connect_points(i, j)
+    var route: PackedVector2Array = graph.get_point_path(0, 1)
+    if route.size() < 2:
         return PackedVector2Array()
-    var cells: Array[Vector2i] = grid.get_id_path(from_cell, to_cell)
-    if cells.is_empty():
-        return PackedVector2Array()
-    var raw := PackedVector2Array([start])
-    for cell in cells:
-        raw.append(bake.cell_center(cell))
-    raw.append(finish)
-    # Greedy visibility smoothing allows genuinely arbitrary endpoints.
-    var result := PackedVector2Array([start])
-    var index := 0
-    while index < raw.size() - 1:
-        var next := raw.size() - 1
-        while next > index + 1 and not clear_segment(raw[index], raw[next], radius, ignore_id):
+    # Remove redundant centre/ring waypoints without changing endpoints.
+    var smoothed := PackedVector2Array([route[0]])
+    var cursor := 0
+    while cursor < route.size() - 1:
+        var next := route.size() - 1
+        while next > cursor + 1 and not clear_segment(route[cursor], route[next], radius, ignore_id):
             next -= 1
-        if not clear_segment(raw[index], raw[next], radius, ignore_id):
-            return PackedVector2Array()
-        result.append(raw[next])
-        index = next
-    return result
+        smoothed.append(route[next])
+        cursor = next
+    return smoothed
+
+## In FREE mode a click within an enemy footprint should stop at the
+## nearest accessible edge, not freeze because its literal point is occupied.
+## Never snap clicks on painted river/rock: those must remain invalid.
+func safe_landing(start: Vector2, requested: Vector2, radius: float = 0.0, ignore_id: int = -1) -> Vector2:
+    if bake.cell_at_screen(requested, true) == Vector2i(-1, -1):
+        return requested
+    if is_valid_position(requested, radius, ignore_id):
+        return requested
+    var nearest: Vector2 = requested
+    var best: float = INF
+    var blocked_by_actor := false
+    for id in actor_positions:
+        if int(id) == ignore_id:
+            continue
+        var body: Dictionary = actor_positions[id]
+        if not bool(body.get("alive", true)):
+            continue
+        var centre: Vector2 = body.get("position", Vector2.ZERO)
+        var separation: float = radius + float(body.get("radius", 0.0))
+        if requested.distance_to(centre) >= separation - EPSILON:
+            continue
+        blocked_by_actor = true
+        var toward_start: Vector2 = start - centre
+        if toward_start.length_squared() < EPSILON:
+            toward_start = requested - centre
+        if toward_start.length_squared() < EPSILON:
+            toward_start = Vector2.LEFT
+        var primary: float = toward_start.angle()
+        for ring in [separation + 3.0, separation + 8.0]:
+            for sector in range(24):
+                var offset: float = TAU * float(sector) / 24.0
+                var candidate: Vector2 = centre + Vector2(cos(primary + offset), sin(primary + offset)) * float(ring)
+                if not is_valid_position(candidate, radius, ignore_id):
+                    continue
+                # Prefer the near side of the clicked actor. The subsequent
+                # find_path still validates actual reachability and budget.
+                var quality: float = candidate.distance_to(requested) + 0.14 * candidate.distance_to(start)
+                if quality < best:
+                    best = quality
+                    nearest = candidate
+    return nearest if blocked_by_actor and best < INF else requested
 
 func path_length(path: PackedVector2Array) -> float:
     var total := 0.0

@@ -14,21 +14,32 @@ var timeline: Array = []
 var stage_left: float = 0.0
 
 func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector2i.RIGHT) -> void:
+    var initial: Vector2i = Facing.from_delta(initial_facing)
+    var horizontal: Vector2i = initial if initial in [Facing.EAST, Facing.WEST] else Facing.EAST
+    var artwork_left: bool = bool(sprite.get_meta("faces_left_unflipped", false))
     tracks[id] = {"sprite": sprite, "state": "idle", "elapsed": 0.0,
-        "duration": 1.0, "loop": true, "facing": Facing.from_delta(initial_facing),
+        "duration": 1.0, "loop": true, "facing": initial,
+        "horizontal": horizontal, "artwork_left": artwork_left,
         "base_scale": sprite.scale}
     sprite.hframes = 6
     sprite.vframes = 4
     sprite.frame = 0
-    sprite.flip_h = initial_facing == Facing.WEST
+    sprite.flip_h = (horizontal == Facing.EAST) if artwork_left else (horizontal == Facing.WEST)
 
 func set_facing(id: int, facing: Vector2i) -> void:
     if not tracks.has(id): return
     var track: Dictionary = tracks[id]
     track.facing = Facing.from_delta(facing,track.facing)
+    # A 6x4 atlas has no dedicated north/south poses. Preserve the last
+    # horizontal silhouette instead of flipping on each vertical step.
+    if Vector2i(track.facing) in [Facing.EAST, Facing.WEST]:
+        track.horizontal = track.facing
     tracks[id] = track
     var sprite: Sprite2D = track.sprite
-    if sprite != null: sprite.flip_h = Vector2i(track.facing) == Facing.WEST
+    if sprite != null:
+        var horizontal: Vector2i = Vector2i(track.horizontal)
+        var artwork_left: bool = bool(track.artwork_left)
+        sprite.flip_h = (horizontal == Facing.EAST) if artwork_left else (horizontal == Facing.WEST)
 
 func facing_for(id: int) -> Vector2i:
     return Vector2i(tracks[id].facing) if tracks.has(id) else Facing.EAST
