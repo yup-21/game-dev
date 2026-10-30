@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Opening','Parties','DemoFlow','ArtAssets','HD2D','HD2DStartup','HD2DInteractions')][string]$Stage = 'All',
+    [ValidateSet('All','Policy','Rules','Edges','Playthrough','Catalog','Schools','SchoolPlaythrough','Framework','Generated','Lifecycle','Opening','Parties','DemoFlow','ArtAssets','HD2D','HD2DStartup','HD2DInteractions','Refactor')][string]$Stage = 'All',
     [string]$GodotPath
 )
 $ErrorActionPreference = 'Stop'
@@ -16,6 +16,7 @@ if ($Stage -in @('All','Parties')) { $checks += @{ Script = 'res://checks/test_p
 if ($Stage -in @('All','Framework')) { $checks += @{ Script = 'res://checks/test_ability_framework.gd'; Log = 'ability-framework.log'; Marker = 'FAILURES 0' } }
 if ($Stage -in @('All','Generated')) { $checks += @{ Script = 'res://checks/test_generated_cards.gd'; Log = 'generated-cards.log'; Marker = 'RESULTS 0 failures' } }
 if ($Stage -in @('All','Lifecycle')) { $checks += @{ Script = 'res://checks/test_model_lifecycle.gd'; Log = 'model-lifecycle.log'; Marker = 'MODEL LIFECYCLE: \d+ PASS / 0 FAIL' } }
+if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_command_dispatcher.gd'; Log = 'battle-command-dispatch.log'; Marker = '^COMMAND_DISPATCH_PASS\b' } }
 if ($Stage -in @('All','Policy')) { $checks += @{ Script = 'res://checks/test_tingfeng_ai.gd'; Log = 'tingfeng-policy.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - context-only tingfeng policy' } }
 if ($Stage -in @('All','Rules')) { $checks += @{ Script = 'res://checks/test_tingfeng.gd'; Log = 'tingfeng-rules.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - targeted tingfeng migration' } }
 if ($Stage -in @('All','Edges')) { $checks += @{ Script = 'res://checks/test_tingfeng_edges.gd'; Log = 'tingfeng-edges.log'; Marker = 'EDGE AUDIT: \d+ PASS / 0 failures' } }
