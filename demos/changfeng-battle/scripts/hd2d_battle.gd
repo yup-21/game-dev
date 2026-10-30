@@ -421,8 +421,8 @@ func _refresh() -> void:
     # Read priority from the NEW state before choosing hand visibility.
     snap = model.snapshot(observer_id)
     var owner := _decision_owner()
-    var actor = model.state.get_actor(owner)
-    if actor != null and actor.controller == "PLAYER":
+    var owner_actor = model.state.get_actor(owner)
+    if owner_actor != null and owner_actor.controller == "PLAYER":
         observer_id = owner
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(owner) if _player_decision() else []
