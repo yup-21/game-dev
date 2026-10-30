@@ -29,5 +29,10 @@
     "sprite_sheet": "res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg",
     "portrait_quality": "integrated",
     "sheet_quality": "concept_preview"
-  }
+  },
+  "learned_schools": [
+    "wind_sword",
+    "tingfeng",
+    "step"
+  ]
 }

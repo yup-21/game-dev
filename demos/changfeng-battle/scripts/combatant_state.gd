@@ -9,6 +9,7 @@ var cell: Vector2i
 var attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
 var stats: Dictionary = {}
 var passives: Dictionary = {"insight":0,"conceal":0}
+var learned_schools: Array = ["tingfeng"]
 var school_id: String = "tingfeng"
 var school_name: String = "听风五式"
 var hand_generation: int = 0
@@ -56,7 +57,7 @@ func _init(actor_id: int = 0, actor_name: String = "", start_cell: Vector2i = Ve
 
 func public_data(_include_hand: bool = false) -> Dictionary:
 	return {"id":id,"character_id":character_id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"hp":hp,"max_hp":max_hp,"qi":qi,"max_qi":max_qi,
-		"school_id":school_id,"school_name":school_name,
+		"school_id":school_id,"school_name":school_name,"learned_schools":learned_schools.duplicate(),
 		"shield":shield,"gauge":gauge,"charge_speed":stats.get("charge_speed",100),
 		"attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),
 		"turns_started":turns_started,"normal_moves_used":normal_moves_used,"move_budget":stats.get("move_budget",2),

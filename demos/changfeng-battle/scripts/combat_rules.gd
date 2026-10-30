@@ -77,6 +77,9 @@ func raw_actions(actor_id: int) -> Array:
 	var reachable: Dictionary=state.reachable_paths(actor.cell,actor_id)
 	if t=="ACTION":
 		options.append({"kind":"END_ACTION","actor_id":actor_id})
+		for school_id in actor.learned_schools:
+			if str(school_id)!=actor.school_id:
+				options.append({"kind":"SWITCH_SCHOOL","actor_id":actor_id,"school_id":str(school_id)})
 		var max_move: int=int(actor.stats.move_budget)-actor.normal_moves_used
 		for cell in state.terrain:
 			var path: Array=reachable.get(cell,[])
@@ -115,7 +118,7 @@ func validate(req: Dictionary) -> Dictionary:
 	# Check types before comparisons: Variant Array == String is a runtime error in Godot.
 	var fields: Dictionary={"kind":TYPE_STRING,"actor_id":TYPE_INT,"battle_id":TYPE_STRING,
 		"expected_revision":TYPE_INT,"request_version":TYPE_INT,"request_id":TYPE_STRING,"action_id":TYPE_STRING,
-		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING}
+		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
 	for key in fields:
 		if req.has(key) and typeof(req[key])!=int(fields[key]): return failure("MALFORMED_REQUEST","请求字段类型错误："+str(key))
 	if not req.has("kind") or not req.has("actor_id"): return failure("MALFORMED_REQUEST","缺少行动或操作者")
@@ -135,7 +138,7 @@ func validate(req: Dictionary) -> Dictionary:
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
-		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id"]:
+		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id","school_id"]:
 			if normalized.get(key)!=o.get(key): matches=false
 		if matches:
 			canonical=o

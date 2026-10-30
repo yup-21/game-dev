@@ -14,7 +14,7 @@ var registry = DefinitionRegistry.new()
 var instances: Dictionary:
 	get: return state.card_instances
 
-func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school_selection: Dictionary = {}) -> void:
+func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school_selection: Dictionary = {}, learned_selection: Dictionary = {}) -> void:
 	state=battle_state
 	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not data is Dictionary:
@@ -48,9 +48,20 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		if school.is_empty():
 			load_error="未知流派："+selection
 			return
+		var learned: Variant=learned_selection.get(actor.id,[selection])
+		if not learned is Array or learned.is_empty() or not learned.has(selection):
+			load_error="角色所学武学列表无效"
+			return
+		var unique: Dictionary={}
+		for id in learned:
+			if not id is String or catalog.get_school(str(id)).is_empty() or unique.has(str(id)):
+				load_error="角色所学武学包含无效或重复流派"
+				return
+			unique[str(id)]=true
+			if id!="tingfeng" and not selected.has(id): selected.append(id)
+		actor.learned_schools=learned.duplicate()
 		actor.school_id=selection
 		actor.school_name=str(school.name)
-		if selection!="tingfeng" and not selected.has(selection): selected.append(selection)
 	if not selected.is_empty():
 		for id in catalog.statuses: statuses[id]=catalog.statuses[id].duplicate(true)
 		for definition in catalog.forms.values():
@@ -143,6 +154,34 @@ func build_deck(actor, _seed: int = 0, _deck_ids: Array = []) -> bool:
 			var uid: String=create_instance(actor,str(entry.card_id),"draw_pile")
 			if uid.is_empty(): return false
 	shuffle(actor.draw_pile)
+	return true
+
+## Changing styles is a battle action. It swaps the complete physical
+## deck (including temporary generated cards) without touching HP, Qi,
+## equipment, status stacks or the unit's CTB meter.
+func equip_school(actor, school_id: String) -> bool:
+	if not actor.learned_schools.has(school_id) or actor.school_id==school_id:
+		return false
+	var target: Dictionary=catalog.get_school(school_id)
+	if target.is_empty(): return false
+	var entries: Array=catalog.deck_for(school_id,deck)
+	for entry in entries:
+		if not definitions.has(str(entry.card_id)) or bool(definitions[str(entry.card_id)].get("generated_only",false)):
+			return false
+	for zone in [actor.hand,actor.draw_pile,actor.discard_pile,actor.resolving,actor.exile_pile]:
+		for uid in zone:
+			forget(str(uid))
+			instances.erase(str(uid))
+		zone.clear()
+	actor.school_id=school_id
+	actor.school_name=str(target.name)
+	actor.attack_history.clear()
+	actor.combo_used.clear()
+	actor.card_uses.clear()
+	state.combo_history[actor.id]=[]
+	actor.hand_generation+=1
+	if not build_deck(actor): return false
+	draw(actor,5)
 	return true
 
 func create_instance(actor, definition_id: String, destination: String = "hand", source_uid: String = "") -> String:
