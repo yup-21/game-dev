@@ -19,9 +19,23 @@ func _create_battle() -> Node:
     root.add_child(battle)
     return battle
 
+## Exercise the production mode-changing command before any FREE UI action.
+func _enable_free(view: Node) -> void:
+    var battle=view.get("model")
+    var owner: int=battle.state.active_id
+    var changed: Dictionary=battle.submit(battle.request("SET_SPATIAL_MODE",owner,{"spatial_mode":"FREE"}))
+    _check(bool(changed.get("success",false)),"UI fixture switches to FREE through authority")
+    if not bool(changed.get("success",false)): return
+    view.call("_accept",changed)
+    var acknowledged: Dictionary=battle.acknowledge_animation(int(changed.ticket))
+    view.set("animation_ticket",-1)
+    view.call("_accept",acknowledged)
+    _check(battle.state.spatial_mode=="FREE","FREE mode is committed and visible")
+
 func _run() -> void:
     var view: Node=_create_battle()
     await process_frame
+    _enable_free(view)
     var model=view.get("model")
     var actor=model.state.get_actor(model.state.active_id)
     var target=model.state.get_actor(1 if actor.id==0 else 0)
@@ -46,6 +60,7 @@ func _run() -> void:
 
     var free_view: Node=_create_battle()
     await process_frame
+    _enable_free(free_view)
     var free_model=free_view.get("model")
     var free_actor=free_model.state.get_actor(free_model.state.active_id)
     var origin: Vector2=free_actor.position
@@ -58,6 +73,7 @@ func _run() -> void:
 
     var card_view: Node=_create_battle()
     await process_frame
+    _enable_free(card_view)
     var card_model=card_view.get("model")
     var caster=card_model.state.get_actor(card_model.state.active_id)
     var victim=card_model.state.get_actor(1 if caster.id==0 else 0)
