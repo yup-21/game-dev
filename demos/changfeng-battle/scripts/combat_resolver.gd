@@ -94,6 +94,21 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 		"MOVE_FREE":
 			actor.normal_moves_used+=int(plan.move_units)
 			move_actor_free(actor.id,Vector2(action.target_position),Vector2i(action.target_cell),PackedVector2Array(plan.continuous_path))
+		"MOVE_AND_ATTACK":
+			# The complete movement + attack cost was paid once at function entry.
+			# No second quote, payment or client-supplied path is used.
+			actor.normal_moves_used+=int(plan.move_units)
+			if int(plan.move_units)>0:
+				move_actor_free(actor.id,Vector2(action.target_position),Vector2i(action.target_cell),PackedVector2Array(plan.continuous_path))
+			var strike: Dictionary=action.attack
+			match str(strike.kind):
+				"BASIC_ATTACK":
+					actor.basic_attack_used=true
+					declare_attack(actor.id,"","basic","basic",int(strike.target_id),1,"thrust",0,[])
+				"PLAY_CARD":
+					play_card(actor,strike)
+				"USE_ABILITY":
+					play_ability(actor,strike)
 		"BASIC_ATTACK":
 			actor.basic_attack_used=true
 			declare_attack(actor.id,"","basic","basic",int(action.target_id),1,"thrust",0,[])
