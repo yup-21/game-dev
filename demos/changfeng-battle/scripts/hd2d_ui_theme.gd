@@ -1,15 +1,14 @@
 extends RefCounted
-## Original illustrated jade-and-ink HUD: reusable, resolution-independent styles.
-const INK = Color("101e24")
-const PANEL = Color("142c2d", 0.95)
-const PANEL_LIGHT = Color("24433d", 0.97)
-const JADE = Color("8ed7bd")
-const GOLD = Color("d7b679")
-const PAPER = Color("f4ead5")
-const MUTED = Color("aebfb6")
-const RED = Color("e3a18d")
-const BLUE = Color("87b8c6")
-const DIM = Color("53665e")
+## Original jade-and-ink combat UI palette for HD-2D wuxia battle.
+const INK = Color("142823")
+const PANEL = Color("1b3530", 0.94)
+const PANEL_LIGHT = Color("27483f", 0.96)
+const JADE = Color("67bc9e")
+const GOLD = Color("d0af75")
+const PAPER = Color("efe7d1")
+const MUTED = Color("b8c6b8")
+const RED = Color("d78a79")
+const PANEL_ART: Texture2D = preload("res://assets/ui/jade_panel_frame.svg")
 
 static func panel(background: Color = PANEL, outline: Color = GOLD) -> StyleBoxFlat:
     var style := StyleBoxFlat.new()
@@ -29,7 +28,31 @@ static func panel(background: Color = PANEL, outline: Color = GOLD) -> StyleBoxF
     return style
 
 static func apply_panel(container: PanelContainer) -> void:
-    container.add_theme_stylebox_override("panel", panel())
+    # Nine-slice original filigree: corner details remain sharp at every panel size.
+    var frame := StyleBoxTexture.new()
+    frame.texture = PANEL_ART
+    frame.texture_margin_left = 24.0
+    frame.texture_margin_right = 24.0
+    frame.texture_margin_top = 24.0
+    frame.texture_margin_bottom = 24.0
+    frame.content_margin_left = 16.0
+    frame.content_margin_right = 16.0
+    frame.content_margin_top = 12.0
+    frame.content_margin_bottom = 12.0
+    container.add_theme_stylebox_override("panel", frame)
+
+static func apply_meter(meter: ProgressBar, fill_color: Color) -> void:
+    meter.show_percentage = false
+    meter.custom_minimum_size = Vector2(0, 7)
+    var background := StyleBoxFlat.new()
+    background.bg_color = Color("102522")
+    background.set_corner_radius_all(3)
+    var fill := StyleBoxFlat.new()
+    fill.bg_color = fill_color
+    fill.set_corner_radius_all(3)
+    meter.add_theme_stylebox_override("background", background)
+    meter.add_theme_stylebox_override("fill", fill)
+
 
 static func apply_button(button: Button) -> void:
     button.add_theme_stylebox_override("normal", panel(PANEL_LIGHT, Color("5c7b6d")))
@@ -44,54 +67,24 @@ static func apply_button(button: Button) -> void:
     button.custom_minimum_size = Vector2(146, 44)
 
 static func card_style(selected: bool = false, hover: bool = false) -> StyleBoxFlat:
-    var style := StyleBoxFlat.new()
-    style.bg_color = Color("345d52") if selected else (Color("294d48") if hover else Color("182e32"))
-    style.border_color = Color("f6dc9a") if selected else (GOLD if hover else Color("537c75"))
-    style.set_border_width_all(3 if selected else 2)
-    style.border_width_bottom = 5 if selected else 3
-    style.set_corner_radius_all(11)
-    style.corner_detail = 8
-    style.content_margin_left = 8
-    style.content_margin_top = 8
-    style.content_margin_right = 9
-    style.content_margin_bottom = 8
-    style.shadow_color = Color(0.01, 0.025, 0.035, 0.83)
-    style.shadow_size = 16 if selected else 9
-    style.shadow_offset = Vector2(0, 7 if selected else 4)
-    return style
+    var box := StyleBoxFlat.new()
+    box.bg_color = Color("18342f") if hover else Color("102a27")
+    box.border_color = Color("f2d99c") if selected else (GOLD if hover else Color("648477"))
+    box.set_border_width_all(3 if selected else 2)
+    box.set_corner_radius_all(12)
+    box.shadow_color = Color(0.02, 0.05, 0.05, 0.72)
+    box.shadow_size = 12 if selected else 7
+    box.shadow_offset = Vector2(0, 5)
+    return box
 
 static func apply_card(button: Button, selected: bool = false) -> void:
-    button.custom_minimum_size = Vector2(255, 161)
+    button.custom_minimum_size = Vector2(176, 184)
     button.add_theme_stylebox_override("normal", card_style(selected))
     button.add_theme_stylebox_override("hover", card_style(selected, true))
     button.add_theme_stylebox_override("pressed", card_style(true, true))
-    button.add_theme_stylebox_override("disabled", card_style(false))
-    button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-    button.add_theme_color_override("font_color", PAPER)
-    button.add_theme_color_override("font_hover_color", Color.WHITE)
-    button.add_theme_color_override("font_pressed_color", Color("fff0c9"))
-    button.add_theme_font_size_override("font_size", 13)
-    button.add_theme_constant_override("h_separation", 8)
-    button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-    button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-    button.add_theme_constant_override("icon_max_width", 93)
-    button.expand_icon = true
-    button.clip_text = true
-    button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-
-static func gauge(background: Color, fill: Color) -> Array[StyleBoxFlat]:
-    var empty := StyleBoxFlat.new()
-    empty.bg_color = background
-    empty.set_corner_radius_all(3)
-    var active := StyleBoxFlat.new()
-    active.bg_color = fill
-    active.set_corner_radius_all(3)
-    return [empty, active]
-
-static func apply_gauge(bar: ProgressBar, fill: Color) -> void:
-    var styles := gauge(Color("09191c"), fill)
-    bar.add_theme_stylebox_override("background", styles[0])
-    bar.add_theme_stylebox_override("fill", styles[1])
-    bar.show_percentage = false
-    bar.custom_minimum_size = Vector2(30, 6)
-    bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    button.add_theme_stylebox_override("focus", card_style(true, true))
+    # The underlying Button retains a readable .text for the input/automation
+    # contract; its visual text is supplied by child Labels in hd2d_card_ui.
+    for state in ["font_color", "font_hover_color", "font_pressed_color",
+                  "font_focus_color", "font_disabled_color"]:
+        button.add_theme_color_override(state, Color.TRANSPARENT)
