@@ -4,6 +4,7 @@ extends SceneTree
 ## Omit --headless and append -- --capture to also save rendered acceptance PNGs.
 const SCENE_PATH := "res://battle_hd2d.tscn"
 const CELL_SIZE := 1.5
+const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
 var scene: Node3D
 var failures := 0
 var checks := 0
@@ -106,7 +107,7 @@ func _key(code: Key) -> void:
         await _frames()
 
 func _screen(cell: Vector2i) -> Vector2:
-    return scene.get("illustrated_map").point_for_cell(cell)
+    return IllustratedMap.point_for_cell(cell)
 
 func _visible_rect(control: Control) -> Rect2:
     var visible := control.get_global_rect().intersection(root.get_visible_rect())
