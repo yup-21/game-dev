@@ -12,6 +12,7 @@ on:
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
       - 'demos/changfeng-battle/scripts/character_registry.gd'
+      - 'demos/changfeng-battle/checks/test_multi_school_switch.gd'
       - 'demos/changfeng-battle/scripts/character_card_ui.gd'
       - 'demos/changfeng-battle/scripts/hd2d_art_catalog.gd'
       - 'demos/changfeng-battle/scripts/scenario_director.gd'
@@ -87,6 +88,8 @@ jobs:
           godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
       - name: Validate character registry, profile bindings and live role dossier
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_character_registry.gd
+      - name: Verify multiple learned schools, switching, card-zone integrity and UI
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_multi_school_switch.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
 
