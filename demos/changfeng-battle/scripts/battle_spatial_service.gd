@@ -71,6 +71,8 @@ func shortest_path(start: Vector2, goal: Vector2, occupied: Array = [], exclude_
         dist.append(INF)
         prev.append(-1)
     dist[0] = 0.0
+    # Cache visibility results: the graph can contain hundreds of waypoints.
+    var visibility: Dictionary = {}
     for _iteration in range(points.size()):
         var best := -1
         for i in range(points.size()):
@@ -85,7 +87,12 @@ func shortest_path(start: Vector2, goal: Vector2, occupied: Array = [], exclude_
             if j == best or done.has(j):
                 continue
             var cost: float = points[best].distance_to(points[j])
-            if dist[best] + cost + EPSILON < dist[j] and clear_segment(points[best], points[j], occupied, exclude_id):
+            if dist[best] + cost + EPSILON >= dist[j]:
+                continue
+            var edge := Vector2i(mini(best, j), maxi(best, j))
+            if not visibility.has(edge):
+                visibility[edge] = clear_segment(points[best], points[j], occupied, exclude_id)
+            if bool(visibility[edge]):
                 dist[j] = dist[best] + cost
                 prev[j] = best
     if is_inf(dist[1]):
