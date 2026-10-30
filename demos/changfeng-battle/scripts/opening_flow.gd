@@ -11,14 +11,15 @@ const INK = Color("233c3c")
 const JADE = Color("3a8178")
 const GOLD = Color("c5a16b")
 const RED = Color("aa5548")
-const ESCORT = Vector2(1110, 530)
+const ESCORT = Vector2(1050, 560)
+const TEMPLE_PAINTING = "res://assets/scenes/story/ruined_temple_story.webp"
 var story = Story.new()
 var ui_font: SystemFont
 var title_font: SystemFont
 var clock: float = 0.0
 var cinematic_elapsed: float = 0.0
 var visible_characters: float = 0.0
-var player_pos: Vector2 = Vector2(405, 593)
+var player_pos: Vector2 = Vector2(350, 705)
 var mouse_pos: Vector2 = Vector2(-100, -100)
 var buttons: Array = []
 var message: String = ""
@@ -71,7 +72,7 @@ func _enter_new_game() -> void:
 	story.begin()
 	cinematic_elapsed = 0.0
 	visible_characters = 0.0
-	player_pos = Vector2(405,593)
+	player_pos = Vector2(350,705)
 	message = ""
 
 func _advance_cinematic() -> void:
@@ -375,12 +376,16 @@ func _draw_menu() -> void:
 	_text(Vector2(138,960),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
-	_sky(clock,true)
-	# The first beat is a memory of the lost martial world, not today's rainy road.
-	if story.cinematic_index == 0:
-		var memory := ArtCatalog.scenery("mountain")
-		if memory != null:
-			_cover_texture(memory,Rect2(0,0,1600,1000),Color(0.37,0.50,0.51,0.68))
+	# First beat is a memory of the destroyed school; the later rain
+	# beats use the EXACT same painted temple shown in playable exploration.
+	if story.cinematic_index > 0 and _temple_background():
+		pass
+	else:
+		_sky(clock,true)
+		if story.cinematic_index == 0:
+			var memory := ArtCatalog.scenery("mountain")
+			if memory != null:
+				_cover_texture(memory,Rect2(0,0,1600,1000),Color(0.37,0.50,0.51,0.68))
 	_rain(clock)
 	var beat: Dictionary=story.current_beat()
 	var duration: float=float(beat.get("duration",4.0))
@@ -388,9 +393,10 @@ func _draw_cinematic() -> void:
 	var caption: String=str(beat.get("caption",""))
 	var body: String=str(beat.get("text",""))
 	var drift: float = sin(cinematic_elapsed * 0.55) * 13.0
-	_paint_pavilion(Vector2(1120 + drift,752),0.98)
-	_carriage(Vector2(800+sin(clock*.24)*7.0,743))
-	_lantern_light(Vector2(1250 + drift,724),clock)
+	if story.cinematic_index==0 or not ResourceLoader.exists(TEMPLE_PAINTING):
+		_paint_pavilion(Vector2(1120 + drift,752),0.98)
+		_carriage(Vector2(800+sin(clock*.24)*7.0,743))
+		_lantern_light(Vector2(1250 + drift,724),clock)
 	if story.cinematic_index >= 1:
 		if not _painted_portrait("沈长风",Rect2(80-drift,235,375,635),Color(1,1,1,0.76)):
 			_portrait(Vector2(315 - drift,730),false,1.80)
@@ -407,35 +413,52 @@ func _draw_cinematic() -> void:
 	_button(Rect2(1339,45,202,44),"跳过过场  Esc","skip",true)
 	_text(Vector2(621,939),"空格 / 点击继续",15,Color("dadbd1"))
 
-func _draw_explore() -> void:
-	_sky(clock,true)
-	_rain(clock,114)
-	draw_rect(Rect2(0,0,1600,125),Color("203d3b"))
-	_text(Vector2(62,72),"第一幕 · 雨夜残镖",36,PAPER,true)
-	_text(Vector2(1090,67),"荒道破庙 / 暮秋 · 三更",17,GOLD)
-	# Ground plane, wet path and scattered stones.
-	_polygon([Vector2(0,650),Vector2(530,570),Vector2(1220,580),Vector2(1600,680),Vector2(1600,1000),Vector2(0,1000)],Color("515d54"))
-	_polygon([Vector2(0,760),Vector2(465,666),Vector2(1130,676),Vector2(1600,776),Vector2(1600,1000),Vector2(0,1000)],Color(0.25,0.29,0.25,0.40))
-	for i in range(45):
-		var px: float=float((i*137+62)%1550)
-		var py: float=678+float((i*41)%293)
-		draw_line(Vector2(px,py),Vector2(px+16,py-2),Color(0.68,0.74,0.65,0.13),1)
-	_wet_road(clock)
-	_paint_pavilion(Vector2(1280,570),0.9)
-	_carriage(Vector2(837,625))
-	_lantern_light(Vector2(1233,574),clock)
+## The generated painting is the entire walkable world, never a wallpaper
+## behind a second programmatic road/carriage. Character sprites are separate.
+func _temple_background() -> bool:
+	if not ResourceLoader.exists(TEMPLE_PAINTING):
+		return false
+	var painting := load(TEMPLE_PAINTING) as Texture2D
+	if painting == null: return false
+	_cover_texture(painting,Rect2(0,0,1600,1000))
+	return true
+
+func _paint_exploration() -> void:
+	if not _temple_background():
+		_sky(clock,true)
+		_wet_road(clock)
+		_paint_pavilion(Vector2(1280,570),0.9)
+		_carriage(Vector2(837,625))
+	_rain(clock,110)
+	# The playable hero uses the exact existing 6x4 animation atlas seen in
+	# combat; no figure is baked into the painted temple texture.
+	var atlas: Texture2D=ArtCatalog.sheet_for_actor(0,false)
+	if atlas!=null:
+		var walking: bool=Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_UP) or Input.is_key_pressed(KEY_DOWN) or Input.is_key_pressed(KEY_LEFT) or Input.is_key_pressed(KEY_RIGHT)
+		var frame := int(clock*9.0)%6 if walking else 0
+		var source := Rect2(float(frame*256),256.0 if walking else 0.0,256.0,256.0)
+		draw_texture_rect_region(atlas,Rect2(player_pos+Vector2(-60,-130),Vector2(120,130)),source)
+	else:
+		_portrait(player_pos,false)
+	# The escort elder currently has an independent illustrated portrait,
+	# but no combat pose sheet. Keep the existing narrative NPC renderer.
 	_portrait(ESCORT+Vector2(0,10),true)
-	_portrait(player_pos,false)
+
+func _draw_explore() -> void:
+	_paint_exploration()
+	draw_rect(Rect2(0,0,1600,106),Color(0.05,0.10,0.12,0.77))
+	_text(Vector2(62,67),"第一幕 · 雨夜残镖",36,PAPER,true)
+	_text(Vector2(1090,65),"荒道破庙 / 暮秋 · 三更",17,GOLD)
 	var near: bool=player_pos.distance_to(ESCORT)<175.0
 	if near:
-		draw_arc(ESCORT+Vector2(0,-15),100,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
-		_button(Rect2(882,366,426,55),"E  与受伤镖头交谈","talk",true)
+		draw_arc(ESCORT+Vector2(0,-14),75,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
+		_button(Rect2(850,363,440,54),"E  与受伤镖头交谈","talk",true)
 	else:
-		_text(Vector2(843,370),"老镖头  ·  似乎还有气息",18,Color("e1d2ac"))
+		_text(Vector2(836,363),"老镖头  ·  似乎还有气息",18,Color("e1d2ac"))
 	_panel(Rect2(76,837,1448,125),Color(0.13,0.22,0.20,0.91),Color(GOLD,0.75))
 	_text(Vector2(112,881),"沿官道走近镖车，查探伤者。",23,PAPER,true)
-	_text(Vector2(114,920),"WASD / 方向键移动    靠近后按 E 交谈    ·    这是序章中的可操作叙事场景",15,Color("d5c8aa"))
-	if message_left>0: _text(Vector2(120,809),message,18,GOLD)
+	_text(Vector2(114,920),"WASD / 方向键移动   ·   靠近后按 E 交谈",15,Color("d5c8aa"))
+	if message_left>0: _text(Vector2(120,810),message,18,GOLD)
 
 func _draw_dialogue() -> void:
 	_draw_explore_backdrop()
@@ -464,21 +487,13 @@ func _draw_dialogue() -> void:
 		_text(Vector2(1281,911),"点击显示全文  ▸",16,Color("968262"))
 
 func _draw_explore_backdrop() -> void:
-	# The world remains visible behind the dialogue, with motion softened.
-	_sky(clock,true)
-	_rain(clock,80)
-	_polygon([Vector2(0,665),Vector2(600,600),Vector2(1200,610),Vector2(1600,720),Vector2(1600,1000),Vector2(0,1000)],Color("525e56"))
-	_wet_road(clock)
-	_paint_pavilion(Vector2(1270,580),0.9)
-	_carriage(Vector2(822,628))
-	_lantern_light(Vector2(1225,582),clock)
-	_portrait(ESCORT+Vector2(0,10),true)
-	_portrait(player_pos,false)
+	_paint_exploration()
 
 func _draw_complete() -> void:
-	_sky(clock,true)
+	if not _temple_background():
+		_sky(clock,true)
+		_carriage(Vector2(1090,650))
 	_rain(clock,90)
-	_carriage(Vector2(1090,650))
 	draw_rect(Rect2(0,0,1600,1000),Color(0.05,0.12,0.12,0.40))
 	_panel(Rect2(235,180,1130,696),Color("e9e4d6"),GOLD)
 	_center(Vector2(800,290),"江 湖 初 入",39,INK,true)

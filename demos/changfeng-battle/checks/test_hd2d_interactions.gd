@@ -4,6 +4,7 @@ extends SceneTree
 ## Omit --headless and append -- --capture to also save rendered acceptance PNGs.
 const SCENE_PATH := "res://battle_hd2d.tscn"
 const CELL_SIZE := 1.5
+const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
 var scene: Node3D
 var failures := 0
 var checks := 0
@@ -106,8 +107,7 @@ func _key(code: Key) -> void:
         await _frames()
 
 func _screen(cell: Vector2i) -> Vector2:
-    var camera: Camera3D = scene.get("camera")
-    return camera.unproject_position(Vector3((cell.x - 7.0) * CELL_SIZE, 0.0, (cell.y - 4.5) * CELL_SIZE))
+    return IllustratedMap.point_for_cell(cell)
 
 func _visible_rect(control: Control) -> Rect2:
     var visible := control.get_global_rect().intersection(root.get_visible_rect())
@@ -192,8 +192,8 @@ func _run() -> void:
         await _click(_screen(cell))
         check(int(_view().revision) == int(before.revision) and _actor(_view(), 0).cell == _actor(before, 0).cell, "mouse rejects water/occupied cell " + str(cell))
     await _mouse(_screen(Vector2i(7, 4)))
-    check(scene.get("hovered") == Vector2i(7, 4), "mouse motion and camera projection resolve the bridge cell")
-    check(bool(scene.get("cursor_mesh").visible), "legal bridge move displays the cursor")
+    check(scene.get("hovered") == Vector2i(7, 4), "mouse motion and painterly 2D projection resolve the bridge cell")
+    check(bool(scene.get("illustrated_map").selection.visible), "legal bridge move displays the 2D cursor")
     await _click(_screen(Vector2i(7, 4)))
     var moved := _view()
     check(_actor(moved, 0).cell == Vector2i(7, 4) and int(moved.revision) == int(before.revision) + 1, "left click submits exactly one legal MOVE through scene input")

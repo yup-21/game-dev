@@ -4,6 +4,7 @@ extends Node3D
 const Model = preload("res://scripts/battle_model.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
 const Scenery = preload("res://scripts/hd2d_scenery.gd")
+const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
 const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
 const CardUI = preload("res://scripts/hd2d_card_ui.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
@@ -25,6 +26,7 @@ var result_reported := false
 var ai = EnemyAI.new()
 var animation_driver = Animator.new()
 var effects_driver
+var illustrated_map: CanvasLayer
 var camera: Camera3D
 var actor_nodes: Dictionary = {}
 var visual_cells: Dictionary = {}
@@ -78,6 +80,8 @@ func _ready() -> void:
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(_decision_owner())
     _build_world()
+    # 3D terrain, procedural scenery, and far-away backdrop are removed.
+    # Only 2D painted ground and 2D sprite action frames are visible.
     effects_driver = VFX.new(self, camera)
     _build_ui()
     _refresh()
@@ -158,6 +162,17 @@ func _build_world() -> void:
     rig.add_child(camera)
     camera.look_at(Vector3.ZERO, Vector3.UP)
     camera.current = true
+
+    # A 2D illustrated image owns the entire battlefield. The camera stays
+    # only for compatibility with old 3D animation/effect fixtures.
+    illustrated_map = IllustratedMap.new(story_encounter)
+    add_child(illustrated_map)
+    for actor in snap.get("actors", []):
+        _create_actor(actor)
+        var sprite: Sprite3D=actor_nodes[int(actor.id)].get_node("Sprite3D") as Sprite3D
+        illustrated_map.add_actor(actor,sprite.texture)
+        actor_nodes[int(actor.id)].visible=false
+    return
 
     var river := _box("River", Vector3(0, -0.35, 0), Vector3(3.3, 0.18, 20), Color("397e82"), 0.22)
     var water := ShaderMaterial.new()
@@ -244,7 +259,7 @@ func _build_target_markers() -> void:
             target_markers.append(marker)
 
 func _refresh_target_markers() -> void:
-    if target_markers.is_empty():
+    if target_markers.is_empty() and illustrated_map==null:
         return
     var target_cells: Dictionary = {}
     var actions: Array = _selected_actions() if not selected_kind.is_empty() else legals
@@ -257,6 +272,9 @@ func _refresh_target_markers() -> void:
             for actor in snap.get("actors", []):
                 if int(actor.id) == int(action.target_id):
                     target_cells[actor.cell] = true
+    if illustrated_map!=null:
+        illustrated_map.set_highlights(target_cells,animation_ticket<0 and _player_decision())
+        return
     for x in range(COLS):
         for y in range(ROWS):
             var cell := Vector2i(x, y)
@@ -1113,6 +1131,14 @@ func _process(delta: float) -> void:
             if sprite != null:
                 sprite.position.y = 1.0 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
     animation_driver.update(delta, moving)
+    if illustrated_map!=null:
+        for actor in snap.get("actors",[]):
+            var id: int=int(actor.id)
+            var root: Node3D=actor_nodes.get(id,null)
+            if root==null: continue
+            var sprite: Sprite3D=root.get_node("Sprite3D") as Sprite3D
+            var grid := Vector2(root.position.x/CELL+7.0,root.position.z/CELL+4.5)
+            illustrated_map.update_actor(id,grid,sprite.frame,sprite.flip_h,float(actor.hp)>0)
     for id in actor_nodes:
         var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow")
         if arrow != null:
@@ -1191,6 +1217,8 @@ func _cue_events(events: Array) -> void:
         var id := int(event.get("defender_id", event.get("target_id", event.get("actor_id", -1))))
         if kind in ["ATTACK_DECLARED", "COMBO_TRIGGERED", "SHIELD", "MOVE"]:
             id = int(event.get("actor_id", id))
+        if illustrated_map!=null and id>=0:
+            illustrated_map.pulse_actor(id)
         if not cue_lights.has(id):
             continue
         var light: OmniLight3D = cue_lights[id]
@@ -1244,6 +1272,8 @@ func _legal(kind: String, cell: Vector2i = Vector2i(-1, -1)) -> Dictionary:
 
 func _hover_cell() -> Vector2i:
     var mouse := get_viewport().get_mouse_position()
+    if illustrated_map!=null:
+        return illustrated_map.cell_from_screen(mouse,snap.get("terrain",{}))
     var origin := camera.project_ray_origin(mouse)
     var direction := camera.project_ray_normal(mouse)
     if absf(direction.y) < 0.0001:
@@ -1261,6 +1291,9 @@ func _hover_cell() -> Vector2i:
 func _update_cursor() -> void:
     hovered = _hover_cell()
     var usable := not _action_at(hovered).is_empty() if not selected_kind.is_empty() else not _legal("MOVE", hovered).is_empty()
+    if illustrated_map!=null:
+        illustrated_map.set_cursor(hovered,usable and animation_ticket<0)
+        return
     cursor_mesh.visible = usable and animation_ticket < 0
     if cursor_mesh.visible:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)

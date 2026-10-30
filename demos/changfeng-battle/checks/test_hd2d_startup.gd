@@ -46,8 +46,8 @@ func _run() -> void:
         quit(1)
         return
 
-    if scene.get_node_or_null("WuxiaScenery") == null:
-        push_error("HD2D_STARTUP: wuxia scenery missing")
+    if scene.get("illustrated_map") == null or scene.get("illustrated_map").picture.texture == null:
+        push_error("HD2D_STARTUP: flat illustrated battlefield missing")
         quit(1)
         return
 
