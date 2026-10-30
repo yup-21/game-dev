@@ -32,9 +32,12 @@ func _run() -> void:
     if sample.get_child_count() < 5:
         _fail("illustration or labels missing from card")
         return
-    var distinct := CardUI.illustration("tf_sunder", "断岳式") as AtlasTexture
-    var first := CardUI.illustration("tf_probe", "探锋式") as AtlasTexture
-    if first == null or distinct == null or first.region == distinct.region:
+    var distinct := CardUI.illustration("tf_sunder", "断岳式")
+    var first := CardUI.illustration("tf_probe", "探锋式")
+    var first_atlas := first as AtlasTexture
+    var distinct_atlas := distinct as AtlasTexture
+    if first == null or distinct == null or (first_atlas != null and distinct_atlas != null
+            and first_atlas.region == distinct_atlas.region) or first == distinct:
         _fail("two different techniques are mapped to one atlas cell")
         return
     sample.free()
@@ -42,7 +45,7 @@ func _run() -> void:
     var scene: Node3D = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame
-    var hand: HFlowContainer = scene.get("card_actions")
+    var hand: HBoxContainer = scene.get("card_actions")
     var utilities: VBoxContainer = scene.get("command_actions")
     if hand == null or utilities == null:
         _fail("new martial hand / utility panel is not installed")
