@@ -11,6 +11,13 @@ on:
       - 'demos/changfeng-battle/checks/opening_visual_check.gd'
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
+      - 'demos/changfeng-battle/scripts/character_registry.gd'
+      - 'demos/changfeng-battle/scripts/character_card_ui.gd'
+      - 'demos/changfeng-battle/scripts/hd2d_art_catalog.gd'
+      - 'demos/changfeng-battle/scripts/scenario_director.gd'
+      - 'demos/changfeng-battle/scripts/combatant_state.gd'
+      - 'demos/changfeng-battle/data/characters/**'
+      - 'demos/changfeng-battle/checks/test_character_registry.gd'
       - 'demos/changfeng-battle/scripts/hd2d_ctb_rail.gd'
       - 'demos/changfeng-battle/scripts/hd2d_response_policy.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_auto_pass.gd'
@@ -78,6 +85,8 @@ jobs:
           godot --headless --path demos/changfeng-battle --script res://checks/test_tingfeng.gd
           godot --headless --path demos/changfeng-battle --script res://checks/test_ability_framework.gd
           godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
+      - name: Validate character registry, profile bindings and live role dossier
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_character_registry.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
 
@@ -101,6 +110,7 @@ jobs:
           xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_hd2d_unified_hud.gd
           test -s demos/changfeng-battle/captures/hd2d-validation/01-board.png
           test -s demos/changfeng-battle/captures/hd2d-validation/02-card-selection.png
+          test -s demos/changfeng-battle/captures/hd2d-validation/03-character-dossier.png
       - name: Upload screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4

@@ -162,3 +162,8 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 ## 战斗手牌显示修复
 
 旧版 `hd2d_battle.gd` 仅将 `legal_actions()` 中的卡牌画出来；独立战斗开场时两名角色相距两格，但绝大多数近战剑招射程一格，导致已抽到的攻击牌被错误隐藏。现统一由 `snapshot(observer_id).hand` 决定卡牌的可见集合，`legal_actions()` 只决定能否点击与目标高亮。暂不可用的牌在原画区置灰，鼠标提示检查目标距离、交锋时机与费用；靠近敌人后会自动恢复可操作。AI行动或动画期间也不再把已有手牌清空。规则、概率、初始12张牌组、抽牌顺序及阶段派生均未更改。
+
+
+## 统一角色卡模块
+
+七份独立角色档案位于 `data/characters/`；`scripts/character_registry.gd` 负责角色身份、背景、属性、流派、已学阶段技能和美术路径，并通过 `ScenarioDirector` 注入战斗。点击战斗左侧角色头像或按 **C** 打开 `CharacterCardUI`，浏览当前气血/内息/状态、四维/派生属性、武学、人物简介和立绘/动作预览；Esc、背景或收起按钮关闭。装备和成长暂未完成，界面不会展示虚假数值。无档案的旧规则测试保留原行为。

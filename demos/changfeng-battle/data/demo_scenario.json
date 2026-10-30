@@ -14,7 +14,8 @@
           "cell": [
             6,
             4
-          ]
+          ],
+          "character_id": "shen_changfeng"
         },
         {
           "id": 2,
@@ -24,7 +25,8 @@
           "cell": [
             5,
             5
-          ]
+          ],
+          "character_id": "gu_qingshuang"
         },
         {
           "id": 3,
@@ -34,7 +36,8 @@
           "cell": [
             5,
             3
-          ]
+          ],
+          "character_id": "green_wanderer"
         },
         {
           "id": 1,
@@ -44,7 +47,8 @@
           "cell": [
             8,
             4
-          ]
+          ],
+          "character_id": "pursuer_captain"
         },
         {
           "id": 4,
@@ -54,7 +58,8 @@
           "cell": [
             9,
             5
-          ]
+          ],
+          "character_id": "black_blade"
         },
         {
           "id": 5,
@@ -64,17 +69,10 @@
           "cell": [
             9,
             3
-          ]
+          ],
+          "character_id": "night_assassin"
         }
-      ],
-      "schools": {
-        "0": "wind_sword",
-        "1": "saber",
-        "2": "tide",
-        "3": "step",
-        "4": "ember",
-        "5": "needle"
-      }
+      ]
     }
   ]
 }

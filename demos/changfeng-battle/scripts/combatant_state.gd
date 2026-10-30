@@ -1,6 +1,7 @@
 extends RefCounted
 const UNIT: int = 10000
 var id: int
+var character_id: String = ""
 var team_id: int = 0
 var controller: String = "AI"
 var name: String
@@ -54,7 +55,7 @@ func _init(actor_id: int = 0, actor_name: String = "", start_cell: Vector2i = Ve
 	cell=start_cell
 
 func public_data(_include_hand: bool = false) -> Dictionary:
-	return {"id":id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"hp":hp,"max_hp":max_hp,"qi":qi,"max_qi":max_qi,
+	return {"id":id,"character_id":character_id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"hp":hp,"max_hp":max_hp,"qi":qi,"max_qi":max_qi,
 		"school_id":school_id,"school_name":school_name,
 		"shield":shield,"gauge":gauge,"charge_speed":stats.get("charge_speed",100),
 		"attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),

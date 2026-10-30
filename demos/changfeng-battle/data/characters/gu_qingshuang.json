@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "gu_qingshuang",
+  "battle_actor_id": 2,
+  "name": "顾清霜",
+  "title": "霜影同行",
+  "role": "护卫 · 化劲",
+  "faction": "同行者",
+  "team_hint": "ally",
+  "weapon": "细剑（兼修掌法）",
+  "personality": "寡言冷静，擅长守势，重视同伴的安全。",
+  "biography": "行走江湖的冷面女侠，剑术为形、沧澜掌意为内。雨夜同行，常于危急之际以化劲卸去敌锋。",
+  "school_id": "tide",
+  "attributes": {
+    "STR": 9,
+    "AGI": 12,
+    "CON": 11,
+    "MND": 12
+  },
+  "passives": {
+    "insight": 1,
+    "conceal": 0
+  },
+  "techniques": {},
+  "art": {
+    "portrait": "res://assets/characters/concepts/gu_qingshuang_portrait_v1.png",
+    "sprite_sheet": "res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png",
+    "portrait_quality": "integrated",
+    "sheet_quality": "24_pose_preview"
+  }
+}
