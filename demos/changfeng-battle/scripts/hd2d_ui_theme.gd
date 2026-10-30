@@ -81,6 +81,9 @@ static func apply_card(button: Button, selected: bool = false) -> void:
     button.add_theme_stylebox_override("hover", card_style(selected, true))
     button.add_theme_stylebox_override("pressed", card_style(true, true))
     button.add_theme_stylebox_override("focus", card_style(true, true))
+    # Keep disabled artwork in the same unified style, rather than the engine's
+    # default grey rectangular button frame.
+    button.add_theme_stylebox_override("disabled", card_style(false))
     for state in ["font_color", "font_hover_color", "font_pressed_color",
                   "font_focus_color", "font_disabled_color"]:
         button.add_theme_color_override(state, Color.TRANSPARENT)
