@@ -180,8 +180,9 @@ func equip_school(actor, school_id: String) -> bool:
 	actor.card_uses.clear()
 	state.combo_history[actor.id]=[]
 	actor.hand_generation+=1
+	# This action is ending. New cards are drawn at the next natural
+	# ACTION start, so the next hand refresh cannot waste freshly drawn cards.
 	if not build_deck(actor): return false
-	draw(actor,5)
 	return true
 
 func create_instance(actor, definition_id: String, destination: String = "hand", source_uid: String = "") -> String:

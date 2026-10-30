@@ -88,8 +88,8 @@ func _run() -> void:
     _check(a.hp_u==previous_hp and a.qi_u==previous_qi
         and m.state.global_tick>=before_tick,
         "switch does not grant HP/Qi or reset global time")
-    _check(a.hand.size()==5 and a.draw_pile.size()==7,
-        "replacement school produces 12 starter cards and five drawn")
+    _check(a.hand.is_empty() and a.draw_pile.size()==12,
+        "replacement school creates twelve cards but does not waste a draw on a spent action")
     var fresh: Array = _all_zone_ids(a)
     var all_new := true
     for uid in fresh:
@@ -112,6 +112,18 @@ func _run() -> void:
     m.acknowledge_animation(m.state.animation_ticket)
     _check(not _has(m.legal_actions(0),"SWITCH_SCHOOL","step"),
         "switching outside own ACTION is prohibited")
+    # On this fixture the enemy acts next. Once it ends its ACTION the
+    # switching character naturally draws five cards from the new deck.
+    a.gauge = 10000
+    enemy.gauge = 0
+    var enemy_end: Dictionary = m.submit(m.request("END_ACTION",enemy.id))
+    _check(bool(enemy_end.get("success",false)),
+        "opponent can end turn while swapped deck is waiting to draw")
+    _check(m.state.active_id==a.id and a.hand.size()==5
+        and a.draw_pile.size()==7, "next own action draws five new martial cards")
+    for uid in a.hand:
+        _check(str(m.cards.canonical_definition(str(uid)).get("id","")).begins_with("tf_"),
+            "new active hand contains only equipped Tingfeng martial cards")
     # Profiled 3v3: all allies/enemies still use their independent schools,
     # and every actor has at least one additional learned discipline.
     var director = Scenario.new()
