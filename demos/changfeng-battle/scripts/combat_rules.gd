@@ -118,7 +118,7 @@ func validate(req: Dictionary) -> Dictionary:
 	# Check types before comparisons: Variant Array == String is a runtime error in Godot.
 	var fields: Dictionary={"kind":TYPE_STRING,"actor_id":TYPE_INT,"battle_id":TYPE_STRING,
 		"expected_revision":TYPE_INT,"request_version":TYPE_INT,"request_id":TYPE_STRING,"action_id":TYPE_STRING,
-		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
+		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"attack_kind":TYPE_STRING,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
 	for key in fields:
 		if req.has(key) and typeof(req[key])!=int(fields[key]): return failure("MALFORMED_REQUEST","请求字段类型错误："+str(key))
 	if not req.has("kind") or not req.has("actor_id"): return failure("MALFORMED_REQUEST","缺少行动或操作者")
@@ -139,6 +139,8 @@ func validate(req: Dictionary) -> Dictionary:
 	# They must instead pass the same authoritative, precommit checks.
 	if str(normalized.get("kind",""))=="MOVE_FREE":
 		return _validate_free_move(normalized)
+	if str(normalized.get("kind",""))=="MOVE_AND_ATTACK":
+		return _validate_move_and_attack(normalized)
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
@@ -210,3 +212,136 @@ func _validate_free_move(req: Dictionary) -> Dictionary:
 	if not checked.get("success",false):
 		return failure("HOOK_REJECTED",str(checked.get("message","行动被规则禁止")))
 	return {"success":true,"action":action,"plan":quote}
+
+## A single precommit plan owns both approach movement and attack execution.
+## Neither stage is applied until all geometry, hook, card and resource checks pass.
+func _validate_move_and_attack(req: Dictionary) -> Dictionary:
+	if state.spatial==null:
+		return failure("SPATIAL_UNAVAILABLE","当前战场不支持自动接近")
+	if timing(int(req.actor_id))!="ACTION":
+		return failure("ILLEGAL_ACTION","只能在自己的行动阶段主动接近攻击")
+	if req.has("target_cell") or req.has("target_position") or not req.has("target_id"):
+		return failure("MALFORMED_REQUEST","接近攻击只能指定敌方角色")
+	var actor=state.get_actor(int(req.actor_id))
+	var target=state.get_actor(int(req.target_id))
+	if actor==null or actor.hp_u<=0 or target==null or target.hp_u<=0 or not state.is_hostile(actor.id,target.id):
+		return failure("INVALID_TARGET","必须选择存活的敌方目标")
+	var kind: String=str(req.get("attack_kind",""))
+	if kind not in ["BASIC_ATTACK","PLAY_CARD","USE_ABILITY"]:
+		return failure("MALFORMED_REQUEST","没有指定受支持的攻击类型")
+	var attack: Dictionary={"kind":kind,"actor_id":actor.id,"target_id":target.id}
+	var usage: Dictionary={}
+	var attack_cost: Dictionary={"qi":1}
+	if kind=="BASIC_ATTACK":
+		if actor.basic_attack_used:
+			return failure("ILLEGAL_ACTION","本次行动已经使用普通攻击")
+	else:
+		if kind=="PLAY_CARD":
+			var uid: String=str(req.get("card_uid",req.get("card_id","")))
+			var usage_id: String=str(req.get("usage_id",""))
+			if uid.is_empty() or usage_id.is_empty() or not actor.hand.has(uid):
+				return failure("INVALID_CARD","攻击卡牌不在当前手牌中")
+			var definition: Dictionary=cards.canonical_definition(uid)
+			if not cards.valid_definition(definition):
+				return failure("INVALID_CARD","当前卡牌定义无效")
+			usage=cards.usage(uid,usage_id)
+			if usage.is_empty() or str(usage.get("timing",""))!="ACTION":
+				return failure("ILLEGAL_ACTION","当前招式不允许主动使用")
+			if not condition_allows(actor,usage):
+				return failure("ILLEGAL_ACTION","招式前置条件不满足")
+			if bool(usage.get("once_per_action",false)) and int(actor.card_uses.get(str(definition.id)+":"+usage_id,0))>0:
+				return failure("ILLEGAL_ACTION","该招式本回合已经使用")
+			attack.merge({"card_uid":uid,"card_id":uid,"usage_id":usage_id})
+			attack_cost=usage.get("cost",{})
+		else:
+			var technique_id: String=str(req.get("technique_id",""))
+			var node_id: String=str(req.get("node_id",""))
+			var known: bool=false
+			for node in abilities.techniques.available_nodes(actor,technique_id,"ACTION"):
+				if str(node.get("id",""))==node_id:
+					usage=node
+					known=true
+					break
+			if not known:
+				return failure("ILLEGAL_ACTION","武学阶段不可用或尚未解锁")
+			if not conditions.allows(actor,usage.get("when",{}),{"timing":"ACTION","tick":state.global_tick,
+				"same_action":int(actor.technique_states[technique_id].last_used_action)==actor.turns_started}):
+				return failure("ILLEGAL_ACTION","当前武学阶段条件不满足")
+			attack.merge({"technique_id":technique_id,"node_id":node_id})
+			attack_cost=abilities.techniques.cost(actor,technique_id,node_id)
+		if str(usage.get("target",{}).get("kind",""))!="enemy_actor":
+			return failure("INVALID_TARGET","只有指定敌方目标的攻击招式能自动接近")
+		var deals_damage: bool=false
+		for effect in usage.get("effects",[]):
+			if str(effect.get("type",""))=="deal_damage":
+				deals_damage=true
+		if not deals_damage:
+			return failure("ILLEGAL_ACTION","这张卡牌不是攻击招式")
+	# Never allow a composite request to bypass card/ability-specific hook policy.
+	for candidate in [req, attack]:
+		var checked: Dictionary=hooks.validate(context(actor.id,candidate))
+		if not bool(checked.get("success",false)):
+			return failure("HOOK_REJECTED",str(checked.get("message","行动被规则禁止")))
+	var attack_quote: Dictionary=costs.quote(actor,attack_cost,context(actor.id,attack))
+	if kind=="BASIC_ATTACK":
+		attack_quote={"qi_u":10000,"hp_u":0,"valid":true}
+	if not costs.can_pay(actor,attack_quote):
+		return failure("INSUFFICIENT_RESOURCE","无法支付攻击本身的气血或内息费用")
+	var remaining: int=int(actor.stats.get("move_budget",2))-actor.normal_moves_used
+	var world_unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var available_distance: float=maxf(0.0,float(remaining)*world_unit)
+	var min_distance: int=1
+	var max_distance: int=1
+	var line_required: bool=false
+	if kind!="BASIC_ATTACK":
+		min_distance=maxi(1,int(usage.target.get("min_distance",1)))
+		max_distance=int(usage.get("attack_profile",{}).get("range",usage.target.get("max_distance",1)))
+		line_required=bool(usage.target.get("line_of_sight",false))
+	if max_distance < min_distance:
+		return failure("INVALID_TARGET","武学攻击距离定义无效")
+	var min_range: float=float(min_distance-1)*world_unit
+	var max_range: float=float(max_distance)*world_unit
+	var positions: Dictionary={}
+	for other in state.actors:
+		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
+	state.spatial.set_actors(positions)
+	var approach: Dictionary=state.spatial.find_attack_approach(actor.position,target.position,
+		min_range,max_range,available_distance,8.0,8.0,actor.id,target.id,line_required)
+	if approach.is_empty():
+		return failure("NO_ATTACK_POSITION","本回合移动距离内没有可用的攻击站位")
+	var final_position: Vector2=Vector2(approach.position)
+	var path: PackedVector2Array=PackedVector2Array(approach.path)
+	var travelled: float=float(approach.cost)
+	# Same quantized coordinates as MOVE_FREE; replan after rounding to keep
+	# committed world state and path endpoint identical.
+	if travelled > 0.0001:
+		final_position=Vector2(roundf(final_position.x*4.0)*0.25,roundf(final_position.y*4.0)*0.25)
+		if not state.spatial.is_valid_position(final_position,8.0,actor.id):
+			return failure("INVALID_POSITION","接近攻击落点发生冲突")
+		path=state.spatial.find_path(actor.position,final_position,8.0,actor.id)
+		if path.size()<2:
+			return failure("UNREACHABLE_POSITION","接近路线已经失效")
+		travelled=state.spatial.path_length(path)
+	var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(final_position,true)
+	if dest_cell==Vector2i(-1,-1) or (travelled>0.0001 and state.occupied(dest_cell,actor.id)):
+		return failure("INVALID_POSITION","目标附近没有可站立的位置")
+	if not state.spatial.attack_in_range(final_position,target.position,min_range,max_range,8.0,8.0):
+		return failure("INVALID_RANGE","接近后仍不满足武学有效距离")
+	if line_required and not state.spatial.attack_line_clear(final_position,target.position,[actor.id,target.id]):
+		return failure("LINE_BLOCKED","攻击路径被地形或其他角色阻挡")
+	var move_units: int=0 if travelled<=0.0001 else ceili((travelled-0.0001)/world_unit)
+	if move_units>remaining:
+		return failure("MOVE_BUDGET_EXCEEDED","本回合移动距离不足以接近目标")
+	var total_quote: Dictionary=attack_quote.duplicate(true)
+	total_quote["qi_u"]=int(attack_quote.get("qi_u",0))+move_units*10000
+	if not costs.can_pay(actor,total_quote):
+		return failure("INSUFFICIENT_RESOURCE","移动与攻击总内息不足")
+	attack["approach_position"]=final_position
+	attack["approach_cell"]=dest_cell
+	total_quote["move_units"]=move_units
+	total_quote["continuous_path"]=path
+	total_quote["move_distance"]=travelled
+	total_quote["attack_kind"]=kind
+	return {"success":true,"action":{"kind":"MOVE_AND_ATTACK","actor_id":actor.id,
+		"target_id":target.id,"attack":attack,"target_position":final_position,
+		"target_cell":dest_cell},"plan":total_quote}
