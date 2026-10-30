@@ -31,7 +31,7 @@ func _run() -> void:
         push_error("HUD_CAPTURE: missing battle scene")
         quit(1)
         return
-    var battle: Node3D = packed.instantiate() as Node3D
+    var battle: Node2D = packed.instantiate() as Node2D
     root.add_child(battle)
     await process_frame
     # Only dismiss the title animation; no model actions are submitted.

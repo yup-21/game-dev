@@ -23,6 +23,10 @@ on:
       - 'demos/changfeng-battle/checks/test_battle_input_controller.gd'
       - 'demos/changfeng-battle/checks/test_battle_command_dispatcher.gd'
       - 'demos/changfeng-battle/scripts/illustrated_battle_map.gd'
+      - 'demos/changfeng-battle/scripts/battle_vfx_2d.gd'
+      - 'demos/changfeng-battle/checks/test_battle_pure_2d.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_startup.gd'
+      - 'demos/changfeng-battle/battle_hd2d.tscn'
       - 'demos/changfeng-battle/scripts/map_bake.gd'
       - 'demos/changfeng-battle/data/maps/**'
       - 'demos/changfeng-battle/checks/test_baked_bridge_grid.gd'
@@ -119,6 +123,10 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_space_ai.gd
       - name: Validate 2D painted terrain and story character registration
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_illustrated_maps.gd
+      - name: Guard true Node2D scene and shake compensated input
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_pure_2d.gd
+      - name: Validate legacy startup suite against canonical Sprite2D
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_startup.gd
       - name: Check original character art in painted battle
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_art_integration.gd
       - name: Check original UI atlas and model-backed HUD

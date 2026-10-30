@@ -36,7 +36,7 @@ func _run() -> void:
     if packed == null:
         quit(1)
         return
-    var scene: Node3D = packed.instantiate() as Node3D
+    var scene: Node2D = packed.instantiate() as Node2D
     root.add_child(scene)
     await process_frame
     var model = scene.get("model")

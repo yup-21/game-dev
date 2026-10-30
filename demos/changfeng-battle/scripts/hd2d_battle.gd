@@ -1,20 +1,19 @@
-extends Node3D
+extends Node2D
 ## HD-2D vertical slice. All tactical state and legality remain in BattleModel.
-## Run res://battle_hd2d.tscn explicitly; the original 2D scene is untouched.
+## Canonical player battle uses only painted 2D terrain and Sprite2D actors.
 const Model = preload("res://scripts/battle_model.gd")
 const BattleCommandController = preload("res://scripts/battle_command_controller.gd")
 const BattleInputController = preload("res://scripts/battle_input_controller.gd")
 const ContinuousSpace = preload("res://scripts/battle_spatial_service.gd")
 const ContinuousPreview = preload("res://scripts/continuous_move_preview.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
-const Scenery = preload("res://scripts/hd2d_scenery.gd")
 const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
 const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
 const CardUI = preload("res://scripts/hd2d_card_ui.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Animator = preload("res://scripts/hd2d_animation.gd")
 const Facing = preload("res://scripts/actor_facing.gd")
-const VFX = preload("res://scripts/hd2d_vfx.gd")
+const VFX = preload("res://scripts/battle_vfx_2d.gd")
 const ResponsePolicy = preload("res://scripts/hd2d_response_policy.gd")
 const CharacterRegistry = preload("res://scripts/character_registry.gd")
 const CharacterCardUI = preload("res://scripts/character_card_ui.gd")
@@ -22,10 +21,6 @@ const ChargeRail = preload("res://scripts/hd2d_ctb_rail.gd")
 const BattleHandView = preload("res://scripts/battle_hand_view.gd")
 const BattleHUDStatus = preload("res://scripts/battle_hud_status.gd")
 const PresentationCoordinator = preload("res://scripts/battle_presentation_coordinator.gd")
-const COLS := 15
-const ROWS := 10
-const CELL := 1.5
-
 var model = Model.new()
 var story_encounter := false
 var observer_id := 0
@@ -38,7 +33,7 @@ var continuous_space
 var continuous_preview
 var continuous_preview_enabled := false
 var illustrated_map: CanvasLayer
-var camera: Camera3D
+var camera: Camera2D
 var actor_nodes: Dictionary = {}
 var visual_cells: Dictionary = {}
 var movement_paths: Dictionary = {}
@@ -58,8 +53,6 @@ var auto_battle := false
 var auto_button: Button
 var spatial_mode_button: Button
 var hovered := Vector2i(-1, -1)
-var cursor_mesh: MeshInstance3D
-var glow_material: StandardMaterial3D
 var card_actions: HBoxContainer
 var fan_layout_pending := false
 var command_actions: VBoxContainer
@@ -74,10 +67,6 @@ var selected_technique := ""
 var selected_node := ""
 var selected_kind := ""
 var last_cue := ""
-var cue_lights: Dictionary = {}
-var cue_remaining: Dictionary = {}
-var target_markers: Array = []
-var camera_base := Vector3(17, 22, 25)
 var camera_shake := 0.0
 var elapsed := 0.0
 var intro_remaining := 3.25
@@ -101,7 +90,7 @@ func _ready() -> void:
         illustrated_map.scene_root.add_child(continuous_preview)
     # 3D terrain, procedural scenery, and far-away backdrop are removed.
     # Only 2D painted ground and 2D sprite action frames are visible.
-    effects_driver = VFX.new(self, camera, illustrated_map.scene_root if illustrated_map != null else null)
+    effects_driver = VFX.new(illustrated_map.scene_root)
     _build_ui()
     _refresh()
     _update_status()
@@ -135,247 +124,57 @@ func _report_story_result() -> void:
         session.report_battle(str(snap.get("outcome", "draw")), int(snap.get("winning_team", -1)))
     result_reported = true
 
-func _material(color: Color, roughness: float = 1.0) -> StandardMaterial3D:
-    var material := StandardMaterial3D.new()
-    material.albedo_color = color
-    material.roughness = roughness
-    return material
-
-func _box(name: String, pos: Vector3, size: Vector3, color: Color, roughness: float = 1.0) -> MeshInstance3D:
-    var mesh := BoxMesh.new()
-    mesh.size = size
-    var instance := MeshInstance3D.new()
-    instance.name = name
-    instance.mesh = mesh
-    instance.material_override = _material(color, roughness)
-    instance.position = pos
-    add_child(instance)
-    return instance
-
-func _world(cell: Vector2i) -> Vector3:
-    return Vector3((float(cell.x) - 7.0) * CELL, 0.0, (float(cell.y) - 4.5) * CELL)
-
 func _build_world() -> void:
-    var environment := WorldEnvironment.new()
-    var settings := Environment.new()
-    settings.background_mode = Environment.BG_COLOR
-    settings.background_color = Color("27383d") if story_encounter else Color("a7c1b3")
-    settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    settings.ambient_light_color = Color("91a9b7") if story_encounter else Color("b8d0c7")
-    settings.ambient_light_energy = 0.48 if story_encounter else 0.65
-    settings.fog_enabled = true
-    settings.fog_light_color = Color("4e6469") if story_encounter else Color("a8b9a8")
-    settings.fog_density = 0.012
-    environment.environment = settings
-    add_child(environment)
-
-    var sun := DirectionalLight3D.new()
-    sun.rotation_degrees = Vector3(-52, -36, 0)
-    sun.light_color = Color("b3c6d5") if story_encounter else Color("ffdfaa")
-    sun.light_energy = 0.65 if story_encounter else 1.25
-    sun.shadow_enabled = true
-    add_child(sun)
-
-    var rig := Node3D.new()
-    rig.name = "CameraRig"
-    add_child(rig)
-    camera = Camera3D.new()
-    camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 29.0
-    camera.position = camera_base
-    rig.add_child(camera)
-    camera.look_at(Vector3.ZERO, Vector3.UP)
-    camera.current = true
-
-    # A 2D illustrated image owns the entire battlefield. The camera stays
-    # only for compatibility with old 3D animation/effect fixtures.
-    illustrated_map = IllustratedMap.new(story_encounter,str(model.state.map_definition_path))
+    camera = Camera2D.new()
+    camera.name = "BattleCamera2D"
+    camera.position = Vector2.ZERO
+    add_child(camera)
+    camera.make_current()
+    illustrated_map = IllustratedMap.new(story_encounter,
+        str(model.state.map_definition_path))
     add_child(illustrated_map)
     for actor in snap.get("actors", []):
-        var id := int(actor.id)
-        var sprite: Sprite2D = illustrated_map.add_actor(actor, ArtCatalog.sheet_for_actor(id, int(actor.get("team_id", 0)) != 0))
-        sprite.set_meta("faces_left_unflipped", ArtCatalog.sheet_faces_left(id))
-        actor_nodes[id] = illustrated_map.actors[id]
-        visual_cells[id] = Vector2i(actor.cell)
-        animation_driver.register_actor(id, sprite, Vector2i(actor.get("facing", Vector2i.RIGHT)))
-    return
-
-    var river := _box("River", Vector3(0, -0.35, 0), Vector3(3.3, 0.18, 20), Color("397e82"), 0.22)
-    var water := ShaderMaterial.new()
-    water.shader = preload("res://shaders/hd2d_river.gdshader")
-    river.material_override = water
-    for x in range(COLS):
-        for y in range(ROWS):
-            var cell := Vector2i(x, y)
-            var terrain := str(snap.get("terrain", {}).get(cell, ""))
-            # Model terrain is authoritative; these meshes are visual only.
-            # snap was initialized from the model before geometry creation.
-            if terrain == "water":
-                continue
-            var center := _world(cell)
-            var ground_color := Color("6b806a") if (x + y) % 3 else Color("70866c")
-            if terrain == "bridge":
-                ground_color = Color("8b6746")
-            elif terrain == "ford":
-                ground_color = Color("8e9d8a")
-            elif terrain == "rock":
-                ground_color = Color("82887a")
-            # Flush terrain plates avoid a visible block-grid; rules still use 15x10 cells.
-            _box("Ground_%d_%d" % [x, y], center + Vector3(0, -0.052, 0),
-                Vector3(CELL * 1.003, 0.105, CELL * 1.003), ground_color)
-            if terrain != "bridge" and terrain != "rock" and (x * 7 + y * 11) % 8 == 0:
-                var moss := MeshInstance3D.new()
-                var patch := CylinderMesh.new()
-                patch.top_radius = 0.34
-                patch.bottom_radius = 0.36
-                patch.height = 0.018
-                moss.mesh = patch
-                moss.material_override = _material(Color("7a9175"))
-                moss.position = center + Vector3(-0.31, 0.014, 0.28)
-                add_child(moss)
-            if terrain == "bridge":
-                for plank in range(3):
-                    _box("Plank", center + Vector3(0, 0.025, (plank - 1) * 0.42),
-                        Vector3(1.45, 0.08, 0.36), Color("9b7955"))
-            elif terrain == "bamboo" or terrain == "rock":
-                var ornament := MeshInstance3D.new()
-                var shape := SphereMesh.new()
-                shape.radius = 0.34 if terrain == "bamboo" else 0.40
-                shape.height = 0.66 if terrain == "bamboo" else 0.55
-                ornament.mesh = shape
-                ornament.material_override = _material(
-                    Color("476b54") if terrain == "bamboo" else Color("8c9185"))
-                ornament.position = center + Vector3(0.37, 0.28, -0.32)
-                ornament.scale = Vector3(0.90, 1.18, 0.78)
-                add_child(ornament)
-
-    # A floating ground highlight; visible only for selectable cells.
-    glow_material = _material(Color(0.48, 0.93, 0.77, 0.52))
-    glow_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-    glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    var highlight := BoxMesh.new()
-    highlight.size = Vector3(CELL * 0.94, 0.035, CELL * 0.94)
-    cursor_mesh = MeshInstance3D.new()
-    cursor_mesh.mesh = highlight
-    cursor_mesh.material_override = glow_material
-    cursor_mesh.visible = false
-    add_child(cursor_mesh)
-
-    for actor in snap.get("actors", []):
         _create_actor(actor)
-    Scenery.build(self, story_encounter, camera)
-    _build_target_markers()
 
-func _build_target_markers() -> void:
-    var marker_mesh := BoxMesh.new()
-    marker_mesh.size = Vector3(CELL * 0.76, 0.02, CELL * 0.76)
-    var marker_material := StandardMaterial3D.new()
-    marker_material.albedo_color = Color(0.27, 0.71, 0.61, 0.16)
-    marker_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-    marker_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    marker_material.no_depth_test = false
-    for x in range(COLS):
-        for y in range(ROWS):
-            var marker := MeshInstance3D.new()
-            marker.mesh = marker_mesh
-            marker.material_override = marker_material
-            marker.position = _world(Vector2i(x, y)) + Vector3(0, 0.09, 0)
-            marker.visible = false
-            add_child(marker)
-            target_markers.append(marker)
+func _create_actor(actor: Dictionary) -> void:
+    if illustrated_map == null:
+        return
+    var id := int(actor.id)
+    if actor_nodes.has(id):
+        return
+    var sprite: Sprite2D = illustrated_map.add_actor(actor,
+        ArtCatalog.sheet_for_actor(id, int(actor.get("team_id", 0)) != 0))
+    sprite.set_meta("faces_left_unflipped", ArtCatalog.sheet_faces_left(id))
+    actor_nodes[id] = illustrated_map.actors[id]
+    visual_cells[id] = Vector2i(actor.cell)
+    animation_driver.register_actor(id, sprite,
+        Vector2i(actor.get("facing", Vector2i.RIGHT)))
 
 func _refresh_target_markers() -> void:
-    if target_markers.is_empty() and illustrated_map==null:
+    if illustrated_map == null:
         return
     var target_cells: Dictionary = {}
     var actions: Array = _selected_actions() if not selected_kind.is_empty() else legals
     for action in actions:
         if selected_kind.is_empty() and str(action.get("kind", "")) != "MOVE":
             continue
-        if action.has("target_cell") and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id)):
+        if action.has("target_cell") and not (selected_kind == "PLAY_CARD"
+                and _can_free_movement_card(selected_card_uid, selected_usage_id)):
             target_cells[action.target_cell] = true
         if action.has("target_id"):
             for actor in snap.get("actors", []):
                 if int(actor.id) == int(action.target_id):
                     target_cells[actor.cell] = true
-    if not selected_kind.is_empty() and ((selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node))):
+    if not selected_kind.is_empty() and (
+            (selected_kind == "PLAY_CARD"
+                and _can_approach_card(selected_card_uid, selected_usage_id))
+            or (selected_kind == "USE_ABILITY"
+                and _can_approach_technique(selected_technique, selected_node))):
         for target in model.state.actors:
-            if target.hp_u>0 and model.state.is_hostile(_decision_owner(),target.id):
-                target_cells[target.cell]=true
-    if illustrated_map!=null:
-        illustrated_map.set_highlights(target_cells,animation_ticket<0 and _player_decision() and not auto_battle)
-        return
-    for x in range(COLS):
-        for y in range(ROWS):
-            var cell := Vector2i(x, y)
-            var marker: MeshInstance3D = target_markers[x * ROWS + y]
-            marker.visible = target_cells.has(cell) and animation_ticket < 0 and _player_decision()
-
-func _create_actor(actor: Dictionary) -> void:
-    var root := Node3D.new()
-    root.name = "Actor_%d" % int(actor.id)
-    root.position = _world(actor.cell)
-    add_child(root)
-    var shadow := MeshInstance3D.new()
-    var disc := CylinderMesh.new()
-    disc.top_radius = 0.42
-    disc.bottom_radius = 0.42
-    disc.height = 0.03
-    shadow.mesh = disc
-    shadow.material_override = _material(Color("263c34"))
-    root.add_child(shadow)
-    var sprite := Sprite3D.new()
-    sprite.name = "Sprite3D"
-    var actor_id := int(actor.id)
-    var enemy := int(actor.get("team_id", 0)) != 0
-    sprite.texture = ArtCatalog.sheet_for_actor(actor_id, enemy)
-    # Normalize differing atlas cell sizes to one world-space character height.
-    sprite.pixel_size = 2.16 / (float(sprite.texture.get_height()) / 4.0)
-    sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-    sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-    sprite.transparent = true
-    sprite.position.y = 1.12
-    root.add_child(sprite)
-    # Current atlases are action-only (6x4), not true four-angle art.
-    # Mirror west/east and provide an unambiguous ground-plane pointer
-    # for north/south until original directional poses are available.
-    var facing_arrow := MeshInstance3D.new()
-    facing_arrow.name = "FacingArrow"
-    var arrow_mesh := ImmediateMesh.new()
-    arrow_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-    for point in [Vector3(-0.20,0.065,0.13),Vector3(0.20,0.065,0.13),Vector3(0,0.065,0.59)]:
-        arrow_mesh.surface_set_normal(Vector3.UP)
-        arrow_mesh.surface_add_vertex(point)
-    arrow_mesh.surface_end()
-    facing_arrow.mesh = arrow_mesh
-    var arrow_material := StandardMaterial3D.new()
-    arrow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    arrow_material.cull_mode = BaseMaterial3D.CULL_DISABLED
-    arrow_material.albedo_color = Color("87d4bb") if not enemy else Color("e4ab79")
-    facing_arrow.material_override = arrow_material
-    facing_arrow.rotation.y = Facing.yaw(Vector2i(actor.get("facing",Vector2i.RIGHT)))
-    root.add_child(facing_arrow)
-    visual_cells[actor_id] = Vector2i(actor.cell)
-    # Legacy 3D geometry is unreachable in illustrated-map mode.
-    # Native Sprite2D registration happens in the painted-map branch.
-    var nameplate := Label3D.new()
-    nameplate.name = "Nameplate"
-    nameplate.text = str(actor.get("name", "江湖客"))
-    nameplate.font_size = 28
-    nameplate.pixel_size = 0.006
-    nameplate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-    nameplate.modulate = Color("ccead8") if int(actor.get("team_id", 0)) == 0 else Color("f2b4a2")
-    nameplate.position.y = 2.52
-    root.add_child(nameplate)
-    var cue := OmniLight3D.new()
-    cue.light_color = Color("eac77e")
-    cue.light_energy = 0.0
-    cue.omni_range = 3.0
-    cue.position.y = 1.15
-    root.add_child(cue)
-    cue_lights[int(actor.id)] = cue
-    cue_remaining[int(actor.id)] = 0.0
-    actor_nodes[int(actor.id)] = root
+            if target.hp_u > 0 and model.state.is_hostile(_decision_owner(), target.id):
+                target_cells[target.cell] = true
+    illustrated_map.set_highlights(target_cells,
+        animation_ticket < 0 and _player_decision() and not auto_battle)
 
 func _veil(parent: Control, texture: Texture2D) -> TextureRect:
     # Decorative texture is deliberately non-interactive: the battlefield
@@ -1229,10 +1028,10 @@ func _process(delta: float) -> void:
         intro_title.visible = intro_remaining > 0.0
         intro_subtitle.visible = intro_remaining > 0.0
     camera_shake = maxf(0.0, camera_shake - delta)
-    if camera_shake > 0.0:
-        camera.position = camera_base + Vector3(sin(elapsed * 71.0) * 0.12, sin(elapsed * 89.0) * 0.07, 0) * camera_shake
-    else:
-        camera.position = camera_base
+    # CanvasLayer does not follow Camera2D: shake the painted world instead.
+    if illustrated_map != null:
+        illustrated_map.scene_root.position = Vector2(
+            sin(elapsed * 71.0) * 10.0, sin(elapsed * 89.0) * 6.0) * camera_shake
     _update_cursor()
     _update_continuous_preview()
     var moving: Dictionary = {}
@@ -1275,25 +1074,6 @@ func _process(delta: float) -> void:
                     else: movement_paths[id] = path2
                 moving[id] = walking2 or not path2.is_empty()
                 continue
-            var legacy_node: Node3D = actor_nodes[id]
-            var path: Array = movement_paths.get(id,[])
-            var destination := _world(Vector2i(actor.cell))
-            if not path.is_empty():
-                var next_cell: Vector2i=Vector2i(path[0])
-                var previous_cell: Vector2i=Vector2i(visual_cells.get(id,Vector2i(actor.cell)))
-                animation_driver.set_facing(id,Facing.from_delta(next_cell-previous_cell,animation_driver.facing_for(id)))
-                destination=_world(next_cell)
-            legacy_node.position = legacy_node.position.move_toward(destination, delta * 5.5)
-            var still_moving: bool=legacy_node.position.distance_to(destination)>0.035
-            if not still_moving and not path.is_empty():
-                legacy_node.position=destination
-                visual_cells[id]=Vector2i(path.pop_front())
-                if path.is_empty(): movement_paths.erase(id)
-                else: movement_paths[id]=path
-            moving[id] = still_moving or not path.is_empty()
-            var sprite: Sprite3D = legacy_node.get_node_or_null("Sprite3D") as Sprite3D
-            if sprite != null:
-                sprite.position.y = 1.0 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
     animation_driver.update(delta, moving)
     if illustrated_map != null:
         for actor in snap.get("actors", []):
@@ -1302,17 +1082,8 @@ func _process(delta: float) -> void:
             if role != null:
                 role.visible = float(actor.hp) > 0
                 role.z_index = clampi(roundi(role.position.y / 20.0), 0, 100)
-    for id in actor_nodes:
-        var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow") if illustrated_map == null else null
-        if arrow != null:
-            arrow.rotation.y=Facing.yaw(animation_driver.facing_for(int(id)))
     if effects_driver != null:
         effects_driver.update(delta)
-    for id in cue_remaining.keys():
-        cue_remaining[id] = maxf(0.0, float(cue_remaining[id]) - delta)
-        if cue_lights.has(id):
-            var light: OmniLight3D = cue_lights[id]
-            light.light_energy = float(cue_remaining[id]) * 4.0
     if animation_ticket >= 0:
         var finished_ticket: int = presentation.advance(delta,
             animation_driver.remaining_seconds(),
@@ -1412,8 +1183,7 @@ func _skip_presentation() -> void:
     for actor in model.state.actors:
         if not actor_nodes.has(actor.id):
             continue
-        actor_nodes[actor.id].position = (Vector2(actor.position)
-            if illustrated_map != null else _world(Vector2i(actor.cell)))
+        actor_nodes[actor.id].position = Vector2(actor.position)
         visual_cells[actor.id] = Vector2i(actor.cell)
     movement_paths.clear()
     continuous_paths.clear()
@@ -1429,31 +1199,15 @@ func _skip_presentation() -> void:
 func _cue_events(events: Array) -> void:
     for event in events:
         var kind := str(event.get("type", ""))
-        var id := int(event.get("defender_id", event.get("target_id", event.get("actor_id", -1))))
+        var id := int(event.get("defender_id",
+            event.get("target_id", event.get("actor_id", -1))))
         if kind in ["ATTACK_DECLARED", "COMBO_TRIGGERED", "SHIELD", "MOVE"]:
             id = int(event.get("actor_id", id))
-        if illustrated_map!=null and id>=0:
+        if id >= 0:
             illustrated_map.pulse_actor(id)
-        if not cue_lights.has(id):
-            continue
-        var light: OmniLight3D = cue_lights[id]
-        match kind:
-            "ATTACK_DECLARED":
-                light.light_color = Color("f0bd66")
-            "COMBO_TRIGGERED":
-                light.light_color = Color("f9df8a")
-            "DAMAGE", "HP_DAMAGED", "SCORCH_TICK":
-                light.light_color = Color("f05a50")
-            "SHIELD", "INTERCEPT_JUDGED":
-                light.light_color = Color("79d9c3")
-            "MOVE":
-                light.light_color = Color("80bfc3")
-            _:
-                continue
-        cue_remaining[id] = 0.55
-        last_cue = kind
         if kind in ["DAMAGE", "HP_DAMAGED", "ATTACK_HIT", "COMBO_TRIGGERED"]:
             camera_shake = 0.20
+        last_cue = kind
 
 func _submit(kind: String, params: Dictionary = {}) -> void:
     # Gate stale input and auto mode before attempting a versioned command.
@@ -1477,22 +1231,11 @@ func _legal(kind: String, cell: Vector2i = Vector2i(-1, -1)) -> Dictionary:
     return {}
 
 func _hover_cell() -> Vector2i:
-    var mouse := get_viewport().get_mouse_position()
-    if illustrated_map!=null:
-        return illustrated_map.cell_from_screen(mouse,snap.get("terrain",{}))
-    var origin := camera.project_ray_origin(mouse)
-    var direction := camera.project_ray_normal(mouse)
-    if absf(direction.y) < 0.0001:
-        return Vector2i(-1, -1)
-    var t := -origin.y / direction.y
-    if t < 0:
-        return Vector2i(-1, -1)
-    var point := origin + direction * t
-    var x := roundi(point.x / CELL + 7.0)
-    var y := roundi(point.z / CELL + 4.5)
-    if x < 0 or x >= COLS or y < 0 or y >= ROWS:
-        return Vector2i(-1, -1)
-    return Vector2i(x, y)
+    return illustrated_map.cell_from_screen(
+        get_viewport().get_mouse_position(), snap.get("terrain", {}))
+
+func _screen_to_battle(screen: Vector2) -> Vector2:
+    return illustrated_map.to_battle_point(screen)
 
 func _update_cursor() -> void:
     hovered = _hover_cell()
@@ -1501,12 +1244,7 @@ func _update_cursor() -> void:
         usable=usable or (selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node))
     if model.state.spatial_mode=="FREE" and selected_kind.is_empty():
         usable = false
-    if illustrated_map!=null:
-        illustrated_map.set_cursor(hovered,usable and animation_ticket<0)
-        return
-    cursor_mesh.visible = usable and animation_ticket < 0
-    if cursor_mesh.visible:
-        cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
+    illustrated_map.set_cursor(hovered, usable and animation_ticket < 0)
 
 func _update_continuous_preview() -> void:
     if model.state.spatial_mode!="FREE" or (not continuous_preview_enabled and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id))) or continuous_space == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
@@ -1521,7 +1259,7 @@ func _update_continuous_preview() -> void:
     if actor == null:
         continuous_preview.clear_preview()
         return
-    var goal: Vector2 = get_viewport().get_mouse_position()
+    var goal: Vector2 = _screen_to_battle(get_viewport().get_mouse_position())
     var path: PackedVector2Array = model.preview_free_path(actor.id, goal)
     if path.size() < 2:
         continuous_preview.clear_preview()
@@ -1577,7 +1315,7 @@ func _unhandled_input(event: InputEvent) -> void:
         if selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id):
             var step_intent: Dictionary = BattleInputController.world_click(
                 "FREE", true, true, selected_kind, true, selected_card_uid,
-                selected_usage_id, -1, get_viewport().get_mouse_position(), {})
+                selected_usage_id, -1, _screen_to_battle(get_viewport().get_mouse_position()), {})
             _submit(str(step_intent.kind), step_intent.params)
             get_viewport().set_input_as_handled()
         elif not selected_kind.is_empty():
@@ -1591,7 +1329,7 @@ func _unhandled_input(event: InputEvent) -> void:
             var intent: Dictionary = BattleInputController.world_click(
                 str(model.state.spatial_mode), illustrated_map != null,
                 _player_decision(), selected_kind, false, "", "",
-                _enemy_at(_hover_cell()), get_viewport().get_mouse_position(),
+                _enemy_at(_hover_cell()), _screen_to_battle(get_viewport().get_mouse_position()),
                 _legal("MOVE", _hover_cell()))
             if not intent.is_empty():
                 _submit(str(intent.kind), intent.params)
@@ -1633,11 +1371,11 @@ func _unhandled_input(event: InputEvent) -> void:
                 continuous_paths.clear()
                 for actor in snap.get("actors", []):
                     var id: int=int(actor.id)
-                    actor_nodes[id].position = illustrated_map.point_for_cell(Vector2i(actor.cell)) if illustrated_map != null else _world(actor.cell)
+                    actor_nodes[id].position = (Vector2(actor.get("position",
+                        illustrated_map.point_for_cell(Vector2i(actor.cell)))))
                     visual_cells[id]=Vector2i(actor.cell)
                     animation_driver.set_facing(id,Vector2i(actor.facing))
-                    var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow") if illustrated_map == null else null
-                    if arrow != null: arrow.rotation.y=Facing.yaw(Vector2i(actor.facing))
+
             KEY_ESCAPE:
                 if story_encounter and snap.get("outcome", "playing") != "playing":
                     get_tree().change_scene_to_file("res://demo_result.tscn")

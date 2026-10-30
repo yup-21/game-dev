@@ -42,7 +42,7 @@ func _run() -> void:
         return
     sample.free()
 
-    var scene: Node3D = load("res://battle_hd2d.tscn").instantiate()
+    var scene: Node2D = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame
     var hand: HBoxContainer = scene.get("card_actions")

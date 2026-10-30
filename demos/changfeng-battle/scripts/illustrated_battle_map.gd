@@ -99,10 +99,14 @@ func point_for_cell(cell: Vector2i) -> Vector2:
 func point_for_grid(grid: Vector2) -> Vector2:
     return bake.grid_position(grid)
 
+func to_battle_point(screen: Vector2) -> Vector2:
+    # Camera shake offsets the CanvasLayer world. Translate pointer intent
+    # to the same unshaken feet coordinate space as MapBake/BattleModel.
+    return screen - scene_root.position
+
 func cell_from_screen(screen: Vector2, _board: Dictionary = {}) -> Vector2i:
-    # Do not find a nearest passable cell: clicking a river/rock must not
-    # snap to some adjacent path. A tile's authored screen rectangle owns it.
-    return bake.cell_at_screen(screen,true)
+    # Do not snap blocked terrain to any nearby traversable cell.
+    return bake.cell_at_screen(to_battle_point(screen), true)
 
 func add_actor(actor: Dictionary, atlas: Texture2D) -> Sprite2D:
     var id: int=int(actor.id)
