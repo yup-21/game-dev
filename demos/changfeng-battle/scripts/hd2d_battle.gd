@@ -360,6 +360,8 @@ func _build_ui() -> void:
     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
     tray_column.add_child(scroll)
     card_actions = HFlowContainer.new()
+    card_actions.add_theme_constant_override("h_separation", 14)
+    card_actions.add_theme_constant_override("v_separation", 12)
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(card_actions)
 
@@ -430,7 +432,9 @@ func _rebuild_actions() -> void:
         if child != selection_label:
             child.queue_free()
     var available: bool = _player_decision() and not bool(snap.get("animation_pending", false)) and str(snap.get("outcome", "playing")) == "playing"
-    selection_label.text = ("选择目标：" + selected_usage_id if not selected_usage_id.is_empty() else "左键走位，选择招式后再点目标格；右键取消") if available else "等待对手行动 / 动画结算"
+    var owner = model.state.get_actor(_decision_owner())
+    var actor_name := str(owner.name) if owner != null else "等待"
+    selection_label.text = ("执剑者 · " + actor_name + "    选择武学后点击高亮目标；右键取消") if available else "等待对手行动 / 动画结算"
     if not available:
         return
     for card in snap.get("hand", []):
@@ -441,8 +445,8 @@ func _rebuild_actions() -> void:
                 continue
             var button := Button.new()
             var cost: Dictionary = usage.get("quoted_cost", {})
-            button.text = "%s · %s (%.1f 气)" % [str(card.get("name", "招式")), str(usage.get("name", usage_id)), float(cost.get("qi", 0))]
-            UITheme.apply_button(button)
+            button.text = "◈ %s\n%s\n气 %.1f  ·  血 %.1f" % [str(card.get("name", "招式")), str(usage.get("name", usage_id)), float(cost.get("qi", 0)), float(cost.get("hp", 0))]
+            UITheme.apply_card(button, selected_card_uid == uid and selected_usage_id == usage_id)
             button.pressed.connect(_select_card.bind(uid, usage_id))
             card_actions.add_child(button)
     var seen_abilities: Dictionary = {}
@@ -456,11 +460,34 @@ func _rebuild_actions() -> void:
             continue
         seen_abilities[key] = true
         var button := Button.new()
-        button.text = "武学续式 %s / %s" % [technique_id, node_id]
-        UITheme.apply_button(button)
+        button.text = "✦ 连携续式\n%s · %s" % [technique_id, node_id]
+        UITheme.apply_card(button, selected_technique == technique_id and selected_node == node_id)
         button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
-    if snap.get("phase", "") == "CLASH":
+    var commands := {
+        "BASIC_GUARD": "守势 · 格挡",
+        "END_ACTION": "收势 · 结束行动",
+        "PASS_REACTION": "不追加 · 交还响应权",
+        "PITCH_CARD": "弃牌 · 调息",
+        "RESET_TECHNIQUE": "收招 · 复位"
+    }
+    var command_seen := {}
+    for action in legals:
+        var kind := str(action.get("kind", ""))
+        if not commands.has(kind):
+            continue
+        var key := kind + ":" + str(action.get("card_uid", action.get("technique_id", "")))
+        if command_seen.has(key):
+            continue
+        command_seen[key] = true
+        var command_button := Button.new()
+        command_button.text = str(commands[kind])
+        if kind == "PITCH_CARD" or kind == "RESET_TECHNIQUE":
+            command_button.text += "\n" + str(action.get("card_uid", action.get("technique_id", "")))
+        UITheme.apply_button(command_button)
+        command_button.pressed.connect(_submit_legal.bind(action))
+        card_actions.add_child(command_button)
+    if snap.get("phase", "") == "CLASH" and not command_seen.has("PASS_REACTION:"):
         var pass_button := Button.new()
         pass_button.text = "Pass · 交还响应权"
         UITheme.apply_button(pass_button)
