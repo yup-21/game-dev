@@ -118,7 +118,7 @@ func _action(action: String) -> void:
 		"story_battle":
 			var session=_session()
 			if session!=null and session.begin_encounter():
-				call_deferred("_change_scene","res://party_battle.tscn")
+				call_deferred("_change_scene","res://battle_hd2d.tscn")
 			else:
 				message="尚未获得残篇，无法进入剧情遭遇"
 				message_left=3.0
