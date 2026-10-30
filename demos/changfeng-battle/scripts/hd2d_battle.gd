@@ -13,6 +13,9 @@ const ROWS := 10
 const CELL := 1.5
 
 var model = Model.new()
+var story_encounter := false
+var observer_id := 0
+var result_reported := false
 var ai = EnemyAI.new()
 var animation_driver = Animator.new()
 var effects_driver
@@ -24,6 +27,7 @@ var status_label: Label
 var help_label: Label
 var clash_label: Label
 var phase_label: Label
+var roster_labels: Dictionary = {}
 var animation_time := 0.0
 var animation_ticket := -1
 var ai_wait := 0.0
@@ -49,14 +53,41 @@ var intro_title: Label
 var intro_subtitle: Label
 
 func _ready() -> void:
-    model.reset(2026)
-    snap = model.snapshot(0)
-    legals = model.legal_actions(0)
+    var session = _session()
+    story_encounter = session != null and session.phase == "battle"
+    if story_encounter:
+        model.reset(session.encounter_seed(), -1, "tingfeng", session.encounter_options())
+    else:
+        model.reset(2026)
+    observer_id = _first_player_id()
+    snap = model.snapshot(observer_id)
+    legals = model.legal_actions(_decision_owner())
     _build_world()
     effects_driver = VFX.new(self, camera)
     _build_ui()
     _refresh()
     _update_status()
+
+func _session():
+    return get_node_or_null("/root/GameSession")
+
+func _first_player_id() -> int:
+    for actor in model.state.actors:
+        if actor.team_id == 0 and actor.controller == "PLAYER":
+            return actor.id
+    return 0
+
+func _player_decision() -> bool:
+    var actor = model.state.get_actor(_decision_owner())
+    return actor != null and actor.controller == "PLAYER"
+
+func _report_story_result() -> void:
+    if not story_encounter or result_reported or str(snap.get("outcome", "playing")) == "playing":
+        return
+    var session = _session()
+    if session != null and session.phase == "battle":
+        session.report_battle(str(snap.get("outcome", "draw")), int(snap.get("winning_team", -1)))
+    result_reported = true
 
 func _material(color: Color, roughness: float = 1.0) -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
@@ -212,7 +243,7 @@ func _refresh_target_markers() -> void:
         for y in range(ROWS):
             var cell := Vector2i(x, y)
             var marker: MeshInstance3D = target_markers[x * ROWS + y]
-            marker.visible = target_cells.has(cell) and animation_ticket < 0 and _decision_owner() == 0
+            marker.visible = target_cells.has(cell) and animation_ticket < 0 and _player_decision()
 
 func _create_actor(actor: Dictionary) -> void:
     var root := Node3D.new()
@@ -272,7 +303,7 @@ func _build_ui() -> void:
     var column := VBoxContainer.new()
     panel.add_child(column)
     var heading := Label.new()
-    heading.text = "长风浮生录  ·  断桥论剑"
+    heading.text = "长风浮生录  ·  雨夜追兵" if story_encounter else "长风浮生录  ·  断桥论剑"
     heading.add_theme_font_size_override("font_size", 23)
     heading.add_theme_color_override("font_color", UITheme.GOLD)
     column.add_child(heading)
@@ -285,6 +316,30 @@ func _build_ui() -> void:
     help_label.add_theme_font_size_override("font_size", 12)
     help_label.add_theme_color_override("font_color", UITheme.MUTED)
     column.add_child(help_label)
+
+    # Multi-party CTB and status HUD.
+    var roster_panel := PanelContainer.new()
+    canvas.add_child(roster_panel)
+    roster_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    roster_panel.offset_left = 12.0
+    roster_panel.offset_right = 294.0
+    roster_panel.offset_top = 120.0
+    roster_panel.offset_bottom = 490.0
+    UITheme.apply_panel(roster_panel)
+    var roster_column := VBoxContainer.new()
+    roster_panel.add_child(roster_column)
+    var roster_heading := Label.new()
+    roster_heading.text = "阵 容  /  CTB 集气"
+    roster_heading.add_theme_color_override("font_color", UITheme.GOLD)
+    roster_heading.add_theme_font_size_override("font_size", 18)
+    roster_column.add_child(roster_heading)
+    for actor in snap.get("actors", []):
+        var entry := Label.new()
+        entry.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        entry.add_theme_font_size_override("font_size", 14)
+        entry.add_theme_color_override("font_color", UITheme.JADE if int(actor.get("team_id", 0)) == 0 else UITheme.RED)
+        roster_column.add_child(entry)
+        roster_labels[int(actor.id)] = entry
 
     # Combat priority and response window information remain visible.
     var sidebar := PanelContainer.new()
@@ -331,12 +386,14 @@ func _build_ui() -> void:
     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
     tray_column.add_child(scroll)
     card_actions = HFlowContainer.new()
+    card_actions.add_theme_constant_override("h_separation", 14)
+    card_actions.add_theme_constant_override("v_separation", 12)
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(card_actions)
 
     # Brief illustrated chapter card; visual only, no BattleModel state changes.
     intro_title = Label.new()
-    intro_title.text = "断 桥 听 风"
+    intro_title.text = "雨 夜 追 兵" if story_encounter else "断 桥 听 风"
     intro_title.add_theme_font_size_override("font_size", 54)
     intro_title.add_theme_color_override("font_color", UITheme.PAPER)
     intro_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -361,8 +418,15 @@ func _build_ui() -> void:
     intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _refresh() -> void:
-    snap = model.snapshot(0)
-    legals = model.legal_actions(0)
+    # Read priority from the NEW state before choosing hand visibility.
+    snap = model.snapshot(observer_id)
+    var owner := _decision_owner()
+    var actor = model.state.get_actor(owner)
+    if actor != null and actor.controller == "PLAYER":
+        observer_id = owner
+    snap = model.snapshot(observer_id)
+    legals = model.legal_actions(owner) if _player_decision() else []
+    _report_story_result()
     for actor in snap.get("actors", []):
         var id := int(actor.id)
         if not actor_nodes.has(id):
@@ -395,8 +459,10 @@ func _rebuild_actions() -> void:
     for child in card_actions.get_children():
         if child != selection_label:
             child.queue_free()
-    var available: bool = _decision_owner() == 0 and not bool(snap.get("animation_pending", false)) and str(snap.get("outcome", "playing")) == "playing"
-    selection_label.text = ("选择目标：" + selected_usage_id if not selected_usage_id.is_empty() else "左键走位，选择招式后再点目标格；右键取消") if available else "等待对手行动 / 动画结算"
+    var available: bool = _player_decision() and not bool(snap.get("animation_pending", false)) and str(snap.get("outcome", "playing")) == "playing"
+    var owner = model.state.get_actor(_decision_owner())
+    var actor_name := str(owner.name) if owner != null else "等待"
+    selection_label.text = ("执剑者 · " + actor_name + "    选择武学后点击高亮目标；右键取消") if available else "等待对手行动 / 动画结算"
     if not available:
         return
     for card in snap.get("hand", []):
@@ -407,8 +473,8 @@ func _rebuild_actions() -> void:
                 continue
             var button := Button.new()
             var cost: Dictionary = usage.get("quoted_cost", {})
-            button.text = "%s · %s (%.1f 气)" % [str(card.get("name", "招式")), str(usage.get("name", usage_id)), float(cost.get("qi", 0))]
-            UITheme.apply_button(button)
+            button.text = "◈ %s\n%s\n气 %.1f  ·  血 %.1f" % [str(card.get("name", "招式")), str(usage.get("name", usage_id)), float(cost.get("qi", 0)), float(cost.get("hp", 0))]
+            UITheme.apply_card(button, selected_card_uid == uid and selected_usage_id == usage_id)
             button.pressed.connect(_select_card.bind(uid, usage_id))
             card_actions.add_child(button)
     var seen_abilities: Dictionary = {}
@@ -422,11 +488,34 @@ func _rebuild_actions() -> void:
             continue
         seen_abilities[key] = true
         var button := Button.new()
-        button.text = "武学续式 %s / %s" % [technique_id, node_id]
-        UITheme.apply_button(button)
+        button.text = "✦ 连携续式\n%s · %s" % [technique_id, node_id]
+        UITheme.apply_card(button, selected_technique == technique_id and selected_node == node_id)
         button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
-    if snap.get("phase", "") == "CLASH":
+    var commands := {
+        "BASIC_GUARD": "守势 · 格挡",
+        "END_ACTION": "收势 · 结束行动",
+        "PASS_REACTION": "不追加 · 交还响应权",
+        "PITCH_CARD": "弃牌 · 调息",
+        "RESET_TECHNIQUE": "收招 · 复位"
+    }
+    var command_seen := {}
+    for action in legals:
+        var kind := str(action.get("kind", ""))
+        if not commands.has(kind):
+            continue
+        var key := kind + ":" + str(action.get("card_uid", action.get("technique_id", "")))
+        if command_seen.has(key):
+            continue
+        command_seen[key] = true
+        var command_button := Button.new()
+        command_button.text = str(commands[kind])
+        if kind == "PITCH_CARD" or kind == "RESET_TECHNIQUE":
+            command_button.text += "\n" + str(action.get("card_uid", action.get("technique_id", "")))
+        UITheme.apply_button(command_button)
+        command_button.pressed.connect(_submit_legal.bind(action))
+        card_actions.add_child(command_button)
+    if snap.get("phase", "") == "CLASH" and not command_seen.has("PASS_REACTION:"):
         var pass_button := Button.new()
         pass_button.text = "Pass · 交还响应权"
         UITheme.apply_button(pass_button)
@@ -499,19 +588,32 @@ func _action_at(cell: Vector2i) -> Dictionary:
 func _update_status() -> void:
     if status_label == null or snap.is_empty():
         return
-    var info := "断桥听风 · HD-2D 试验场    %s   tick %d" % [snap.get("phase", ""), int(snap.get("global_tick", 0))]
+    var info := ("雨夜追兵 · 多人交锋" if story_encounter else "断桥听风 · HD-2D 试验场") + "    %s   tick %d" % [snap.get("phase", ""), int(snap.get("global_tick", 0))]
     for actor in snap.get("actors", []):
         info += "    %s  血 %.1f/%.1f  气 %.1f" % [actor.name, float(actor.hp), float(actor.max_hp), float(actor.qi)]
     if snap.get("outcome", "playing") != "playing":
         info += "    结束: %s" % str(snap.outcome)
+        if story_encounter:
+            info += "    Esc 查看剧情结算"
     status_label.text = info
+    for actor in snap.get("actors", []):
+        var id := int(actor.id)
+        if not roster_labels.has(id):
+            continue
+        var marker := "◆" if id == _decision_owner() else "◇"
+        var role := "手动" if str(actor.get("controller", "")) == "PLAYER" else "自动"
+        var hp := float(actor.get("hp", 0.0))
+        var max_hp := maxf(1.0, float(actor.get("max_hp", 1.0)))
+        var gauge := int(actor.get("gauge", 0))
+        roster_labels[id].text = "%s %s  [%s]  集气 %d\n    血 %.0f/%.0f  ·  气 %.1f" % [
+            marker, str(actor.get("name", "江湖客")), role, gauge, hp, max_hp, float(actor.get("qi", 0.0))]
     var acting: int = _decision_owner()
     if phase_label != null:
-        phase_label.text = "交锋应变" if snap.get("phase", "") == "CLASH" else ("自由行动" if acting == 0 else "敌方行动")
+        phase_label.text = "交锋应变" if snap.get("phase", "") == "CLASH" else ("我方行动" if _player_decision() else "敌方行动")
     if clash_label != null:
         var clash: Dictionary = snap.get("clash", {})
         if snap.get("phase", "") == "CLASH":
-            clash_label.text = "响应层 %d / 4   Pass %d / 2\n%s获得响应权" % [clash.get("stack", []).size(), int(clash.get("consecutive_passes", 0)), "我方" if acting == 0 else "敌方"]
+            clash_label.text = "响应层 %d / 4   Pass %d / 2\n%s获得响应权" % [clash.get("stack", []).size(), int(clash.get("consecutive_passes", 0)), "我方" if _player_decision() else "敌方"]
         else:
             clash_label.text = "移动 · 出招 · 护体 · 连携\n按合法行动结算，不改变原规则"
 
@@ -565,7 +667,8 @@ func _process(delta: float) -> void:
     var decision_id := int(snap.get("active_id", -1))
     if snap.get("phase", "") == "CLASH":
         decision_id = int(snap.get("clash", {}).get("priority_actor_id", -1))
-    if decision_id != 0:
+    var decision_actor = model.state.get_actor(decision_id)
+    if decision_actor != null and decision_actor.controller != "PLAYER":
         ai_wait -= delta
         if ai_wait <= 0:
             var request: Dictionary = ai.choose_action(model.decision_context(decision_id))
@@ -627,9 +730,20 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
     var owner := int(snap.get("active_id", -1))
     if snap.get("phase", "") == "CLASH":
         owner = int(snap.get("clash", {}).get("priority_actor_id", -1))
-    if owner != 0:
+    if not _player_decision():
         return
-    _accept(model.submit(model.request(kind, 0, params)))
+    # Reject stale UI commands; only the authoritative legal set may execute.
+    for candidate in model.legal_actions(owner):
+        if str(candidate.get("kind", "")) != kind:
+            continue
+        var matches := true
+        for key in params:
+            if not candidate.has(key) or candidate[key] != params[key]:
+                matches = false
+                break
+        if matches:
+            _accept(model.submit(model.request(kind, owner, params)))
+            return
 
 func _legal(kind: String, cell: Vector2i = Vector2i(-1, -1)) -> Dictionary:
     for action in legals:
@@ -692,6 +806,8 @@ func _unhandled_input(event: InputEvent) -> void:
                 if not _legal(kind).is_empty():
                     _submit(kind)
             KEY_R:
+                if story_encounter:
+                    return
                 model.reset(2026)
                 animation_driver.reset()
                 if effects_driver != null:
@@ -703,4 +819,7 @@ func _unhandled_input(event: InputEvent) -> void:
                 for actor in snap.get("actors", []):
                     actor_nodes[int(actor.id)].position = _world(actor.cell)
             KEY_ESCAPE:
-                get_tree().change_scene_to_file("res://opening.tscn")
+                if story_encounter and snap.get("outcome", "playing") != "playing":
+                    get_tree().change_scene_to_file("res://demo_result.tscn")
+                elif not story_encounter:
+                    get_tree().change_scene_to_file("res://opening.tscn")
