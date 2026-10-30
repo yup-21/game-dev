@@ -34,8 +34,10 @@ func _run() -> void:
         return
     var distinct := CardUI.illustration("tf_sunder", "断岳式")
     var first := CardUI.illustration("tf_probe", "探锋式")
-    if first == null or distinct == null or (first is AtlasTexture and distinct is AtlasTexture
-            and first.region == distinct.region) or (first == distinct):
+    var first_atlas := first as AtlasTexture
+    var distinct_atlas := distinct as AtlasTexture
+    if first == null or distinct == null or (first_atlas != null and distinct_atlas != null
+            and first_atlas.region == distinct_atlas.region) or first == distinct:
         _fail("two different techniques are mapped to one atlas cell")
         return
     sample.free()
