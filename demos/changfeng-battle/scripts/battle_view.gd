@@ -1,4 +1,6 @@
 extends Node2D
+## DEPRECATED (not player-facing): legacy 2D duel retained only for historical tests.
+## Launch the illustrated battle via res://battle_hd2d.tscn instead.
 ## Presentation consumes the observer projection; all gameplay enters request/submit.
 const Model = preload("res://scripts/battle_model.gd")
 const AI = preload("res://scripts/enemy_ai.gd")

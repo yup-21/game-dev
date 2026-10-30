@@ -4,6 +4,8 @@ extends Node2D
 const Story = preload("res://scripts/opening_story.gd")
 const CharacterArt = preload("res://scripts/hd2d_illustrated_factory.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
+## Only player-facing combat scene. Legacy battle demos remain for regression tests.
+const ACTIVE_BATTLE_SCENE := "res://battle_hd2d.tscn"
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
 const JADE = Color("3a8178")
@@ -114,16 +116,14 @@ func _change_scene(path: String) -> void:
 func _action(action: String) -> void:
 	match action:
 		"start": _enter_new_game()
-		"duel": call_deferred("_change_scene","res://battle.tscn")
-		"hd2d": call_deferred("_change_scene","res://battle_hd2d.tscn")
+		"hd2d": call_deferred("_change_scene", ACTIVE_BATTLE_SCENE)
 		"story_battle":
 			var session=_session()
 			if session!=null and session.begin_encounter():
-				call_deferred("_change_scene","res://battle_hd2d.tscn")
+				call_deferred("_change_scene", ACTIVE_BATTLE_SCENE)
 			else:
 				message="尚未获得残篇，无法进入剧情遭遇"
 				message_left=3.0
-		"party": call_deferred("_change_scene","res://party_battle.tscn")
 		"quit": get_tree().quit()
 		"menu":
 			story.reset()
@@ -367,11 +367,11 @@ func _draw_menu() -> void:
 	draw_line(Vector2(126,424),Vector2(618,424),GOLD,2)
 	_text(Vector2(132,482),"英雄无百岁，刀剑不饶人。",23,Color("e1dcc7"),true)
 	_text(Vector2(135,524),"由武入道 · 逆天改命",17,Color("bbcfc3"))
-	_button(Rect2(137,595,391,65),"初入江湖 · 新游戏","start",true)
-	_button(Rect2(137,672,391,57),"插画立体战场 · HD-2D","hd2d",true)
-	_button(Rect2(137,741,391,53),"经典断桥论剑 · 旧版","duel",true)
-	_button(Rect2(137,806,391,53),"群侠试炼 · 多人战斗","party",true)
-	_button(Rect2(137,871,391,50),"退出游戏","quit",true)
+	# A single HD-2D battle is exposed: prologue or quick battle.
+	# Old duel and party scenes are intentionally absent from player menus.
+	_button(Rect2(137,605,391,67),"初入江湖 · 新游戏","start",true)
+	_button(Rect2(137,689,391,61),"进入战斗 · HD-2D","hd2d",true)
+	_button(Rect2(137,774,391,56),"退出游戏","quit",true)
 	_text(Vector2(138,960),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
@@ -487,10 +487,9 @@ func _draw_complete() -> void:
 	_center(Vector2(800,470),"一卷无名绢帛，一场未完的血案。",24,INK,true)
 	_center(Vector2(800,525),"你尚不知道，它将牵出多少江湖恩怨。",20,INK)
 	_center(Vector2(800,579),"远处的马蹄声越来越近……",19,Color("846d4e"))
-	_button(Rect2(430,639,742,70),"迎战追兵 · 继续序章","story_battle",true)
-	_button(Rect2(430,734,350,58),"插画战斗场景预览","hd2d",true)
-	_button(Rect2(822,734,350,58),"群侠战斗试玩","party",true)
-	_button(Rect2(626,810,350,49),"返回主菜单","menu",true)
+	# The story encounter always opens the same illustrated multi-actor battle.
+	_button(Rect2(430,655,742,74),"迎战追兵 · 继续序章","story_battle",true)
+	_button(Rect2(626,774,350,56),"返回主菜单","menu",true)
 
 func _draw() -> void:
 	if ui_font==null or story.load_error!="": return

@@ -18,15 +18,14 @@ func _fail(view, message: String) -> void:
 
 func run(view) -> void:
 	await _wait(view)
-	if view.story.phase!="menu" or view.buttons.size()<5:
+	if view.story.phase!="menu" or view.buttons.size()!=3:
 		_fail(view,"title screen/menu buttons")
 		return
-	var has_hd2d: bool = false
+	var menu_actions: Array = []
 	for button in view.buttons:
-		if str(button.action) == "hd2d":
-			has_hd2d = true
-	if not has_hd2d:
-		_fail(view,"illustrated battle preview entry missing")
+		menu_actions.append(str(button.action))
+	if menu_actions != ["start", "hd2d", "quit"]:
+		_fail(view,"menu must expose only story + one illustrated battle + quit")
 		return
 	var sheet: Texture2D = Illustration.make_sheet(false)
 	if sheet == null or sheet.get_size() != Vector2(960, 800):
@@ -72,6 +71,13 @@ func run(view) -> void:
 			view._dialogue_next()
 	if view.story.phase!="complete" or not view.story.obtained_fragment:
 		_fail(view,"dialogue fails to reach final fragment")
+		return
+	await _wait(view)
+	var completion_actions: Array = []
+	for button in view.buttons:
+		completion_actions.append(str(button.action))
+	if completion_actions != ["story_battle", "menu"]:
+		_fail(view,"prologue completion must expose only canonical story battle and menu")
 		return
 	if not await _capture(view,"opening-complete.png"):
 		_fail(view,"chapter completion screenshot write")
