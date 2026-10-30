@@ -1343,7 +1343,12 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
         owner = int(snap.get("clash", {}).get("priority_actor_id", -1))
     if not _player_decision():
         return
-    # Reject stale UI commands; only the authoritative legal set may execute.
+    # Continuous positions cannot be enumerated as finite legacy actions.
+    # The authoritative CombatRules validation checks all required constraints.
+    if kind == "MOVE_FREE":
+        _accept(model.submit(model.request(kind, owner, params)))
+        return
+    # Reject stale enumerated UI commands; only legal actions may execute.
     for candidate in model.legal_actions(owner):
         if str(candidate.get("kind", "")) != kind:
             continue
