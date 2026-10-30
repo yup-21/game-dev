@@ -2,6 +2,7 @@ extends RefCounted
 ## Painterly wuxia card presentation. No game rules live here.
 ## Eight distinct illustrations are stored in one 4x2 PNG atlas.
 const WuxiaTheme = preload("res://scripts/hd2d_ui_theme.gd")
+const OptionalPaintings = preload("res://scripts/hd2d_card_art.gd")
 const ATLAS: Texture2D = preload("res://assets/ui/technique_art_atlas_v1.png")
 const FRAME: Texture2D = preload("res://assets/ui/jade_card_filagree.svg")
 const SEAL: Texture2D = preload("res://assets/ui/jade_seal.svg")
@@ -29,6 +30,11 @@ static func _image_index(definition_id: String, title: String) -> int:
     return posmod((definition_id + title).hash(), ATLAS_COLUMNS * ATLAS_ROWS)
 
 static func illustration(definition_id: String, title: String) -> Texture2D:
+    # Prefer optional high-resolution painted assets from PR #32; preserve the
+    # existing atlas when a painting is not shipped with the game.
+    var optional := OptionalPaintings.for_card({"definition_id": definition_id, "name": title})
+    if optional != null and optional.resource_path.ends_with(".png"):
+        return optional
     var index := _image_index(definition_id, title)
     var region_width := float(ATLAS.get_width()) / float(ATLAS_COLUMNS)
     var region_height := float(ATLAS.get_height()) / float(ATLAS_ROWS)

@@ -8,6 +8,7 @@ const GOLD = Color("d0af75")
 const PAPER = Color("efe7d1")
 const MUTED = Color("b8c6b8")
 const RED = Color("d78a79")
+const DIM = Color("53665e")
 const PANEL_ART: Texture2D = preload("res://assets/ui/jade_panel_frame.svg")
 
 static func panel(background: Color = PANEL, outline: Color = GOLD) -> StyleBoxFlat:

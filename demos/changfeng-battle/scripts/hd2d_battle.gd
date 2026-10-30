@@ -36,7 +36,7 @@ var ai_wait := 0.0
 var hovered := Vector2i(-1, -1)
 var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
-var card_actions: HFlowContainer
+var card_actions: HBoxContainer
 var command_actions: VBoxContainer
 var selection_label: Label
 var selected_card_uid := ""
@@ -324,11 +324,11 @@ func _build_ui() -> void:
     heading.text = "长 风 浮 生 录     /     雨夜残镖" if story_encounter else "长 风 浮 生 录     /     断桥听风"
     heading.add_theme_font_size_override("font_size", 25)
     heading.add_theme_color_override("font_color", UITheme.GOLD)
-    banner_text.add_child(heading)
+    column.add_child(heading)
     status_label = Label.new()
     status_label.add_theme_font_size_override("font_size", 15)
     status_label.add_theme_color_override("font_color", UITheme.PAPER)
-    banner_text.add_child(status_label)
+    column.add_child(status_label)
     help_label = Label.new()
     help_label.text = "左键选目标  ·  Q 普攻  ·  G 格挡  ·  Space 收势/Pass  ·  右键取消  ·  R 重开  ·  Esc 返回"
     help_label.add_theme_font_size_override("font_size", 12)
@@ -366,7 +366,7 @@ func _build_ui() -> void:
         var actor_row := HBoxContainer.new()
         actor_row.custom_minimum_size.y = 61
         actor_row.add_theme_constant_override("separation", 9)
-        roster_column.add_child(actor_row)
+        roster_list.add_child(actor_row)
         var portrait_icon := TextureRect.new()
         portrait_icon.custom_minimum_size = Vector2(50, 54)
         portrait_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -439,7 +439,7 @@ func _build_ui() -> void:
     tray.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
     tray.offset_left = 12.0
     tray.offset_right = -12.0
-    tray.offset_top = -268.0
+    tray.offset_top = -304.0
     tray.offset_bottom = -10.0
     UITheme.apply_panel(tray)
     var tray_column := VBoxContainer.new()
@@ -458,12 +458,12 @@ func _build_ui() -> void:
     var scroll := ScrollContainer.new()
     scroll.name = "HandScroll"
     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+    scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     tray_column.add_child(scroll)
-    card_actions = HFlowContainer.new()
+    card_actions = HBoxContainer.new()
     card_actions.name = "CardActions"
-    card_actions.add_theme_constant_override("h_separation", 9)
-    card_actions.add_theme_constant_override("v_separation", 9)
+    card_actions.add_theme_constant_override("separation", 9)
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(card_actions)
     # Brief chapter typography, separate from the authoritative battle.
@@ -610,12 +610,12 @@ func _update_card_selection() -> void:
     for child in card_actions.get_children():
         if not child is Button:
             continue
-        if child.has_meta("card_uid"):
-            UITheme.apply_card(child, selected_card_uid == str(child.get_meta("card_uid"))
-                and selected_usage_id == str(child.get_meta("usage_id")))
-        elif child.has_meta("technique_id"):
+        if child.has_meta("technique_id"):
             UITheme.apply_card(child, selected_technique == str(child.get_meta("technique_id"))
                 and selected_node == str(child.get_meta("node_id")))
+        elif child.has_meta("card_uid"):
+            UITheme.apply_card(child, selected_card_uid == str(child.get_meta("card_uid"))
+                and selected_usage_id == str(child.get_meta("usage_id")))
 
 func _select_card(uid: String, usage: String) -> void:
     _clear_selection()
