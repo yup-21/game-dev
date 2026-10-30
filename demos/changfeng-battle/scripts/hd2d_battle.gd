@@ -5,7 +5,7 @@ const Model = preload("res://scripts/battle_model.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
 const Scenery = preload("res://scripts/hd2d_scenery.gd")
 const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
-const SpriteFactory = preload("res://scripts/hd2d_illustrated_factory.gd")
+const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Animator = preload("res://scripts/hd2d_animation.gd")
 const VFX = preload("res://scripts/hd2d_vfx.gd")
 const COLS := 15
@@ -113,20 +113,20 @@ func _build_world() -> void:
     var environment := WorldEnvironment.new()
     var settings := Environment.new()
     settings.background_mode = Environment.BG_COLOR
-    settings.background_color = Color("a7c1b3")
+    settings.background_color = Color("27383d") if story_encounter else Color("a7c1b3")
     settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    settings.ambient_light_color = Color("b8d0c7")
-    settings.ambient_light_energy = 0.65
+    settings.ambient_light_color = Color("91a9b7") if story_encounter else Color("b8d0c7")
+    settings.ambient_light_energy = 0.48 if story_encounter else 0.65
     settings.fog_enabled = true
-    settings.fog_light_color = Color("a8b9a8")
+    settings.fog_light_color = Color("4e6469") if story_encounter else Color("a8b9a8")
     settings.fog_density = 0.012
     environment.environment = settings
     add_child(environment)
 
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-52, -36, 0)
-    sun.light_color = Color("ffdfaa")
-    sun.light_energy = 1.25
+    sun.light_color = Color("b3c6d5") if story_encounter else Color("ffdfaa")
+    sun.light_energy = 0.65 if story_encounter else 1.25
     sun.shadow_enabled = true
     add_child(sun)
 
@@ -204,7 +204,7 @@ func _build_world() -> void:
 
     for actor in snap.get("actors", []):
         _create_actor(actor)
-    Scenery.build(self)
+    Scenery.build(self, story_encounter)
     _build_target_markers()
 
 func _build_target_markers() -> void:
@@ -260,12 +260,15 @@ func _create_actor(actor: Dictionary) -> void:
     root.add_child(shadow)
     var sprite := Sprite3D.new()
     sprite.name = "Sprite3D"
-    sprite.texture = SpriteFactory.make_sheet(int(actor.get("team_id", 0)) != 0)
-    sprite.pixel_size = 0.010
+    var actor_id := int(actor.id)
+    var enemy := int(actor.get("team_id", 0)) != 0
+    sprite.texture = ArtCatalog.sheet_for_actor(actor_id, enemy)
+    # Normalize differing atlas cell sizes to one world-space character height.
+    sprite.pixel_size = 2.16 / (float(sprite.texture.get_height()) / 4.0)
     sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
     sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     sprite.transparent = true
-    sprite.position.y = 1.0
+    sprite.position.y = 1.12
     root.add_child(sprite)
     animation_driver.register_actor(int(actor.id), sprite)
     var nameplate := Label3D.new()
@@ -275,7 +278,7 @@ func _create_actor(actor: Dictionary) -> void:
     nameplate.pixel_size = 0.006
     nameplate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     nameplate.modulate = Color("ccead8") if int(actor.get("team_id", 0)) == 0 else Color("f2b4a2")
-    nameplate.position.y = 2.20
+    nameplate.position.y = 2.52
     root.add_child(nameplate)
     var cue := OmniLight3D.new()
     cue.light_color = Color("eac77e")
@@ -334,12 +337,24 @@ func _build_ui() -> void:
     roster_heading.add_theme_font_size_override("font_size", 18)
     roster_column.add_child(roster_heading)
     for actor in snap.get("actors", []):
+        var actor_id := int(actor.id)
+        var enemy := int(actor.get("team_id", 0)) != 0
+        var actor_row := HBoxContainer.new()
+        actor_row.add_theme_constant_override("separation", 8)
+        roster_column.add_child(actor_row)
+        var portrait_icon := TextureRect.new()
+        portrait_icon.custom_minimum_size = Vector2(44, 45)
+        portrait_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+        portrait_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+        portrait_icon.texture = ArtCatalog.avatar(actor_id, enemy)
+        actor_row.add_child(portrait_icon)
         var entry := Label.new()
+        entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
         entry.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
         entry.add_theme_font_size_override("font_size", 14)
-        entry.add_theme_color_override("font_color", UITheme.JADE if int(actor.get("team_id", 0)) == 0 else UITheme.RED)
-        roster_column.add_child(entry)
-        roster_labels[int(actor.id)] = entry
+        entry.add_theme_color_override("font_color", UITheme.RED if enemy else UITheme.JADE)
+        actor_row.add_child(entry)
+        roster_labels[actor_id] = entry
 
     # Combat priority and response window information remain visible.
     var sidebar := PanelContainer.new()
