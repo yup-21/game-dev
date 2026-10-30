@@ -264,7 +264,81 @@ func decision_context(actor_id: int) -> Dictionary:
 	var ctx: Dictionary=snapshot(actor_id)
 	ctx.observer_id=actor_id
 	ctx.legal_actions=legal_actions(actor_id)
+	if state.spatial_mode=="FREE" and state.mode=="ACTION" and actor_id==state.active_id:
+		ctx.legal_actions.append_array(_spatial_ai_candidates(actor_id))
 	return ctx
+
+## Only AI contexts enumerate expensive continuous candidates; the human UI
+## queries on click and never exposes private opponent hands.
+func _spatial_ai_candidates(actor_id: int) -> Array:
+	var result: Array=[]
+	var actor=state.get_actor(actor_id)
+	if actor==null or actor.hp_u<=0 or state.spatial==null: return result
+	var opponents: Array=[]
+	for target in state.actors:
+		if target.hp_u>0 and state.is_hostile(actor_id,target.id):
+			opponents.append(target)
+	opponents.sort_custom(func(a,b):
+		var da: float=actor.position.distance_squared_to(a.position)
+		var db: float=actor.position.distance_squared_to(b.position)
+		if not is_equal_approx(da,db): return da<db
+		return a.id<b.id)
+	var available_qi: int=actor.qi_u
+	for target in opponents.slice(0,2):
+		var candidates: Array=[]
+		if not actor.basic_attack_used:
+			candidates.append({"attack_kind":"BASIC_ATTACK","target_id":target.id})
+		for uid in actor.hand:
+			for usage in cards.canonical_definition(str(uid)).get("usages",[]):
+				if str(usage.get("timing",""))!="ACTION" or str(usage.get("target",{}).get("kind",""))!="enemy_actor": continue
+				var damage: bool=false
+				for effect in usage.get("effects",[]):
+					if str(effect.get("type",""))=="deal_damage": damage=true
+				if damage:
+					candidates.append({"attack_kind":"PLAY_CARD","target_id":target.id,
+						"card_uid":str(uid),"usage_id":str(usage.id)})
+		for school in actor.technique_states:
+			for stage in techniques.available_nodes(actor,str(school),"ACTION"):
+				if str(stage.get("target",{}).get("kind",""))!="enemy_actor": continue
+				var damaging: bool=false
+				for effect in stage.get("effects",[]):
+					if str(effect.get("type",""))=="deal_damage": damaging=true
+				if damaging:
+					candidates.append({"attack_kind":"USE_ABILITY","target_id":target.id,
+						"technique_id":str(school),"node_id":str(stage.id)})
+		for params in candidates:
+			var req: Dictionary={"kind":"MOVE_AND_ATTACK","actor_id":actor_id,
+				"battle_id":state.battle_id,"expected_revision":state.revision}
+			req.merge(params)
+			var verdict: Dictionary=rules.validate(req)
+			if bool(verdict.get("success",false)):
+				req["spatial_move_units"]=int(verdict.plan.get("move_units",0))
+				result.append(req)
+	if not result.is_empty(): return result
+	# If no attack can be reached this turn, approach as far as the remaining
+	# movement and Qi allow. Only return positions validated by CombatRules.
+	var remaining: int=mini(int(actor.stats.get("move_budget",2))-actor.normal_moves_used,
+		int(float(available_qi)/10000.0))
+	if remaining<=0: return result
+	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var positions: Dictionary={}
+	for combatant in state.actors:
+		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
+	state.spatial.set_actors(positions)
+	for target in opponents:
+		var goal: Dictionary=state.spatial.find_attack_approach(actor.position,target.position,
+			0.0,unit,100000.0,8.0,8.0,actor.id,target.id,true)
+		if goal.is_empty() or not goal.has("path"): continue
+		var route: PackedVector2Array=state.spatial.trim_path(PackedVector2Array(goal.path),float(remaining)*unit)
+		if route.size()<2: continue
+		var end: Vector2=route[-1]
+		end=Vector2(roundf(end.x*4.0)*0.25,roundf(end.y*4.0)*0.25)
+		var request: Dictionary={"kind":"MOVE_FREE","actor_id":actor_id,
+			"battle_id":state.battle_id,"expected_revision":state.revision,"target_position":end}
+		if bool(rules.validate(request).get("success",false)):
+			result.append(request)
+			break
+	return result
 
 ## PREVIEW only: actual MOVE_FREE requests always pass CombatRules.validate().
 func preview_free_path(actor_id: int, target_position: Vector2) -> PackedVector2Array:
