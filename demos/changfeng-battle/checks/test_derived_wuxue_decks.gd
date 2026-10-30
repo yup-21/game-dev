@@ -69,12 +69,12 @@ func _run() -> void:
     _check(_count(player, model, "tf_change") == 0
         and _count(enemy, model, "tf_change") == 0,
         "neither combatant can draw a change card before prerequisite")
-    var first_uid := model.cards.create_instance(player, "tf_probe", "hand")
+    var first_uid: String = model.cards.create_instance(player, "tf_probe", "hand")
     player.cell = Vector2i(7,4)
     enemy.cell = Vector2i(8,4)
     player.qi_u = 6 * UNIT
-    var legal := model.legal_actions(player.id)
-    var attack := {}
+    var legal: Array = model.legal_actions(player.id)
+    var attack: Dictionary = {}
     for choice in legal:
         if (str(choice.get("kind", "")) == "PLAY_CARD"
                 and str(choice.get("card_uid", "")) == first_uid
@@ -85,7 +85,7 @@ func _run() -> void:
     if attack.is_empty():
         quit(1)
         return
-    var executed := _submit(model, attack)
+    var executed: Dictionary = _submit(model, attack)
     _check(bool(executed.get("success",false)) and model.state.mode == "CLASH",
         "attack declares root and opens response priority")
     var child := ""
@@ -104,7 +104,7 @@ func _run() -> void:
     _ack(model)
     # Defender passes, attacker now holds priority while generated card is
     # still in hand and has valid attack-response timing.
-    var defender_pass := _first_action(model, enemy.id, "PASS_REACTION")
+    var defender_pass: Dictionary = _first_action(model, enemy.id, "PASS_REACTION")
     _check(not defender_pass.is_empty(), "defender can give priority back")
     if not defender_pass.is_empty():
         _check(bool(_submit(model, defender_pass).get("success",false)),
@@ -117,7 +117,7 @@ func _run() -> void:
             break
     _check(has_derived_response,
         "created change can be used as an actual same-clash response")
-    var attacker_pass := _first_action(model, player.id, "PASS_REACTION")
+    var attacker_pass: Dictionary = _first_action(model, player.id, "PASS_REACTION")
     if not attacker_pass.is_empty():
         _check(bool(_submit(model, attacker_pass).get("success",false)),
             "second pass resolves the ordinary attack")
