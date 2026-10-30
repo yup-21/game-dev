@@ -442,44 +442,44 @@ func _draw_cinematic() -> void:
 ## Treat image content, not ResourceLoader.exists(), as the readiness test.
 ## Evaluate once on scene creation rather than decoding WebP every _draw().
 func _painted_content(texture: Texture2D) -> bool:
-    if texture == null:
-        return false
-    var image: Image = texture.get_image()
-    if image == null or image.is_empty() or image.get_width() < 256 or image.get_height() < 256:
-        return false
-    var painted := 0
-    for y in range(1, 8):
-        for x in range(1, 8):
-            var pixel: Color = image.get_pixel(
-                mini(image.get_width() - 1, int(float(x) * float(image.get_width()) / 8.0)),
-                mini(image.get_height() - 1, int(float(y) * float(image.get_height()) / 8.0)))
-            if pixel.a > 0.50 and minf(pixel.r, minf(pixel.g, pixel.b)) < 0.86:
-                painted += 1
-    return painted >= 6
+	if texture == null:
+		return false
+	var image: Image = texture.get_image()
+	if image == null or image.is_empty() or image.get_width() < 256 or image.get_height() < 256:
+		return false
+	var painted := 0
+	for y in range(1, 8):
+		for x in range(1, 8):
+			var pixel: Color = image.get_pixel(
+				mini(image.get_width() - 1, int(float(x) * float(image.get_width()) / 8.0)),
+				mini(image.get_height() - 1, int(float(y) * float(image.get_height()) / 8.0)))
+			if pixel.a > 0.50 and minf(pixel.r, minf(pixel.g, pixel.b)) < 0.86:
+				painted += 1
+	return painted >= 6
 
 func _load_temple_background() -> void:
-    temple_uses_fallback = false
-    temple_backdrop = null
-    if ResourceLoader.exists(TEMPLE_PAINTING):
-        var original: Texture2D = load(TEMPLE_PAINTING) as Texture2D
-        if _painted_content(original):
-            temple_backdrop = original
-    if temple_backdrop == null:
-        # A visible, previously shipped HD painterly scene is better than
-        # silently drawing an opaque white WebP as the first act.
-        temple_backdrop = ArtCatalog.scenery("mountain")
-        temple_uses_fallback = true
-        push_warning("First-act painting is empty or unavailable: " + TEMPLE_PAINTING
-            + "; using bundled illustrated scene fallback.")
-    if not _painted_content(temple_backdrop):
-        push_error("No nonblank illustrated background is available for the first act")
+	temple_uses_fallback = false
+	temple_backdrop = null
+	if ResourceLoader.exists(TEMPLE_PAINTING):
+		var original: Texture2D = load(TEMPLE_PAINTING) as Texture2D
+		if _painted_content(original):
+			temple_backdrop = original
+	if temple_backdrop == null:
+		# A visible, previously shipped HD painterly scene is better than
+		# silently drawing an opaque white WebP as the first act.
+		temple_backdrop = ArtCatalog.scenery("mountain")
+		temple_uses_fallback = true
+		push_warning("First-act painting is empty or unavailable: " + TEMPLE_PAINTING
+			+ "; using bundled illustrated scene fallback.")
+	if not _painted_content(temple_backdrop):
+		push_error("No nonblank illustrated background is available for the first act")
 
 func _temple_background() -> bool:
-    if temple_backdrop == null:
-        return false
-    _cover_texture(temple_backdrop,Rect2(0,0,1600,1000),
-        Color(0.75,0.83,0.87) if temple_uses_fallback else Color.WHITE)
-    return true
+	if temple_backdrop == null:
+		return false
+	_cover_texture(temple_backdrop,Rect2(0,0,1600,1000),
+		Color(0.75,0.83,0.87) if temple_uses_fallback else Color.WHITE)
+	return true
 
 func _paint_exploration() -> void:
 	if not _temple_background():
