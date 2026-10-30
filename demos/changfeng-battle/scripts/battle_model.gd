@@ -264,8 +264,21 @@ func decision_context(actor_id: int) -> Dictionary:
 	var ctx: Dictionary=snapshot(actor_id)
 	ctx.observer_id=actor_id
 	ctx.legal_actions=legal_actions(actor_id)
-	if state.spatial_mode=="FREE" and state.mode=="ACTION" and actor_id==state.active_id:
-		ctx.legal_actions.append_array(_spatial_ai_candidates(actor_id))
+	if state.spatial_mode=="FREE":
+		# The legacy reachable-cell card targets are retained for GRID/manual
+		# compatibility, but AI must not use snapped-cell movement in FREE.
+		var filtered: Array=[]
+		for option in ctx.legal_actions:
+			if str(option.get("kind",""))=="PLAY_CARD" and option.has("target_cell"):
+				var usage: Dictionary=cards.usage(str(option.get("card_uid","")),str(option.get("usage_id","")))
+				if str(usage.get("target",{}).get("kind",""))=="reachable_cell":
+					continue
+			filtered.append(option)
+		ctx.legal_actions=filtered
+		if state.mode=="ACTION" and actor_id==state.active_id:
+			ctx.legal_actions.append_array(_spatial_ai_candidates(actor_id))
+		elif state.mode=="CLASH" and actor_id==rules.responder_id():
+			ctx.legal_actions.append_array(_free_reaction_ai_candidates(actor_id))
 	return ctx
 
 ## Only AI contexts enumerate expensive continuous candidates; the human UI
@@ -339,6 +352,27 @@ func _spatial_ai_candidates(actor_id: int) -> Array:
 			result.append(request)
 			break
 	return result
+
+## Defensive free-space reactions use the same versioned card command as
+## the player, and remain subject to the global LIFO response limit.
+func _free_reaction_ai_candidates(actor_id: int) -> Array:
+	var options: Array=[]
+	var actor=state.get_actor(actor_id)
+	if actor==null or actor.hp_u<=0 or state.spatial==null: return options
+	for uid in actor.hand:
+		for usage in cards.canonical_definition(str(uid)).get("usages",[]):
+			if str(usage.get("timing",""))!=rules.timing(actor_id): continue
+			if str(usage.get("target",{}).get("kind",""))!="reachable_cell": continue
+			for offset in [Vector2(0,-20),Vector2(0,20),Vector2(-25,0),Vector2(25,0),
+				Vector2(-20,-20),Vector2(20,-20),Vector2(-20,20),Vector2(20,20)]:
+				var req: Dictionary={"kind":"PLAY_CARD_FREE_MOVE","actor_id":actor_id,
+					"battle_id":state.battle_id,"expected_revision":state.revision,
+					"card_uid":str(uid),"usage_id":str(usage.id),
+					"target_position":actor.position+offset}
+				if bool(rules.validate(req).get("success",false)):
+					options.append(req)
+					break
+	return options
 
 ## PREVIEW only: actual MOVE_FREE requests always pass CombatRules.validate().
 func preview_free_path(actor_id: int, target_position: Vector2) -> PackedVector2Array:
