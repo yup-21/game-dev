@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "rainy_bridge",
+  "background": "res://assets/scenes/battle/rainy_bridge_battle.webp",
+  "source_size": [
+    1586,
+    992
+  ],
+  "viewport": [
+    1600,
+    1000
+  ],
+  "art_transform": {
+    "rotation_degrees": -6,
+    "scale": 1.14
+  },
+  "grid": {
+    "columns": 15,
+    "rows": 10,
+    "first_center": [
+      154,
+      94
+    ],
+    "cell_size": [
+      90,
+      68
+    ]
+  },
+  "terrain_legend": {
+    "T": "bamboo",
+    "R": "rock",
+    "W": "water",
+    ".": "road",
+    "B": "bridge"
+  },
+  "rows": [
+    "TTTTTTWWWWWWTTT",
+    "RRRRRRWWWWWWRRR",
+    "RRRRRRWWWWWWRRR",
+    ".....RWWWWWW...",
+    "R....BBBBBB....",
+    "RRRRRWWWWWWRR..",
+    "RRRRRWWWWWWRR..",
+    "R...RWWWWWWRR..",
+    "R...RWWWWWWRR..",
+    "RR..RWWWWWWR..."
+  ],
+  "notes": "Manually baked from the provided painted bridge, after rotating the artwork -6 degrees. Bridge is a single horizontal playable lane at logical row 4, columns 5–10; foreground rapids have no ford. X increases to the right; Y increases down. Nonwalkable image features have explicit tile types."
+}
