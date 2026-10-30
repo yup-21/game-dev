@@ -108,7 +108,11 @@ func battle_options(roster: Array, character_ids: Dictionary) -> Dictionary:
         output.schools[id] = str(profile.school_id)
         output.attributes[id] = profile.attributes.duplicate(true)
         output.passives[id] = profile.passives.duplicate(true)
-        output.techniques[id] = profile.techniques.duplicate(true)
+        output.techniques[id] = {}
+        # JSON integral numbers parse as floats; TechniqueRuntime.configure
+        # deliberately requires actual int ranks for learned techniques.
+        for technique_id in profile.techniques:
+            output.techniques[id][str(technique_id)] = int(profile.techniques[technique_id])
         output.character_names[id] = str(profile.name)
     for entry in roster:
         if not entry is Dictionary or not entry.get("id") is int or not output.character_ids.has(int(entry.id)):
