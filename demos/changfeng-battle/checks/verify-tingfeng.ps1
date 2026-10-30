@@ -20,6 +20,7 @@ if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_
 if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_input_controller.gd'; Log = 'battle-input.log'; Marker = '^BATTLE_INPUT_PASS\b' } }
 if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_hand_view.gd'; Log = 'battle-hand.log'; Marker = '^BATTLE_HUD_PASS\b' } }
 if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_presentation_coordinator.gd'; Log = 'battle-presentation.log'; Marker = '^PRESENTATION_TICKET_PASS\b' } }
+if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_presentation_skip_ui.gd'; Log = 'battle-skip-ui.log'; Marker = '^PRESENTATION_SKIP_UI\b' } }
 if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_pure_2d.gd'; Log = 'battle-2d.log'; Marker = '^PURE_BATTLE_2D_PASS\b' } }
 if ($Stage -in @('All','Refactor')) { $checks += @{ Script = 'res://checks/test_battle_spatial_facade.gd'; Log = 'battle-spatial.log'; Marker = '^SPATIAL_FACADE_PASS\b' } }
 if ($Stage -in @('All','Policy')) { $checks += @{ Script = 'res://checks/test_tingfeng_ai.gd'; Log = 'tingfeng-policy.log'; Marker = 'RESULTS: \d+ PASS / 0 FAIL - context-only tingfeng policy' } }
