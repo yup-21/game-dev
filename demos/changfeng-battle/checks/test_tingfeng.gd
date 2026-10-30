@@ -53,11 +53,18 @@ func fixture(model, actor_id: int, ids: Array, qi: int = 6) -> void:
 	actor.qi_u = qi * UNIT
 	var selected: Array = []
 	for definition_id in ids:
+		var found := false
 		for uid in model.cards.instances:
 			var instance: Dictionary = model.cards.instances[uid]
 			if int(instance.get("owner_actor_id", instance.get("owner", -1))) == actor_id and str(instance.get("definition_id", "")) == definition_id and not selected.has(uid):
 				selected.append(uid)
+				found = true
 				break
+		# Synthetic fixtures can instantiate historical or derived-only cards,
+		# but runtime build_deck() continues to reject such IDs.
+		if not found and model.cards.definitions.has(str(definition_id)):
+			selected.append(model.cards.create_instance(actor,str(definition_id),"hand"))
+	actor.hand.clear()
 	for uid in model.cards.instances:
 		var instance: Dictionary = model.cards.instances[uid]
 		if int(instance.get("owner_actor_id", instance.get("owner", -1))) == actor_id:
@@ -280,10 +287,10 @@ func test_spatial_and_intercept() -> void:
 	for usage_id in ["probe", "follow", "heavy"]:
 		model = fresh(20)
 		adjacent(model)
-		fixture(model, 0, ["tf_sunder" if usage_id == "heavy" else "tf_probe"])
+		fixture(model, 0, ["tf_sunder" if usage_id == "heavy" else ("tf_follow" if usage_id == "follow" else "tf_probe")])
 		fixture(model, 1, ["tf_guard"])
 		var hp: int = int(model.state.get_actor(1).hp_u)
-		send(model, option(model, 0, "PLAY_CARD", "tf_sunder" if usage_id == "heavy" else "tf_probe", usage_id))
+		send(model, option(model, 0, "PLAY_CARD", "tf_sunder" if usage_id == "heavy" else ("tf_follow" if usage_id == "follow" else "tf_probe"), usage_id))
 		check(send(model, option(model, 1, "PLAY_CARD", "tf_guard", "intercept")).success, "intercept legal against " + usage_id)
 		pass_clash(model)
 		var expected_loss: int = {"probe": 0, "follow": 1, "heavy": 5}[usage_id]
