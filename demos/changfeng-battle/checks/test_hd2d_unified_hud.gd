@@ -74,11 +74,11 @@ func _run() -> void:
             "charge track must run upward from 0 to 10000")
         for actor in battle.get("snap").get("actors", []):
             var id := int(actor.id)
-            var marker := rail.get_node_or_null("Charge_%d" % id)
+            var marker := rail.get_node_or_null("Charge_%d" % id) as Control
             _check(marker != null, "CTB marker missing actor %d" % id)
             _check(marker != null and marker.tooltip_text.contains("集气"),
                 "CTB marker missing accessible gauge value")
-            var row := hud.get_node_or_null("FloatingRoster/RosterScroll/ActorList/Status_%d" % id)
+            var row := hud.get_node_or_null("FloatingRoster/RosterScroll/ActorList/Status_%d" % id) as Control
             _check(row != null and row.visible == (int(actor.get("team_id", 0)) == 0),
                 "only allies should occupy the compact left roster")
     var revision_before: int = int(battle.get("snap").get("revision", -1))

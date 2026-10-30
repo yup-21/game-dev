@@ -17,7 +17,7 @@ func _run() -> void:
     var battle: Node = load(SCENE_PATH).instantiate()
     root.add_child(battle)
     await process_frame
-    var hud: Control = battle.get_node_or_null("WuxiaCombatHUD/UnifiedHUD")
+    var hud: Control = battle.get_node_or_null("WuxiaCombatHUD/UnifiedHUD") as Control
     var rail: Control
     if hud != null:
         rail = hud.get_node_or_null("ChargeRail") as Control
@@ -38,7 +38,7 @@ func _run() -> void:
     await process_frame
     for actor in actors:
         var id := int(actor.get("id", -1))
-        var portrait: Control = rail.get_node_or_null("Charge_%d" % id)
+        var portrait: Control = rail.get_node_or_null("Charge_%d" % id) as Control
         _check(portrait != null, "missing portrait for actor %d" % id)
         if portrait != null:
             _check(portrait.visible == (float(actor.get("hp", 0)) > 0.0),
