@@ -16,6 +16,7 @@ const TEMPLE_PAINTING = "res://assets/scenes/story/ruined_temple_story.webp"
 var story = Story.new()
 var temple_backdrop: Texture2D
 var temple_uses_fallback := false
+var temple_picture: TextureRect
 var ui_font: SystemFont
 var title_font: SystemFont
 var clock: float = 0.0
@@ -32,6 +33,7 @@ var message_left: float = 0.0
 
 func _ready() -> void:
 	_load_temple_background()
+	_build_temple_picture()
 	ui_font = SystemFont.new()
 	ui_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -84,6 +86,8 @@ func _process(delta: float) -> void:
 			visible_characters = minf(float(str(line.get("text", "")).length()),visible_characters+delta*29.0)
 	if story.phase != "explore":
 		_sync_story_sprites(Vector2.ZERO,delta)
+	if temple_picture != null:
+		temple_picture.visible = story.phase in ["explore","dialogue","complete"] or (story.phase=="cinematic" and story.cinematic_index > 0)
 	queue_redraw()
 
 func _sync_story_sprites(motion: Vector2, delta: float) -> void:
@@ -474,12 +478,30 @@ func _load_temple_background() -> void:
 	if not _painted_content(temple_backdrop):
 		push_error("No nonblank illustrated background is available for the first act")
 
-func _temple_background() -> bool:
+## WebP was loaded but the previous draw_texture_rect_region() path rendered
+## white in the opening viewport. Use the same native TextureRect presentation
+## as the battle scenery, at a negative canvas Z behind UI and role sprites.
+func _build_temple_picture() -> void:
 	if temple_backdrop == null:
-		return false
-	_cover_texture(temple_backdrop,Rect2(0,0,1600,1000),
-		Color(0.75,0.83,0.87) if temple_uses_fallback else Color.WHITE)
-	return true
+		return
+	temple_picture = TextureRect.new()
+	temple_picture.name = "FirstActPaintedBackground"
+	temple_picture.texture = temple_backdrop
+	temple_picture.position = Vector2.ZERO
+	temple_picture.size = Vector2(1600,1000)
+	temple_picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	temple_picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	temple_picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	temple_picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	temple_picture.z_index = -100
+	temple_picture.modulate = Color(0.75,0.83,0.87) if temple_uses_fallback else Color.WHITE
+	temple_picture.visible = false
+	add_child(temple_picture)
+
+func _temple_background() -> bool:
+	# The painted TextureRect is a real scene child; calling drawing commands
+	# from outside Node2D._draw() is no longer necessary.
+	return temple_picture != null and temple_picture.texture != null
 
 func _paint_exploration() -> void:
 	if not _temple_background():
