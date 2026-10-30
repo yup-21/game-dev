@@ -22,7 +22,7 @@ func _run() -> void:
         "baked bridge JSON parses and validates")
     _check(baked.tiles.size()==150 and baked.terrain.size()==150,
         "every square of 15x10 has a tile and authoritative terrain")
-    _check(baked.step.x==90.0 and baked.step.y==68.0
+    _check(baked.origin.y==48.0 and baked.step.x==90.0 and baked.step.y==68.0
         and baked.image_rotation_degrees==-6.0 and baked.image_scale>=1.1,
         "flat orthographic tile lattice and independently rotated painting")
     var rows_align := true
