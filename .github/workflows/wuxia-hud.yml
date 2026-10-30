@@ -11,6 +11,12 @@ on:
       - 'demos/changfeng-battle/checks/opening_visual_check.gd'
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
+      - 'demos/changfeng-battle/scripts/hd2d_response_policy.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_auto_pass.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_wuxia_ui.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_ui_assets.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_unified_hud.gd'
+      - 'demos/changfeng-battle/scripts/hd2d_card_art.gd'
       - 'demos/changfeng-battle/scripts/card_system.gd'
       - 'demos/changfeng-battle/scripts/combat_resolver.gd'
       - 'demos/changfeng-battle/scripts/school_catalog.gd'
@@ -22,10 +28,6 @@ on:
       - 'demos/changfeng-battle/data/school_forms.json'
       - 'demos/changfeng-battle/data/demo_scenario.json'
       - 'demos/changfeng-battle/checks/test_derived_wuxue_decks.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_wuxia_ui.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_ui_assets.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_unified_hud.gd'
-      - 'demos/changfeng-battle/scripts/hd2d_card_art.gd'
       - '.github/workflows/wuxia-hud.yml'
   workflow_dispatch:
 
@@ -56,6 +58,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_unified_hud.gd
       - name: Check clickable hand and animation request lifecycle
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
+      - name: Verify automatic empty-response skips and authoritative clash resolution
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_auto_pass.gd
       - name: Validate generated martial cards and actor-specific schools
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_derived_wuxue_decks.gd
       - name: Check original multi-school V3 mechanics

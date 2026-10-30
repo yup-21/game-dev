@@ -35,7 +35,7 @@
 | 选择武学用法 | 点击底部手牌；部分招式需要随后选择目标 |
 | 基础攻击 | Q（存在合法目标时） |
 | 基础格挡 | G |
-| 结束行动 / 交锋 Pass | Space 或 Enter |
+| 结束行动 / 交锋 Pass | Space 或 Enter；没有合法应变牌或武学时自动 Pass，无须点击 |
 | 取消已选择的招式 | 右键 |
 | 重新开始独立战斗 | R（剧情战斗不能重置会话） |
 | 返回菜单或剧情结算 | Esc（剧情需战斗结束后返回结算页） |
@@ -144,6 +144,14 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 ```
 
 这是一轮优先解决占位图粗糙问题的素材替换，完整五式教学、连续技槽、动画骨骼和战场镜头仍需单独设计。未触及现有战斗规则。
+
+## 交锋零响应自动跳过
+
+正式 HD-2D 战斗中，系统以 `BattleModel.legal_actions(responder)` 为准：拥有交锋优先权的任一角色（玩家、友军 AI、敌军 AI）若仅有 `PASS_REACTION` 而没有合法 `PLAY_CARD` 或 `USE_ABILITY`，即立即通过版本化 `BattleModel.request/submit` 自动交还优先权。不会弹出强制 Pass 按钮；若可应变，则仍可主动 Pass。
+
+自动 Pass 不是跳过结算：一次 Pass 交给对方，两次连续 Pass 后仍由 `ReactionController` 逆序结算交锋。纯 `PRIORITY_PASSED` 自动跳过不再等待空动画，若 Pass 触发伤害/死亡等结算事件，保留真实攻击命中/受击动画票据。已有 CTB、LIFO、内息、武学时机与 AI 决策保持不变。
+
+主菜单直达 `battle_hd2d.tscn` 目前仍是 **1v1** 的独立测试战斗；序章追兵进入同一场景，使用 **3v3** 六人队伍，包含两名玩家操控角色及一名友方 AI。当前修改只处理交锋响应的输入体验，未更改人数配置或剧情遭遇。
 
 
 ## 武学派生与人物流派（2026-10-30）

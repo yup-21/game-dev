@@ -79,24 +79,27 @@ static func _lantern(parent: Node3D, pos: Vector3) -> void:
     light.position = pos + Vector3(0, 1.66, 0)
     parent.add_child(light)
 
-static func build(parent: Node3D, story_encounter: bool = false) -> void:
+static func build(parent: Node3D, story_encounter: bool = false, camera: Camera3D = null) -> void:
     var scenery := Node3D.new()
     scenery.name = "WuxiaScenery"
     parent.add_child(scenery)
-    # The snowy sword-sect painting belongs to the standalone training preview.
-    # The rain-soaked prologue keeps its own river landscape and moonlit palette.
-    if not story_encounter:
-        var painting := ArtCatalog.scenery("snow")
-        if painting != null:
-            var backdrop := Sprite3D.new()
-            backdrop.name = "IllustratedBackdrop"
-            backdrop.texture = painting
-            backdrop.pixel_size = 0.023
-            backdrop.position = Vector3(0.0, 10.0, -29.0)
-            backdrop.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-            backdrop.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-            backdrop.shaded = false
-            backdrop.modulate = Color(0.78, 0.87, 0.95, 1.0)
+    # Match the distant illustration to the encounter: rainy bridge for story,
+    # snowy sword-sect courtyard for the standalone training preview.
+    var painting := ArtCatalog.scenery("rainy_bridge" if story_encounter else "snow")
+    if painting != null:
+        var backdrop := Sprite3D.new()
+        backdrop.name = "IllustratedBackdrop"
+        backdrop.texture = painting
+        backdrop.pixel_size = 0.04
+        # Keep the painting aligned with the camera and far behind the board.
+        # A world-space plane gets lost above the horizon in this steep tactical view.
+        backdrop.position = Vector3(0.0, 0.0, -100.0)
+        backdrop.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+        backdrop.shaded = false
+        backdrop.modulate = Color(0.92, 0.96, 1.0, 1.0)
+        if camera != null:
+            camera.add_child(backdrop)
+        else:
             scenery.add_child(backdrop)
     # Layered forest silhouettes on both sides of the tactical area.
     for i in range(18):
