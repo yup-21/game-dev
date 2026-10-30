@@ -66,6 +66,7 @@ func _init(battle_seed: int = 74291) -> void:
 	actors[0].team_id=0
 	actors[0].controller="PLAYER"
 	actors[1].team_id=1
+	actors[1].facing=Vector2i.LEFT
 	actors[1].controller="AI"
 	for row in range(ROWS):
 		for col in range(COLS):
@@ -116,6 +117,7 @@ func configure_combatants(roster: Variant) -> bool:
 			return false
 		var actor=CombatantState.new(int(entry.id),str(name),cell)
 		actor.team_id=int(entry.team_id)
+		actor.facing=Vector2i.LEFT if actor.team_id==1 else Vector2i.RIGHT
 		actor.controller=str(entry.get("controller","AI"))
 		created.append(actor)
 		used_ids[actor.id]=true

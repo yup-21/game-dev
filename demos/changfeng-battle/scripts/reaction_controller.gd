@@ -1,5 +1,6 @@
 extends RefCounted
 ## Bounded priority protocol; the root attack is not a response link.
+const Facing=preload("res://scripts/actor_facing.gd")
 var state
 var _resolver_ref: WeakRef
 var resolver:
@@ -19,13 +20,19 @@ func other(actor_id: int) -> int:
 	return int(state.attack.defender_id) if actor_id==int(state.attack.attacker_id) else int(state.attack.attacker_id)
 
 func add(actor_id: int,uid: String,definition_id: String,u: Dictionary,choice: Dictionary) -> void:
+	# Counter/counter-guard faces the opposing duelist even if a response
+	# applies to the attack stack rather than explicitly naming a target.
+	var responder=state.get_actor(actor_id)
+	var opponent=state.get_actor(other(actor_id))
+	if responder!=null and opponent!=null:
+		responder.facing=Facing.from_delta(opponent.cell-responder.cell,responder.facing)
 	state.next_link+=1
 	var link: Dictionary={"id":state.next_link,"link_id":state.next_link,"actor_id":actor_id,"uid":uid,"definition_id":definition_id,"usage_id":u.id,"name":u.get("name",definition_id),"effects":u.get("effects",[]).duplicate(true),"choice":choice.duplicate(true),"canceled":false,"resolved":false}
 	state.clash.stack.append(link)
 	state.clash.counts[actor_id]=int(state.clash.counts.get(actor_id,0))+1
 	state.clash.priority_actor_id=other(actor_id)
 	state.clash.consecutive_passes=0
-	resolver.emit("CHAIN_LINK_ADDED",{"actor_id":actor_id,"link_id":link.id,"definition_id":definition_id,"usage_id":u.id,"text":"L%d · %s" % [link.id,link.name]})
+	resolver.emit("CHAIN_LINK_ADDED",{"actor_id":actor_id,"link_id":link.id,"definition_id":definition_id,"usage_id":u.id,"facing":responder.facing,"text":"L%d · %s" % [link.id,link.name]})
 	if state.clash.stack.size()>=4: resolver.resolve_clash()
 	else: update_window()
 

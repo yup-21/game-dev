@@ -11,6 +11,10 @@ on:
       - 'demos/changfeng-battle/checks/opening_visual_check.gd'
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
+      - 'demos/changfeng-battle/scripts/actor_facing.gd'
+      - 'demos/changfeng-battle/scripts/hd2d_animation.gd'
+      - 'demos/changfeng-battle/scripts/battle_state.gd'
+      - 'demos/changfeng-battle/checks/test_actor_facing.gd'
       - 'demos/changfeng-battle/scripts/character_registry.gd'
       - 'demos/changfeng-battle/checks/test_multi_school_switch.gd'
       - 'demos/changfeng-battle/scripts/character_card_ui.gd'
@@ -93,6 +97,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_character_registry.gd
       - name: Verify multiple learned schools, switching, card-zone integrity and UI
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_multi_school_switch.gd
+      - name: Check four-way actor facing, movement path and attack targets
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_actor_facing.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
 

@@ -8,6 +8,7 @@ const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
 const CardUI = preload("res://scripts/hd2d_card_ui.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Animator = preload("res://scripts/hd2d_animation.gd")
+const Facing = preload("res://scripts/actor_facing.gd")
 const VFX = preload("res://scripts/hd2d_vfx.gd")
 const ResponsePolicy = preload("res://scripts/hd2d_response_policy.gd")
 const CharacterRegistry = preload("res://scripts/character_registry.gd")
@@ -26,6 +27,8 @@ var animation_driver = Animator.new()
 var effects_driver
 var camera: Camera3D
 var actor_nodes: Dictionary = {}
+var visual_cells: Dictionary = {}
+var movement_paths: Dictionary = {}
 var snap: Dictionary = {}
 var legals: Array = []
 var status_label: Label
@@ -285,7 +288,27 @@ func _create_actor(actor: Dictionary) -> void:
     sprite.transparent = true
     sprite.position.y = 1.12
     root.add_child(sprite)
-    animation_driver.register_actor(int(actor.id), sprite)
+    # Current atlases are action-only (6x4), not true four-angle art.
+    # Mirror west/east and provide an unambiguous ground-plane pointer
+    # for north/south until original directional poses are available.
+    var facing_arrow := MeshInstance3D.new()
+    facing_arrow.name = "FacingArrow"
+    var arrow_mesh := ImmediateMesh.new()
+    arrow_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+    for point in [Vector3(-0.20,0.065,0.13),Vector3(0.20,0.065,0.13),Vector3(0,0.065,0.59)]:
+        arrow_mesh.surface_set_normal(Vector3.UP)
+        arrow_mesh.surface_add_vertex(point)
+    arrow_mesh.surface_end()
+    facing_arrow.mesh = arrow_mesh
+    var arrow_material := StandardMaterial3D.new()
+    arrow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    arrow_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+    arrow_material.albedo_color = Color("87d4bb") if not enemy else Color("e4ab79")
+    facing_arrow.material_override = arrow_material
+    facing_arrow.rotation.y = Facing.yaw(Vector2i(actor.get("facing",Vector2i.RIGHT)))
+    root.add_child(facing_arrow)
+    visual_cells[actor_id] = Vector2i(actor.cell)
+    animation_driver.register_actor(int(actor.id), sprite, Vector2i(actor.get("facing",Vector2i.RIGHT)))
     var nameplate := Label3D.new()
     nameplate.name = "Nameplate"
     nameplate.text = str(actor.get("name", "江湖客"))
@@ -1071,13 +1094,29 @@ func _process(delta: float) -> void:
         var id := int(actor.id)
         if actor_nodes.has(id):
             var node: Node3D = actor_nodes[id]
-            var destination := _world(actor.cell)
+            var path: Array = movement_paths.get(id,[])
+            var destination := _world(Vector2i(actor.cell))
+            if not path.is_empty():
+                var next_cell: Vector2i=Vector2i(path[0])
+                var previous_cell: Vector2i=Vector2i(visual_cells.get(id,Vector2i(actor.cell)))
+                animation_driver.set_facing(id,Facing.from_delta(next_cell-previous_cell,animation_driver.facing_for(id)))
+                destination=_world(next_cell)
             node.position = node.position.move_toward(destination, delta * 5.5)
-            moving[id] = node.position.distance_to(destination) > 0.035
+            var still_moving: bool=node.position.distance_to(destination)>0.035
+            if not still_moving and not path.is_empty():
+                node.position=destination
+                visual_cells[id]=Vector2i(path.pop_front())
+                if path.is_empty(): movement_paths.erase(id)
+                else: movement_paths[id]=path
+            moving[id] = still_moving or not path.is_empty()
             var sprite: Sprite3D = node.get_node_or_null("Sprite3D") as Sprite3D
             if sprite != null:
                 sprite.position.y = 1.0 + sin(elapsed * 2.5 + float(id) * 1.4) * 0.035
     animation_driver.update(delta, moving)
+    for id in actor_nodes:
+        var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow")
+        if arrow != null:
+            arrow.rotation.y=Facing.yaw(animation_driver.facing_for(int(id)))
     if effects_driver != null:
         effects_driver.update(delta)
     for id in cue_remaining.keys():
@@ -1122,6 +1161,14 @@ func _accept(result: Dictionary) -> void:
         push_warning(str(result.get("message", "Action rejected")))
         return
     _cue_events(result.get("events", []))
+    # Presentation follows each real path waypoint, rather than the straight
+    # chord between old and final grid cells. Facing tracks each segment.
+    for event in result.get("events", []):
+        if str(event.get("type", "")) == "MOVE":
+            var id: int=int(event.get("actor_id",-1))
+            if actor_nodes.has(id):
+                visual_cells[id]=Vector2i(event.get("from",Vector2i.ZERO))
+                movement_paths[id]=event.get("path",[]).duplicate()
     animation_driver.events(result.get("events", []))
     if effects_driver != null:
         effects_driver.handle_events(result.get("events", []), actor_nodes)
@@ -1264,8 +1311,14 @@ func _unhandled_input(event: InputEvent) -> void:
                 animation_ticket = -1
                 _refresh()
                 _refresh_target_markers()
+                movement_paths.clear()
                 for actor in snap.get("actors", []):
-                    actor_nodes[int(actor.id)].position = _world(actor.cell)
+                    var id: int=int(actor.id)
+                    actor_nodes[id].position = _world(actor.cell)
+                    visual_cells[id]=Vector2i(actor.cell)
+                    animation_driver.set_facing(id,Vector2i(actor.facing))
+                    var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow")
+                    if arrow != null: arrow.rotation.y=Facing.yaw(Vector2i(actor.facing))
             KEY_ESCAPE:
                 if story_encounter and snap.get("outcome", "playing") != "playing":
                     get_tree().change_scene_to_file("res://demo_result.tscn")
