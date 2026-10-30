@@ -31,9 +31,10 @@ func _run() -> void:
     var opts: Dictionary = director.battle_options("escort_ambush")
     _check(opts.get("character_ids",{}).size() == 6 and opts.get("schools",{}).size() == 6,
         "six encounter identities bind real school and base stats")
-    var independent: Dictionary = opts.get("attributes",{}).get(0,{})
-    independent["STR"] = 99
-    _check(int(registry.for_actor(0).attributes.STR) != 99, "runtime overrides never mutate static profile")
+    var independent: Dictionary = opts.duplicate(true)
+    independent.attributes[0]["STR"] = 99
+    _check(int(registry.for_actor(0).attributes.STR) != 99
+        and int(opts.attributes[0].STR) != 99, "caller mutations never alter registry or combat options")
     var battle = Model.new()
     battle.reset(2026,-1,"tingfeng",opts)
     _check(battle.state.outcome == "playing" and battle.state.actors.size() == 6,
