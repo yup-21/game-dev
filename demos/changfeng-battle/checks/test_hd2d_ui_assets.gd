@@ -23,7 +23,12 @@ func _run() -> void:
             "card art missing or wrong dimensions: " + id)
     _check(CardArt.SEAL != null and CardArt.SEAL.get_size() == Vector2(128, 128),
         "jade emblem not imported")
-    var scene := load("res://battle_hd2d.tscn").instantiate()
+    var packed: PackedScene = load("res://battle_hd2d.tscn") as PackedScene
+    if packed == null:
+        _check(false, "HD-2D scene failed to load")
+        quit(1)
+        return
+    var scene: Node = packed.instantiate()
     root.add_child(scene)
     await process_frame
     var actions = scene.get("card_actions")
