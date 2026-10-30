@@ -29,7 +29,7 @@ func run(view) -> void:
 		_fail(view,"illustrated battle preview entry missing")
 		return
 	var sheet: Texture2D = Illustration.make_sheet(false)
-	if sheet == null or sheet.get_size() != Vector2i(960, 800):
+	if sheet == null or sheet.get_size() != Vector2(960, 800):
 		_fail(view,"opening character illustration sheet not loaded")
 		return
 	if not await _capture(view,"opening-title.png"):

@@ -28,8 +28,16 @@ func _run() -> void:
         quit(1)
         return
 
-    if scene.get_node_or_null("CameraRig/Camera3D") == null:
-        push_error("HD2D_STARTUP: camera missing")
+    # Runtime-created nodes have generated names unless named explicitly.
+    # Validate the actual rendering camera instead of assuming its child name.
+    var camera: Camera3D = scene.get("camera") as Camera3D
+    var rig: Node = scene.get_node_or_null("CameraRig")
+    if camera == null or rig == null or camera.get_parent() != rig:
+        push_error("HD2D_STARTUP: battle camera missing from CameraRig")
+        quit(1)
+        return
+    if scene.get_viewport().get_camera_3d() != camera:
+        push_error("HD2D_STARTUP: battle camera is not active in its viewport")
         quit(1)
         return
 
@@ -48,9 +56,13 @@ func _run() -> void:
         quit(1)
         return
 
-    var hero: Sprite3D = scene.get_node_or_null("Actor_0/Sprite3D") as Sprite3D
-    var foe: Sprite3D = scene.get_node_or_null("Actor_1/Sprite3D") as Sprite3D
-    if hero == null or foe == null or hero.hframes != 6 or hero.vframes != 4:
+    var hero: Sprite3D = _actor_sprite(scene, 0)
+    var foe: Sprite3D = _actor_sprite(scene, 1)
+    if hero == null or foe == null:
+        push_error("HD2D_STARTUP: actor Sprite3D missing")
+        quit(1)
+        return
+    if hero.hframes != 6 or hero.vframes != 4 or foe.hframes != 6 or foe.vframes != 4:
         push_error("HD2D_STARTUP: 6x4 illustrated atlas missing")
         quit(1)
         return
@@ -62,6 +74,10 @@ func _run() -> void:
         return
     var image: Image = texture.get_image()
     var rival_image: Image = rival_texture.get_image()
+    if image == null or rival_image == null or image.is_empty() or rival_image.is_empty():
+        push_error("HD2D_STARTUP: illustrated atlas image is empty")
+        quit(1)
+        return
     if image.get_size() != Vector2i(960, 800) or rival_image.get_size() != Vector2i(960, 800):
         push_error("HD2D_STARTUP: 160x200 painterly atlas frames expected")
         quit(1)
@@ -71,6 +87,10 @@ func _run() -> void:
         quit(1)
         return
     var driver: RefCounted = scene.get("animation_driver") as RefCounted
+    if driver == null:
+        push_error("HD2D_STARTUP: sprite animation controller missing")
+        quit(1)
+        return
     driver.call("play", 0, "attack")
     driver.call("update", 0.16, {})
     if hero.frame < 12 or hero.frame > 17:
@@ -105,3 +125,10 @@ func _run() -> void:
 
     print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 illustrated_sprites=6x4_160x200")
     quit(0)
+
+func _actor_sprite(scene: Node, actor_id: int) -> Sprite3D:
+    var actor: Node = scene.get_node_or_null("Actor_%d" % actor_id)
+    if actor == null:
+        return null
+    var sprites: Array[Node] = actor.find_children("*", "Sprite3D", false, false)
+    return sprites[0] as Sprite3D if sprites.size() == 1 else null
