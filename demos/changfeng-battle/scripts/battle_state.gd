@@ -1,8 +1,9 @@
 extends RefCounted
 
 const CombatantState = preload("res://scripts/combatant_state.gd")
-const COLS: int = 15
-const ROWS: int = 10
+const BridgeLayout = preload("res://scripts/rainy_bridge_layout.gd")
+const COLS: int = BridgeLayout.COLS
+const ROWS: int = BridgeLayout.ROWS
 const MAX_CHAIN_DEPTH: int = 4
 const DIRECTIONS: Array = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 
@@ -68,16 +69,7 @@ func _init(battle_seed: int = 74291) -> void:
 	actors[1].team_id=1
 	actors[1].facing=Vector2i.LEFT
 	actors[1].controller="AI"
-	for row in range(ROWS):
-		for col in range(COLS):
-			terrain[Vector2i(col, row)] = "water" if col == 7 else "grass"
-	terrain[Vector2i(7, 4)] = "bridge"
-	terrain[Vector2i(7, 8)] = "ford"
-	for point in [Vector2i(4, 1), Vector2i(5, 1), Vector2i(3, 7), Vector2i(4, 7), Vector2i(10, 2), Vector2i(11, 7)]:
-		terrain[point] = "rock"
-	for point in [Vector2i(2, 2), Vector2i(3, 2), Vector2i(5, 6), Vector2i(9, 7), Vector2i(12, 1), Vector2i(12, 8)]:
-		terrain[point] = "bamboo"
-	terrain[Vector2i(13, 4)] = "exit"
+	terrain = BridgeLayout.make_terrain()
 
 
 ## Optional encounter roster; default duel remains unchanged.
@@ -154,11 +146,11 @@ func get_actor(actor_id: int):
 
 
 func in_bounds(point: Vector2i) -> bool:
-	return point.x >= 0 and point.x < COLS and point.y >= 0 and point.y < ROWS
+	return BridgeLayout.in_bounds(point)
 
 
 func passable(point: Vector2i) -> bool:
-	return in_bounds(point) and terrain.has(point) and str(terrain[point]) not in ["water", "rock", "bamboo"]
+	return BridgeLayout.is_walkable(point, terrain)
 
 
 func occupied(point: Vector2i, exclude_id: int = -1) -> bool:
