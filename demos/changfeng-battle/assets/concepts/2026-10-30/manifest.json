@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "batch_date": "2026-10-30",
+  "origin": "User-provided generated concept artwork; repository owner to confirm usage rights",
+  "state": "concept_only",
+  "runtime_integrated": false,
+  "assets": [
+    {
+      "path": "characters/gu_qingshuang_24_pose.png",
+      "source_filename": "顾清霜武侠动作图集-1(3).png",
+      "kind": "character_pose_sheet",
+      "resolution": "1536x1024",
+      "grid": "6x4",
+      "sha": "5f9846956abb89bf3e9fad7062801e9f3d7eb030",
+      "notes": "RGBA; edge cleanup pending"
+    },
+    {
+      "path": "characters/green_robed_wanderer_24_pose.png",
+      "source_filename": "青衫客剑影动画图集-2(3).png",
+      "kind": "character_pose_sheet",
+      "resolution": "1536x1024",
+      "grid": "6x4",
+      "sha": "4ced280495edeea870ad641589e9a5345cfe33fd",
+      "notes": "RGBA; edge cleanup pending"
+    },
+    {
+      "path": "characters/black_blade_fighter_24_pose.png",
+      "source_filename": "黑衣刀客24帧战斗图集-3(3).png",
+      "kind": "character_pose_sheet",
+      "resolution": "1536x1024",
+      "grid": "6x4",
+      "sha": "3afba0585a64e21e108e35c67eae1b396311f9ff",
+      "notes": "RGBA; edge cleanup pending"
+    },
+    {
+      "path": "characters/violet_dual_blade_assassin_24_pose.png",
+      "source_filename": "紫影双刃刺客动作图集-4(3).png",
+      "kind": "character_pose_sheet",
+      "resolution": "1536x1024",
+      "grid": "6x4",
+      "sha": "da87df40f5420e5fe0b62290946f6887eae6a5f9",
+      "notes": "RGBA; edge cleanup pending"
+    },
+    {
+      "path": "character_style/red_thread_fighter_painted_study.jpg",
+      "source_filename": "Gemini_Generated_Image_bkw64sbkw64sbkw6.jpg",
+      "kind": "character_design_study",
+      "resolution": "2048x1373",
+      "grid": "3x2",
+      "sha": "0cc391a1757da85a1fe76db5eb474edd49c36930",
+      "notes": "opaque JPG"
+    },
+    {
+      "path": "character_style/red_thread_fighter_pixel_study.jpg",
+      "source_filename": "Gemini_Generated_Image_bkw64sbkw64sbkw6 (1).jpg",
+      "kind": "stylized_pose_study",
+      "resolution": "2048x1373",
+      "grid": "6x4",
+      "sha": "9b5144c1621ee196e4e5dc67afbc16e1a2eac316",
+      "notes": "opaque JPG with white background"
+    },
+    {
+      "path": "character_style/blue_swordfighter_pixel_study.jpg",
+      "source_filename": "Gemini_Generated_Image_bkw64sbkw64sbkw6 (2).jpg",
+      "kind": "stylized_pose_study",
+      "resolution": "2048x1373",
+      "grid": "6x4",
+      "sha": "a4594b1e31ce637811db749761d77bf1f7f6b777",
+      "notes": "opaque JPG with white background"
+    },
+    {
+      "path": "character_style/blue_swordfighter_painted_study.jpg",
+      "source_filename": "Gemini_Generated_Image_bkw64sbkw64sbkw6 (3).jpg",
+      "kind": "character_design_study",
+      "resolution": "2048x1373",
+      "grid": "3x2",
+      "sha": "b48ab1bdc3c25f82a9bbcc93b92ed0a5f7e0e1a0",
+      "notes": "opaque JPG"
+    },
+    {
+      "path": "character_style/teal_herbalist_painted_study.jpg",
+      "source_filename": "Gemini_Generated_Image_bkw64sbkw64sbkw6 (4).jpg",
+      "kind": "character_design_study",
+      "resolution": "2048x1373",
+      "grid": "3x2",
+      "sha": "8408fefc54346cda09a2b8d9e4996bd45951ee13",
+      "notes": "opaque JPG"
+    },
+    {
+      "path": "character_style/teal_herbalist_pixel_study.jpg",
+      "source_filename": "Gemini_Generated_Image_bkw64sbkw64sbkw6 (6).jpg",
+      "kind": "stylized_pose_study",
+      "resolution": "2048x1373",
+      "grid": "6x4",
+      "sha": "d45dff58d4171dee510f24758049b30250328db3",
+      "notes": "opaque JPG with white background"
+    },
+    {
+      "path": "scenes/snowy_sword_sect_courtyard.jpg",
+      "source_filename": "Gemini_Generated_Image_bkw64sbkw64sbkw6 (5).jpg",
+      "kind": "scene_concept",
+      "resolution": "2048x1143",
+      "grid": null,
+      "sha": "f7485b5606b371215c2bbfef783a83020ec2f0d9",
+      "notes": "opaque JPG"
+    },
+    {
+      "path": "scenes/mountain_herbal_workshop_day.jpg",
+      "source_filename": "Gemini_Generated_Image_oda7uqoda7uqoda7.jpg",
+      "kind": "scene_concept",
+      "resolution": "2048x1143",
+      "grid": null,
+      "sha": "1008bd27b984b0af81eb3fc6386cba07d17ecf25",
+      "notes": "opaque JPG"
+    }
+  ],
+  "excluded_near_duplicate": [
+    "顾清霜武侠动作精灵图-5(3).png"
+  ]
+}
