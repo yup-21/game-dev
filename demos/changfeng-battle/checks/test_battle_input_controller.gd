@@ -1,7 +1,7 @@
 extends SceneTree
 const Model = preload("res://scripts/battle_model.gd")
 const Command = preload("res://scripts/battle_command_controller.gd")
-const Input = preload("res://scripts/battle_input_controller.gd")
+const PointerInput = preload("res://scripts/battle_input_controller.gd")
 var checks := 0
 var failures := 0
 
@@ -16,26 +16,26 @@ func _check(ok: bool, message: String) -> void:
 
 func _run() -> void:
     var point := Vector2(453.0, 319.0)
-    var free_move: Dictionary = Input.world_click("FREE", true, true,
+    var free_move: Dictionary = PointerInput.world_click("FREE", true, true,
         "", false, "", "", -1, point, {})
     _check(str(free_move.get("kind", "")) == "MOVE_FREE"
         and Vector2(free_move.get("params", {}).get("target_position", Vector2.ZERO)) == point,
         "FREE click retains exact free landing point")
-    var enemy: Dictionary = Input.world_click("FREE", true, true,
+    var enemy: Dictionary = PointerInput.world_click("FREE", true, true,
         "", false, "", "", 2, point, {})
     _check(str(enemy.get("kind", "")) == "MOVE_AND_ATTACK"
         and int(enemy.get("params", {}).get("target_id", -1)) == 2,
         "FREE hostile click chooses atomic auto-approach")
-    var dodge: Dictionary = Input.world_click("FREE", true, true,
+    var dodge: Dictionary = PointerInput.world_click("FREE", true, true,
         "PLAY_CARD", true, "u2", "dodge", -1, point, {})
     _check(str(dodge.get("kind", "")) == "PLAY_CARD_FREE_MOVE"
         and str(dodge.get("params", {}).get("card_uid", "")) == "u2",
         "selected martial step takes priority")
-    _check(Input.world_click("GRID", true, true, "PLAY_CARD", false,
+    _check(PointerInput.world_click("GRID", true, true, "PLAY_CARD", false,
         "", "", 2, point, {}).is_empty(), "selected normal card remains targeted by UI")
-    _check(Input.world_click("GRID", true, true, "", false,
+    _check(PointerInput.world_click("GRID", true, true, "", false,
         "", "", -1, point, {}).is_empty(), "invalid GRID landing remains ignored")
-    var grid: Dictionary = Input.world_click("GRID", true, true, "",
+    var grid: Dictionary = PointerInput.world_click("GRID", true, true, "",
         false, "", "", -1, point, {"target_cell": Vector2i(4, 6)})
     _check(str(grid.get("kind", "")) == "MOVE"
         and grid.get("params", {}).get("target_cell") == Vector2i(4, 6),
