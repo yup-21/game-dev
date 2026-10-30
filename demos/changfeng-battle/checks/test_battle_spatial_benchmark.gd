@@ -51,7 +51,56 @@ func _run() -> void:
     timings.sort()
     var mid: int = timings.size() / 2
     var p95_index: int = mini(timings.size() - 1, ceili(float(timings.size()) * 0.95) - 1)
+    # Compare reordered approach candidates against the original ring/sector
+    # scan so an optimization cannot silently change the chosen tactical spot.
+    var source: Vector2 = space.bake.cell_center(Vector2i(4, 4))
+    var enemy: Vector2 = space.bake.cell_center(Vector2i(6, 4))
+    space.set_actors({17: {"position":enemy, "radius":8.0, "alive":true}})
+    space.diagnostics_enabled = true
+    space.reset_diagnostics()
+    var optimized: Dictionary = space.find_attack_approach(
+        source, enemy, 0.0, 90.0, 180.0, 8.0, 8.0, 0, 17, true)
+    var approach_stats: Dictionary = space.diagnostic_snapshot()
+    space.diagnostics_enabled = false
+    var reference: Dictionary = _legacy_approach(space, source, enemy)
+    _check(not optimized.is_empty() and not reference.is_empty(),
+        "approach fixture yields a legal attack position")
+    if not optimized.is_empty() and not reference.is_empty():
+        _check(Vector2(optimized.position).distance_to(Vector2(reference.position)) < 0.01
+            and absf(float(optimized.cost) - float(reference.cost)) < 0.01,
+            "branch-and-bound preserves legacy attack landing and cost")
+    _check(int(approach_stats.approach_paths) < int(approach_stats.approach_candidates),
+        "approach lower bound avoids unnecessary A* queries")
     print("SPATIAL_BENCH p50_us=%d p95_us=%d max_us=%d graph_nodes=%d pairs=%d failures=%d"
         % [timings[mid], timings[p95_index], timings[-1],
         int(profile.max_nodes), int(profile.candidate_pairs), failures])
     quit(1 if failures > 0 else 0)
+
+func _legacy_approach(space, source: Vector2, target: Vector2) -> Dictionary:
+    var best: Dictionary = {}
+    for ring in range(3):
+        var edge_distance: float = 90.0 - 90.0 * float(ring) / 2.0
+        var center_distance: float = edge_distance + 16.0
+        for sector in range(48):
+            var angle: float = TAU * float(sector) / 48.0
+            var point: Vector2 = target + Vector2(cos(angle), sin(angle)) * center_distance
+            if not space.is_valid_position(point, 8.0, 0):
+                continue
+            if not space.attack_in_range(point, target, 0.0, 90.0, 8.0, 8.0):
+                continue
+            var lower: float = source.distance_to(point)
+            if lower > 180.0 + 0.001:
+                continue
+            if not best.is_empty() and lower >= float(best.cost) - 0.001:
+                continue
+            if not space.attack_line_clear(point, target, [0, 17]):
+                continue
+            var path: PackedVector2Array = space.find_path(source, point, 8.0, 0)
+            if path.is_empty():
+                continue
+            var cost: float = space.path_length(path)
+            if cost > 180.0 + 0.001:
+                continue
+            if best.is_empty() or cost < float(best.cost) - 0.001:
+                best = {"position":point, "path":path, "cost":cost}
+    return best

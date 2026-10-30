@@ -22,6 +22,7 @@ var _cached_ignore_id := -999999
 
 func reset_diagnostics() -> void:
     diagnostics = {"path_queries":0, "failed_paths":0, "graph_builds":0, "graph_reuses":0,
+        "approach_candidates":0, "approach_paths":0,
         "max_nodes":0, "candidate_pairs":0, "segment_queries":0,
         "total_us":0, "max_us":0}
 
@@ -347,11 +348,10 @@ func find_attack_approach(source: Vector2, target: Vector2, min_range: float,
     if move_budget < 0.0 or min_range < 0.0 or max_range < min_range:
         return {}
     if attack_in_range(source, target, min_range, max_range, radius, target_radius):
-        if not require_line_of_sight or attack_line_clear(source, target, [ignore_id,target_id]):
-            return {"position": source, "path": PackedVector2Array([source]), "cost": 0.0}
-    var best: Dictionary = {}
-    # Sample the legal attack annulus deterministically. A future navigation
-    # mesh can replace this candidate generator without changing the API.
+        if not require_line_of_sight or attack_line_clear(source, target, [ignore_id, target_id]):
+            return {"position":source,"path":PackedVector2Array([source]),"cost":0.0}
+    var candidates: Array[Dictionary] = []
+    # Preserve all original ring/sector candidates and their stable order.
     for ring in range(3):
         var edge_distance := max_range - (max_range - min_range) * float(ring) / 2.0
         var center_distance := edge_distance + radius + target_radius
@@ -362,24 +362,46 @@ func find_attack_approach(source: Vector2, target: Vector2, min_range: float,
                 continue
             if not attack_in_range(point, target, min_range, max_range, radius, target_radius):
                 continue
-            # Euclidean length is a lower bound for every legal walking route.
-            # Skip expensive path search when the candidate cannot beat budget
-            # or a shorter legal route already found.
-            var straight: float=source.distance_to(point)
-            if straight>move_budget+EPSILON:
+            var lower_bound: float = source.distance_to(point)
+            if lower_bound > move_budget + EPSILON:
                 continue
-            if not best.is_empty() and straight>=float(best.cost)-EPSILON:
-                continue
-            if require_line_of_sight and not attack_line_clear(point,target,[ignore_id,target_id]):
-                continue
-            var path := find_path(source, point, radius, ignore_id)
-            if path.is_empty():
-                continue
-            var cost := path_length(path)
-            if cost > move_budget + EPSILON:
-                continue
-            if best.is_empty() or cost < float(best.cost) - EPSILON:
-                best = {"position": point, "path": path, "cost": cost}
+            candidates.append({"position":point,"lower_bound":lower_bound,
+                "order":ring * 48 + sector})
+    if diagnostics_enabled:
+        diagnostics["approach_candidates"] = int(diagnostics.approach_candidates) + candidates.size()
+    var best: Dictionary = {}
+    while not candidates.is_empty():
+        var nearest_index := 0
+        for index in range(1, candidates.size()):
+            var option: Dictionary = candidates[index]
+            var previous: Dictionary = candidates[nearest_index]
+            if float(option.lower_bound) < float(previous.lower_bound) - EPSILON or (
+                    absf(float(option.lower_bound) - float(previous.lower_bound)) <= EPSILON
+                    and int(option.order) < int(previous.order)):
+                nearest_index = index
+        var candidate: Dictionary = candidates.pop_at(nearest_index)
+        var straight: float = float(candidate.lower_bound)
+        # Every legal path costs at least its straight-line distance.
+        if not best.is_empty() and straight > float(best.cost) + EPSILON:
+            break
+        var point: Vector2 = Vector2(candidate.position)
+        if require_line_of_sight and not attack_line_clear(point, target, [ignore_id, target_id]):
+            continue
+        if diagnostics_enabled:
+            diagnostics["approach_paths"] = int(diagnostics.approach_paths) + 1
+        var path: PackedVector2Array = find_path(source, point, radius, ignore_id)
+        if path.is_empty():
+            continue
+        var cost: float = path_length(path)
+        if cost > move_budget + EPSILON:
+            continue
+        if best.is_empty() or cost < float(best.cost) - EPSILON or (
+                absf(cost - float(best.cost)) <= EPSILON
+                and int(candidate.order) < int(best.order)):
+            best = {"position":point,"path":path,"cost":cost,
+                "order":int(candidate.order)}
+    if not best.is_empty():
+        best.erase("order")
     return best
 
 ## PR #57 API compatibility: use its exact visibility-graph implementation,
