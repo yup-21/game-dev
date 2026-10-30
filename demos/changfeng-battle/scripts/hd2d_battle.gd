@@ -285,7 +285,7 @@ func _refresh_target_markers() -> void:
     for action in actions:
         if selected_kind.is_empty() and str(action.get("kind", "")) != "MOVE":
             continue
-        if action.has("target_cell"):
+        if action.has("target_cell") and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id)):
             target_cells[action.target_cell] = true
         if action.has("target_id"):
             for actor in snap.get("actors", []):
@@ -817,6 +817,32 @@ func _can_approach_technique(technique_id: String, node_id: String) -> bool:
         return model.costs.can_pay(actor,quote)
     return false
 
+func _can_free_movement_card(uid: String, usage_id: String) -> bool:
+    if model.state.spatial_mode!="FREE" or model.state.spatial==null:
+        return false
+    var actor=model.state.get_actor(_decision_owner())
+    if actor==null or actor.hp_u<=0 or not actor.hand.has(uid):
+        return false
+    var usage: Dictionary=model.cards.usage(uid,usage_id)
+    if usage.is_empty() or str(usage.get("timing",""))!=model.rules.timing(actor.id):
+        return false
+    if str(usage.get("target",{}).get("kind",""))!="reachable_cell":
+        return false
+    var available:=false
+    for effect in usage.get("effects",[]):
+        if str(effect.get("type",""))=="move" and int(effect.get("max_distance",0))>0:
+            available=true
+    if not available or not model.rules.condition_allows(actor,usage):
+        return false
+    if model.state.mode=="CLASH" and (int(model.state.clash.counts.get(actor.id,0))>=2 or model.state.clash.stack.size()>=4):
+        return false
+    var definition: Dictionary=model.cards.canonical_definition(uid)
+    if bool(usage.get("once_per_action",false)) and int(actor.card_uses.get(str(definition.get("id",""))+":"+usage_id,0))>0:
+        return false
+    var quote: Dictionary=model.costs.quote(actor,usage.get("cost",{}),
+        model.rules.context(actor.id,{"kind":"PLAY_CARD_FREE_MOVE","card_uid":uid,"usage_id":usage_id}))
+    return model.costs.can_pay(actor,quote)
+
 func _enemy_at(cell: Vector2i) -> int:
     var owner: int = _decision_owner()
     for target in model.state.actors:
@@ -896,7 +922,7 @@ func _rebuild_actions() -> void:
         if available and not pass_only:
             for usage in card.get("usages", []):
                 var usage_id: String = str(usage.get("id", ""))
-                if _find_actions(uid,usage_id).is_empty() and not _can_approach_card(uid,usage_id):
+                if _find_actions(uid,usage_id).is_empty() and not _can_approach_card(uid,usage_id) and not _can_free_movement_card(uid,usage_id):
                     continue
                 _add_visible_hand_card(card, usage, true)
                 displayed = true
@@ -1126,12 +1152,24 @@ func _submit_legal(action: Dictionary) -> void:
 func _activate_selection() -> void:
     var actions := _selected_actions()
     if actions.is_empty():
+        if selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id):
+            selection_label.text="已选择身法：点击地图任意合法位置，按路径距离施展步法；右键取消。"
+            _paint_selection()
+            _refresh_target_markers()
+            return
         if (selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node)):
             selection_label.text="已选择攻击招式：点击敌方角色自动寻路接近并出招；右键取消。"
             _paint_selection()
             _refresh_target_markers()
             return
         _clear_selection()
+        return
+    # In FREE, a movement card targets arbitrary world coordinates, including
+    # the defensive-reaction dodge; do not silently snap it to a cell.
+    if selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id):
+        selection_label.text="已选择身法：点击地图任意合法位置；右键取消。"
+        _paint_selection()
+        _refresh_target_markers()
         return
     # Untargeted effects execute immediately. Link-targeted responses get buttons.
     if not actions[0].has("target_cell") and not actions[0].has("target_id") and not actions[0].has("link_id"):
@@ -1486,7 +1524,7 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
         return
     # Position-dependent commands are not finite legal-action enumerations.
     # Their complete legality is checked transactionally by CombatRules.
-    if kind in ["MOVE_FREE", "MOVE_AND_ATTACK", "SET_SPATIAL_MODE"]:
+    if kind in ["MOVE_FREE", "MOVE_AND_ATTACK", "SET_SPATIAL_MODE", "PLAY_CARD_FREE_MOVE"]:
         _accept(model.submit(model.request(kind, owner, params)))
         return
     # Enumerated legacy commands still require an exact legal-action match.
@@ -1549,11 +1587,12 @@ func _update_cursor() -> void:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
 
 func _update_continuous_preview() -> void:
-    if model.state.spatial_mode!="FREE" or not continuous_preview_enabled or continuous_space == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
+    if model.state.spatial_mode!="FREE" or (not continuous_preview_enabled and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id))) or continuous_space == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
         if continuous_preview != null:
             continuous_preview.clear_preview()
         return
-    if not selected_kind.is_empty():
+    var martial_step: bool=selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id)
+    if not selected_kind.is_empty() and not martial_step:
         continuous_preview.clear_preview()
         return
     var actor = model.state.get_actor(_decision_owner())
@@ -1570,6 +1609,12 @@ func _update_continuous_preview() -> void:
     var units: int = ceili((cost - 0.0001) / unit)
     var remaining: int = int(actor.stats.get("move_budget", 2)) - actor.normal_moves_used
     var reachable: bool = units > 0 and units <= remaining and actor.qi_u >= units * 10000
+    if martial_step:
+        var usage: Dictionary=model.cards.usage(selected_card_uid,selected_usage_id)
+        remaining=int(usage.get("target",{}).get("max_distance",0))
+        for effect in usage.get("effects",[]):
+            if str(effect.get("type",""))=="move": remaining=mini(remaining,int(effect.get("max_distance",0)))
+        reachable=cost>0.25 and cost<=float(remaining)*unit+0.001
     continuous_preview.show_preview(path, cost, reachable)
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1603,7 +1648,11 @@ func _unhandled_input(event: InputEvent) -> void:
         _refresh_target_markers()
         return
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        if not selected_kind.is_empty():
+        if selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id):
+            _submit("PLAY_CARD_FREE_MOVE",{"card_uid":selected_card_uid,"usage_id":selected_usage_id,
+                "target_position":get_viewport().get_mouse_position()})
+            get_viewport().set_input_as_handled()
+        elif not selected_kind.is_empty():
             var selected := _action_at(_hover_cell())
             if not selected.is_empty():
                 _submit_legal(selected)
