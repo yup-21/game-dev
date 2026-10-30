@@ -104,7 +104,7 @@ func cell_from_screen(screen: Vector2, _board: Dictionary = {}) -> Vector2i:
     # snap to some adjacent path. A tile's authored screen rectangle owns it.
     return bake.cell_at_screen(screen,true)
 
-func add_actor(actor: Dictionary, atlas: Texture2D) -> void:
+func add_actor(actor: Dictionary, atlas: Texture2D) -> Sprite2D:
     var id: int=int(actor.id)
     var node := Node2D.new()
     node.name="Role_%d" % id
@@ -133,6 +133,7 @@ func add_actor(actor: Dictionary, atlas: Texture2D) -> void:
     node.add_child(nameplate)
     actors[id]=node
     lights[id]=0.0
+    return sprite
 
 func update_actor(id: int, grid: Vector2, frame: int, flip: bool, alive: bool) -> void:
     var node: Node2D=actors.get(id,null)
