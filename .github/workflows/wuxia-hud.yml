@@ -35,6 +35,7 @@ on:
       - 'demos/changfeng-battle/scripts/hd2d_ctb_rail.gd'
       - 'demos/changfeng-battle/scripts/hd2d_response_policy.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_auto_pass.gd'
+      - 'demos/changfeng-battle/checks/test_bridge_auto_battle.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_wuxia_ui.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_ui_assets.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_unified_hud.gd'
@@ -97,6 +98,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
       - name: Verify automatic empty-response skips and authoritative clash resolution
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_auto_pass.gd
+      - name: Play seeded six-character bridge battles through production AI
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_bridge_auto_battle.gd
       - name: Validate generated martial cards and actor-specific schools
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_derived_wuxue_decks.gd
       - name: Check original multi-school V3 mechanics
