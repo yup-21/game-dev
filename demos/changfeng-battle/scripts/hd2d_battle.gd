@@ -38,6 +38,8 @@ var cursor_mesh: MeshInstance3D
 var glow_material: StandardMaterial3D
 var card_actions: HBoxContainer
 var command_actions: VBoxContainer
+var command_scroll: ScrollContainer
+var context_veil: TextureRect
 var selection_label: Label
 var selected_card_uid := ""
 var selected_usage_id := ""
@@ -293,186 +295,242 @@ func _create_actor(actor: Dictionary) -> void:
     cue_remaining[int(actor.id)] = 0.0
     actor_nodes[int(actor.id)] = root
 
+func _veil(parent: Control, texture: Texture2D) -> TextureRect:
+    # Decorative texture is deliberately non-interactive: the battlefield
+    # must still receive all clicks outside the actual card/command controls.
+    var image := TextureRect.new()
+    image.texture = texture
+    image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    image.stretch_mode = TextureRect.STRETCH_SCALE
+    image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    parent.add_child(image)
+    return image
+
 func _build_ui() -> void:
     var canvas := CanvasLayer.new()
     canvas.name = "WuxiaCombatHUD"
     add_child(canvas)
+    var hud := Control.new()
+    hud.name = "UnifiedHUD"
+    hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    canvas.add_child(hud)
 
-    # Compact chapter masthead: the battlefield remains the visual hero.
-    var banner := PanelContainer.new()
-    banner.name = "ChapterBanner"
-    canvas.add_child(banner)
-    banner.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-    banner.offset_left = 10.0
-    banner.offset_right = -10.0
-    banner.offset_top = 8.0
-    banner.offset_bottom = 105.0
-    UITheme.apply_panel(banner)
-    var heading_row := HBoxContainer.new()
-    heading_row.add_theme_constant_override("separation", 14)
-    banner.add_child(heading_row)
-    var chapter_seal := TextureRect.new()
-    chapter_seal.custom_minimum_size = Vector2(56, 56)
-    chapter_seal.texture = preload("res://assets/ui/jade_seal.svg")
-    chapter_seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    chapter_seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-    heading_row.add_child(chapter_seal)
-    var column := VBoxContainer.new()
-    column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    heading_row.add_child(column)
+    # A narrow ink gradient replaces the old full-width framed banner.
+    var ribbon := Control.new()
+    ribbon.name = "ChapterRibbon"
+    ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud.add_child(ribbon)
+    ribbon.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+    ribbon.offset_top = 0.0
+    ribbon.offset_bottom = 95.0
+    _veil(ribbon, preload("res://assets/ui/veil_top.svg"))
+    var header := HBoxContainer.new()
+    header.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+    header.offset_left = 28.0
+    header.offset_right = -29.0
+    header.offset_top = 12.0
+    header.offset_bottom = 70.0
+    header.add_theme_constant_override("separation", 13)
+    ribbon.add_child(header)
+    var seal := TextureRect.new()
+    seal.name = "JadeMark"
+    seal.texture = preload("res://assets/ui/jade_seal.svg")
+    seal.custom_minimum_size = Vector2(43, 43)
+    seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    header.add_child(seal)
+    var heading_stack := VBoxContainer.new()
+    heading_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    heading_stack.add_theme_constant_override("separation", 2)
+    header.add_child(heading_stack)
     var heading := Label.new()
-    heading.text = "长 风 浮 生 录     /     雨夜残镖" if story_encounter else "长 风 浮 生 录     /     断桥听风"
-    heading.add_theme_font_size_override("font_size", 25)
-    heading.add_theme_color_override("font_color", UITheme.GOLD)
-    column.add_child(heading)
+    heading.text = "长风浮生录  /  雨夜残镖" if story_encounter else "长风浮生录  /  断桥听风"
+    heading.add_theme_font_size_override("font_size", 24)
+    heading.add_theme_color_override("font_color", UITheme.PAPER)
+    heading_stack.add_child(heading)
     status_label = Label.new()
-    status_label.add_theme_font_size_override("font_size", 15)
-    status_label.add_theme_color_override("font_color", UITheme.PAPER)
-    column.add_child(status_label)
+    status_label.add_theme_font_size_override("font_size", 13)
+    status_label.add_theme_color_override("font_color", UITheme.MUTED)
+    heading_stack.add_child(status_label)
+    var right_heading := VBoxContainer.new()
+    right_heading.add_theme_constant_override("separation", 2)
+    header.add_child(right_heading)
+    phase_label = Label.new()
+    phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    phase_label.add_theme_font_size_override("font_size", 19)
+    phase_label.add_theme_color_override("font_color", UITheme.GOLD)
+    right_heading.add_child(phase_label)
     help_label = Label.new()
-    help_label.text = "左键选目标  ·  Q 普攻  ·  G 格挡  ·  Space 收势/Pass  ·  右键取消  ·  R 重开  ·  Esc 返回"
-    help_label.add_theme_font_size_override("font_size", 12)
+    help_label.text = "左键选目标 · Q 攻击 · G 格挡 · Space 收势/Pass · 右键取消 · Esc 返回"
+    help_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    help_label.add_theme_font_size_override("font_size", 11)
     help_label.add_theme_color_override("font_color", UITheme.MUTED)
-    column.add_child(help_label)
+    right_heading.add_child(help_label)
 
-    # The multi-actor roster reads model snapshots, never computes rules.
-    var roster_panel := PanelContainer.new()
-    roster_panel.name = "PartyStatus"
-    canvas.add_child(roster_panel)
-    roster_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-    roster_panel.offset_left = 12.0
-    roster_panel.offset_right = 318.0
-    roster_panel.offset_top = 116.0
-    roster_panel.offset_bottom = 568.0
-    UITheme.apply_panel(roster_panel)
-    var roster_column := VBoxContainer.new()
-    roster_column.add_theme_constant_override("separation", 6)
-    roster_panel.add_child(roster_column)
+    # Team status floats directly over the scene: no per-actor rectangular
+    # panels, only portraits, fine health/qi strokes and CTB typography.
+    var party := Control.new()
+    party.name = "FloatingRoster"
+    party.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud.add_child(party)
+    party.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    party.offset_left = 0.0
+    party.offset_right = 285.0
+    party.offset_top = 105.0
+    party.offset_bottom = 619.0
+    _veil(party, preload("res://assets/ui/veil_left.svg"))
     var roster_heading := Label.new()
-    roster_heading.text = "◆  江 湖 阵 容   /   CTB"
+    roster_heading.text = "江 湖 同 行    ·    CTB"
+    roster_heading.position = Vector2(20, 16)
+    roster_heading.size = Vector2(241, 29)
+    roster_heading.add_theme_font_size_override("font_size", 16)
     roster_heading.add_theme_color_override("font_color", UITheme.GOLD)
-    roster_heading.add_theme_font_size_override("font_size", 17)
-    roster_column.add_child(roster_heading)
+    roster_heading.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    party.add_child(roster_heading)
     var roster_scroll := ScrollContainer.new()
-    roster_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    roster_column.add_child(roster_scroll)
+    roster_scroll.name = "RosterScroll"
+    roster_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
+    party.add_child(roster_scroll)
+    roster_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    roster_scroll.offset_left = 17.0
+    roster_scroll.offset_right = -19.0
+    roster_scroll.offset_top = 49.0
+    roster_scroll.offset_bottom = -10.0
+    roster_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     var roster_list := VBoxContainer.new()
-    roster_list.add_theme_constant_override("separation", 9)
+    roster_list.name = "ActorList"
     roster_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    roster_list.add_theme_constant_override("separation", 8)
     roster_scroll.add_child(roster_list)
     for actor in snap.get("actors", []):
         var actor_id := int(actor.id)
         var enemy := int(actor.get("team_id", 0)) != 0
         var actor_row := HBoxContainer.new()
-        actor_row.custom_minimum_size.y = 61
+        actor_row.name = "Status_%d" % actor_id
+        actor_row.custom_minimum_size = Vector2(0, 57)
         actor_row.add_theme_constant_override("separation", 9)
         roster_list.add_child(actor_row)
-        var portrait_icon := TextureRect.new()
-        portrait_icon.custom_minimum_size = Vector2(50, 54)
-        portrait_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-        portrait_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-        portrait_icon.texture = ArtCatalog.avatar(actor_id, enemy)
-        portrait_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-        actor_row.add_child(portrait_icon)
-        var details := VBoxContainer.new()
-        details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-        details.add_theme_constant_override("separation", 3)
-        actor_row.add_child(details)
+        var avatar := TextureRect.new()
+        avatar.custom_minimum_size = Vector2(46, 51)
+        avatar.texture = ArtCatalog.avatar(actor_id, enemy)
+        avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+        avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+        avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        actor_row.add_child(avatar)
+        var detail := VBoxContainer.new()
+        detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        detail.add_theme_constant_override("separation", 5)
+        actor_row.add_child(detail)
         var entry := Label.new()
         entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-        entry.clip_text = true
-        entry.add_theme_font_size_override("font_size", 14)
+        entry.add_theme_font_size_override("font_size", 13)
         entry.add_theme_color_override("font_color", UITheme.RED if enemy else UITheme.JADE)
-        details.add_child(entry)
+        detail.add_child(entry)
         roster_labels[actor_id] = entry
-        var hp_bar := ProgressBar.new()
-        UITheme.apply_meter(hp_bar, UITheme.RED if enemy else Color("a5d4aa"))
-        details.add_child(hp_bar)
-        var qi_bar := ProgressBar.new()
-        UITheme.apply_meter(qi_bar, Color("65b9c5"))
-        details.add_child(qi_bar)
-        roster_bars[actor_id] = {"hp": hp_bar, "qi": qi_bar}
+        var hp := ProgressBar.new()
+        UITheme.apply_meter(hp, UITheme.RED if enemy else Color("a5cda9"))
+        detail.add_child(hp)
+        var qi := ProgressBar.new()
+        UITheme.apply_meter(qi, UITheme.JADE)
+        detail.add_child(qi)
+        roster_bars[actor_id] = {"hp": hp, "qi": qi}
 
-    # Stack depth and priority remain conspicuous in a conflict window.
-    var sidebar := PanelContainer.new()
-    sidebar.name = "ClashPriority"
-    canvas.add_child(sidebar)
-    sidebar.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-    sidebar.offset_left = -348.0
-    sidebar.offset_right = -12.0
-    sidebar.offset_top = 116.0
-    sidebar.offset_bottom = 560.0
-    UITheme.apply_panel(sidebar)
-    var sidebar_column := VBoxContainer.new()
-    sidebar_column.add_theme_constant_override("separation", 8)
-    sidebar.add_child(sidebar_column)
-    phase_label = Label.new()
-    phase_label.add_theme_font_size_override("font_size", 22)
-    phase_label.add_theme_color_override("font_color", UITheme.GOLD)
-    sidebar_column.add_child(phase_label)
-    var separator := HSeparator.new()
-    sidebar_column.add_child(separator)
+    # The right rail has no box. It reveals a soft ink veil only while actual
+    # commands are available; clash details appear only during CLASH.
+    var context := Control.new()
+    context.name = "ContextActions"
+    context.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud.add_child(context)
+    context.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    context.offset_left = -319.0
+    context.offset_right = 0.0
+    context.offset_top = 112.0
+    context.offset_bottom = 535.0
+    context_veil = _veil(context, preload("res://assets/ui/veil_right.svg"))
     clash_label = Label.new()
+    clash_label.name = "ClashDetails"
+    clash_label.position = Vector2(23, 15)
+    clash_label.size = Vector2(274, 69)
+    clash_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     clash_label.add_theme_font_size_override("font_size", 15)
     clash_label.add_theme_color_override("font_color", UITheme.PAPER)
-    clash_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    sidebar_column.add_child(clash_label)
-    var utility_title := Label.new()
-    utility_title.text = "—  行 动 指 令  —"
-    utility_title.add_theme_font_size_override("font_size", 15)
-    utility_title.add_theme_color_override("font_color", UITheme.MUTED)
-    sidebar_column.add_child(utility_title)
-    var command_scroll := ScrollContainer.new()
-    command_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    sidebar_column.add_child(command_scroll)
+    context.add_child(clash_label)
+    command_scroll = ScrollContainer.new()
+    command_scroll.name = "ContextScroll"
+    context.add_child(command_scroll)
+    command_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    command_scroll.offset_left = 23.0
+    command_scroll.offset_right = -20.0
+    command_scroll.offset_top = 85.0
+    command_scroll.offset_bottom = -9.0
+    command_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     command_actions = VBoxContainer.new()
     command_actions.name = "CommandActions"
     command_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    command_actions.add_theme_constant_override("separation", 7)
+    command_actions.add_theme_constant_override("separation", 8)
     command_scroll.add_child(command_actions)
 
-    # Dedicated illustrated hand + separate utility strip. Cards never
-    # manufacture legal actions and enemy hidden hands are not rendered.
-    var tray := PanelContainer.new()
-    tray.name = "MartialHand"
-    canvas.add_child(tray)
-    tray.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    tray.offset_left = 12.0
-    tray.offset_right = -12.0
-    tray.offset_top = -304.0
-    tray.offset_bottom = -10.0
-    UITheme.apply_panel(tray)
-    var tray_column := VBoxContainer.new()
-    tray_column.add_theme_constant_override("separation", 4)
-    tray.add_child(tray_column)
-    var tray_heading := Label.new()
-    tray_heading.text = "◈  听 风 出 招     /     武 学 手 牌"
-    tray_heading.add_theme_font_size_override("font_size", 20)
-    tray_heading.add_theme_color_override("font_color", UITheme.GOLD)
-    tray_column.add_child(tray_heading)
+    # Ink fades out into the battlefield. Cards themselves are the UI and do
+    # not sit inside a second solid, framed tray.
+    var hand_stage := Control.new()
+    hand_stage.name = "HandStage"
+    hand_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud.add_child(hand_stage)
+    hand_stage.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    hand_stage.offset_left = 0.0
+    hand_stage.offset_right = 0.0
+    hand_stage.offset_top = -321.0
+    hand_stage.offset_bottom = 0.0
+    _veil(hand_stage, preload("res://assets/ui/veil_hand.svg"))
+    var hand_title := Label.new()
+    hand_title.text = "听 风 出 招    /    武 学"
+    hand_title.add_theme_font_size_override("font_size", 19)
+    hand_title.add_theme_color_override("font_color", UITheme.GOLD)
+    hand_stage.add_child(hand_title)
+    hand_title.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    hand_title.offset_left = 65.0
+    hand_title.offset_right = 440.0
+    hand_title.offset_top = 18.0
+    hand_title.offset_bottom = 46.0
     selection_label = Label.new()
-    selection_label.text = "选定一式，点击高亮目标；交锋时可迎锋、闪避或截势。"
-    selection_label.add_theme_font_size_override("font_size", 14)
+    selection_label.name = "HandInstruction"
+    selection_label.text = "选一式，点目标；右键取消。"
+    selection_label.add_theme_font_size_override("font_size", 13)
     selection_label.add_theme_color_override("font_color", UITheme.MUTED)
-    tray_column.add_child(selection_label)
-    var scroll := ScrollContainer.new()
-    scroll.name = "HandScroll"
-    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-    scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-    tray_column.add_child(scroll)
+    hand_stage.add_child(selection_label)
+    selection_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+    selection_label.offset_left = 65.0
+    selection_label.offset_right = -50.0
+    selection_label.offset_top = 49.0
+    selection_label.offset_bottom = 72.0
+    var hand_scroll := ScrollContainer.new()
+    hand_scroll.name = "HandScroll"
+    hand_stage.add_child(hand_scroll)
+    hand_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    hand_scroll.offset_left = 64.0
+    hand_scroll.offset_right = -62.0
+    hand_scroll.offset_top = 79.0
+    hand_scroll.offset_bottom = -9.0
+    hand_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+    hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     card_actions = HBoxContainer.new()
     card_actions.name = "CardActions"
-    card_actions.add_theme_constant_override("separation", 9)
+    # Center short hands; once cards overflow, normal scroll starts at the left.
+    card_actions.alignment = BoxContainer.ALIGNMENT_CENTER
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    scroll.add_child(card_actions)
-    # Brief chapter typography, separate from the authoritative battle.
+    card_actions.add_theme_constant_override("separation", 12)
+    hand_scroll.add_child(card_actions)
+
+    # Chapter reveal is visual only, and cannot swallow user mouse input.
     intro_title = Label.new()
     intro_title.text = "雨 夜 追 兵" if story_encounter else "断 桥 听 风"
     intro_title.add_theme_font_size_override("font_size", 54)
     intro_title.add_theme_color_override("font_color", UITheme.PAPER)
     intro_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    canvas.add_child(intro_title)
+    hud.add_child(intro_title)
     intro_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
     intro_title.offset_left = -320.0
     intro_title.offset_right = 320.0
@@ -480,14 +538,14 @@ func _build_ui() -> void:
     intro_title.offset_bottom = -84.0
     intro_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
     intro_subtitle = Label.new()
-    intro_subtitle.text = "一剑试江湖  ·  原创水墨武学卡牌 / HD-2D 立体战场"
+    intro_subtitle.text = "一剑试江湖   ·   水墨武学 / 立体战场"
     intro_subtitle.add_theme_font_size_override("font_size", 20)
     intro_subtitle.add_theme_color_override("font_color", UITheme.GOLD)
     intro_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    canvas.add_child(intro_subtitle)
+    hud.add_child(intro_subtitle)
     intro_subtitle.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-    intro_subtitle.offset_left = -340.0
-    intro_subtitle.offset_right = 340.0
+    intro_subtitle.offset_left = -320.0
+    intro_subtitle.offset_right = 320.0
     intro_subtitle.offset_top = -90.0
     intro_subtitle.offset_bottom = -45.0
     intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -556,6 +614,7 @@ func _rebuild_actions() -> void:
             button.set_meta("usage_id", usage_id)
             button.pressed.connect(_select_card.bind(uid, usage_id))
             card_actions.add_child(button)
+            _bind_card_feedback(button)
 
     var seen_abilities: Dictionary = {}
     for action in legals:
@@ -574,6 +633,7 @@ func _rebuild_actions() -> void:
         button.set_meta("node_id", node_id)
         button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
+        _bind_card_feedback(button)
 
     var commands := {
         "BASIC_GUARD": "守势 · 格挡",
@@ -583,9 +643,13 @@ func _rebuild_actions() -> void:
         "RESET_TECHNIQUE": "收招 · 复位"
     }
     var command_seen: Dictionary = {}
+    var pitch_actions: Array = []
     for action in legals:
         var kind := str(action.get("kind", ""))
         if not commands.has(kind):
+            continue
+        if kind == "PITCH_CARD":
+            pitch_actions.append(action)
             continue
         var key := kind + ":" + str(action.get("card_uid", action.get("technique_id", "")))
         if command_seen.has(key):
@@ -593,11 +657,19 @@ func _rebuild_actions() -> void:
         command_seen[key] = true
         var command_button := Button.new()
         command_button.text = str(commands[kind])
-        if kind == "PITCH_CARD" or kind == "RESET_TECHNIQUE":
-            command_button.text += "\n" + str(action.get("card_uid", action.get("technique_id", "")))
+        if kind == "RESET_TECHNIQUE":
+            command_button.text = "复位 · " + str(action.get("technique_id", ""))
         UITheme.apply_button(command_button)
         command_button.pressed.connect(_submit_legal.bind(action))
         command_actions.add_child(command_button)
+    if not pitch_actions.is_empty():
+        # Present one contextual command instead of N technical card-UID rows.
+        var pitch_toggle := Button.new()
+        pitch_toggle.name = "PitchToggle"
+        pitch_toggle.text = "调息 · 弃牌  ▸"
+        UITheme.apply_button(pitch_toggle)
+        pitch_toggle.pressed.connect(_toggle_pitch_choices.bind(pitch_actions, pitch_toggle))
+        command_actions.add_child(pitch_toggle)
     if snap.get("phase", "") == "CLASH" and not command_seen.has("PASS_REACTION:"):
         var pass_button := Button.new()
         pass_button.text = "按兵 · 交还响应"
@@ -605,17 +677,67 @@ func _rebuild_actions() -> void:
         pass_button.pressed.connect(_submit.bind("PASS_REACTION", {}))
         command_actions.add_child(pass_button)
 
-func _update_card_selection() -> void:
-    # No UI element can submit anything except a legal action in BattleModel.
+func _toggle_pitch_choices(actions: Array, toggle: Button) -> void:
+    var existing := command_actions.get_node_or_null("PitchChoices")
+    if existing != null:
+        existing.queue_free()
+        toggle.text = "调息 · 弃牌  ▸"
+        return
+    toggle.text = "调息 · 收起  ▾"
+    var choices := VBoxContainer.new()
+    choices.name = "PitchChoices"
+    choices.add_theme_constant_override("separation", 3)
+    command_actions.add_child(choices)
+    for action in actions:
+        var card_uid := str(action.get("card_uid", ""))
+        var card_name := "手牌"
+        for card in snap.get("hand", []):
+            if str(card.get("uid", card.get("card_id", ""))) == card_uid:
+                card_name = str(card.get("name", "手牌"))
+                break
+        var choice := Button.new()
+        choice.text = "弃 · " + card_name
+        UITheme.apply_button(choice)
+        choice.pressed.connect(_submit_legal.bind(action))
+        choices.add_child(choice)
+
+func _bind_card_feedback(button: Button) -> void:
+    # Scale changes do not affect the HBox layout or the legal action data.
+    button.pivot_offset = Vector2(88, 218)
+    button.mouse_entered.connect(_on_card_hover.bind(button, true))
+    button.mouse_exited.connect(_on_card_hover.bind(button, false))
+
+func _on_card_hover(button: Button, entering: bool) -> void:
+    if not is_instance_valid(button):
+        return
+    var chosen := _is_selected_card(button)
+    button.z_index = 5 if entering or chosen else 0
+    var tween := create_tween()
+    tween.set_trans(Tween.TRANS_CUBIC)
+    tween.set_ease(Tween.EASE_OUT)
+    tween.tween_property(button, "scale",
+        Vector2.ONE * (1.055 if entering else (1.025 if chosen else 1.0)), 0.14)
+
+func _is_selected_card(button: Button) -> bool:
+    if button.has_meta("technique_id"):
+        return str(button.get_meta("technique_id")) == selected_technique and str(button.get_meta("node_id")) == selected_node
+    return button.has_meta("card_uid") and str(button.get_meta("card_uid")) == selected_card_uid and str(button.get_meta("usage_id")) == selected_usage_id
+
+func _paint_selection() -> void:
     for child in card_actions.get_children():
         if not child is Button:
             continue
-        if child.has_meta("technique_id"):
-            UITheme.apply_card(child, selected_technique == str(child.get_meta("technique_id"))
-                and selected_node == str(child.get_meta("node_id")))
-        elif child.has_meta("card_uid"):
-            UITheme.apply_card(child, selected_card_uid == str(child.get_meta("card_uid"))
-                and selected_usage_id == str(child.get_meta("usage_id")))
+        var chosen := _is_selected_card(child)
+        UITheme.apply_card(child, chosen)
+        if chosen:
+            child.z_index = 4
+            child.scale = Vector2.ONE * 1.025
+        elif not child.is_hovered():
+            child.z_index = 0
+            child.scale = Vector2.ONE
+
+func _update_card_selection() -> void:
+    _paint_selection()
 
 func _select_card(uid: String, usage: String) -> void:
     _clear_selection()
@@ -669,15 +791,7 @@ func _activate_selection() -> void:
         button.pressed.connect(_submit_legal.bind(action))
         command_actions.add_child(button)
     selection_label.text = "已选择招式：点击绿色目标格或角色；右键取消。"
-    for child in card_actions.get_children():
-        if not child is Button:
-            continue
-        var chosen: bool = false
-        if child.has_meta("technique_id"):
-            chosen = str(child.get_meta("technique_id")) == selected_technique and str(child.get_meta("node_id")) == selected_node
-        elif child.has_meta("card_uid"):
-            chosen = str(child.get_meta("card_uid")) == selected_card_uid and str(child.get_meta("usage_id", "")) == selected_usage_id
-        UITheme.apply_card(child, chosen)
+    _paint_selection()
     _refresh_target_markers()
 
 func _action_at(cell: Vector2i) -> Dictionary:
@@ -725,6 +839,16 @@ func _update_status() -> void:
             qi_bar.max_value = max_qi
             qi_bar.value = clampf(qi, 0.0, max_qi)
             qi_bar.tooltip_text = "真气 %.1f / %.1f" % [qi, max_qi]
+    # Reveal situational controls; the idle battlefield has no framed sidebar.
+    var in_clash := str(snap.get("phase", "")) == "CLASH"
+    var has_commands := command_actions != null and command_actions.get_child_count() > 0
+    if context_veil != null:
+        context_veil.visible = in_clash or (has_commands and _player_decision())
+    if command_scroll != null:
+        command_scroll.visible = has_commands and _player_decision()
+        command_scroll.offset_top = 87.0 if in_clash else 17.0
+    if clash_label != null:
+        clash_label.visible = in_clash
     if phase_label != null:
         phase_label.text = "◆  交 锋 应 变" if snap.get("phase", "") == "CLASH" else ("◆  我 方 行 动" if _player_decision() else "◆  敌 方 行 动")
     if clash_label != null:
