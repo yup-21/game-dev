@@ -19,7 +19,7 @@ func _run() -> void:
     for id in ["tf_probe", "tf_sunder", "tf_step", "tf_guard", "tf_change",
         "wind_final", "taixu_breath", "blood_burn"]:
         var texture := CardArt.for_card({"definition_id": id})
-        _check(texture != null and texture.get_size() == Vector2(240, 320),
+        _check(texture != null and texture.get_size() in [Vector2(240, 320), Vector2(384, 512)],
             "card art missing or wrong dimensions: " + id)
     _check(CardArt.SEAL != null and CardArt.SEAL.get_size() == Vector2(128, 128),
         "jade emblem not imported")

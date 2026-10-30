@@ -21,3 +21,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_s
 在 1600×1000、1440×900 窗口下需人工检查卡牌文字长短、滚动、头像裁剪、操作热点、CLASH 层次和缩放。SVG 图稿不能代表精细角色动作动画；本轮只重做 UI 视觉素材与对应表现层。
 
 **验证状态**：此执行环境没有 Godot 二进制，尚未执行引擎启动／交互回归；不能将静态审阅视作实机 PASS。
+
+## 高精度 PNG 覆盖路径（可选）
+将同主题 384×512 的原创插画 `card_probe.png`、`card_sunder.png` 等放置在：
+`assets/ui/original/painted/`。执行 Godot 导入后 `CardArt` 会优先加载 PNG；没有该文件时自动使用当前已入库的 SVG。这样素材升级不需要修改战斗逻辑或按钮代码。
