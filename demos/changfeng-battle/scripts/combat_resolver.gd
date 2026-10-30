@@ -129,6 +129,7 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 			gain_qi(actor.id,1)
 			emit("CARD_DISCARDED",{"actor_id":actor.id,"definition_id":cards.instance(str(action.card_uid)).definition_id,"text":"%s 弃牌调息" % actor.name})
 		"PLAY_CARD": play_card(actor,action)
+		"PLAY_CARD_FREE_MOVE": play_card(actor,action)
 		"USE_ABILITY": play_ability(actor,action)
 		"RESET_TECHNIQUE":
 			if techniques.reset(actor,str(action.technique_id)):
@@ -364,6 +365,22 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 			"deal_damage": deal_damage(source,target_id,float(effect.amount))
 			"on_attack_hit", "on_attack_miss": pass
 			"move":
+				if state.spatial_mode=="FREE" and state.spatial!=null and choice.get("target_position") is Vector2:
+					var moving=state.get_actor(source)
+					if moving==null: continue
+					var goal: Vector2=Vector2(choice.target_position)
+					var positions: Dictionary={}
+					for other in state.actors:
+						positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
+					state.spatial.set_actors(positions)
+					var path2: PackedVector2Array=state.spatial.find_path(moving.position,goal,8.0,source)
+					var distance: float=state.spatial.path_length(path2)
+					var max_distance: float=float(effect.get("max_distance",0))*maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+					if path2.size()>1 and distance>=0.25 and distance<=max_distance+0.001:
+						var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(goal,true)
+						if dest_cell!=Vector2i(-1,-1):
+							move_actor_free(source,goal,dest_cell,path2)
+					continue
 				if not choice.get("target_cell") is Vector2i: continue
 				var path: Array=state.find_path(state.get_actor(source).cell,choice.target_cell,source)
 				if not path.is_empty() and path.size()<=int(effect.max_distance): move_actor(source,choice.target_cell,path)
