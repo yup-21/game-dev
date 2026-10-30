@@ -88,7 +88,9 @@ func _ready() -> void:
     _update_status()
 
 func _quick_character_options() -> Dictionary:
-    return CharacterRegistry.new().battle_options([], {0:"shen_changfeng",1:"pursuer_captain"})
+    var configured: Dictionary=CharacterRegistry.new().battle_options([], {0:"shen_changfeng",1:"pursuer_captain"})
+    configured["map_definition_path"]="res://data/maps/rainy_bridge.json"
+    return configured
 
 func _session():
     return get_node_or_null("/root/GameSession")
@@ -165,7 +167,7 @@ func _build_world() -> void:
 
     # A 2D illustrated image owns the entire battlefield. The camera stays
     # only for compatibility with old 3D animation/effect fixtures.
-    illustrated_map = IllustratedMap.new(story_encounter)
+    illustrated_map = IllustratedMap.new(story_encounter,str(model.state.map_definition_path))
     add_child(illustrated_map)
     for actor in snap.get("actors", []):
         _create_actor(actor)
@@ -1262,6 +1264,11 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
             return
 
 func _legal(kind: String, cell: Vector2i = Vector2i(-1, -1)) -> Dictionary:
+    # Movement always requires a real target. The shared optional-cell
+    # sentinel (-1,-1) must never choose the first legal MOVE when the user
+    # clicks blocked water, cliff faces or outside the calibrated grid.
+    if kind == "MOVE" and cell.x < 0:
+        return {}
     for action in legals:
         if str(action.get("kind", "")) != kind:
             continue
@@ -1320,6 +1327,9 @@ func _unhandled_input(event: InputEvent) -> void:
                 _submit("MOVE", {"target_cell": move.target_cell})
     if event is InputEventKey and event.pressed and not event.echo:
         match event.keycode:
+            KEY_F3:
+                if illustrated_map != null:
+                    illustrated_map.set_debug_grid(not illustrated_map.debug_grid.visible)
             KEY_C:
                 _open_character_card(observer_id)
             KEY_Q:

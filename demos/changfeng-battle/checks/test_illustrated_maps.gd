@@ -1,6 +1,6 @@
 extends SceneTree
 ## Validate actual 2D battle presentation, role anchoring and story scene.
-const SceneMap = preload("res://scripts/illustrated_battle_map.gd")
+const MapBake = preload("res://scripts/map_bake.gd")
 var failures := 0
 var checks := 0
 
@@ -36,23 +36,28 @@ func _run() -> void:
         "no procedural 3D terrain or distant background is constructed")
     _check(painted.actors.size()==2 and painted.actors[0].get_node("ActionSprite").texture!=null,
         "duel actors are visual 2D Sprite2D nodes with real atlas")
-    var left: Vector2=SceneMap.point_for_cell(Vector2i(6,4))
-    var bridge_point: Vector2=SceneMap.point_for_cell(Vector2i(7,4))
-    var right: Vector2=SceneMap.point_for_cell(Vector2i(8,4))
-    _check(left.x<bridge_point.x and bridge_point.x<right.x,
-        "bridge endpoints align with foot anchors of the painting")
-    var crossing: Vector2=SceneMap.point_for_cell(Vector2i(7,8))
-    _check(crossing.y>bridge_point.y+210,
-        "ford crossing is in the foreground, separated from the bridge")
+    var left: Vector2=painted.point_for_cell(Vector2i(6,4))
+    var bridge_point: Vector2=painted.point_for_cell(Vector2i(7,4))
+    var right: Vector2=painted.point_for_cell(Vector2i(8,4))
+    _check(left.y==bridge_point.y and right.y==bridge_point.y
+        and left.x<bridge_point.x and bridge_point.x<right.x,
+        "bridge is a continuous horizontal orthographic grid row")
+    var river: Vector2=painted.point_for_cell(Vector2i(7,8))
+    _check(model.state.terrain[Vector2i(7,8)]=="water"
+        and not model.state.passable(Vector2i(7,8)),
+        "painted foreground rapids are blocked, not a fictional ford")
     _check(painted.cell_from_screen(bridge_point,model.state.terrain)==Vector2i(7,4),
         "map projection inverses the real traversable bridge")
-    _check(painted.cell_from_screen(crossing,model.state.terrain)==Vector2i(7,8),
-        "map projection inverses the real traversable ford")
+    _check(painted.cell_from_screen(river,model.state.terrain)==Vector2i(-1,-1),
+        "clicking a blocked river never snaps to a nearby walkable tile")
     _check(painted.cell_from_screen(Vector2(1550,40),model.state.terrain)==Vector2i(-1,-1),
         "non-playable off-map art does not resolve to movement")
     var hero = painted.actors[0].get_node("ActionSprite") as Sprite2D
     _check(hero.hframes==6 and hero.vframes==4,
         "2D actor preserves original action atlas frame convention")
+    _check(painted.bake.tiles.size()==150
+        and painted.bake.image_rotation_degrees==-6.0,
+        "150 painted tiles are baked and bridge painting is leveled")
     var seq = model.state.revision
     painted.update_actor(0,Vector2(6,4),13,false,true)
     _check(hero.frame==13 and model.state.revision==seq,

@@ -23,8 +23,8 @@
           "team_id": 0,
           "controller": "PLAYER",
           "cell": [
-            5,
-            5
+            3,
+            3
           ],
           "character_id": "gu_qingshuang"
         },
@@ -34,8 +34,8 @@
           "team_id": 0,
           "controller": "AI",
           "cell": [
-            5,
-            3
+            4,
+            4
           ],
           "character_id": "green_wanderer"
         },
@@ -56,8 +56,8 @@
           "team_id": 1,
           "controller": "AI",
           "cell": [
-            9,
-            5
+            12,
+            4
           ],
           "character_id": "black_blade"
         },
@@ -67,12 +67,13 @@
           "team_id": 1,
           "controller": "AI",
           "cell": [
-            9,
+            13,
             3
           ],
           "character_id": "night_assassin"
         }
-      ]
+      ],
+      "map_id": "rainy_bridge"
     }
   ]
 }

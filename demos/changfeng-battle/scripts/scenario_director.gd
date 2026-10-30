@@ -26,6 +26,10 @@ func _init(path: String = "res://data/demo_scenario.json") -> void:
 		if not _valid_integer(entry.get("seed",0)) or not entry.get("schools",{}) is Dictionary:
 			load_error="Invalid encounter seed / schools"
 			return
+		if entry.has("map_id"):
+			if not entry.map_id is String or not str(entry.map_id).is_valid_identifier():
+				load_error="Invalid map ID"
+				return
 		var normalized: Dictionary=entry.duplicate(true)
 		if normalized.has("seed"): normalized.seed=int(normalized.seed)
 		for actor in normalized.combatants:
@@ -64,9 +68,15 @@ func battle_options(id: String) -> Dictionary:
 		if actor.has("character_id"):
 			ids[int(actor.id)]=str(actor.character_id)
 	if not ids.is_empty():
-		return characters.battle_options(roster,ids)
+		var configured: Dictionary=characters.battle_options(roster,ids)
+		if definition.has("map_id"):
+			configured["map_definition_path"]="res://data/maps/"+str(definition.map_id)+".json"
+		return configured
 	# Legacy/custom encounter fixtures remain supported without profiles.
 	var schools: Dictionary={}
 	for key in definition.get("schools",{}):
 		schools[int(key)]=str(definition.schools[key])
-	return {"combatants":roster,"schools":schools}
+	var configured: Dictionary={"combatants":roster,"schools":schools}
+	if definition.has("map_id"):
+		configured["map_definition_path"]="res://data/maps/"+str(definition.map_id)+".json"
+	return configured

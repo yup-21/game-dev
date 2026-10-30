@@ -197,3 +197,8 @@ godot --headless --path demos/changfeng-battle --editor --import --quit
 godot --headless --path demos/changfeng-battle --script res://checks/test_illustrated_maps.gd
 godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
 ```
+
+
+## 手绘战斗地图的正交网格烘焙
+
+正式剧情战斗和独立试玩使用 `data/maps/rainy_bridge.json`：以用户提交的完整断桥原画为底，将图片旋转 -6° 校平桥面、放大 1.14 倍消除黑边，15×10 的**水平正交矩形网格**不旋转、不使用45°菱形棋盘。地形类型（道路、桥面、急流、石壁、竹丛）已根据原画逐格人工烘焙为可版本管理的行数据。角色脚底、鼠标格子、移动目标、场景出生点统一通过 `MapBake` 投影，`BattleModel` 寻路及碰撞直接消费同一张地形字典。原画前景急流不可通行，不再有虚构的浅滩捷径。**F3** 可显示全部150格的坐标和通行校对层；详情见 `docs/baked-bridge-grid.md`。无地图参数的旧规则测试依旧可独立运行。

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Single controller and authority. UI and AI submit the same versioned requests.
 const State = preload("res://scripts/battle_state.gd")
+const MapBake = preload("res://scripts/map_bake.gd")
 const Cards = preload("res://scripts/card_system.gd")
 const Attributes = preload("res://scripts/attribute_system.gd")
 const Statuses = preload("res://scripts/status_system.gd")
@@ -48,7 +49,23 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	_battle_serial+=1
 	state.battle_id="battle:%d:%d" % [seed,_battle_serial]
 	state.root_action_id=state.battle_id+":initial"
-	var party_valid: bool=not options.has("combatants") or state.configure_combatants(options.combatants)
+	# An authored battlefield owns the terrain for the entire combat graph.
+	# Legacy/unit-test battles without map_definition_path still use the old
+	# deterministic terrain for compatibility.
+	var map_valid := true
+	if options.has("map_definition_path"):
+		if not options.map_definition_path is String or str(options.map_definition_path).is_empty():
+			map_valid=false
+			state.party_error="Invalid baked map resource path"
+		else:
+			var baked = MapBake.new(str(options.map_definition_path))
+			if not baked.error.is_empty():
+				map_valid=false
+				state.party_error=baked.error
+			else:
+				state.terrain=baked.baked_terrain()
+				state.map_definition_path=str(options.map_definition_path)
+	var party_valid: bool=map_valid and (not options.has("combatants") or state.configure_combatants(options.combatants))
 	state.preferred_first=state.actors[0].id
 	for candidate in state.actors:
 		if candidate.team_id==0 and candidate.controller=="PLAYER":
