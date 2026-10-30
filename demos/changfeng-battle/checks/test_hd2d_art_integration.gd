@@ -66,7 +66,7 @@ func _run() -> void:
         _fail("rainy story scene does not display the full 2D bridge background")
         return
     for actor_id in [0, 1, 2, 3, 4, 5]:
-        var sprite: Sprite3D = battle.get_node_or_null("Actor_%d/Sprite3D" % actor_id) as Sprite3D
+        var sprite: Sprite2D = battle_map.actors[actor_id].get_node_or_null("ActionSprite") as Sprite2D
         if sprite == null or sprite.texture != Catalog.sheet_for_actor(actor_id, actor_id > 3):
             _fail("story actor %d is not displaying the supplied atlas" % actor_id)
             return
