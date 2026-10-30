@@ -75,10 +75,18 @@ func events(emitted: Array) -> void:
                 animation = "guard"
         if not animation.is_empty() and tracks.has(id):
             var duration: float=float(DURATIONS.get(animation, 0.35))
+            var presentation_facing: Vector2i=Vector2i(event.get("facing",facing_for(id)))
             if kind == "MOVE":
-                duration=maxf(duration,float(event.get("path",[]).size()) * 0.33)
+                var path: Array=event.get("path",[])
+                duration=maxf(duration,float(path.size()) * 0.33)
+                # Show the direction of the FIRST step immediately; view
+                # updates the orientation again at every corner.
+                if not path.is_empty():
+                    presentation_facing=Facing.from_delta(
+                        Vector2i(path[0])-Vector2i(event.get("from",Vector2i.ZERO)),
+                        presentation_facing)
             timeline.append({"id": id, "state": animation,
-                "facing": event.get("facing",facing_for(id)),
+                "facing": presentation_facing,
                 "duration": duration})
     _play_next()
 
