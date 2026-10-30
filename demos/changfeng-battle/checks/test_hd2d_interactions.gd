@@ -186,13 +186,12 @@ func _run() -> void:
     await _capture("01-board")
 
     # These cells are visibly on the board but cannot be moved into.
+    # A missing target means 'any legal action'; an invalid MapBake cell does not.
+    var invalid_move: Dictionary = scene.call("_legal", "MOVE", Vector2i(-1, -1))
+    check(invalid_move.is_empty(), "invalid baked-grid pointer cannot resolve to a legal MOVE")
     var before := _view()
     for cell in [Vector2i(7, 3), Vector2i(8, 4)]:
         await _mouse(_screen(cell))
-        print("GRID_INPUT_PROBE wanted=",cell," map=",
-            scene.get("illustrated_map").cell_from_screen(root.get_mouse_position(),
-                scene.get("model").state.terrain)," viewport_mouse=",root.get_mouse_position(),
-            " hovered=",scene.get("hovered"))
         await _click(_screen(cell))
         check(int(_view().revision) == int(before.revision) and _actor(_view(), 0).cell == _actor(before, 0).cell, "mouse rejects water/occupied cell " + str(cell))
     await _mouse(_screen(Vector2i(7, 4)))
