@@ -74,7 +74,19 @@ func _run() -> void:
     if not await _capture("03-character-dossier"):
         quit(1)
         return
-    print("HUD_CAPTURE_PASS battle + card highlight + live character dossier")
+    overlay.call("close_card")
+    var painted = battle.get("illustrated_map")
+    if painted == null or painted.debug_grid == null:
+        push_error("HUD_CAPTURE: baked map visual inspector missing")
+        quit(1)
+        return
+    painted.set_debug_grid(true)
+    await process_frame
+    if not await _capture("04-baked-grid"):
+        quit(1)
+        return
+    painted.set_debug_grid(false)
+    print("HUD_CAPTURE_PASS board + card + dossier + 150-cell baked overlay")
     battle.queue_free()
     await process_frame
     quit(0)
