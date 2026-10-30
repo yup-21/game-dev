@@ -120,3 +120,11 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_demo_f
 - `BattlePresentationPlayer` 持有动画驱动、VFX 与 ticket 协调，不允许写规则；旧 `animation_driver`、`presentation` 字段仍指向同一实例。
 - `BattleHUDView` 绑定状态栏、CTB、手牌投影与扇形排版；原布局创建与事件按钮暂留主场景以保持 UI 兼容。
 - R8 live-scene 测试：`checks/test_battle_r8_components.gd`。本阶段不改变卡牌规则、GUI 素材、行动顺序或剧情。
+
+## R9 — 统一 GRID/FREE 空间契约（2026-10-31）
+
+- `BattleSpatialFacade.plan_free_landing` 负责统一 FREE 选点、圆形避让、量化与可达路径预检；移动和武学身法仍在 `CombatRules` 判断时机、预算与费用。
+- `check_attack_approach` 对自动接近的量化坐标重新验证站位、距离和 LOS；GRID facade 的远距 LOS 也按轴线校验，基础邻接攻击规则保持不变。
+- `forced_displacement` 与 `forced_move_preview` 统一为轴向遇阻停止的几何方案，并由 `CombatResolver` 直接消费，避免界面预览与真实击退走不同路径。
+- `BattleModel.preview_free_path` 使用 battle ID、revision、actor ID 与量化落点作为单条缓存键，避免静止鼠标每帧重建可见性图；提交或重开战斗后自动失效。
+- 新增 `checks/test_battle_spatial_r9.gd` 和 CI 检查。当前 FREE 实现为 MapBake + AStar2D 可见性图，不是 AStarGrid2D 或 NavigationPolygon。

@@ -40,11 +40,14 @@ var abilities
 var _request_serial: int=0
 static var _battle_serial: int=0
 var _busy: bool=false
+## A single-entry route preview cache; invalidated on reset or revision change.
+var _free_preview_cache: Dictionary = {}
 
 func _init() -> void:
 	reset()
 
 func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",options: Dictionary = {}) -> void:
+	_free_preview_cache.clear()
 	var revision: int=0 if state==null else state.revision+1
 	var ticket: int=0 if state==null else state.animation_ticket+1
 	state=State.new(seed)
@@ -335,13 +338,10 @@ func _spatial_ai_candidates(actor_id: int) -> Array:
 		int(float(available_qi)/10000.0))
 	if remaining<=0: return result
 	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
-	var positions: Dictionary={}
-	for combatant in state.actors:
-		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
-	state.spatial.set_actors(positions)
+	var geometry=Geometry.new(state)
 	for target in opponents:
-		var goal: Dictionary=state.spatial.find_attack_approach(actor.position,target.position,
-			0.0,unit,100000.0,8.0,8.0,actor.id,target.id,true)
+		var goal: Dictionary=geometry.find_attack_approach(actor,target,
+			0.0,unit,100000.0,true)
 		if goal.is_empty() or not goal.has("path"): continue
 		var route: PackedVector2Array=state.spatial.trim_path(PackedVector2Array(goal.path),float(remaining)*unit)
 		if route.size()<2: continue
@@ -382,10 +382,16 @@ func preview_free_path(actor_id: int, target_position: Vector2) -> PackedVector2
 	var actor=state.get_actor(actor_id)
 	if actor==null or actor.hp_u<=0:
 		return PackedVector2Array()
+	var key: Array=[state.battle_id,state.revision,actor_id,
+		roundf(target_position.x*4.0)*0.25,roundf(target_position.y*4.0)*0.25]
+	if _free_preview_cache.get("key",[])==key:
+		return PackedVector2Array(_free_preview_cache.path)
 	var geometry=Geometry.new(state)
 	var landing: Vector2=geometry.safe_landing(actor,target_position)
 	landing=Vector2(roundf(landing.x*4.0)*0.25,roundf(landing.y*4.0)*0.25)
-	return PackedVector2Array(geometry.find_path(actor,landing))
+	var result: PackedVector2Array=PackedVector2Array(geometry.find_path(actor,landing))
+	_free_preview_cache={"key":key,"path":result}
+	return result
 
 func distance(a: Vector2i,b: Vector2i) -> int:
 	return rules.distance(a,b)

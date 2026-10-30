@@ -35,7 +35,7 @@ flowchart TD
 - `GRID`：保留 15×10 正交格、原移动预算与 Manhattan 基本攻击距离。
 - `FREE`：连续 `Vector2`、圆形碰撞、真实路径长度、自动接近攻击与自由身法落点。
 - `BattleSpatialFacade` 统一回答 `can_land / safe_landing / find_path / path_cost / can_attack / find_attack_approach / forced_move_preview`。当前 `CombatRules` 的基础攻击、FREE 攻击用法与自动接近走 facade；`BattleModel.preview_free_path` 也使用它。部分旧校验仍直接调用 `BattleSpatialService`，属于后续收敛点。
-- FREE 底层仍是 `MapBake` 的障碍 mask 与 `AStarGrid2D` 路径平滑，**不是** `NavigationPolygon` 独立导航网格。重构不修改寻路算法。
+- FREE 底层仍是 `MapBake` 的障碍 mask 与 `AStar2D` 动态可见性图和路径平滑，**不是** `NavigationPolygon` 独立导航网格。重构不修改寻路算法。
 - `forced_move_preview` 仅返回几何建议；真实强制位移仍需经 CombatResolver 授权。GRID/FREE 切换失败不能产生资源与 revision 的副作用。
 
 ## 保留入口、资产与已知限制

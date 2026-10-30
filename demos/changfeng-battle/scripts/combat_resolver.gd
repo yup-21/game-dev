@@ -3,6 +3,7 @@ extends RefCounted
 const UNIT: int=10000
 const MAX_EFFECTS: int=32
 const Facing = preload("res://scripts/actor_facing.gd")
+const Geometry = preload("res://scripts/battle_spatial_facade.gd")
 var state
 var cards
 var costs
@@ -480,50 +481,20 @@ func move_actor(actor_id: int,dest: Vector2i,path: Array) -> void:
 	emit("MOVE",{"actor_id":actor_id,"from":previous,"to":dest,"path":path.duplicate(),"facing":actor.facing,"text":"%s 移步 (%d,%d)" % [actor.name,dest.x,dest.y]})
 	emit("MOVE_FINISHED",{"actor_id":actor_id,"from":previous,"to":dest})
 
+## R9: the same axis-constrained geometry is used by previews and commits.
 func force_move(source: int,target_id: int,effect: Dictionary) -> void:
-	var actor=state.get_actor(target_id)
-	if state.spatial_mode=="FREE" and state.spatial!=null:
-		_force_move_free(source,target_id,effect)
-		return
-	var delta: Vector2i=actor.cell-state.get_actor(source).cell
-	if abs(delta.x)>=abs(delta.y): delta=Vector2i(signi(delta.x),0)
-	else: delta=Vector2i(0,signi(delta.y))
-	if effect.direction=="towards_attacker": delta=-delta
-	var path: Array=[]
-	var dest: Vector2i=actor.cell
-	for _i in range(int(effect.max_distance)):
-		var next: Vector2i=dest+delta
-		if delta==Vector2i.ZERO or not state.passable(next) or state.occupied(next,target_id): break
-		path.append(next)
-		dest=next
-	if not path.is_empty(): move_actor(target_id,dest,path)
-
-## Continuous knockback is performed along the push axis, not by teleports
-## between legacy cells. Stop at the last legal position before collision.
-func _force_move_free(source: int,target_id: int,effect: Dictionary) -> void:
 	var actor=state.get_actor(target_id)
 	var attacker=state.get_actor(source)
 	if actor==null or attacker==null: return
-	var direction: Vector2=actor.position-attacker.position
-	if direction.length_squared()<0.0001: return
-	direction=direction.normalized()
-	if str(effect.get("direction",""))=="towards_attacker": direction=-direction
-	var positions: Dictionary={}
-	for other in state.actors:
-		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
-	state.spatial.set_actors(positions)
-	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
-	var start: Vector2=actor.position
-	var end: Vector2=start
-	for i in range(1,maxi(0,int(effect.get("max_distance",0)))*24+1):
-		var candidate: Vector2=start+direction*(float(i)*unit/24.0)
-		if not state.spatial.is_valid_position(candidate,8.0,target_id): break
-		end=candidate
-	if end.distance_to(start)<0.25: return
-	end=Vector2(roundf(end.x*4.0)*0.25,roundf(end.y*4.0)*0.25)
-	var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(end)
-	if dest_cell==Vector2i(-1,-1): return
-	move_actor_free(target_id,end,dest_cell,PackedVector2Array([start,end]))
+	var proposal: Dictionary=Geometry.new(state).forced_displacement(actor,attacker,
+		maxi(0,int(effect.get("max_distance",0))),
+		str(effect.get("direction",""))=="towards_attacker")
+	if proposal.is_empty(): return
+	if state.spatial_mode=="FREE" and state.spatial!=null:
+		move_actor_free(target_id,Vector2(proposal.position),
+			Vector2i(proposal.cell),PackedVector2Array(proposal.path))
+	else:
+		move_actor(target_id,Vector2i(proposal.cell),Array(proposal.path))
 
 func add_shield(actor_id: int,amount: float,duration: int) -> void:
 	var a=state.get_actor(actor_id)
