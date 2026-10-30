@@ -10,6 +10,7 @@ const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Animator = preload("res://scripts/hd2d_animation.gd")
 const VFX = preload("res://scripts/hd2d_vfx.gd")
 const ResponsePolicy = preload("res://scripts/hd2d_response_policy.gd")
+const ChargeRail = preload("res://scripts/hd2d_ctb_rail.gd")
 const COLS := 15
 const ROWS := 10
 const CELL := 1.5
@@ -41,6 +42,7 @@ var card_actions: HBoxContainer
 var command_actions: VBoxContainer
 var command_scroll: ScrollContainer
 var context_veil: TextureRect
+var charge_rail: Control
 var selection_label: Label
 var selected_card_uid := ""
 var selected_usage_id := ""
@@ -318,76 +320,67 @@ func _build_ui() -> void:
     hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
     canvas.add_child(hud)
 
-    # A narrow ink gradient replaces the old full-width framed banner.
+    # A small title and muted state caption leave the camera fully visible.
     var ribbon := Control.new()
     ribbon.name = "ChapterRibbon"
     ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
     hud.add_child(ribbon)
     ribbon.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-    ribbon.offset_top = 0.0
-    ribbon.offset_bottom = 95.0
+    ribbon.offset_bottom = 61.0
     _veil(ribbon, preload("res://assets/ui/veil_top.svg"))
-    var header := HBoxContainer.new()
-    header.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-    header.offset_left = 28.0
-    header.offset_right = -29.0
-    header.offset_top = 12.0
-    header.offset_bottom = 70.0
-    header.add_theme_constant_override("separation", 13)
-    ribbon.add_child(header)
-    var seal := TextureRect.new()
-    seal.name = "JadeMark"
-    seal.texture = preload("res://assets/ui/jade_seal.svg")
-    seal.custom_minimum_size = Vector2(43, 43)
-    seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-    seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    header.add_child(seal)
-    var heading_stack := VBoxContainer.new()
-    heading_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    heading_stack.add_theme_constant_override("separation", 2)
-    header.add_child(heading_stack)
     var heading := Label.new()
-    heading.text = "长风浮生录  /  雨夜残镖" if story_encounter else "长风浮生录  /  断桥听风"
-    heading.add_theme_font_size_override("font_size", 24)
+    heading.text = "雨夜追兵" if story_encounter else "断桥听风"
+    heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    heading.add_theme_font_size_override("font_size", 23)
     heading.add_theme_color_override("font_color", UITheme.PAPER)
-    heading_stack.add_child(heading)
+    heading.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    ribbon.add_child(heading)
+    heading.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+    heading.offset_top = 8.0
+    heading.offset_bottom = 43.0
     status_label = Label.new()
-    status_label.add_theme_font_size_override("font_size", 13)
+    status_label.add_theme_font_size_override("font_size", 11)
     status_label.add_theme_color_override("font_color", UITheme.MUTED)
-    heading_stack.add_child(status_label)
-    var right_heading := VBoxContainer.new()
-    right_heading.add_theme_constant_override("separation", 2)
-    header.add_child(right_heading)
+    status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    ribbon.add_child(status_label)
+    status_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    status_label.offset_left = 15.0
+    status_label.offset_right = 510.0
+    status_label.offset_top = 13.0
+    status_label.offset_bottom = 47.0
     phase_label = Label.new()
     phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-    phase_label.add_theme_font_size_override("font_size", 19)
+    phase_label.add_theme_font_size_override("font_size", 12)
     phase_label.add_theme_color_override("font_color", UITheme.GOLD)
-    right_heading.add_child(phase_label)
+    phase_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    ribbon.add_child(phase_label)
+    phase_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    phase_label.offset_left = -380.0
+    phase_label.offset_right = -138.0
+    phase_label.offset_top = 15.0
+    phase_label.offset_bottom = 42.0
     help_label = Label.new()
     help_label.text = "左键选目标 · Q 攻击 · G 格挡 · Space 收势/Pass · 右键取消 · Esc 返回"
-    help_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-    help_label.add_theme_font_size_override("font_size", 11)
-    help_label.add_theme_color_override("font_color", UITheme.MUTED)
-    right_heading.add_child(help_label)
+    help_label.visible = false
+    ribbon.add_child(help_label)
 
     # Team status floats directly over the scene: no per-actor rectangular
-    # panels, only portraits, fine health/qi strokes and CTB typography.
+    # panels, only portraits and fine health/qi strokes.
     var party := Control.new()
     party.name = "FloatingRoster"
     party.mouse_filter = Control.MOUSE_FILTER_IGNORE
     hud.add_child(party)
     party.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
     party.offset_left = 0.0
-    party.offset_right = 285.0
-    party.offset_top = 105.0
-    party.offset_bottom = 619.0
+    party.offset_right = 214.0
+    party.offset_top = 75.0
+    party.offset_bottom = 459.0
     _veil(party, preload("res://assets/ui/veil_left.svg"))
     var roster_heading := Label.new()
-    roster_heading.text = "江 湖 同 行    ·    CTB"
-    roster_heading.position = Vector2(20, 16)
-    roster_heading.size = Vector2(241, 29)
-    roster_heading.add_theme_font_size_override("font_size", 16)
+    roster_heading.text = "江湖同行"
+    roster_heading.position = Vector2(13, 10)
+    roster_heading.size = Vector2(180, 23)
+    roster_heading.add_theme_font_size_override("font_size", 13)
     roster_heading.add_theme_color_override("font_color", UITheme.GOLD)
     roster_heading.mouse_filter = Control.MOUSE_FILTER_IGNORE
     party.add_child(roster_heading)
@@ -396,26 +389,29 @@ func _build_ui() -> void:
     roster_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
     party.add_child(roster_scroll)
     roster_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    roster_scroll.offset_left = 17.0
-    roster_scroll.offset_right = -19.0
-    roster_scroll.offset_top = 49.0
+    roster_scroll.offset_left = 12.0
+    roster_scroll.offset_right = -9.0
+    roster_scroll.offset_top = 37.0
     roster_scroll.offset_bottom = -10.0
     roster_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     var roster_list := VBoxContainer.new()
     roster_list.name = "ActorList"
     roster_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    roster_list.add_theme_constant_override("separation", 8)
+    roster_list.add_theme_constant_override("separation", 5)
     roster_scroll.add_child(roster_list)
     for actor in snap.get("actors", []):
         var actor_id := int(actor.id)
         var enemy := int(actor.get("team_id", 0)) != 0
         var actor_row := HBoxContainer.new()
         actor_row.name = "Status_%d" % actor_id
-        actor_row.custom_minimum_size = Vector2(0, 57)
-        actor_row.add_theme_constant_override("separation", 9)
+        actor_row.custom_minimum_size = Vector2(0, 47)
+        actor_row.add_theme_constant_override("separation", 7)
+        # Enemy progress is on the right CTB rail and over each battle sprite.
+        # Keep their read-only controls for existing status consumers.
+        actor_row.visible = not enemy
         roster_list.add_child(actor_row)
         var avatar := TextureRect.new()
-        avatar.custom_minimum_size = Vector2(46, 51)
+        avatar.custom_minimum_size = Vector2(39, 43)
         avatar.texture = ArtCatalog.avatar(actor_id, enemy)
         avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
         avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
@@ -423,11 +419,11 @@ func _build_ui() -> void:
         actor_row.add_child(avatar)
         var detail := VBoxContainer.new()
         detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-        detail.add_theme_constant_override("separation", 5)
+        detail.add_theme_constant_override("separation", 3)
         actor_row.add_child(detail)
         var entry := Label.new()
         entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-        entry.add_theme_font_size_override("font_size", 13)
+        entry.add_theme_font_size_override("font_size", 12)
         entry.add_theme_color_override("font_color", UITheme.RED if enemy else UITheme.JADE)
         detail.add_child(entry)
         roster_labels[actor_id] = entry
@@ -439,39 +435,38 @@ func _build_ui() -> void:
         detail.add_child(qi)
         roster_bars[actor_id] = {"hp": hp, "qi": qi}
 
-    # The right rail has no box. It reveals a soft ink veil only while actual
-    # commands are available; clash details appear only during CLASH.
+    # Contextual commands float beside, never instead of, the CTB rail.
     var context := Control.new()
     context.name = "ContextActions"
     context.mouse_filter = Control.MOUSE_FILTER_IGNORE
     hud.add_child(context)
-    context.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-    context.offset_left = -319.0
-    context.offset_right = 0.0
-    context.offset_top = 112.0
-    context.offset_bottom = 535.0
+    context.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+    context.offset_left = -336.0
+    context.offset_right = -126.0
+    context.offset_top = -538.0
+    context.offset_bottom = -265.0
     context_veil = _veil(context, preload("res://assets/ui/veil_right.svg"))
     clash_label = Label.new()
     clash_label.name = "ClashDetails"
-    clash_label.position = Vector2(23, 15)
-    clash_label.size = Vector2(274, 69)
+    clash_label.position = Vector2(11, 10)
+    clash_label.size = Vector2(190, 62)
     clash_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    clash_label.add_theme_font_size_override("font_size", 15)
+    clash_label.add_theme_font_size_override("font_size", 12)
     clash_label.add_theme_color_override("font_color", UITheme.PAPER)
     context.add_child(clash_label)
     command_scroll = ScrollContainer.new()
     command_scroll.name = "ContextScroll"
     context.add_child(command_scroll)
     command_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    command_scroll.offset_left = 23.0
-    command_scroll.offset_right = -20.0
-    command_scroll.offset_top = 85.0
-    command_scroll.offset_bottom = -9.0
+    command_scroll.offset_left = 11.0
+    command_scroll.offset_right = -9.0
+    command_scroll.offset_top = 76.0
+    command_scroll.offset_bottom = -8.0
     command_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     command_actions = VBoxContainer.new()
     command_actions.name = "CommandActions"
     command_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    command_actions.add_theme_constant_override("separation", 8)
+    command_actions.add_theme_constant_override("separation", 5)
     command_scroll.add_child(command_actions)
 
     # Ink fades out into the battlefield. Cards themselves are the UI and do
@@ -483,38 +478,38 @@ func _build_ui() -> void:
     hand_stage.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
     hand_stage.offset_left = 0.0
     hand_stage.offset_right = 0.0
-    hand_stage.offset_top = -321.0
+    hand_stage.offset_top = -262.0
     hand_stage.offset_bottom = 0.0
     _veil(hand_stage, preload("res://assets/ui/veil_hand.svg"))
     var hand_title := Label.new()
-    hand_title.text = "听 风 出 招    /    武 学"
-    hand_title.add_theme_font_size_override("font_size", 19)
+    hand_title.text = "武 学"
+    hand_title.add_theme_font_size_override("font_size", 15)
     hand_title.add_theme_color_override("font_color", UITheme.GOLD)
     hand_stage.add_child(hand_title)
     hand_title.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-    hand_title.offset_left = 65.0
-    hand_title.offset_right = 440.0
-    hand_title.offset_top = 18.0
-    hand_title.offset_bottom = 46.0
+    hand_title.offset_left = 28.0
+    hand_title.offset_right = 110.0
+    hand_title.offset_top = 11.0
+    hand_title.offset_bottom = 36.0
     selection_label = Label.new()
     selection_label.name = "HandInstruction"
     selection_label.text = "选一式，点目标；右键取消。"
-    selection_label.add_theme_font_size_override("font_size", 13)
+    selection_label.add_theme_font_size_override("font_size", 11)
     selection_label.add_theme_color_override("font_color", UITheme.MUTED)
     hand_stage.add_child(selection_label)
     selection_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-    selection_label.offset_left = 65.0
-    selection_label.offset_right = -50.0
-    selection_label.offset_top = 49.0
-    selection_label.offset_bottom = 72.0
+    selection_label.offset_left = 112.0
+    selection_label.offset_right = -140.0
+    selection_label.offset_top = 13.0
+    selection_label.offset_bottom = 40.0
     var hand_scroll := ScrollContainer.new()
     hand_scroll.name = "HandScroll"
     hand_stage.add_child(hand_scroll)
     hand_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    hand_scroll.offset_left = 64.0
-    hand_scroll.offset_right = -62.0
-    hand_scroll.offset_top = 79.0
-    hand_scroll.offset_bottom = -9.0
+    hand_scroll.offset_left = 75.0
+    hand_scroll.offset_right = -128.0
+    hand_scroll.offset_top = 53.0
+    hand_scroll.offset_bottom = -7.0
     hand_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
     hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
     card_actions = HBoxContainer.new()
@@ -522,8 +517,19 @@ func _build_ui() -> void:
     # Center short hands; once cards overflow, normal scroll starts at the left.
     card_actions.alignment = BoxContainer.ALIGNMENT_CENTER
     card_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    card_actions.add_theme_constant_override("separation", 12)
+    card_actions.add_theme_constant_override("separation", 9)
     hand_scroll.add_child(card_actions)
+
+    # The original CTB is a real vertical charge gauge, not a stack of
+    # decorative portraits or a second turn-order model.
+    charge_rail = ChargeRail.new()
+    charge_rail.name = "ChargeRail"
+    hud.add_child(charge_rail)
+    charge_rail.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
+    charge_rail.offset_left = -116.0
+    charge_rail.offset_right = -8.0
+    charge_rail.offset_top = 63.0
+    charge_rail.offset_bottom = -131.0
 
     # Chapter reveal is visual only, and cannot swallow user mouse input.
     intro_title = Label.new()
@@ -714,7 +720,7 @@ func _toggle_pitch_choices(actions: Array, toggle: Button) -> void:
 
 func _bind_card_feedback(button: Button) -> void:
     # Scale changes do not affect the HBox layout or the legal action data.
-    button.pivot_offset = Vector2(88, 218)
+    button.pivot_offset = Vector2(button.custom_minimum_size.x * 0.5, button.custom_minimum_size.y)
     button.mouse_entered.connect(_on_card_hover.bind(button, true))
     button.mouse_exited.connect(_on_card_hover.bind(button, false))
 
@@ -824,9 +830,11 @@ func _update_status() -> void:
     var active_name := str(priority.name) if priority != null else "等待结算"
     var school_name := str(priority.school_name) if priority != null else ""
     var stance_ready: bool = priority != null and priority.technique_states.has("tf_change_stage") and str(priority.technique_states.tf_change_stage.node) == "ready"
-    status_label.text = "%s    /    %s    /    第 %d 拍    /    %s · %s%s" % [
-        mode, str(snap.get("phase", "")), int(snap.get("global_tick", 0)),
-        active_name, school_name, "    ◈ 变锋待发" if stance_ready else ""]
+    status_label.text = "第 %d 拍  ·  %s%s" % [
+        int(snap.get("global_tick", 0)), active_name,
+        "  ◈ 变锋待发" if stance_ready else ""]
+    status_label.tooltip_text = "%s / %s / %s" % [mode,
+        str(snap.get("phase", "")), school_name]
     if str(snap.get("outcome", "playing")) != "playing":
         status_label.text += "    ·    战斗结束：" + str(snap.get("outcome", ""))
     for actor in snap.get("actors", []):
@@ -839,9 +847,8 @@ func _update_status() -> void:
         var max_hp := maxf(1.0, float(actor.get("max_hp", 1.0)))
         var qi := float(actor.get("qi", 0.0))
         var gauge := int(actor.get("gauge", 0))
-        roster_labels[id].text = "%s %s  ·  %s  /  CTB %d" % [
-            marker, str(actor.get("name", "江湖客")), role, gauge]
-        roster_labels[id].tooltip_text = "血 %.0f / %.0f  ·  气 %.1f" % [hp, max_hp, qi]
+        roster_labels[id].text = "%s %s" % [marker, str(actor.get("name", "江湖客"))]
+        roster_labels[id].tooltip_text = "%s  ·  集气 %d\n血 %.0f / %.0f  ·  气 %.1f" % [role, gauge, hp, max_hp, qi]
         if roster_bars.has(id):
             var bars: Dictionary = roster_bars[id]
             var hp_bar: ProgressBar = bars["hp"]
@@ -853,6 +860,8 @@ func _update_status() -> void:
             qi_bar.max_value = max_qi
             qi_bar.value = clampf(qi, 0.0, max_qi)
             qi_bar.tooltip_text = "真气 %.1f / %.1f" % [qi, max_qi]
+    if charge_rail != null:
+        charge_rail.call("set_state", snap.get("actors", []), _decision_owner())
     # Reveal situational controls; the idle battlefield has no framed sidebar.
     var in_clash := str(snap.get("phase", "")) == "CLASH"
     var has_commands := command_actions != null and command_actions.get_child_count() > 0
@@ -860,7 +869,7 @@ func _update_status() -> void:
         context_veil.visible = in_clash or (has_commands and _player_decision())
     if command_scroll != null:
         command_scroll.visible = has_commands and _player_decision()
-        command_scroll.offset_top = 87.0 if in_clash else 17.0
+        command_scroll.offset_top = 78.0 if in_clash else 12.0
     if clash_label != null:
         clash_label.visible = in_clash
     if phase_label != null:

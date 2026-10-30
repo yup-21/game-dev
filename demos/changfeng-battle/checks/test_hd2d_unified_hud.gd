@@ -35,7 +35,7 @@ func _run() -> void:
         quit(1)
         return
     _check(_count_framed(hud) == 0, "boxed PanelContainers returned to combat HUD")
-    for expected in ["ChapterRibbon", "FloatingRoster", "ContextActions",
+    for expected in ["ChapterRibbon", "FloatingRoster", "ContextActions", "ChargeRail",
         "HandStage", "HandStage/HandScroll"]:
         _check(hud.get_node_or_null(expected) != null, "missing zone: " + expected)
     var cards: HBoxContainer = battle.get("card_actions") as HBoxContainer
@@ -50,7 +50,7 @@ func _run() -> void:
             if child is Button and child.has_meta("card_uid"):
                 illustrated += 1
                 _check(child.get_meta("usage_id") != null, "missing per-usage action metadata")
-                _check(child.custom_minimum_size.y >= 210.0, "full-length card artwork is clipped")
+                _check(child.custom_minimum_size.y >= 184.0, "compact painted card artwork is clipped")
         _check(illustrated > 0, "the opening hand has no playable illustrated cards")
     if commands != null:
         var toggles := 0
@@ -68,6 +68,19 @@ func _run() -> void:
     var roster: Dictionary = battle.get("roster_bars")
     _check(roster.size() == battle.get("snap").get("actors", []).size(),
         "roster must reflect every actor")
+    var rail: Control = hud.get_node_or_null("ChargeRail") as Control
+    if rail != null:
+        _check(float(rail.call("gauge_y", 0.0)) > float(rail.call("gauge_y", 10000.0)),
+            "charge track must run upward from 0 to 10000")
+        for actor in battle.get("snap").get("actors", []):
+            var id := int(actor.id)
+            var marker := rail.get_node_or_null("Charge_%d" % id)
+            _check(marker != null, "CTB marker missing actor %d" % id)
+            _check(marker != null and marker.tooltip_text.contains("集气"),
+                "CTB marker missing accessible gauge value")
+            var row := hud.get_node_or_null("FloatingRoster/RosterScroll/ActorList/Status_%d" % id)
+            _check(row != null and row.visible == (int(actor.get("team_id", 0)) == 0),
+                "only allies should occupy the compact left roster")
     var revision_before: int = int(battle.get("snap").get("revision", -1))
     await process_frame
     _check(int(battle.get("model").snapshot(0).get("revision", -1)) == revision_before,
