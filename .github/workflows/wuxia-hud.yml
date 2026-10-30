@@ -81,7 +81,7 @@ jobs:
       - name: Validate continuous battle movement and attack approach
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_space.gd
       - name: Keep PR57 visibility graph regression
-        run: godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_battle_space.gd
+        run: timeout --signal=TERM 40s godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_battle_space.gd
       - name: Validate both spatial APIs after restoring reverted PR62
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_spatial_api_coexistence.gd
       - name: Validate committed free movement and rollback
