@@ -48,6 +48,9 @@ func configure(id: String) -> bool:
     body.name = "BodySprite"
     body.texture = texture
     body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+    if is_sheet:
+        body.set_meta("faces_left_unflipped", Art.sheet_faces_left(int(role.battle_actor_id)))
+        body.flip_h = bool(body.get_meta("faces_left_unflipped")) # Initial look east
     body.centered = true
     if is_sheet:
         body.hframes = ANIMATION_COLUMNS
@@ -80,7 +83,9 @@ func set_motion(motion: Vector2, delta: float) -> void:
     if walking:
         animation_clock += maxf(delta,0.0)
         if absf(motion.x) > 0.05:
-            body.flip_h = motion.x < 0.0
+            # The imported sheet faces left before mirroring, unlike the fallback.
+            var source_faces_left: bool = bool(body.get_meta("faces_left_unflipped",false))
+            body.flip_h = motion.x > 0.0 if source_faces_left else motion.x < 0.0
     else:
         animation_clock = 0.0
     var frame: int = int(animation_clock*WALK_FPS) % ANIMATION_COLUMNS if walking else 0
