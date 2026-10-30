@@ -26,7 +26,9 @@
     "portrait": "res://assets/characters/concepts/escort_captain_portrait.png",
     "sprite_sheet": "",
     "portrait_quality": "integrated",
-    "sheet_quality": "none"
+    "sheet_quality": "none",
+    "static_pose": "res://assets/characters/concepts/escort_elder_injured.svg",
+    "pose_quality": "hand_drawn_svg_still"
   },
   "learned_schools": []
 }

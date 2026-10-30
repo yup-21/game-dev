@@ -206,4 +206,4 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_i
 
 ## 第一幕角色正式 Sprite2D 替换
 
-`opening_flow.gd` 的破庙探索角色改由 `scripts/opening_role_sprite.gd` 创建真正的 `Sprite2D` 节点，人物身份从 `CharacterRegistry` 查询；沈长风使用战斗同一套6×4动画图，WASD时更新行走帧、左右转向，停止时回到待机。老镖头目前**只有专属立绘，没有动作图集**，故使用本人立绘作带边缘柔化的静态 `Sprite2D` 受伤 NPC，绝不再绘制生成式 SVG 假角色；将来补上其透明动作图后由角色档案的 `art.sprite_sheet` 无缝替换。角色以地面脚底作为锚点，按Y深度排序；对白和过场隐藏世界角色，继续使用已有的人物精细立绘。旧 `_portrait()` SVG 人物回退已移除。该次改动**没有改变**第一幕移动范围和镖头交互判定（场景碰撞烘焙属于后续独立任务）。
+`opening_flow.gd` 的破庙探索角色改由 `scripts/opening_role_sprite.gd` 创建真正的 `Sprite2D` 节点，人物身份从 `CharacterRegistry` 查询；沈长风使用战斗同一套6×4动画图，WASD时更新行走帧、左右转向，停止时回到待机。老镖头使用专门绘制的透明 SVG 静态受伤矢量角色姿态（倚石坐地、肩部绷带、旧镖服、手护残卷），通过人物档案 `art.static_pose` 加载为 `Sprite2D`。目前不需要逐帧 NPC 动画，也不再绘制旧运行时 SVG；对白仍使用已有高清立绘。角色以地面脚底作为锚点，按Y深度排序；对白和过场隐藏世界角色，继续使用已有的人物精细立绘。旧 `_portrait()` SVG 人物回退已移除。该次改动**没有改变**第一幕移动范围和镖头交互判定（场景碰撞烘焙属于后续独立任务）。

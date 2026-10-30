@@ -45,10 +45,14 @@ func _run() -> void:
         and hero.body.vframes==4 and Art.uses_supplied_sheet(0),
         "hero uses existing imported 6x4 martial sprite sheet")
     _check(elder.has_real_sprite and not elder.is_sheet
-        and elder.body.texture==Art.portrait_for_character("escort_elder")
-        and elder.body.material is ShaderMaterial,
-        "injured elder uses dedicated painting standee, never vector SVG")
+        and elder.body.texture==Art.story_pose_for_character("escort_elder")
+        and elder.body.material==null
+        and elder.body.frame_coords==Vector2i.ZERO,
+        "injured elder uses dedicated transparent vector pose, no generated model")
     _check(not layer.visible,"story role sprites stay hidden during title")
+    _check(str(registry.for_name("老镖头").art.static_pose)
+        == "res://assets/characters/concepts/escort_elder_injured.svg",
+        "injured vector file is registered on the character dossier")
     opening.call("_enter_new_game")
     await process_frame
     _check(not layer.visible,"cinematic still portraits do not clash with scene sprites")
@@ -66,6 +70,9 @@ func _run() -> void:
         "walking selects the real sprite sheet animation")
     hero.set_motion(Vector2.LEFT,0.14)
     _check(hero.body.flip_h,"westward movement flips the real sprite")
+    elder.set_motion(Vector2.RIGHT,1.2)
+    _check(not elder.walking and elder.body.frame_coords==Vector2i.ZERO,
+        "wounded elder remains a deliberate static pose")
     hero.set_motion(Vector2.ZERO,0.10)
     _check(not hero.walking and hero.body.frame_coords==Vector2i.ZERO,
         "idle restores stance and never invents new frames")

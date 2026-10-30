@@ -7,6 +7,7 @@ on:
       - 'demos/changfeng-battle/scripts/hd2d_card_ui.gd'
       - 'demos/changfeng-battle/scripts/opening_flow.gd'
       - 'demos/changfeng-battle/scripts/opening_role_sprite.gd'
+      - 'demos/changfeng-battle/assets/characters/concepts/escort_elder_injured.svg'
       - 'demos/changfeng-battle/checks/test_opening_sprites.gd'
       - 'demos/changfeng-battle/scripts/demo_result.gd'
       - 'demos/changfeng-battle/checks/test_single_battle_entry.gd'
@@ -138,10 +139,19 @@ jobs:
           test -s demos/changfeng-battle/captures/hd2d-validation/02-card-selection.png
           test -s demos/changfeng-battle/captures/hd2d-validation/03-character-dossier.png
           test -s demos/changfeng-battle/captures/hd2d-validation/04-baked-grid.png
+      - name: Capture real first-act story and injured elder
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a -s " -screen 0 1600x1000x24" godot --path demos/changfeng-battle -- --opening-visual-check
+          test -s demos/changfeng-battle/captures/opening-explore.png
+          test -s demos/changfeng-battle/captures/opening-dialogue.png
       - name: Upload screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unified-wuxia-hud-visual-evidence
-          path: demos/changfeng-battle/captures/hd2d-validation/*.png
+          path: |
+            demos/changfeng-battle/captures/hd2d-validation/*.png
+            demos/changfeng-battle/captures/opening-*.png
           if-no-files-found: warn

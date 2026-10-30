@@ -23,6 +23,12 @@ const PORTRAITS_BY_PATH := {
     "res://assets/characters/concepts/escort_captain_portrait.png": preload("res://assets/characters/concepts/escort_captain_portrait.png"),
     "res://assets/characters/concepts/gu_qingshuang_portrait_v1.png": preload("res://assets/characters/concepts/gu_qingshuang_portrait_v1.png")
 }
+## Static authored character art is kept separate from animated Sprite Sheets.
+## Preloading ensures Godot exports the real transparent SVG pose.
+const STORY_POSES_BY_PATH := {
+    "res://assets/characters/concepts/escort_elder_injured.svg":
+        preload("res://assets/characters/concepts/escort_elder_injured.svg")
+}
 const SCENES := {
     "mountain": preload("res://assets/concepts/2026-10-30/scenes/mountain_herbal_workshop_day.jpg"),
     "snow": preload("res://assets/concepts/2026-10-30/scenes/snowy_sword_sect_courtyard.jpg"),
@@ -35,6 +41,11 @@ static func portrait_for_character(character_id: String) -> Texture2D:
     var profile: Dictionary = _registry.get_profile(character_id)
     var path: String = str(profile.get("art",{}).get("portrait",""))
     return PORTRAITS_BY_PATH.get(path,null) as Texture2D
+
+static func story_pose_for_character(character_id: String) -> Texture2D:
+    var definition: Dictionary = _registry.get_profile(character_id)
+    var source: String = str(definition.get("art",{}).get("static_pose",""))
+    return STORY_POSES_BY_PATH.get(source,null) as Texture2D
 
 static func portrait(speaker: String) -> Texture2D:
     var profile: Dictionary = _registry.for_name(speaker)

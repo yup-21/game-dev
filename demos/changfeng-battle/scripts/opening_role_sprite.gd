@@ -36,10 +36,10 @@ func configure(id: String) -> bool:
             push_error(load_error)
             return false
     else:
-        # The injured elder has a dedicated painted portrait, but no pose
-        # sheet yet. Render it as a static in-world sprite: never invent
-        # walking frames or substitute an unrelated character/SVG model.
-        texture = Art.portrait_for_character(character_id)
+        # A genuine artist-authored transparent SVG character, NOT the old
+        # runtime SVG generator or the rectangular dialogue portrait.
+        # It is intentionally static because the elder has no animation yet.
+        texture = Art.story_pose_for_character(character_id)
     if texture == null:
         load_error = "Missing story sprite/portrait: " + character_id
         push_error(load_error)
@@ -55,26 +55,11 @@ func configure(id: String) -> bool:
         body.offset = Vector2(0,-128)
         body.scale = Vector2(120.0/256.0,130.0/256.0)
     else:
-        # The existing painted art remains visibly an NPC portrait stand-in,
-        # feathered at the edges, until a true transparent NPC sheet exists.
+        # The art is already a full-alpha static injured pose. Preserve its
+        # edges and proportions instead of masking a rectangular portrait.
         var image_size: Vector2 = texture.get_size()
         body.offset = Vector2(0,-image_size.y*0.5)
-        body.scale = Vector2(126.0/image_size.x,175.0/image_size.y)
-        body.rotation_degrees = -5.0
-        var shader := Shader.new()
-        shader.code = """
-shader_type canvas_item;
-void fragment() {
-    vec4 painted = texture(TEXTURE, UV);
-    float side = 1.0 - smoothstep(0.75, 0.99, abs(UV.x - 0.5) * 2.0);
-    float top = smoothstep(0.01, 0.10, UV.y);
-    float bottom = 1.0 - smoothstep(0.91, 0.99, UV.y);
-    COLOR = vec4(painted.rgb, painted.a * side * top * bottom);
-}
-"""
-        var material := ShaderMaterial.new()
-        material.shader = shader
-        body.material = material
+        body.scale = Vector2(184.0/image_size.x,220.0/image_size.y)
     foot_shadow = Polygon2D.new()
     foot_shadow.name = "FootShadow"
     foot_shadow.color = Color(0.015,0.060,0.065,0.22)
