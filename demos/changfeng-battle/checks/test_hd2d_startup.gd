@@ -78,8 +78,8 @@ func _run() -> void:
         push_error("HD2D_STARTUP: illustrated atlas image is empty")
         quit(1)
         return
-    if image.get_size() != Vector2i(960, 800) or rival_image.get_size() != Vector2i(960, 800):
-        push_error("HD2D_STARTUP: 160x200 painterly atlas frames expected")
+    if image.get_size() != Vector2i(1536, 1024) or rival_image.get_size() != Vector2i(1536, 1024):
+        push_error("HD2D_STARTUP: 256x256 supplied pose atlas frames expected")
         quit(1)
         return
     if image.get_pixel(0, 0).a != 0.0 or rival_image.get_pixel(0, 0).a != 0.0:
@@ -123,7 +123,7 @@ func _run() -> void:
         return
     vfx.call("clear")
 
-    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 illustrated_sprites=6x4_160x200")
+    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 supplied_sprites=6x4_256x256")
     quit(0)
 
 func _actor_sprite(scene: Node, actor_id: int) -> Sprite3D:

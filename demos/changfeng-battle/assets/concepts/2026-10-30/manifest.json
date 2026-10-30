@@ -112,6 +112,15 @@
       "grid": null,
       "sha": "1008bd27b984b0af81eb3fc6386cba07d17ecf25",
       "notes": "opaque JPG"
+    },
+    {
+      "path": "scenes/rainy_broken_bridge_battle_v1.jpg",
+      "source_filename": "OpenAI ImageGen built-in (Codex)",
+      "kind": "runtime_battle_backdrop",
+      "resolution": "1200x675",
+      "grid": null,
+      "sha": "ca3ee72a10a048d1f72b4e2a209f4fc13b466693",
+      "notes": "generated for the rainy escort encounter; landscape backdrop only"
     }
   ],
   "excluded_near_duplicate": [
@@ -119,14 +128,17 @@
   ],
   "runtime_usage": {
     "character_pose_actor_ids": {
+      "0": "character_style/blue_swordfighter_pixel_study.jpg",
+      "1": "character_style/red_thread_fighter_pixel_study.jpg (provisional pursuit-leader mapping)",
       "2": "characters/gu_qingshuang_24_pose.png",
       "3": "characters/green_robed_wanderer_24_pose.png",
       "4": "characters/black_blade_fighter_24_pose.png",
       "5": "characters/violet_dual_blade_assassin_24_pose.png"
     },
     "story_memory": "scenes/mountain_herbal_workshop_day.jpg",
+    "story_battle_backdrop": "scenes/rainy_broken_bridge_battle_v1.jpg",
     "standalone_battle_backdrop": "scenes/snowy_sword_sect_courtyard.jpg",
-    "character_style_studies": "reference_only",
+    "character_style_studies": "selected_pose_sheets_runtime_preview",
     "loader": "res://scripts/hd2d_art_catalog.gd",
     "quality_status": "runtime_preview; edge-alpha and motion inbetweens still require art QA"
   }

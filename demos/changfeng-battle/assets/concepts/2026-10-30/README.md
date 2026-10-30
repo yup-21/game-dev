@@ -5,6 +5,7 @@
 - 角色动作参考：4 张 1536×1024 RGBA PNG，画面按 6×4 排布（24 个*候选姿势格*）。
 - 角色画风和立绘参考：3 张精细绘制的 3×2 设计稿 + 3 张较低像素化的 6×4 动作参考（全部为不透明 JPG）。
 - 场景概念：2 张 2048×1143 JPG（白天药谷村落、雪山剑派平台）。
+- 战斗场景补图：1 张 1672×941 雨夜断桥远景，由 Codex 内置 ImageGen 生成。
 
 ## 文件清单
 
@@ -22,6 +23,7 @@
 | [`character_style/teal_herbalist_pixel_study.jpg`](character_style/teal_herbalist_pixel_study.jpg) | stylized_pose_study | 2048x1373 | 6x4 |
 | [`scenes/snowy_sword_sect_courtyard.jpg`](scenes/snowy_sword_sect_courtyard.jpg) | scene_concept | 2048x1143 | — |
 | [`scenes/mountain_herbal_workshop_day.jpg`](scenes/mountain_herbal_workshop_day.jpg) | scene_concept | 2048x1143 | — |
+| [`scenes/rainy_broken_bridge_battle_v1.jpg`](scenes/rainy_broken_bridge_battle_v1.jpg) | runtime_battle_backdrop | 1200x675 | — |
 
 各图片的原始上传文件名、Git blob SHA 和状态见 [manifest.json](manifest.json)。
 
@@ -38,8 +40,14 @@
 
 ## 运行时接入补充（2026-10-30）
 
-原有素材文件未改动，现通过 `scripts/hd2d_art_catalog.gd` 接入四张 6×4 角色动作候选图。顾清霜（2）、青衫客（3）、黑衣刀客（4）、夜行刺客（5）分别使用独立图集，并清理每个格子的边缘连通白底；未配置的角色或尺寸异常时回退原插画。高清角色原画用于序章对话、菜单和战斗头像。
+通过 `scripts/hd2d_art_catalog.gd` 将六张 6×4 角色动作候选图接入 HD-2D 战斗。顾清霜（2）、青衫客（3）、黑衣刀客（4）、夜行刺客（5）使用提交的透明 PNG；沈长风（0）和追镖首领（1）使用蓝衣剑客、红衣缚线侠客 JPG 设定图，运行时切格并清理白底。追镖首领与红衣角色的对应仍是临时视觉映射，等待剧情角色定稿。高清角色原画继续用于序章对话、菜单和战斗头像。
 
-场景原画按内容使用：药谷作为菜单及序章首幕回忆背景；雪山剑派只用于独立 HD-2D 战斗预览远景。雨夜追兵的河桥地图不错误覆盖为雪景。六人队伍、CTB、卡牌、连携仍来自原 BattleModel。
+场景原画按内容使用：药谷作为菜单及序章首幕回忆背景；雪山剑派用于独立 HD-2D 战斗预览；新生成的雨夜断桥图用于剧情追兵战斗远景，战术网格、桥面和灯笼仍由 Godot 场景绘制。六人队伍、CTB、卡牌、连携仍来自原 BattleModel。
 
-这些素材属于**运行时预览**，不是已验收的生产版 Sprite Sheet。色边、脚底锚点、动作过渡及原图授权请继续审核，见 `docs/asset-runtime-integration.md`。
+这些素材属于**运行时预览**，不是已验收的生产版 Sprite Sheet。白底清理、色边、脚底锚点、动作过渡、临时角色映射及原图授权请继续审核，见 `docs/asset-runtime-integration.md`。
+
+### 雨夜背景生成提示词
+
+使用 Codex 内置 ImageGen 生成 `scenes/rainy_broken_bridge_battle_v1.jpg`：
+
+> Create one wide landscape environment illustration for a Chinese wuxia game's rainy-night battle background. 16:9 composition. Painterly ink-wash concept art with layered mist, subtle brush texture, deep jade and blue-gray night palette, distant river gorge and mountain silhouettes, hard rain, a few warm amber lantern glows near the far left and right edges. It is a stormy broken-bridge setting above a fast river, but keep the middle of the image low contrast and visually quiet so small 3D characters and a tactical grid remain readable in front. Match elegant, detailed Chinese fantasy RPG key art, subdued and atmospheric, not photorealistic. No people, no characters, no weapons, no text, no UI, no logos, no snow, no daylight.
