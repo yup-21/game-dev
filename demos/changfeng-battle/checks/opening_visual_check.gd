@@ -11,6 +11,22 @@ func _capture(view, name: String) -> bool:
 	var image: Image=view.get_viewport().get_texture().get_image()
 	return image.save_png(folder.path_join(name))==OK
 
+## The previous screenshot smoke test only checked that a PNG existed.
+## A fully WHITE first-act scene satisfied that check and shipped broken.
+func _background_visible(view) -> bool:
+    var image: Image = view.get_viewport().get_texture().get_image()
+    if image == null or image.is_empty():
+        return false
+    var scenic := 0
+    for sample_y in [0.24, 0.41, 0.59, 0.72]:
+        for sample_x in [0.13, 0.29, 0.45, 0.61, 0.78, 0.89]:
+            var pixel: Color=image.get_pixel(
+                mini(image.get_width()-1,int(float(image.get_width())*sample_x)),
+                mini(image.get_height()-1,int(float(image.get_height())*sample_y)))
+            if pixel.a>0.9 and minf(pixel.r,minf(pixel.g,pixel.b))<0.85:
+                scenic+=1
+    return scenic>=10
+
 func _fail(view, message: String) -> void:
 	push_error("OPENING_VISUAL_CHECK_FAILED: "+message)
 	view.get_tree().quit(1)
@@ -54,6 +70,9 @@ func run(view) -> void:
 		return
 	if not await _capture(view,"opening-explore.png"):
 		_fail(view,"exploration screenshot write")
+		return
+	if not _background_visible(view):
+		_fail(view,"first-act terrain is blank/white although screenshot file exists")
 		return
 	view._start_dialogue()
 	await _wait(view)
