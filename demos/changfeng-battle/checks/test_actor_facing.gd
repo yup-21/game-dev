@@ -114,31 +114,31 @@ func _run() -> void:
     var invalid=pushed.submit(pushed.request("MOVE",0,{"target_cell":Vector2i(30,30)}))
     _check(not invalid.success and pushed.state.get_actor(0).facing==Facing.EAST,
         "invalid action cannot rotate an actor")
-    # HD-2D stage: visual flip and 3D floor pointer represent the actor state.
+    # Native HD-2D scene: visible Sprite2D flip follows authoritative facing.
     var scene=load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame
-    var protagonist: Node3D=scene.get_node_or_null("Actor_0")
-    var opponent: Node3D=scene.get_node_or_null("Actor_1")
-    _check(protagonist!=null and opponent!=null,"both sprite actors in real scene")
+    var visual_actors: Dictionary=scene.get("actor_nodes")
+    var protagonist: Node2D=visual_actors.get(0,null) as Node2D
+    var opponent: Node2D=visual_actors.get(1,null) as Node2D
+    _check(protagonist!=null and opponent!=null,"both native Sprite2D actors in real scene")
     if protagonist!=null and opponent!=null:
-        var sprite: Sprite3D=protagonist.get_node("Sprite3D") as Sprite3D
-        var enemy_sprite: Sprite3D=opponent.get_node("Sprite3D") as Sprite3D
-        var pointer: Node3D=protagonist.get_node_or_null("FacingArrow")
-        _check(pointer!=null,"four-way floor pointer is present in real HD-2D scene")
-        _check(not sprite.flip_h and enemy_sprite.flip_h,"sideways facing mirrors Sprite3D")
+        var sprite: Sprite2D=protagonist.get_node_or_null("ActionSprite") as Sprite2D
+        var enemy_sprite: Sprite2D=opponent.get_node_or_null("ActionSprite") as Sprite2D
+        _check(sprite!=null and enemy_sprite!=null,"painted scene owns two visible action sprites")
+        if sprite!=null and enemy_sprite!=null:
+            _check(not sprite.flip_h and enemy_sprite.flip_h,"sideways facing mirrors native Sprite2D")
         var battle=scene.get("model")
         var step: Dictionary=battle.submit(battle.request("MOVE",0,{"target_cell":Vector2i(5,4)}))
         _check(bool(step.get("success",false)),"rendered scene move is legal")
-        scene.call("_accept",step)
-        for _frame in range(8):
-            await process_frame
-        _check(sprite.flip_h,"model MOVE event turns displayed actor west")
-        if pointer!=null:
-            _check(is_equal_approx(pointer.rotation.y,Facing.yaw(Facing.WEST)),
-                "sprite world pointer turns toward west")
-        _check(scene.get("animation_driver").facing_for(0)==Facing.WEST,
-            "sprite animation track maintains turn state")
+        if bool(step.get("success",false)):
+            scene.call("_accept",step)
+            for _frame in range(8):
+                await process_frame
+            if sprite!=null:
+                _check(sprite.flip_h,"model MOVE event turns visible Sprite2D west")
+            _check(scene.get("animation_driver").facing_for(0)==Facing.WEST,
+                "sprite animation track maintains authoritative westward direction")
     # Multi-party CTB scene uses the same state and pointers.
     var registry=preload("res://scripts/character_registry.gd").new()
     var many=Model.new()
