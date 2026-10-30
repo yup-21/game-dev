@@ -144,6 +144,8 @@ func validate(req: Dictionary) -> Dictionary:
 		return _validate_free_move(normalized)
 	if str(normalized.get("kind",""))=="MOVE_AND_ATTACK":
 		return _validate_move_and_attack(normalized)
+	if str(normalized.get("kind",""))=="PLAY_CARD_FREE_MOVE":
+		return _validate_free_card_move(normalized)
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
@@ -415,3 +417,63 @@ func _validate_mode_change(req: Dictionary) -> Dictionary:
 		return failure("HOOK_REJECTED",str(checked.get("message","规则拒绝切换模式")))
 	return {"success":true,"action":{"kind":"SET_SPATIAL_MODE","actor_id":int(req.actor_id),
 		"spatial_mode":next_mode},"plan":{"qi_u":0,"hp_u":0,"valid":true}}
+
+## Martial step/evasion cards accept continuous landing coordinates in FREE.
+## Card movement uses the card's own max_distance and cost (not normal MOVE
+## budget). Reactions enter the existing deferred LIFO response stack.
+func _validate_free_card_move(req: Dictionary) -> Dictionary:
+	if state.spatial==null or state.spatial_mode!="FREE":
+		return failure("WRONG_SPATIAL_MODE","当前战斗模式不支持自由武学步法")
+	if not req.has("target_position") or req.has("target_cell") or req.has("target_id"):
+		return failure("MALFORMED_REQUEST","武学步法必须指定唯一的落脚坐标")
+	var actor=state.get_actor(int(req.actor_id))
+	if actor==null or actor.hp_u<=0: return failure("INVALID_ACTOR","角色无法行动")
+	var uid: String=str(req.get("card_uid",req.get("card_id","")))
+	var usage_id: String=str(req.get("usage_id",""))
+	if uid.is_empty() or not actor.hand.has(uid):
+		return failure("INVALID_CARD","移动卡牌不在当前手牌")
+	var definition: Dictionary=cards.canonical_definition(uid)
+	if not cards.valid_definition(definition): return failure("INVALID_CARD","武学卡牌定义无效")
+	var usage: Dictionary=cards.usage(uid,usage_id)
+	var t: String=timing(actor.id)
+	if t.is_empty() or str(usage.get("timing",""))!=t or str(usage.get("target",{}).get("kind",""))!="reachable_cell":
+		return failure("ILLEGAL_ACTION","当前时机不能使用这张步法牌")
+	if not condition_allows(actor,usage): return failure("ILLEGAL_ACTION","武学步法条件不满足")
+	if bool(usage.get("once_per_action",false)) and int(actor.card_uses.get(str(definition.id)+":"+usage_id,0))>0:
+		return failure("ILLEGAL_ACTION","当前行动已使用这张步法")
+	if state.mode=="CLASH" and (int(state.clash.counts.get(actor.id,0))>=2 or state.clash.stack.size()>=4):
+		return failure("RESPONSE_LIMIT","交锋响应层数已满")
+	var allowed_steps: int=int(usage.get("target",{}).get("max_distance",0))
+	var has_move: bool=false
+	for effect in usage.get("effects",[]):
+		if str(effect.get("type",""))=="move":
+			has_move=true
+			allowed_steps=mini(allowed_steps,int(effect.get("max_distance",0)))
+	if not has_move or allowed_steps<1:
+		return failure("ILLEGAL_ACTION","该卡牌不是可自由移动的武学步法")
+	var point: Vector2=req.target_position
+	if not is_finite(point.x) or not is_finite(point.y) or absf(point.x)>100000.0 or absf(point.y)>100000.0:
+		return failure("INVALID_POSITION","武学步法目标坐标无效")
+	point=Vector2(roundf(point.x*4.0)*0.25,roundf(point.y*4.0)*0.25)
+	var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(point,true)
+	if dest_cell==Vector2i(-1,-1): return failure("INVALID_POSITION","步法落点不可通行")
+	var positions: Dictionary={}
+	for other in state.actors:
+		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
+	state.spatial.set_actors(positions)
+	var path: PackedVector2Array=state.spatial.find_path(actor.position,point,8.0,actor.id)
+	if path.size()<2: return failure("UNREACHABLE_POSITION","步法目标不可达")
+	var distance: float=state.spatial.path_length(path)
+	var maximum: float=float(allowed_steps)*maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	if distance<0.25 or distance>maximum+0.001:
+		return failure("MOVE_BUDGET_EXCEEDED","超出该武学步法的实际移动距离")
+	var action: Dictionary={"kind":"PLAY_CARD_FREE_MOVE","actor_id":actor.id,
+		"card_uid":uid,"card_id":uid,"usage_id":usage_id,
+		"target_position":point,"target_cell":dest_cell,"continuous_path":path}
+	var checked: Dictionary=hooks.validate(context(actor.id,action))
+	if not bool(checked.get("success",false)):
+		return failure("HOOK_REJECTED",str(checked.get("message","移动被规则禁止")))
+	var quote: Dictionary=costs.quote(actor,usage.get("cost",{}),context(actor.id,action))
+	if not costs.can_pay(actor,quote):
+		return failure("INSUFFICIENT_RESOURCE","无法支付武学步法内息")
+	return {"success":true,"action":action,"plan":quote}
