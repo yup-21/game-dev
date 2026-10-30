@@ -4,12 +4,15 @@ func _wait(view, frames: int = 3) -> void:
 	for _i in range(frames): await view.get_tree().process_frame
 
 func _capture(view, name: String) -> bool:
+	print("OPENING_RENDER_CAPTURE_BEGIN name=", name)
 	var folder: String=ProjectSettings.globalize_path("res://captures")
 	var err: int=DirAccess.make_dir_recursive_absolute(folder)
 	if err!=OK: return false
 	await _wait(view,2)
 	var image: Image=view.get_viewport().get_texture().get_image()
-	return image.save_png(folder.path_join(name))==OK
+	var saved: bool = image.save_png(folder.path_join(name))==OK
+	print("OPENING_RENDER_CAPTURE_DONE name=",name," saved=",saved)
+	return saved
 
 ## The previous screenshot smoke test only checked that a PNG existed.
 ## A fully WHITE first-act scene satisfied that check and shipped broken.

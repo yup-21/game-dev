@@ -11,13 +11,17 @@ func _fail(reason: String) -> void:
     quit(1)
 
 func _capture(name: String) -> bool:
+    print("OPENING_RENDER_CAPTURE_BEGIN name=", name)
     await RenderingServer.frame_post_draw
     var image: Image = root.get_texture().get_image()
     if image == null or image.is_empty():
+        print("OPENING_RENDER_CAPTURE_DONE name=", name, " saved=false reason=empty-image")
         return false
     DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
     var file := OUTPUT + name + ".png"
-    if image.save_png(file) != OK:
+    var saved: bool = image.save_png(file) == OK
+    print("OPENING_RENDER_CAPTURE_DONE name=", name, " saved=", saved)
+    if not saved:
         return false
     # Visible painted scene is required; a white/empty screenshot is failure.
     var scenic := 0
