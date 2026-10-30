@@ -49,6 +49,42 @@ function Resolve-DemoGodotPath {
     return $resolvedPath
 }
 
+function Test-DemoAssetImportRequired {
+    param([Parameter(Mandatory = $true)][string]$ProjectRoot)
+    $importedRoot = Join-Path $ProjectRoot '.godot/imported'
+    if (-not (Test-Path -LiteralPath $importedRoot -PathType Container)) { return $true }
+
+    $assetRoot = Join-Path $ProjectRoot 'assets'
+    if (-not (Test-Path -LiteralPath $assetRoot -PathType Container)) { return $false }
+    $importedExtensions = @('.png', '.jpg', '.jpeg', '.webp', '.svg', '.bmp', '.tga', '.wav', '.ogg', '.mp3', '.opus')
+    foreach ($asset in Get-ChildItem -LiteralPath $assetRoot -Recurse -File) {
+        if ($importedExtensions -contains $asset.Extension.ToLowerInvariant() -and
+            -not (Test-Path -LiteralPath ($asset.FullName + '.import') -PathType Leaf)) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Import-DemoAssets {
+    param(
+        [Parameter(Mandatory = $true)][string]$ProjectRoot,
+        [Parameter(Mandatory = $true)][string]$GodotPath,
+        [Parameter(Mandatory = $true)][string]$LogPath
+    )
+    if (Test-Path -LiteralPath $LogPath) { Remove-Item -LiteralPath $LogPath }
+    $arguments = @(
+        '--headless', '--editor', '--path', ('"{0}"' -f $ProjectRoot),
+        '--log-file', ('"{0}"' -f $LogPath), '--import', '--quit'
+    )
+    $process = Start-Process -FilePath $GodotPath -ArgumentList $arguments -WorkingDirectory $ProjectRoot -WindowStyle Hidden -PassThru -Wait
+    $logText = if (Test-Path -LiteralPath $LogPath) { Get-Content -LiteralPath $LogPath -Raw } else { '' }
+    if ($process.ExitCode -ne 0 -or $logText -match '(?im)(SCRIPT ERROR:|Parse Error:|^ERROR:)') {
+        if ($logText) { Write-Output $logText.TrimEnd() }
+        throw "Godot asset import failed (exit code $($process.ExitCode)). Log: $LogPath"
+    }
+}
+
 if ($MyInvocation.InvocationName -eq '.') { return }
 try {
     $projectRoot = [IO.Path]::GetFullPath($PSScriptRoot)
@@ -57,6 +93,10 @@ try {
     $captureRoot = Join-Path $projectRoot 'captures'
     [IO.Directory]::CreateDirectory($captureRoot) | Out-Null
     $logPath = Join-Path $captureRoot 'play.log'
+    if (Test-DemoAssetImportRequired -ProjectRoot $projectRoot) {
+        $importLogPath = Join-Path $captureRoot 'import.log'
+        Import-DemoAssets -ProjectRoot $projectRoot -GodotPath $resolvedGodot -LogPath $importLogPath
+    }
     # Native argument quoting preserves spaces and shell metacharacters; no shell is invoked.
     $nativeArguments = @('--path', ('"{0}"' -f $projectRoot), '--log-file', ('"{0}"' -f $logPath))
     Start-Process -FilePath $resolvedGodot -ArgumentList $nativeArguments -WorkingDirectory $projectRoot | Out-Null

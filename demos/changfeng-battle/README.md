@@ -22,6 +22,8 @@
 
 脚本优先使用 `-GodotPath`，其次 `GODOT_BIN`、PATH 中的 `godot` / `godot4`；在原 Creator 工作区也可自动找到已有引擎。运行日志为 `captures/play.log`，输出目录会自动创建。
 
+首次启动或存在尚未导入的媒体素材时，启动脚本会先以无界面模式导入资源，再打开游戏；导入日志写入 `captures/import.log`。
+
 ```powershell
 .\run-demo.cmd -GodotPath "C:\Tools\Godot\godot.exe"
 .\run-demo.cmd -CheckOnly

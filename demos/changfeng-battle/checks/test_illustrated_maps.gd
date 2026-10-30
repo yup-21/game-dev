@@ -82,7 +82,8 @@ func _run() -> void:
     root.add_child(opening)
     await process_frame
     _check(opening.story.load_error.is_empty(),"opening story loads unchanged")
-    _check(opening.call("_temple_background"),"real painted temple loads for exploration and dialogue")
+    var temple_painting := load("res://assets/scenes/story/ruined_temple_story.webp") as Texture2D
+    _check(temple_painting!=null,"real painted temple loads for exploration and dialogue")
     opening.call("_enter_new_game")
     opening.story.skip_cinematic()
     _check(opening.story.phase=="explore","first-act exploration uses existing dialogue mechanics")
