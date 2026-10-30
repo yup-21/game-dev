@@ -48,6 +48,10 @@ var effect_queue: Array = []
 var root_effect_count: int = 0
 var terrain: Dictionary = {}
 var map_definition_path: String = ""
+## Optional authoritative continuous-space query provider for mapped encounters.
+var spatial
+## Runtime-selectable combat geometry. GRID preserves old rules, FREE uses world coordinates.
+var spatial_mode: String = "GRID"
 var logs: Array = []
 var phase_history: Array = []
 var processed_requests: Dictionary = {}

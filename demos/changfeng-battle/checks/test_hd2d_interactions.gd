@@ -201,8 +201,9 @@ func _run() -> void:
     await _click(_screen(Vector2i(6, 4)))
     check(int(_view().revision) == int(moved.revision), "keyboard and mouse cannot submit again while MOVE is animating")
     check(await _wait_player(), "MOVE animation acknowledges and restores player input")
-    var actor_node: Node3D = scene.get("actor_nodes")[0]
-    check(actor_node.position.distance_to(Vector3(0.0, 0.0, -0.75)) < 0.04, "visible actor finishes travelling to the submitted cell")
+    var actor_node: Node2D = scene.get("actor_nodes")[0] as Node2D
+    check(actor_node != null and actor_node.position.distance_to(_screen(Vector2i(7, 4))) < 1.5,
+        "native Sprite2D actor finishes at the authoritative painted-map foot anchor")
 
     # Pick an actual targeted card in the seeded scene, then click its real GUI button.
     var card_action: Dictionary = {}
