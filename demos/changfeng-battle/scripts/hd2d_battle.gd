@@ -1374,10 +1374,10 @@ func _unhandled_input(event: InputEvent) -> void:
                 movement_paths.clear()
                 for actor in snap.get("actors", []):
                     var id: int=int(actor.id)
-                    actor_nodes[id].position = _world(actor.cell)
+                    actor_nodes[id].position = illustrated_map.point_for_cell(Vector2i(actor.cell)) if illustrated_map != null else _world(actor.cell)
                     visual_cells[id]=Vector2i(actor.cell)
                     animation_driver.set_facing(id,Vector2i(actor.facing))
-                    var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow")
+                    var arrow: Node3D=actor_nodes[id].get_node_or_null("FacingArrow") if illustrated_map == null else null
                     if arrow != null: arrow.rotation.y=Facing.yaw(Vector2i(actor.facing))
             KEY_ESCAPE:
                 if story_encounter and snap.get("outcome", "playing") != "playing":
