@@ -25,10 +25,18 @@ func _run() -> void:
     space.diagnostics_enabled = true
     space.reset_diagnostics()
     var traced: PackedVector2Array = space.find_path(start, target, 8.0)
+    var repeated: PackedVector2Array = space.find_path(start, target, 8.0)
     var profile: Dictionary = space.diagnostic_snapshot()
+    _check(repeated == traced, "reused visibility graph preserves route")
     _check(traced.size() >= 3, "close-quarter detour exists")
-    _check(int(profile.path_queries) == 1 and int(profile.graph_builds) == 1,
-        "profile observes exactly one graph build")
+    _check(int(profile.path_queries) == 2 and int(profile.graph_builds) == 1
+        and int(profile.graph_reuses) == 1,
+        "unchanged actor positions reuse the built graph")
+    space.set_actors({42: {"position":centre + Vector2(0, 1), "radius":8.0, "alive":true}})
+    space.find_path(start, target, 8.0)
+    _check(int(space.diagnostic_snapshot().graph_builds) == 2,
+        "moving an obstacle invalidates the cached graph")
+    space.set_actors({42: {"position":centre, "radius":8.0, "alive":true}})
     _check(int(profile.segment_queries) > 0 and int(profile.max_nodes) >= 3,
         "profile observes real edge testing")
     space.diagnostics_enabled = false

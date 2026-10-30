@@ -36,6 +36,11 @@ var hud_view = BattleHUDView.new()
 var effects_driver
 var continuous_preview
 var continuous_preview_enabled := false
+var _preview_last_goal := Vector2.INF
+var _preview_last_actor := -1
+var _preview_last_revision := -1
+var _preview_last_card := ""
+var _preview_last_query_ms: int = -1000000
 var illustrated_map: CanvasLayer
 var camera: Camera2D
 var actor_nodes: Dictionary = {}
@@ -84,6 +89,7 @@ func _ready() -> void:
         model.reset(session.encounter_seed(), -1, "tingfeng", session.encounter_options())
     else:
         model.reset(2026, -1, "tingfeng", _quick_character_options())
+    continuous_preview_enabled = model.state.spatial_mode == "FREE"
     observer_id = _first_player_id()
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(_decision_owner())
@@ -784,7 +790,7 @@ func _accept(result: Dictionary) -> void:
             if session!=null and session.has_method("set_battle_spatial_mode"):
                 session.call("set_battle_spatial_mode",str(event.get("to","GRID")))
             if continuous_preview != null:
-                continuous_preview.clear_preview()
+                continuous_preview.clear_all()
             if illustrated_map != null:
                 for role_id in actor_nodes:
                     var combatant=model.state.get_actor(int(role_id))
@@ -867,35 +873,73 @@ func _update_cursor() -> void:
     illustrated_map.set_cursor(hovered, usable and animation_ticket < 0)
 
 func _update_continuous_preview() -> void:
-    if model.state.spatial_mode!="FREE" or (not continuous_preview_enabled and not (selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id))) or model.state.spatial == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
+    if model.state.spatial_mode != "FREE" or model.state.spatial == null or continuous_preview == null or not _player_decision() or animation_ticket >= 0:
         if continuous_preview != null:
-            continuous_preview.clear_preview()
+            continuous_preview.clear_all()
+        _preview_last_actor = -1
         return
-    var martial_step: bool=selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id)
+    var martial_step: bool = selected_kind == "PLAY_CARD" and _can_free_movement_card(selected_card_uid, selected_usage_id)
     if not selected_kind.is_empty() and not martial_step:
-        continuous_preview.clear_preview()
+        continuous_preview.clear_all()
+        _preview_last_actor = -1
         return
     var actor = model.state.get_actor(_decision_owner())
     if actor == null:
+        continuous_preview.clear_all()
+        _preview_last_actor = -1
+        return
+    var unit: float = maxf(model.state.spatial.bake.step.x, model.state.spatial.bake.step.y)
+    var remaining: int = int(actor.stats.get("move_budget", 2)) - actor.normal_moves_used
+    if martial_step:
+        var usage: Dictionary = model.cards.usage(selected_card_uid, selected_usage_id)
+        remaining = int(usage.get("target", {}).get("max_distance", 0))
+        for effect in usage.get("effects", []):
+            if str(effect.get("type", "")) == "move":
+                remaining = mini(remaining, int(effect.get("max_distance", 0)))
+    var limit: float = maxf(0.0, float(remaining) * unit)
+    if limit <= 0.0:
+        continuous_preview.clear_all()
+        _preview_last_actor = -1
+        return
+    continuous_preview.show_range(actor.position, limit)
+    if not continuous_preview_enabled and not martial_step:
         continuous_preview.clear_preview()
+        _preview_last_goal = Vector2.INF
         return
     var goal: Vector2 = _screen_to_battle(get_viewport().get_mouse_position())
+    # Path length can never be smaller than the direct distance. Reject
+    # out-of-range hover without running even the first A* query.
+    if actor.position.distance_to(goal) > limit + 0.001:
+        continuous_preview.clear_preview()
+        _preview_last_goal = Vector2.INF
+        return
+    var revision: int = int(model.state.revision)
+    var card_key: String = selected_card_uid + ":" + selected_usage_id if martial_step else ""
+    var same_context: bool = _preview_last_actor == actor.id and _preview_last_revision == revision and _preview_last_card == card_key
+    if same_context and _preview_last_goal.distance_to(goal) < 3.0:
+        return
+    var now_ms: int = Time.get_ticks_msec()
+    if same_context and now_ms - _preview_last_query_ms < 50:
+        continuous_preview.clear_preview()
+        return
+    _preview_last_actor = actor.id
+    _preview_last_revision = revision
+    _preview_last_card = card_key
+    _preview_last_goal = goal
+    _preview_last_query_ms = now_ms
     var path: PackedVector2Array = model.preview_free_path(actor.id, goal)
     if path.size() < 2:
         continuous_preview.clear_preview()
         return
     var cost: float = model.state.spatial.path_length(path)
-    var unit: float = maxf(model.state.spatial.bake.step.x, model.state.spatial.bake.step.y)
+    # A detour can exceed movement range even when the goal is inside the
+    # circle. Hide the route completely, as requested, instead of redrawing it.
+    if cost > limit + 0.001 or cost < 0.25:
+        continuous_preview.clear_preview()
+        return
     var units: int = ceili((cost - 0.0001) / unit)
-    var remaining: int = int(actor.stats.get("move_budget", 2)) - actor.normal_moves_used
-    var reachable: bool = units > 0 and units <= remaining and actor.qi_u >= units * 10000
-    if martial_step:
-        var usage: Dictionary=model.cards.usage(selected_card_uid,selected_usage_id)
-        remaining=int(usage.get("target",{}).get("max_distance",0))
-        for effect in usage.get("effects",[]):
-            if str(effect.get("type",""))=="move": remaining=mini(remaining,int(effect.get("max_distance",0)))
-        reachable=cost>0.25 and cost<=float(remaining)*unit+0.001
-    continuous_preview.show_preview(path, cost, reachable)
+    var affordable: bool = martial_step or actor.qi_u >= units * 10000
+    continuous_preview.show_preview(path, cost, affordable, limit)
 
 func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_S and animation_ticket >= 0:

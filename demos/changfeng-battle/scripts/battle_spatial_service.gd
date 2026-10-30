@@ -13,9 +13,15 @@ var waypoint_compat
 ## themselves add overhead and must not be used for timing comparisons.
 var diagnostics_enabled: bool = false
 var diagnostics: Dictionary = {}
+## Reused while actor occupancy, moving radius and ignored actor stay unchanged.
+## Query endpoints are temporary points 0 and 1; cached points start at ID 2.
+var _cached_graph: AStar2D
+var _cached_points: Array[Vector2] = []
+var _cached_radius := -1.0
+var _cached_ignore_id := -999999
 
 func reset_diagnostics() -> void:
-    diagnostics = {"path_queries":0, "failed_paths":0, "graph_builds":0,
+    diagnostics = {"path_queries":0, "failed_paths":0, "graph_builds":0, "graph_reuses":0,
         "max_nodes":0, "candidate_pairs":0, "segment_queries":0,
         "total_us":0, "max_us":0}
 
@@ -36,7 +42,11 @@ func _init(map_path: String = MapBake.DEFAULT_PATH, actor_clearance: float = 10.
     reset_diagnostics()
 
 func set_actors(positions: Dictionary) -> void:
-    actor_positions = positions.duplicate()
+    if actor_positions == positions:
+        return
+    actor_positions = positions.duplicate(true)
+    _cached_graph = null
+    _cached_points.clear()
 
 func is_valid_position(point: Vector2, radius: float = 0.0, ignore_id: int = -1) -> bool:
     if not is_finite(point.x) or not is_finite(point.y) or radius < 0.0:
@@ -126,18 +136,45 @@ func _find_path_impl(start: Vector2, finish: Vector2, radius: float = 0.0, ignor
         return PackedVector2Array()
     if clear_segment(start, finish, radius, ignore_id):
         return PackedVector2Array([start, finish])
-    var points: Array[Vector2] = [start, finish]
-    # A grid is still an authored source of terrain waypoints, never a
-    # collision test on *characters' cells*. Include only physically legal
-    # centres so the graph does not route through an occupied foot anchor.
+    _ensure_cached_graph(radius, ignore_id)
+    _cached_graph.add_point(0, start)
+    _cached_graph.add_point(1, finish)
+    var max_edge: float = maxf(bake.step.x, bake.step.y) * 2.1
+    for index in range(_cached_points.size()):
+        var point: Vector2 = _cached_points[index]
+        if start.distance_to(point) <= max_edge and clear_segment(start, point, radius, ignore_id):
+            _cached_graph.connect_points(0, index + 2)
+        if finish.distance_to(point) <= max_edge and clear_segment(finish, point, radius, ignore_id):
+            _cached_graph.connect_points(1, index + 2)
+    var route: PackedVector2Array = _cached_graph.get_point_path(0, 1)
+    # Never leave query-specific edges on the reusable graph.
+    _cached_graph.remove_point(0)
+    _cached_graph.remove_point(1)
+    if route.size() < 2:
+        return PackedVector2Array()
+    var smoothed := PackedVector2Array([route[0]])
+    var cursor := 0
+    while cursor < route.size() - 1:
+        var next := route.size() - 1
+        while next > cursor + 1 and not clear_segment(route[cursor], route[next], radius, ignore_id):
+            next -= 1
+        smoothed.append(route[next])
+        cursor = next
+    return smoothed
+
+func _ensure_cached_graph(radius: float, ignore_id: int) -> void:
+    if _cached_graph != null and is_equal_approx(_cached_radius, radius) and _cached_ignore_id == ignore_id:
+        if diagnostics_enabled:
+            diagnostics["graph_reuses"] = int(diagnostics.graph_reuses) + 1
+        return
+    var points: Array[Vector2] = []
     for cell in bake.tiles:
         if not bool(bake.tiles[cell].walkable):
             continue
         var centre: Vector2 = bake.cell_center(cell)
         if is_valid_position(centre, radius, ignore_id):
             points.append(centre)
-    # Polygonal approximation of each dynamic body's exclusion circle.
-    # Outward offset protects the chords BETWEEN adjacent circle vertices.
+    # Candidate body-ring waypoints are tied to the authoritative actor layout.
     const SECTORS = 16
     for id in actor_positions:
         if int(id) == ignore_id:
@@ -152,35 +189,24 @@ func _find_path_impl(start: Vector2, finish: Vector2, radius: float = 0.0, ignor
             var candidate: Vector2 = centre + Vector2(cos(theta), sin(theta)) * detour_radius
             if is_valid_position(candidate, radius, ignore_id):
                 points.append(candidate)
-    if diagnostics_enabled:
-        diagnostics["graph_builds"] = int(diagnostics.graph_builds) + 1
-        diagnostics["max_nodes"] = maxi(int(diagnostics.max_nodes), points.size())
-        diagnostics["candidate_pairs"] = int(diagnostics.candidate_pairs) + points.size() * (points.size() - 1) / 2
     var graph := AStar2D.new()
     for index in range(points.size()):
-        graph.add_point(index, points[index])
-    # Only local visibility edges are needed: the fixed terrain waypoints
-    # bridge long routes, while circle waypoints permit close-quarter sidesteps.
+        graph.add_point(index + 2, points[index])
     var max_edge: float = maxf(bake.step.x, bake.step.y) * 2.1
     for i in range(points.size()):
         for j in range(i + 1, points.size()):
             if points[i].distance_to(points[j]) > max_edge:
                 continue
             if clear_segment(points[i], points[j], radius, ignore_id):
-                graph.connect_points(i, j)
-    var route: PackedVector2Array = graph.get_point_path(0, 1)
-    if route.size() < 2:
-        return PackedVector2Array()
-    # Remove redundant centre/ring waypoints without changing endpoints.
-    var smoothed := PackedVector2Array([route[0]])
-    var cursor := 0
-    while cursor < route.size() - 1:
-        var next := route.size() - 1
-        while next > cursor + 1 and not clear_segment(route[cursor], route[next], radius, ignore_id):
-            next -= 1
-        smoothed.append(route[next])
-        cursor = next
-    return smoothed
+                graph.connect_points(i + 2, j + 2)
+    _cached_graph = graph
+    _cached_points = points
+    _cached_radius = radius
+    _cached_ignore_id = ignore_id
+    if diagnostics_enabled:
+        diagnostics["graph_builds"] = int(diagnostics.graph_builds) + 1
+        diagnostics["max_nodes"] = maxi(int(diagnostics.max_nodes), points.size() + 2)
+        diagnostics["candidate_pairs"] = int(diagnostics.candidate_pairs) + (points.size() + 2) * (points.size() + 1) / 2
 
 ## In FREE mode a click within an enemy footprint should stop at the
 ## nearest accessible edge, not freeze because its literal point is occupied.
