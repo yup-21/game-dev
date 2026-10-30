@@ -22,6 +22,9 @@ on:
       - 'demos/changfeng-battle/checks/test_illustrated_maps.gd'
       - 'demos/changfeng-battle/scripts/actor_facing.gd'
       - 'demos/changfeng-battle/scripts/hd2d_animation.gd'
+      - 'demos/changfeng-battle/scripts/battle_spatial_service.gd'
+      - 'demos/changfeng-battle/checks/test_free_crowd_navigation.gd'
+      - 'demos/changfeng-battle/checks/test_story_background_content.gd'
       - 'demos/changfeng-battle/scripts/battle_state.gd'
       - 'demos/changfeng-battle/checks/test_actor_facing.gd'
       - 'demos/changfeng-battle/scripts/character_registry.gd'
@@ -80,6 +83,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_baked_bridge_grid.gd
       - name: Validate continuous battle movement and attack approach
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_space.gd
+      - name: Validate safe close-quarter FREE navigation and crowded clicks
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_crowd_navigation.gd
       - name: Keep PR57 visibility graph regression
         run: timeout --signal=TERM 40s godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_battle_space.gd
       - name: Validate both spatial APIs after restoring reverted PR62
@@ -137,6 +142,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_multi_school_switch.gd
       - name: Check four-way actor facing, movement path and attack targets
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_actor_facing.gd
+      - name: Assert first-act painting has visible nonwhite content
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_story_background_content.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
 
