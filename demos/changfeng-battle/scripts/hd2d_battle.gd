@@ -21,6 +21,7 @@ const CharacterCardUI = preload("res://scripts/character_card_ui.gd")
 const ChargeRail = preload("res://scripts/hd2d_ctb_rail.gd")
 const BattleHandView = preload("res://scripts/battle_hand_view.gd")
 const BattleHUDStatus = preload("res://scripts/battle_hud_status.gd")
+const PresentationCoordinator = preload("res://scripts/battle_presentation_coordinator.gd")
 const COLS := 15
 const ROWS := 10
 const CELL := 1.5
@@ -31,6 +32,7 @@ var observer_id := 0
 var result_reported := false
 var ai = EnemyAI.new()
 var animation_driver = Animator.new()
+var presentation = PresentationCoordinator.new()
 var effects_driver
 var continuous_space
 var continuous_preview
@@ -1209,6 +1211,7 @@ func _auto_pass_unavailable_reactions() -> bool:
         var ticket := int(result.get("ticket", -1))
         var acknowledged: Dictionary = model.acknowledge_animation(ticket)
         if bool(acknowledged.get("success", false)):
+            presentation.cancel()
             animation_ticket = -1
             animation_time = 0.0
             _accept(acknowledged)
@@ -1311,13 +1314,13 @@ func _process(delta: float) -> void:
             var light: OmniLight3D = cue_lights[id]
             light.light_energy = float(cue_remaining[id]) * 4.0
     if animation_ticket >= 0:
-        animation_time -= delta
-        # The semantic queue can span several frame boundaries. Its remaining
-        # stages must finish even when the initial wall-clock estimate expires.
-        if animation_time <= 0.0 and animation_driver.remaining_seconds() <= 0.0 and movement_paths.is_empty() and continuous_paths.is_empty():
-            var ticket := animation_ticket
+        var finished_ticket: int = presentation.advance(delta,
+            animation_driver.remaining_seconds(),
+            not movement_paths.is_empty() or not continuous_paths.is_empty())
+        animation_time = presentation.wait_remaining
+        if finished_ticket >= 0:
             animation_ticket = -1
-            _accept(model.acknowledge_animation(ticket))
+            _accept(model.acknowledge_animation(finished_ticket))
         return
     if snap.get("outcome", "playing") != "playing":
         return
@@ -1392,15 +1395,36 @@ func _accept(result: Dictionary) -> void:
     _clear_selection()
     _refresh()
     if snap.get("animation_pending", false):
-        animation_ticket = int(result.get("ticket", snap.get("ticket", -1)))
-        animation_time = _event_duration(result.get("events", []))
+        presentation.begin(int(result.get("ticket", snap.get("ticket", -1))),
+            animation_driver.remaining_seconds())
+    else:
+        presentation.cancel()
+    animation_ticket = presentation.ticket
+    animation_time = presentation.wait_remaining
     _refresh_target_markers()
     _update_status()
 
-func _event_duration(_events: Array) -> float:
-    # Await the entire semantic event animation queue before acknowledging
-    # the model's presentation ticket and letting the next actor act.
-    return maxf(0.35, animation_driver.remaining_seconds())
+func _skip_presentation() -> void:
+    # Snap graphics to the committed model state. Skip must never submit
+    # a second attack or apply an effect; only acknowledge the active ticket.
+    if animation_ticket < 0:
+        return
+    for actor in model.state.actors:
+        if not actor_nodes.has(actor.id):
+            continue
+        actor_nodes[actor.id].position = (Vector2(actor.position)
+            if illustrated_map != null else _world(Vector2i(actor.cell)))
+        visual_cells[actor.id] = Vector2i(actor.cell)
+    movement_paths.clear()
+    continuous_paths.clear()
+    animation_driver.reset()
+    if effects_driver != null:
+        effects_driver.clear()
+    var ticket_to_ack: int = presentation.skip()
+    animation_ticket = -1
+    animation_time = 0.0
+    if ticket_to_ack >= 0:
+        _accept(model.acknowledge_animation(ticket_to_ack))
 
 func _cue_events(events: Array) -> void:
     for event in events:
@@ -1516,6 +1540,10 @@ func _update_continuous_preview() -> void:
     continuous_preview.show_preview(path, cost, reachable)
 
 func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_S and animation_ticket >= 0:
+        _skip_presentation()
+        get_viewport().set_input_as_handled()
+        return
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M:
         _toggle_spatial_mode()
         get_viewport().set_input_as_handled()
@@ -1596,7 +1624,9 @@ func _unhandled_input(event: InputEvent) -> void:
                 if effects_driver != null:
                     effects_driver.clear()
                 _clear_selection()
+                presentation.reset_battle()
                 animation_ticket = -1
+                animation_time = 0.0
                 _refresh()
                 _refresh_target_markers()
                 movement_paths.clear()

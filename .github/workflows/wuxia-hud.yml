@@ -30,6 +30,8 @@ on:
       - 'demos/changfeng-battle/checks/test_illustrated_maps.gd'
       - 'demos/changfeng-battle/scripts/actor_facing.gd'
       - 'demos/changfeng-battle/scripts/hd2d_animation.gd'
+      - 'demos/changfeng-battle/scripts/battle_presentation_coordinator.gd'
+      - 'demos/changfeng-battle/checks/test_battle_presentation_coordinator.gd'
       - 'demos/changfeng-battle/scripts/battle_spatial_service.gd'
       - 'demos/changfeng-battle/checks/test_free_crowd_navigation.gd'
       - 'demos/changfeng-battle/checks/test_story_background_content.gd'
@@ -135,6 +137,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_ornament_hud.gd
       - name: Check clickable hand and animation request lifecycle
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
+      - name: Validate single-acknowledge presentation and skip lifecycle
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_presentation_coordinator.gd
       - name: Verify automatic empty-response skips and authoritative clash resolution
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_auto_pass.gd
       - name: Play seeded six-character bridge battles through production AI
