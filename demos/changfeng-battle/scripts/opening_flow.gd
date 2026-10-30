@@ -3,6 +3,7 @@ extends Node2D
 ## Presentation only: chapter flow is in OpeningStory; existing battles are separate scenes.
 const Story = preload("res://scripts/opening_story.gd")
 const CharacterArt = preload("res://scripts/hd2d_illustrated_factory.gd")
+const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
 const JADE = Color("3a8178")
@@ -289,6 +290,29 @@ func _portrait(pos: Vector2, old: bool, scale_factor: float = 1.0) -> void:
 		Rect2(0, 0, CharacterArt.FRAME_W, CharacterArt.FRAME_H))
 
 
+func _cover_texture(texture: Texture2D, area: Rect2, tint: Color = Color.WHITE) -> void:
+	# Crop, never stretch: wide backdrops and vertical paintings retain proportion.
+	var size := Vector2(texture.get_size())
+	var source := Rect2(Vector2.ZERO, size)
+	var target_ratio := area.size.x / area.size.y
+	var image_ratio := size.x / size.y
+	if image_ratio > target_ratio:
+		var width := size.y * target_ratio
+		source.position.x = (size.x - width) * 0.5
+		source.size.x = width
+	else:
+		var height := size.x / target_ratio
+		source.position.y = (size.y - height) * 0.5
+		source.size.y = height
+	draw_texture_rect_region(texture, area, source, tint)
+
+func _painted_portrait(speaker: String, area: Rect2, tint: Color = Color.WHITE) -> bool:
+	var painting := ArtCatalog.portrait(speaker)
+	if painting == null:
+		return false
+	_cover_texture(painting, area, tint)
+	return true
+
 func _lantern_light(pos: Vector2, t: float) -> void:
 	# Warm pooled lantern light and wet-ground reflections against the cool rain.
 	var warm: Color = Color("efbf77")
@@ -329,10 +353,14 @@ func _cinema_bars() -> void:
 
 func _draw_menu() -> void:
 	_sky(clock)
-	draw_rect(Rect2(0,0,650,1000),Color(0.08,0.18,0.17,0.47))
-	_paint_pavilion(Vector2(1290,755),1.1)
-	_lantern_light(Vector2(1280,711),clock)
-	_portrait(Vector2(1010,700),false,2.10)
+	var landscape := ArtCatalog.scenery("mountain")
+	if landscape != null:
+		_cover_texture(landscape, Rect2(0,0,1600,1000), Color(0.54,0.67,0.65,0.90))
+	draw_rect(Rect2(0,0,1600,1000),Color(0.04,0.12,0.13,0.31))
+	draw_rect(Rect2(0,0,665,1000),Color(0.07,0.16,0.16,0.84))
+	_panel(Rect2(855,91,510,813),Color(0.07,0.15,0.15,0.62),Color(GOLD,0.7))
+	if not _painted_portrait("沈长风",Rect2(865,101,490,792)):
+		_portrait(Vector2(1010,700),false,2.10)
 	draw_circle(Vector2(800,370),105,Color(0.93,0.86,0.67,0.10))
 	_text(Vector2(132,250),"MORTAL DAO  /  江 湖 浮 生",19,GOLD)
 	_text(Vector2(118,384),"长风浮生录",77,PAPER,true)
@@ -348,6 +376,11 @@ func _draw_menu() -> void:
 
 func _draw_cinematic() -> void:
 	_sky(clock,true)
+	# The first beat is a memory of the lost martial world, not today's rainy road.
+	if story.cinematic_index == 0:
+		var memory := ArtCatalog.scenery("mountain")
+		if memory != null:
+			_cover_texture(memory,Rect2(0,0,1600,1000),Color(0.37,0.50,0.51,0.68))
 	_rain(clock)
 	var beat: Dictionary=story.current_beat()
 	var duration: float=float(beat.get("duration",4.0))
@@ -359,9 +392,11 @@ func _draw_cinematic() -> void:
 	_carriage(Vector2(800+sin(clock*.24)*7.0,743))
 	_lantern_light(Vector2(1250 + drift,724),clock)
 	if story.cinematic_index >= 1:
-		_portrait(Vector2(315 - drift,730),false,1.80)
+		if not _painted_portrait("沈长风",Rect2(80-drift,235,375,635),Color(1,1,1,0.76)):
+			_portrait(Vector2(315 - drift,730),false,1.80)
 	if story.cinematic_index >= 2:
-		_portrait(Vector2(1400,753),true,1.40)
+		if not _painted_portrait("老镖头",Rect2(1285,395,260,455),Color(1,1,1,0.70)):
+			_portrait(Vector2(1400,753),true,1.40)
 	draw_rect(Rect2(0,0,1600,1000),Color(0.05,0.11,0.12,0.43))
 	_cinema_bars()
 	_center(Vector2(800,382),caption,32,Color(GOLD,opacity),true)
@@ -411,7 +446,8 @@ func _draw_dialogue() -> void:
 	_panel(Rect2(124,665,1352,292),Color("eae3cf"),GOLD)
 	# Classic wuxia character frame / nameplate.
 	_panel(Rect2(153,574,227,308),Color("38534c"),GOLD)
-	_portrait(Vector2(266,738),speaker=="老镖头",1.18)
+	if not _painted_portrait(speaker,Rect2(161,582,211,291)):
+		_portrait(Vector2(266,738),speaker=="老镖头",1.18)
 	_panel(Rect2(385,628,264,63),Color("25483f"),GOLD)
 	_center(Vector2(517,671),speaker,27,PAPER,true)
 	var clipped: String=full_text.substr(0,mini(full_text.length(),int(visible_characters)))

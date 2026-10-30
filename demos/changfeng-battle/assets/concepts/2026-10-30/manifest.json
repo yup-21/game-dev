@@ -2,8 +2,8 @@
   "schema_version": 1,
   "batch_date": "2026-10-30",
   "origin": "User-provided generated concept artwork; repository owner to confirm usage rights",
-  "state": "concept_only",
-  "runtime_integrated": false,
+  "state": "partially_integrated",
+  "runtime_integrated": true,
   "assets": [
     {
       "path": "characters/gu_qingshuang_24_pose.png",
@@ -116,5 +116,18 @@
   ],
   "excluded_near_duplicate": [
     "顾清霜武侠动作精灵图-5(3).png"
-  ]
+  ],
+  "runtime_usage": {
+    "character_pose_actor_ids": {
+      "2": "characters/gu_qingshuang_24_pose.png",
+      "3": "characters/green_robed_wanderer_24_pose.png",
+      "4": "characters/black_blade_fighter_24_pose.png",
+      "5": "characters/violet_dual_blade_assassin_24_pose.png"
+    },
+    "story_memory": "scenes/mountain_herbal_workshop_day.jpg",
+    "standalone_battle_backdrop": "scenes/snowy_sword_sect_courtyard.jpg",
+    "character_style_studies": "reference_only",
+    "loader": "res://scripts/hd2d_art_catalog.gd",
+    "quality_status": "runtime_preview; edge-alpha and motion inbetweens still require art QA"
+  }
 }

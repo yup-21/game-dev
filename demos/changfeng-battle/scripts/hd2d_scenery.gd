@@ -1,4 +1,5 @@
 extends RefCounted
+const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 ## Original procedural wuxia diorama decorations. Visual only: no collisions or rules.
 ## Intentionally positioned outside the 15x10 tactical grid.
 const LEAF_DARK = Color("294c3f")
@@ -78,10 +79,25 @@ static func _lantern(parent: Node3D, pos: Vector3) -> void:
     light.position = pos + Vector3(0, 1.66, 0)
     parent.add_child(light)
 
-static func build(parent: Node3D) -> void:
+static func build(parent: Node3D, story_encounter: bool = false) -> void:
     var scenery := Node3D.new()
     scenery.name = "WuxiaScenery"
     parent.add_child(scenery)
+    # The snowy sword-sect painting belongs to the standalone training preview.
+    # The rain-soaked prologue keeps its own river landscape and moonlit palette.
+    if not story_encounter:
+        var painting := ArtCatalog.scenery("snow")
+        if painting != null:
+            var backdrop := Sprite3D.new()
+            backdrop.name = "IllustratedBackdrop"
+            backdrop.texture = painting
+            backdrop.pixel_size = 0.023
+            backdrop.position = Vector3(0.0, 10.0, -29.0)
+            backdrop.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+            backdrop.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+            backdrop.shaded = false
+            backdrop.modulate = Color(0.78, 0.87, 0.95, 1.0)
+            scenery.add_child(backdrop)
     # Layered forest silhouettes on both sides of the tactical area.
     for i in range(18):
         var z := -10.0 + float(i) * 1.19
