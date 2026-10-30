@@ -3,9 +3,10 @@ extends CanvasLayer
 ## backdrop are used for the player-visible battlefield.
 ## The 15x10 logical BattleModel grid is mapped to painterly foot anchors.
 const Art = preload("res://scripts/hd2d_art_catalog.gd")
-const STORY_MAP = "res://assets/scenes/battle/rainy_bridge_battle.webp"
-const PREVIEW_MAP = "res://assets/scenes/battle/rainy_bridge_battle.webp"
-const VIEW = Vector2(1600,1000)
+const BridgeLayout = preload("res://scripts/rainy_bridge_layout.gd")
+const STORY_MAP = BridgeLayout.ART_PATH
+const PREVIEW_MAP = BridgeLayout.ART_PATH
+const VIEW = BridgeLayout.CANVAS_SIZE
 var picture: TextureRect
 var actors: Dictionary = {}
 var lights: Dictionary = {}
@@ -39,8 +40,8 @@ func _init(story_battle: bool = false) -> void:
     selection.name = "MoveCursor"
     selection.visible = false
     scene_root.add_child(selection)
-    for x in range(15):
-        for y in range(10):
+    for x in range(BridgeLayout.COLS):
+        for y in range(BridgeLayout.ROWS):
             var key := Vector2i(x,y)
             var mark := _ellipse(Color(0.40,0.91,0.73,0.28),35,16)
             mark.name = "Legal_%d_%d" % [x,y]
@@ -59,40 +60,16 @@ func _ellipse(color: Color, rx: float, ry: float) -> Polygon2D:
     result.polygon=points
     return result
 
-## Layout anchors were calibrated to the supplied 1586x992 painting:
-## bridge spans left (6,4) => middle (7,4) => right (8,4);
-## shallow river crossing is (7,8). The painting is NOT a grid tileset.
+## Board-coordinate mapping stays in rainy_bridge_layout.gd, shared with
+## BattleState terrain and the six-person encounter spawn validator.
 static func point_for_cell(cell: Vector2i) -> Vector2:
-    return point_for_grid(Vector2(cell))
+    return BridgeLayout.point_for_cell(cell)
 
 static func point_for_grid(grid: Vector2) -> Vector2:
-    var x: float=grid.x
-    var y: float=grid.y
-    if x<=6.0:
-        return Vector2(220.0 + 64.0*x, 200.0-20.0*x+65.0*y)
-    if x<7.0:
-        var left := Vector2(604.0,80.0+65.0*y)
-        var river := Vector2(790.0,72.0+66.0*y)
-        return left.lerp(river,x-6.0)
-    if x==7.0:
-        return Vector2(790.0,72.0+66.0*y)
-    if x<8.0:
-        var river := Vector2(790.0,72.0+66.0*y)
-        var right := Vector2(990.0,85.0+65.0*y)
-        return river.lerp(right,x-7.0)
-    return Vector2(990.0+65.0*(x-8.0),85.0+20.0*(x-8.0)+65.0*y)
+    return BridgeLayout.point_for_grid(grid)
 
 func cell_from_screen(screen: Vector2, board: Dictionary) -> Vector2i:
-    var best := Vector2i(-1,-1)
-    var nearest := 55.0*55.0
-    for cell in board:
-        if str(board[cell]) in ["water","rock","bamboo"]:
-            continue
-        var dist: float=point_for_cell(Vector2i(cell)).distance_squared_to(screen)
-        if dist<nearest:
-            nearest=dist
-            best=Vector2i(cell)
-    return best
+    return BridgeLayout.cell_from_screen(screen, board)
 
 func add_actor(actor: Dictionary, atlas: Texture2D) -> void:
     var id: int=int(actor.id)
