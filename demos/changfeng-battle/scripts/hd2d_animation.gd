@@ -1,6 +1,7 @@
 extends RefCounted
 ## Event-driven Sprite3D playback. Owns only animation cursors, never battle state.
 ## 6x4 atlas: idle, walk, attack, special (guard/hit/dodge/skill).
+const Facing = preload("res://scripts/actor_facing.gd")
 const FRAME_RATE := 9.0
 const FRAMES_PER_ROW := 6
 const STATE_ROW := {"idle": 0, "move": 1, "attack": 2, "guard": 3,
@@ -12,13 +13,25 @@ var tracks: Dictionary = {}
 var timeline: Array = []
 var stage_left: float = 0.0
 
-func register_actor(id: int, sprite: Sprite3D) -> void:
+func register_actor(id: int, sprite: Sprite3D, initial_facing: Vector2i = Vector2i.RIGHT) -> void:
     tracks[id] = {"sprite": sprite, "state": "idle", "elapsed": 0.0,
-        "duration": 1.0, "loop": true}
+        "duration": 1.0, "loop": true, "facing": Facing.from_delta(initial_facing)}
     sprite.hframes = 6
     sprite.vframes = 4
     sprite.frame = 0
     sprite.scale = Vector3.ONE
+    sprite.flip_h = initial_facing == Facing.WEST
+
+func set_facing(id: int, facing: Vector2i) -> void:
+    if not tracks.has(id): return
+    var track: Dictionary = tracks[id]
+    track.facing = Facing.from_delta(facing,track.facing)
+    tracks[id] = track
+    var sprite: Sprite3D = track.sprite
+    if sprite != null: sprite.flip_h = Vector2i(track.facing) == Facing.WEST
+
+func facing_for(id: int) -> Vector2i:
+    return Vector2i(tracks[id].facing) if tracks.has(id) else Facing.EAST
 
 func play(id: int, state: String) -> void:
     if not tracks.has(id) or not STATE_ROW.has(state):
@@ -59,8 +72,12 @@ func events(emitted: Array) -> void:
             "ATTACK_INTERRUPTED":
                 animation = "guard"
         if not animation.is_empty() and tracks.has(id):
+            var duration: float=float(DURATIONS.get(animation, 0.35))
+            if kind == "MOVE":
+                duration=maxf(duration,float(event.get("path",[]).size()) * 0.33)
             timeline.append({"id": id, "state": animation,
-                "duration": float(DURATIONS.get(animation, 0.35))})
+                "facing": event.get("facing",facing_for(id)),
+                "duration": duration})
     _play_next()
 
 func _play_next() -> void:
@@ -68,6 +85,7 @@ func _play_next() -> void:
         stage_left = 0.0
         return
     var next: Dictionary = timeline.pop_front()
+    set_facing(int(next.id),Vector2i(next.facing))
     play(int(next.id), str(next.state))
     stage_left = float(next.duration)
 

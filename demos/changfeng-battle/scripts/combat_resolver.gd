@@ -2,6 +2,7 @@ extends RefCounted
 ## The only effect executor. No scene tree, awaits, animations, or policy decisions.
 const UNIT: int=10000
 const MAX_EFFECTS: int=32
+const Facing = preload("res://scripts/actor_facing.gd")
 var state
 var cards
 var costs
@@ -164,6 +165,9 @@ func play_ability(actor,choice: Dictionary) -> void:
 func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: String,target_id: int,damage: int,route: String,break_bonus: int,effects: Array,technique_id: String="",node_id: String="") -> void:
 	var actor=state.get_actor(actor_id)
 	var target=state.get_actor(target_id)
+	# Attacks (basic, martial cards and staged abilities) all turn toward
+	# their selected target before opening the LIFO response window.
+	actor.facing=Facing.from_delta(target.cell-actor.cell,actor.facing)
 	var attack: Dictionary={"attack_id":state.root_action_id,"attacker_id":actor_id,"defender_id":target_id,
 		"card_uid":uid,"definition_id":definition_id,"usage_id":usage_id,"route":route,"break_bonus":break_bonus,
 		"origin_cell":actor.cell,"target_cell":target.cell,"affected_cells":[target.cell],
@@ -184,7 +188,7 @@ func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: St
 		for armed_id in techniques.arm_from_card(actor,definition_id,usage_id):
 			emit("TECHNIQUE_ARMED",{"actor_id":actor_id,"technique_id":armed_id,"text":"变锋 · 势已成"})
 	reactions.declare(attack)
-	emit("ATTACK_DECLARED",{"actor_id":actor_id,"target_id":target_id,"definition_id":definition_id,"usage_id":usage_id,"text":"%s 向 %s 出招" % [actor.name,target.name]})
+	emit("ATTACK_DECLARED",{"actor_id":actor_id,"target_id":target_id,"facing":actor.facing,"definition_id":definition_id,"usage_id":usage_id,"text":"%s 向 %s 出招" % [actor.name,target.name]})
 	# Root attack effects are usually deferred until hit/miss resolution.
 	# A grant_card at the root is different: create the derivative NOW, before
 	# the defender/attacker alternate response priority, so 变锋 can actually
@@ -389,7 +393,11 @@ func move_actor(actor_id: int,dest: Vector2i,path: Array) -> void:
 	var actor=state.get_actor(actor_id)
 	var previous: Vector2i=actor.cell
 	actor.cell=dest
-	emit("MOVE",{"actor_id":actor_id,"from":previous,"to":dest,"path":path.duplicate(),"text":"%s 移步 (%d,%d)" % [actor.name,dest.x,dest.y]})
+	# Follow the FINAL step of the actual resolved BFS/forced-move path.
+	# A bent route must not face toward the endpoint through an obstacle.
+	var from_cell: Vector2i=previous if path.size()<2 else Vector2i(path[path.size()-2])
+	actor.facing=Facing.from_delta(dest-from_cell,actor.facing)
+	emit("MOVE",{"actor_id":actor_id,"from":previous,"to":dest,"path":path.duplicate(),"facing":actor.facing,"text":"%s 移步 (%d,%d)" % [actor.name,dest.x,dest.y]})
 	emit("MOVE_FINISHED",{"actor_id":actor_id,"from":previous,"to":dest})
 
 func force_move(source: int,target_id: int,effect: Dictionary) -> void:
