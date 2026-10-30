@@ -15,6 +15,9 @@ on:
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
       - 'demos/changfeng-battle/scripts/battle_command_dispatcher.gd'
+      - 'demos/changfeng-battle/scripts/battle_command_controller.gd'
+      - 'demos/changfeng-battle/scripts/battle_input_controller.gd'
+      - 'demos/changfeng-battle/checks/test_battle_input_controller.gd'
       - 'demos/changfeng-battle/checks/test_battle_command_dispatcher.gd'
       - 'demos/changfeng-battle/scripts/illustrated_battle_map.gd'
       - 'demos/changfeng-battle/scripts/map_bake.gd'
@@ -99,6 +102,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_move_and_attack_ui.gd
       - name: Guard refactored command adapter and versioned submissions
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_command_dispatcher.gd
+      - name: Validate extracted input intent and guarded view submission
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_input_controller.gd
       - name: Validate two authoritative spatial modes and live transitions
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_dual_spatial_mode.gd
       - name: Exercise in-battle M toggle and mode preference persistence

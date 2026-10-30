@@ -2,7 +2,8 @@ extends Node3D
 ## HD-2D vertical slice. All tactical state and legality remain in BattleModel.
 ## Run res://battle_hd2d.tscn explicitly; the original 2D scene is untouched.
 const Model = preload("res://scripts/battle_model.gd")
-const CommandDispatcher = preload("res://scripts/battle_command_dispatcher.gd")
+const BattleCommandController = preload("res://scripts/battle_command_controller.gd")
+const BattleInputController = preload("res://scripts/battle_input_controller.gd")
 const ContinuousSpace = preload("res://scripts/battle_spatial_service.gd")
 const ContinuousPreview = preload("res://scripts/continuous_move_preview.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
@@ -1517,16 +1518,9 @@ func _cue_events(events: Array) -> void:
             camera_shake = 0.20
 
 func _submit(kind: String, params: Dictionary = {}) -> void:
-    if auto_battle or animation_ticket >= 0:
-        return
-    var owner := int(snap.get("active_id", -1))
-    if snap.get("phase", "") == "CLASH":
-        owner = int(snap.get("clash", {}).get("priority_actor_id", -1))
-    if not _player_decision():
-        return
-    # This view owns the interaction gates; the dispatcher owns the
-    # enumerated/dynamic command routing. BattleModel remains the authority.
-    var dispatched: Dictionary = CommandDispatcher.dispatch(model, owner, kind, params)
+    # Gate stale input and auto mode before attempting a versioned command.
+    var dispatched: Dictionary = BattleCommandController.from_view(
+        model, snap, _player_decision(), auto_battle, animation_ticket, kind, params)
     if bool(dispatched.get("dispatched", false)):
         _accept(dispatched.get("result", {}))
 
@@ -1639,8 +1633,10 @@ func _unhandled_input(event: InputEvent) -> void:
         return
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         if selected_kind=="PLAY_CARD" and _can_free_movement_card(selected_card_uid,selected_usage_id):
-            _submit("PLAY_CARD_FREE_MOVE",{"card_uid":selected_card_uid,"usage_id":selected_usage_id,
-                "target_position":get_viewport().get_mouse_position()})
+            var step_intent: Dictionary = BattleInputController.world_click(
+                "FREE", true, true, selected_kind, true, selected_card_uid,
+                selected_usage_id, -1, get_viewport().get_mouse_position(), {})
+            _submit(str(step_intent.kind), step_intent.params)
             get_viewport().set_input_as_handled()
         elif not selected_kind.is_empty():
             var selected := _action_at(_hover_cell())
@@ -1649,17 +1645,16 @@ func _unhandled_input(event: InputEvent) -> void:
             else:
                 _submit_selected_approach(_enemy_at(_hover_cell()))
             get_viewport().set_input_as_handled()
-        elif model.state.spatial_mode=="FREE" and illustrated_map != null and _player_decision():
-            var enemy_id: int=_enemy_at(_hover_cell())
-            if enemy_id>=0:
-                _submit("MOVE_AND_ATTACK",{"attack_kind":"BASIC_ATTACK","target_id":enemy_id})
-            else:
-                _submit("MOVE_FREE", {"target_position": get_viewport().get_mouse_position()})
-            get_viewport().set_input_as_handled()
         else:
-            var move := _legal("MOVE", _hover_cell())
-            if not move.is_empty():
-                _submit("MOVE", {"target_cell": move.target_cell})
+            var intent: Dictionary = BattleInputController.world_click(
+                str(model.state.spatial_mode), illustrated_map != null,
+                _player_decision(), selected_kind, false, "", "",
+                _enemy_at(_hover_cell()), get_viewport().get_mouse_position(),
+                _legal("MOVE", _hover_cell()))
+            if not intent.is_empty():
+                _submit(str(intent.kind), intent.params)
+                if model.state.spatial_mode == "FREE":
+                    get_viewport().set_input_as_handled()
     if event is InputEventKey and event.pressed and not event.echo:
         match event.keycode:
             KEY_F3:
