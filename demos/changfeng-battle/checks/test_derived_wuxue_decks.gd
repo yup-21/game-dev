@@ -70,6 +70,9 @@ func _run() -> void:
         and _count(enemy, model, "tf_change") == 0
         and _count(player, model, "tf_follow") == 0,
         "neither change nor follow-up appears in starter draw")
+    _check(player.technique_states.has("tf_change_stage")
+        and str(player.technique_states.tf_change_stage.node) == "sealed",
+        "change is learned as a stage but does not start ready")
     var first_uid: String = model.cards.create_instance(player, "tf_probe", "hand")
     player.cell = Vector2i(7,4)
     enemy.cell = Vector2i(8,4)

@@ -62,6 +62,11 @@ jobs:
         run: |
           godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_catalog.gd
           godot --headless --path demos/changfeng-battle --script res://checks/test_generated_cards.gd
+      - name: Verify old Tingfeng rules, chained stages, and V3 school compatibility
+        run: |
+          godot --headless --path demos/changfeng-battle --script res://checks/test_tingfeng.gd
+          godot --headless --path demos/changfeng-battle --script res://checks/test_ability_framework.gd
+          godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
 

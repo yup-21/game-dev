@@ -508,7 +508,7 @@
       "name": "探锋·追风",
       "generated_only": true,
       "lifecycle": "exile_on_finish",
-      "retain_own_actions": 1,
+      "retain_own_actions": 0,
       "relations": {
         "parent": "tf_probe",
         "children": [],
