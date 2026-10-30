@@ -12,6 +12,9 @@ on:
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
       - 'demos/changfeng-battle/scripts/illustrated_battle_map.gd'
+      - 'demos/changfeng-battle/scripts/map_bake.gd'
+      - 'demos/changfeng-battle/data/maps/**'
+      - 'demos/changfeng-battle/checks/test_baked_bridge_grid.gd'
       - 'demos/changfeng-battle/assets/scenes/**'
       - 'demos/changfeng-battle/checks/test_illustrated_maps.gd'
       - 'demos/changfeng-battle/scripts/actor_facing.gd'
@@ -67,6 +70,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --editor --import --quit
       - name: Assert only the illustrated battle is player-facing
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_single_battle_entry.gd
+      - name: Verify 150 baked orthographic cells, river-blocked hitboxes and 3v3 paths
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_baked_bridge_grid.gd
       - name: Validate 2D painted terrain and story character registration
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_illustrated_maps.gd
       - name: Check original character art in painted battle
