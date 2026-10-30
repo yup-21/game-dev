@@ -21,7 +21,10 @@ func _init(s,c,cost_system,validator,graph,condition_system) -> void:
 func options(actor, timing: String, reachable: Dictionary = {}) -> Array:
 	var results: Array = []
 	if state.mode=="CLASH" and (int(state.clash.counts.get(actor.id,0))>=2 or state.clash.stack.size()>=4): return results
-	if reachable.is_empty(): reachable=state.reachable_paths(actor.cell,actor.id)
+	# Legacy discrete-cell reachability is GRID-only. FREE movement cards
+	# are validated through the authoritative PLAY_CARD_FREE_MOVE command.
+	if reachable.is_empty() and state.spatial_mode=="GRID":
+		reachable=state.reachable_paths(actor.cell,actor.id)
 	for uid in actor.hand:
 		var definition: Dictionary=cards.canonical_definition(str(uid))
 		if not cards.valid_definition(definition): continue
@@ -50,13 +53,19 @@ func _targets(actor,base: Dictionary,usage: Dictionary,reachable: Dictionary) ->
 			for target in state.actors:
 				if not state.is_hostile(actor.id,target.id) or target.hp_u<=0: continue
 				var max_dist: int=int(usage.get("attack_profile",{}).get("range",usage.target.get("max_distance",1)))
-				var dist: int=rules.distance(actor.cell,target.cell)
-				if dist<int(usage.target.get("min_distance",1)) or dist>max_dist: continue
-				if usage.target.get("line_of_sight",false) and not rules.line_clear(actor.cell,target.cell): continue
+				if state.spatial_mode=="FREE":
+					if not rules.free_target_legal(actor,target,usage): continue
+				else:
+					var dist: int=rules.distance(actor.cell,target.cell)
+					if dist<int(usage.target.get("min_distance",1)) or dist>max_dist: continue
+					if usage.target.get("line_of_sight",false) and not rules.line_clear(actor.cell,target.cell): continue
 				var option: Dictionary=base.duplicate(true)
 				option.target_id=target.id
 				result.append(option)
 		"reachable_cell":
+			# Never expose a legacy cell target in continuous combat: otherwise
+			# a direct PLAY_CARD request could bypass circle collision/path costs.
+			if state.spatial_mode=="FREE": return result
 			for cell in state.terrain:
 				var path: Array=reachable.get(cell,[])
 				if path.is_empty() or path.size()>int(usage.target.get("max_distance",1)): continue

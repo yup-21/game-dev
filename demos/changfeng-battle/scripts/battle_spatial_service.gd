@@ -1,149 +1,214 @@
 extends RefCounted
-## Continuous-space rules prototype. Positions are in MapBake foot-anchor units.
-## The authored tile mask is a coarse obstacle source, NOT a landing-point grid.
-## Deterministic waypoint search is deliberately independent of scene nodes.
+## Continuous battle-space queries. No battle state is mutated here.
+## Version 1 uses the authored MapBake mask as an obstacle source; actors
+## have continuous feet positions, while detours use baked-cell waypoints.
 const MapBake = preload("res://scripts/map_bake.gd")
+## Keep the visibility-graph API introduced by PR #57 available to callers.
+const WaypointCompatibility = preload("res://scripts/battle_spatial_waypoint.gd")
 const EPSILON := 0.001
 var bake
-var clearance: float = 10.0
+var actor_positions: Dictionary = {}
+var waypoint_compat
 
 func _init(map_path: String = MapBake.DEFAULT_PATH, actor_clearance: float = 10.0) -> void:
     bake = MapBake.new(map_path)
-    clearance = maxf(0.0, actor_clearance)
+    waypoint_compat = WaypointCompatibility.new(map_path, actor_clearance)
 
-func valid_position(point: Vector2, occupied: Array = [], exclude_id: int = -1) -> bool:
-    if not is_finite(point.x) or not is_finite(point.y) or not bake.error.is_empty():
+func set_actors(positions: Dictionary) -> void:
+    actor_positions = positions.duplicate()
+
+func is_valid_position(point: Vector2, radius: float = 0.0, ignore_id: int = -1) -> bool:
+    if not is_finite(point.x) or not is_finite(point.y) or radius < 0.0:
         return false
-    # Clearance checks sample the circumference; a character must not clip
-    # river banks or rocks even when its centre is on traversable ground.
-    for i in range(9):
-        var sample := point
-        if i > 0:
-            var angle := TAU * float(i - 1) / 8.0
-            sample += Vector2(cos(angle), sin(angle)) * clearance
-        var cell: Vector2i = bake.cell_at_screen(sample, true)
-        if cell.x < 0:
-            return false
-    for body in occupied:
-        if int(body.get("id", -1)) == exclude_id or not bool(body.get("alive", true)):
+    if bake.error != "":
+        return false
+    var base: Vector2i = bake.cell_at_screen(point,true)
+    if base==Vector2i(-1,-1): return false
+    # The footprint must remain INSIDE the calibrated battlefield bounds.
+    var bounds_min: Vector2=bake.cell_rect(Vector2i.ZERO).position
+    var bounds_max: Vector2=bake.cell_rect(Vector2i(bake.width-1,bake.height-1)).end
+    if point.x-radius < bounds_min.x-EPSILON or point.y-radius < bounds_min.y-EPSILON or point.x+radius > bounds_max.x+EPSILON or point.y+radius > bounds_max.y+EPSILON:
+        return false
+    # Only obstacles within one footprint radius can collide. Iterating all
+    # 150 baked cells for every A* sample makes AI approach search O(cells).
+    var nearby_x: int=maxi(1,ceili(radius/bake.step.x)+1)
+    var nearby_y: int=maxi(1,ceili(radius/bake.step.y)+1)
+    for y in range(base.y-nearby_y,base.y+nearby_y+1):
+        for x in range(base.x-nearby_x,base.x+nearby_x+1):
+            var cell:=Vector2i(x,y)
+            if not bake.tiles.has(cell) or bool(bake.tiles[cell].walkable):
+                continue
+            var rect: Rect2=bake.cell_rect(cell)
+            var nearest:=Vector2(clampf(point.x,rect.position.x,rect.end.x),
+                clampf(point.y,rect.position.y,rect.end.y))
+            if point.distance_to(nearest)<radius+EPSILON:
+                return false
+    for id in actor_positions:
+        if int(id) == ignore_id:
             continue
-        var other: Vector2 = body.get("position", Vector2.ZERO)
-        var minimum: float = clearance + float(body.get("radius", clearance))
-        if point.distance_squared_to(other) < minimum * minimum - EPSILON:
+        var actor: Dictionary = actor_positions[id]
+        if not bool(actor.get("alive", true)):
+            continue
+        var other: Vector2 = actor.get("position", Vector2.ZERO)
+        var other_radius: float = float(actor.get("radius", 0.0))
+        if point.distance_to(other) < radius + other_radius - EPSILON:
             return false
     return true
 
-func clear_segment(start: Vector2, goal: Vector2, occupied: Array = [], exclude_id: int = -1) -> bool:
-    var length := start.distance_to(goal)
-    var stride := maxf(2.0, minf(bake.step.x, bake.step.y) / 6.0)
+func clear_segment(start: Vector2, finish: Vector2, radius_or_occupied: Variant = 0.0, ignore_id: int = -1) -> bool:
+    if radius_or_occupied is Array:
+        return waypoint_compat.clear_segment(start, finish, radius_or_occupied, ignore_id)
+    var radius: float = float(radius_or_occupied)
+    var length := start.distance_to(finish)
+    var stride: float = maxf(2.0, minf(bake.step.x, bake.step.y) * 0.15)
     var count := maxi(1, ceili(length / stride))
-    for i in range(count + 1):
-        if not valid_position(start.lerp(goal, float(i) / float(count)), occupied, exclude_id):
+    for index in range(count + 1):
+        if not is_valid_position(start.lerp(finish, float(index) / float(count)), radius, ignore_id):
             return false
     return true
 
-func shortest_path(start: Vector2, goal: Vector2, occupied: Array = [], exclude_id: int = -1) -> PackedVector2Array:
-    var empty := PackedVector2Array()
-    if not valid_position(start, occupied, exclude_id) or not valid_position(goal, occupied, exclude_id):
-        return empty
-    if clear_segment(start, goal, occupied, exclude_id):
-        return PackedVector2Array([start, goal])
-    # Visibility graph over obstacle-corner waypoints. The points are offset
-    # inward from each traversable cell corner; endpoints remain arbitrary.
-    var points: Array[Vector2] = [start, goal]
-    var inset := clearance + 2.0
-    for y in range(bake.height):
-        for x in range(bake.width):
-            var cell := Vector2i(x, y)
-            if not bake.is_walkable(cell):
-                continue
-            var rect: Rect2 = bake.cell_rect(cell)
-            for corner in [rect.position + Vector2(inset, inset),
-                    rect.position + Vector2(rect.size.x - inset, inset),
-                    rect.end - Vector2(inset, inset),
-                    rect.position + Vector2(inset, rect.size.y - inset)]:
-                if valid_position(corner, occupied, exclude_id):
-                    points.append(corner)
-    var dist: Array[float] = []
-    var prev: Array[int] = []
-    var done: Dictionary = {}
-    for _point in points:
-        dist.append(INF)
-        prev.append(-1)
-    dist[0] = 0.0
-    # Cache visibility results: the graph can contain hundreds of waypoints.
-    var visibility: Dictionary = {}
-    for _iteration in range(points.size()):
-        var best := -1
-        for i in range(points.size()):
-            if not done.has(i) and (best < 0 or dist[i] < dist[best]):
-                best = i
-        if best < 0 or is_inf(dist[best]):
-            break
-        if best == 1:
-            break
-        done[best] = true
-        for j in range(points.size()):
-            if j == best or done.has(j):
-                continue
-            var cost: float = points[best].distance_to(points[j])
-            if dist[best] + cost + EPSILON >= dist[j]:
-                continue
-            var edge := Vector2i(mini(best, j), maxi(best, j))
-            if not visibility.has(edge):
-                visibility[edge] = clear_segment(points[best], points[j], occupied, exclude_id)
-            if bool(visibility[edge]):
-                dist[j] = dist[best] + cost
-                prev[j] = best
-    if is_inf(dist[1]):
-        return empty
-    var reverse: Array[Vector2] = []
-    var index := 1
-    while index >= 0:
-        reverse.append(points[index])
-        index = prev[index]
-    reverse.reverse()
-    return PackedVector2Array(reverse)
-
-func path_length(path: PackedVector2Array) -> float:
-    var result := 0.0
-    for i in range(1, path.size()):
-        result += path[i - 1].distance_to(path[i])
+func find_path(start: Vector2, finish: Vector2, radius: float = 0.0, ignore_id: int = -1) -> PackedVector2Array:
+    if not is_valid_position(start, radius, ignore_id) or not is_valid_position(finish, radius, ignore_id):
+        return PackedVector2Array()
+    if clear_segment(start, finish, radius, ignore_id):
+        return PackedVector2Array([start, finish])
+    var grid := AStarGrid2D.new()
+    grid.region = Rect2i(0, 0, bake.width, bake.height)
+    grid.cell_size = bake.step
+    grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
+    grid.update()
+    for cell in bake.tiles:
+        if not is_valid_position(bake.cell_center(cell), radius, ignore_id):
+            grid.set_point_solid(cell)
+    var from_cell: Vector2i = bake.cell_at_screen(start)
+    var to_cell: Vector2i = bake.cell_at_screen(finish)
+    if grid.is_point_solid(from_cell) or grid.is_point_solid(to_cell):
+        return PackedVector2Array()
+    var cells: Array[Vector2i] = grid.get_id_path(from_cell, to_cell)
+    if cells.is_empty():
+        return PackedVector2Array()
+    var raw := PackedVector2Array([start])
+    for cell in cells:
+        raw.append(bake.cell_center(cell))
+    raw.append(finish)
+    # Greedy visibility smoothing allows genuinely arbitrary endpoints.
+    var result := PackedVector2Array([start])
+    var index := 0
+    while index < raw.size() - 1:
+        var next := raw.size() - 1
+        while next > index + 1 and not clear_segment(raw[index], raw[next], radius, ignore_id):
+            next -= 1
+        if not clear_segment(raw[index], raw[next], radius, ignore_id):
+            return PackedVector2Array()
+        result.append(raw[next])
+        index = next
     return result
 
-func within_budget(path: PackedVector2Array, budget: float) -> Vector2:
-    if path.is_empty():
-        return Vector2(INF, INF)
-    var remaining := maxf(0.0, budget)
-    for i in range(1, path.size()):
-        var distance := path[i - 1].distance_to(path[i])
-        if remaining <= distance:
-            return path[i - 1].lerp(path[i], remaining / maxf(distance, EPSILON))
-        remaining -= distance
-    return path[path.size() - 1]
+func path_length(path: PackedVector2Array) -> float:
+    var total := 0.0
+    for index in range(1, path.size()):
+        total += path[index - 1].distance_to(path[index])
+    return total
 
-func attack_position(start: Vector2, target: Vector2, minimum_range: float,
-        maximum_range: float, move_budget: float, occupied: Array = [],
-        exclude_id: int = -1) -> Dictionary:
-    # Search candidate points on concentric attack rings. This is a
-    # deterministic prototype; cover/LOS and weapon arcs are later phases.
-    if maximum_range < minimum_range or minimum_range < 0.0:
-        return {}
-    var best: Dictionary = {}
-    var radii := [maxf(minimum_range, minf(maximum_range, start.distance_to(target))),
-            minimum_range, maximum_range, (minimum_range + maximum_range) * 0.5]
-    for radius in radii:
-        for i in range(32):
-            var angle := TAU * float(i) / 32.0
-            var destination := target + Vector2(cos(angle), sin(angle)) * radius
-            if not valid_position(destination, occupied, exclude_id):
+func trim_path(path: PackedVector2Array, budget: float) -> PackedVector2Array:
+    if path.is_empty() or budget < 0.0:
+        return PackedVector2Array()
+    var result := PackedVector2Array([path[0]])
+    var left := budget
+    for index in range(1, path.size()):
+        var distance := path[index - 1].distance_to(path[index])
+        if distance > left:
+            if distance > EPSILON:
+                result.append(path[index - 1].lerp(path[index], left / distance))
+            return result
+        result.append(path[index])
+        left -= distance
+    return result
+
+func attack_in_range(source: Vector2, target: Vector2, min_range: float, max_range: float,
+        source_radius: float = 0.0, target_radius: float = 0.0) -> bool:
+    if min_range < 0.0 or max_range < min_range:
+        return false
+    var gap := maxf(0.0, source.distance_to(target) - source_radius - target_radius)
+    return gap + EPSILON >= min_range and gap <= max_range + EPSILON
+
+## Visibility is independent of movement collision: attacker and defender
+## themselves are endpoints, while terrain and other living actors can block.
+func attack_line_clear(start: Vector2, finish: Vector2, ignore_ids: Array = []) -> bool:
+    if bake.error != "" or not is_finite(start.x) or not is_finite(start.y) or not is_finite(finish.x) or not is_finite(finish.y):
+        return false
+    var separation := start.distance_to(finish)
+    var stride: float = maxf(2.0, minf(bake.step.x, bake.step.y) * 0.15)
+    var count := maxi(1, ceili(separation / stride))
+    for step_index in range(count + 1):
+        var point: Vector2 = start.lerp(finish, float(step_index) / float(count))
+        if bake.cell_at_screen(point, true) == Vector2i(-1, -1):
+            return false
+        for actor_id in actor_positions:
+            if ignore_ids.has(int(actor_id)):
                 continue
-            var path := shortest_path(start, destination, occupied, exclude_id)
+            var actor: Dictionary = actor_positions[actor_id]
+            if not bool(actor.get("alive", true)):
+                continue
+            if point.distance_to(Vector2(actor.get("position", Vector2.ZERO))) < float(actor.get("radius", 0.0)):
+                return false
+    return true
+
+func find_attack_approach(source: Vector2, target: Vector2, min_range: float,
+        max_range: float, move_budget: float, radius: float = 0.0,
+        target_radius: float = 0.0, ignore_id: int = -1,
+        target_id: int = -1, require_line_of_sight: bool = false) -> Dictionary:
+    if move_budget < 0.0 or min_range < 0.0 or max_range < min_range:
+        return {}
+    if attack_in_range(source, target, min_range, max_range, radius, target_radius):
+        if not require_line_of_sight or attack_line_clear(source, target, [ignore_id,target_id]):
+            return {"position": source, "path": PackedVector2Array([source]), "cost": 0.0}
+    var best: Dictionary = {}
+    # Sample the legal attack annulus deterministically. A future navigation
+    # mesh can replace this candidate generator without changing the API.
+    for ring in range(3):
+        var edge_distance := max_range - (max_range - min_range) * float(ring) / 2.0
+        var center_distance := edge_distance + radius + target_radius
+        for sector in range(48):
+            var angle := TAU * float(sector) / 48.0
+            var point := target + Vector2(cos(angle), sin(angle)) * center_distance
+            if not is_valid_position(point, radius, ignore_id):
+                continue
+            if not attack_in_range(point, target, min_range, max_range, radius, target_radius):
+                continue
+            # Euclidean length is a lower bound for every legal walking route.
+            # Skip expensive path search when the candidate cannot beat budget
+            # or a shorter legal route already found.
+            var straight: float=source.distance_to(point)
+            if straight>move_budget+EPSILON:
+                continue
+            if not best.is_empty() and straight>=float(best.cost)-EPSILON:
+                continue
+            if require_line_of_sight and not attack_line_clear(point,target,[ignore_id,target_id]):
+                continue
+            var path := find_path(source, point, radius, ignore_id)
             if path.is_empty():
                 continue
             var cost := path_length(path)
             if cost > move_budget + EPSILON:
                 continue
-            if best.is_empty() or cost < float(best.cost):
-                best = {"position": destination, "path": path, "cost": cost}
+            if best.is_empty() or cost < float(best.cost) - EPSILON:
+                best = {"position": point, "path": path, "cost": cost}
     return best
+
+## PR #57 API compatibility: use its exact visibility-graph implementation,
+## without changing the continuous battle authority introduced by PR #62.
+func valid_position(point: Vector2, occupied: Array = [], exclude_id: int = -1) -> bool:
+    return waypoint_compat.valid_position(point, occupied, exclude_id)
+
+func shortest_path(start: Vector2, goal: Vector2, occupied: Array = [], exclude_id: int = -1) -> PackedVector2Array:
+    return waypoint_compat.shortest_path(start, goal, occupied, exclude_id)
+
+func within_budget(path: PackedVector2Array, budget: float) -> Vector2:
+    return waypoint_compat.within_budget(path, budget)
+
+func attack_position(start: Vector2, target: Vector2, minimum_range: float,
+        maximum_range: float, move_budget: float, occupied: Array = [],
+        exclude_id: int = -1) -> Dictionary:
+    return waypoint_compat.attack_position(start, target, minimum_range,
+        maximum_range, move_budget, occupied, exclude_id)
