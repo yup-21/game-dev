@@ -184,4 +184,5 @@ jobs:
           path: |
             demos/changfeng-battle/captures/hd2d-validation/*.png
             demos/changfeng-battle/captures/opening-*.png
+            demos/changfeng-battle/assets/scenes/story/ruined_temple_story.webp
           if-no-files-found: warn
