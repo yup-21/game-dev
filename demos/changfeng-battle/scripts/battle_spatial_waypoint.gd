@@ -127,8 +127,13 @@ func attack_position(start: Vector2, target: Vector2, minimum_range: float,
         exclude_id: int = -1) -> Dictionary:
     # Search candidate points on concentric attack rings. This is a
     # deterministic prototype; cover/LOS and weapon arcs are later phases.
-    if maximum_range < minimum_range or minimum_range < 0.0:
+    if maximum_range < minimum_range or minimum_range < 0.0 or move_budget < 0.0:
         return {}
+    # A zero-length route is globally optimal when the attacker already
+    # stands in the legal attack annulus. Skip visibility-graph enumeration.
+    var separation: float = start.distance_to(target)
+    if separation + EPSILON >= minimum_range and separation <= maximum_range + EPSILON and valid_position(start, occupied, exclude_id):
+        return {"position":start,"path":PackedVector2Array([start]),"cost":0.0}
     var best: Dictionary = {}
     var radii := [maxf(minimum_range, minf(maximum_range, start.distance_to(target))),
             minimum_range, maximum_range, (minimum_range + maximum_range) * 0.5]
