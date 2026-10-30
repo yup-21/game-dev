@@ -1263,11 +1263,13 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
             _accept(model.submit(model.request(kind, owner, params)))
             return
 
-func _legal(kind: String, cell: Vector2i = Vector2i(-1, -1)) -> Dictionary:
+func _legal(kind: String, cell: Variant = null) -> Dictionary:
+    # Only an omitted target is a wildcard. MapBake returns (-1,-1) for
+    # nonwalkable/off-grid clicks, which must never select another MOVE.
     for action in legals:
         if str(action.get("kind", "")) != kind:
             continue
-        if cell.x >= 0 and action.get("target_cell", Vector2i(-2, -2)) != cell:
+        if cell != null and action.get("target_cell", Vector2i(-2, -2)) != cell:
             continue
         return action
     return {}
