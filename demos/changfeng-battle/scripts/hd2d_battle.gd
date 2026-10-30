@@ -29,7 +29,7 @@ var ai = EnemyAI.new()
 var animation_driver = Animator.new()
 var effects_driver
 var continuous_space
-var continuous_preview: Node2D
+var continuous_preview
 var continuous_preview_enabled := false
 var illustrated_map: CanvasLayer
 var camera: Camera3D
