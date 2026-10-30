@@ -74,20 +74,25 @@ func raw_actions(actor_id: int) -> Array:
 	if actor==null or actor.hp_u<=0: return options
 	var t: String=timing(actor_id)
 	if t.is_empty(): return options
-	var reachable: Dictionary=state.reachable_paths(actor.cell,actor_id)
+	var reachable: Dictionary=state.reachable_paths(actor.cell,actor_id) if state.spatial_mode=="GRID" else {}
 	if t=="ACTION":
 		options.append({"kind":"END_ACTION","actor_id":actor_id})
 		for school_id in actor.learned_schools:
 			if str(school_id)!=actor.school_id:
 				options.append({"kind":"SWITCH_SCHOOL","actor_id":actor_id,"school_id":str(school_id)})
-		var max_move: int=int(actor.stats.move_budget)-actor.normal_moves_used
-		for cell in state.terrain:
-			var path: Array=reachable.get(cell,[])
-			if not path.is_empty() and path.size()<=max_move and actor.qi_u>=path.size()*10000:
-				options.append({"kind":"MOVE","actor_id":actor_id,"target_cell":cell})
+		if state.spatial!=null:
+			var next_mode: String="FREE" if state.spatial_mode=="GRID" else "GRID"
+			if next_mode=="FREE" or _can_reanchor_to_grid():
+				options.append({"kind":"SET_SPATIAL_MODE","actor_id":actor_id,"spatial_mode":next_mode})
+		if state.spatial_mode=="GRID":
+			var max_move: int=int(actor.stats.move_budget)-actor.normal_moves_used
+			for cell in state.terrain:
+				var path: Array=reachable.get(cell,[])
+				if not path.is_empty() and path.size()<=max_move and actor.qi_u>=path.size()*10000:
+					options.append({"kind":"MOVE","actor_id":actor_id,"target_cell":cell})
 		if not actor.basic_attack_used and actor.qi_u>=10000:
 			for target in state.actors:
-				if state.is_hostile(actor_id,target.id) and target.hp_u>0 and distance(actor.cell,target.cell)==1:
+				if state.is_hostile(actor_id,target.id) and target.hp_u>0 and _basic_attack_in_range(actor,target):
 					options.append({"kind":"BASIC_ATTACK","actor_id":actor_id,"target_id":target.id})
 		if not actor.basic_guard_used and actor.qi_u>=10000: options.append({"kind":"BASIC_GUARD","actor_id":actor_id})
 		if not actor.pitch_used:
@@ -118,7 +123,7 @@ func validate(req: Dictionary) -> Dictionary:
 	# Check types before comparisons: Variant Array == String is a runtime error in Godot.
 	var fields: Dictionary={"kind":TYPE_STRING,"actor_id":TYPE_INT,"battle_id":TYPE_STRING,
 		"expected_revision":TYPE_INT,"request_version":TYPE_INT,"request_id":TYPE_STRING,"action_id":TYPE_STRING,
-		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"attack_kind":TYPE_STRING,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
+		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"attack_kind":TYPE_STRING,"spatial_mode":TYPE_STRING,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
 	for key in fields:
 		if req.has(key) and typeof(req[key])!=int(fields[key]): return failure("MALFORMED_REQUEST","请求字段类型错误："+str(key))
 	if not req.has("kind") or not req.has("actor_id"): return failure("MALFORMED_REQUEST","缺少行动或操作者")
@@ -144,7 +149,7 @@ func validate(req: Dictionary) -> Dictionary:
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
-		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id","school_id"]:
+		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id","school_id","spatial_mode"]:
 			if normalized.get(key)!=o.get(key): matches=false
 		if matches:
 			canonical=o
@@ -154,6 +159,8 @@ func validate(req: Dictionary) -> Dictionary:
 	var checked: Dictionary=hooks.validate(ctx)
 	if not checked.get("success",false): return failure("HOOK_REJECTED",str(checked.get("message","行动被规则禁止")))
 	var actor=state.get_actor(int(req.actor_id))
+	if canonical.kind=="SET_SPATIAL_MODE" and str(canonical.spatial_mode)=="GRID" and not _can_reanchor_to_grid():
+		return failure("GRID_REANCHOR_BLOCKED","有角色位于相同旧格子，无法安全切回网格")
 	var cost: Dictionary={"qi":0}
 	if canonical.kind in ["BASIC_ATTACK","BASIC_GUARD"]: cost={"qi":1}
 	if canonical.kind=="MOVE": cost={"qi":state.find_path(actor.cell,canonical.target_cell,actor.id).size()}
@@ -171,6 +178,8 @@ func validate(req: Dictionary) -> Dictionary:
 func _validate_free_move(req: Dictionary) -> Dictionary:
 	if state.spatial == null:
 		return failure("SPATIAL_UNAVAILABLE","当前战场不支持自由移动")
+	if state.spatial_mode!="FREE":
+		return failure("WRONG_SPATIAL_MODE","网格模式禁止自由移动，请先切换战斗模式")
 	if not req.has("target_position") or req.has("target_cell"):
 		return failure("MALFORMED_REQUEST","自由移动仅接受 target_position")
 	if timing(int(req.actor_id))!="ACTION":
@@ -185,7 +194,7 @@ func _validate_free_move(req: Dictionary) -> Dictionary:
 	# Quantization keeps logical positions stable across save/replay boundaries.
 	goal=Vector2(roundf(goal.x*4.0)*0.25,roundf(goal.y*4.0)*0.25)
 	var destination_cell: Vector2i=state.spatial.bake.cell_at_screen(goal,true)
-	if destination_cell==Vector2i(-1,-1) or state.occupied(destination_cell,actor.id):
+	if destination_cell==Vector2i(-1,-1):
 		return failure("INVALID_POSITION","落脚点不可通行或与旧战棋单位冲突")
 	var positions: Dictionary={}
 	for other in state.actors:
@@ -218,6 +227,8 @@ func _validate_free_move(req: Dictionary) -> Dictionary:
 func _validate_move_and_attack(req: Dictionary) -> Dictionary:
 	if state.spatial==null:
 		return failure("SPATIAL_UNAVAILABLE","当前战场不支持自动接近")
+	if state.spatial_mode!="FREE":
+		return failure("WRONG_SPATIAL_MODE","网格模式不能执行自由接近攻击")
 	if timing(int(req.actor_id))!="ACTION":
 		return failure("ILLEGAL_ACTION","只能在自己的行动阶段主动接近攻击")
 	if req.has("target_cell") or req.has("target_position") or not req.has("target_id"):
@@ -324,7 +335,7 @@ func _validate_move_and_attack(req: Dictionary) -> Dictionary:
 			return failure("UNREACHABLE_POSITION","接近路线已经失效")
 		travelled=state.spatial.path_length(path)
 	var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(final_position,true)
-	if dest_cell==Vector2i(-1,-1) or (travelled>0.0001 and state.occupied(dest_cell,actor.id)):
+	if dest_cell==Vector2i(-1,-1):
 		return failure("INVALID_POSITION","目标附近没有可站立的位置")
 	if not state.spatial.attack_in_range(final_position,target.position,min_range,max_range,8.0,8.0):
 		return failure("INVALID_RANGE","接近后仍不满足武学有效距离")
@@ -346,3 +357,26 @@ func _validate_move_and_attack(req: Dictionary) -> Dictionary:
 	return {"success":true,"action":{"kind":"MOVE_AND_ATTACK","actor_id":actor.id,
 		"target_id":target.id,"attack":attack,"target_position":final_position,
 		"target_cell":dest_cell},"plan":total_quote}
+
+## Grid representation is still used for map authoring and legacy techniques;
+## tactical FREE collision never treats two feet in the same tile as overlapping.
+func _can_reanchor_to_grid() -> bool:
+	if state.spatial==null: return false
+	var occupied_cells: Dictionary={}
+	for actor in state.actors:
+		if actor.hp_u<=0: continue
+		if not state.spatial.bake.is_walkable(actor.cell) or occupied_cells.has(actor.cell):
+			return false
+		occupied_cells[actor.cell]=true
+	return true
+
+func _basic_attack_in_range(actor,target) -> bool:
+	if state.spatial_mode!="FREE" or state.spatial==null:
+		return distance(actor.cell,target.cell)==1
+	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var spatial=state.spatial
+	var positions: Dictionary={}
+	for combatant in state.actors:
+		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
+	spatial.set_actors(positions)
+	return spatial.attack_in_range(actor.position,target.position,0.0,unit,8.0,8.0) and spatial.attack_line_clear(actor.position,target.position,[actor.id,target.id])
