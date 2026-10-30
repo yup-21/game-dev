@@ -30,7 +30,7 @@ func _run() -> void:
     _check(painted.actors.size() >= 2 and
         painted.actors[0].get_node("ActionSprite") is Sprite2D,
         "actors use real Sprite2D animation atlas")
-    var p := painted.point_for_cell(Vector2i(7, 4))
+    var p: Vector2 = painted.point_for_cell(Vector2i(7, 4))
     painted.scene_root.position = Vector2(3, 5)
     _check(painted.cell_from_screen(p + Vector2(3, 5)) == Vector2i(7, 4),
         "mouse projection compensates for stage shake")
