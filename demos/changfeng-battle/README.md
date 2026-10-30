@@ -177,3 +177,23 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 ## 四方向角色朝向
 
 正式 HD-2D 战斗在 `CombatantState.facing` 记录东、西、南、北四方向，并通过只读快照暴露。成功移动（包括击退）按真实寻路**最后一格方向**转身；普通攻击、武学卡与阶段攻击在声明招式时面向目标。演出沿移动路径逐格走位，左右使用原有 Sprite3D 素材水平翻转，脚下小型方向标记提示南北朝向。由于现有 6×4 图集只有动作种类而非四方位逐帧素材，暂不虚称已经提供完整四方向人物立绘；未来可替换为原生分方向图集。朝向目前仅影响表现/状态，不额外叠加背刺伤害或攻击范围判定，CTB、费用、连携保持原规则。可运行 `checks/test_actor_facing.gd` 回归测试。
+
+
+## 第一幕插画地图（2D）
+
+`opening_flow.gd` 将首幕探索／对白共用同一张完整破庙插画；主角画面由现有 6×4 动作图集单独绘制，交互仍由 `OpeningStory` 状态机控制。正式雨夜追兵与练习入口的 `hd2d_battle.gd` 现使用 `illustrated_battle_map.gd` 创建 2D `CanvasLayer` 的**完整地图 + 2D Sprite2D 角色 + 二维目标落点**。不再创建可见的 3D 棋盘块体、河流 Shader 与叠在背后的远景 Sprite3D；保留旧 `BattleModel`、CTB、卡牌、多武学、事件动画与六人角色图集。战场 Node3D 用于兼容现有独立的动画帧驱动和自动化测试，场景显示层不再渲染 3D 地形。
+
+原画入库目标路径：
+
+- `assets/scenes/battle/rainy_bridge_battle.webp`：雨夜断桥河谷完整战斗地图，桥头对应逻辑 `(7,4)`，浅滩对应 `(7,8)`；脚底投影在 `illustrated_battle_map.gd` 手动校准，不能直接用标准 3D 投影。
+- `assets/scenes/story/ruined_temple_story.webp`：荒道雨夜破庙探索背景，人物及对话从 `opening_flow.gd` 单独叠加。
+
+两张素材的原始图由项目所有者在对话中提供，均为 1586×992 的 RGBA PNG；优化版使用 WebP q90，不改变原始构图。**注意：GitHub 连接器本轮不支持直接上传二进制图片，PR #49 先提交渲染与交互代码，PNG/WebP 资源需要独立入库。** 在图片缺失时脚本为了兼容旧 CI 会使用旧的运行时环境图／程序化破庙作为退化画面；不可将这种 fallback 的 CI 截图误认为新插画已接入。可以从本次对话的资源包将两张文件放入上述路径。
+
+开发检查：
+
+```bash
+godot --headless --path demos/changfeng-battle --editor --import --quit
+godot --headless --path demos/changfeng-battle --script res://checks/test_illustrated_maps.gd
+godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
+```
