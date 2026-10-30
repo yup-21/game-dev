@@ -147,6 +147,13 @@ func _find_path_impl(start: Vector2, finish: Vector2, radius: float = 0.0, ignor
         if finish.distance_to(point) <= max_edge and clear_segment(finish, point, radius, ignore_id):
             _cached_graph.connect_points(1, index + 2)
     var route: PackedVector2Array = _cached_graph.get_point_path(0, 1)
+    if route.size() < 2:
+        # A nearby legal start/goal can have no edge within the local radius.
+        # Add a bounded number of longer, collision-checked connections before
+        # declaring the point unreachable. The regular graph stays unchanged.
+        _connect_endpoint_fallback(0, start, radius, ignore_id, max_edge)
+        _connect_endpoint_fallback(1, finish, radius, ignore_id, max_edge)
+        route = _cached_graph.get_point_path(0, 1)
     # Never leave query-specific edges on the reusable graph.
     _cached_graph.remove_point(0)
     _cached_graph.remove_point(1)
@@ -161,6 +168,27 @@ func _find_path_impl(start: Vector2, finish: Vector2, radius: float = 0.0, ignor
         smoothed.append(route[next])
         cursor = next
     return smoothed
+
+func _connect_endpoint_fallback(point_id: int, origin: Vector2,
+        radius: float, ignore_id: int, local_edge_limit: float) -> void:
+    var ranked: Array[Dictionary] = []
+    for index in range(_cached_points.size()):
+        var distance: float = origin.distance_to(_cached_points[index])
+        if distance > local_edge_limit:
+            ranked.append({"id":index + 2, "distance":distance})
+    var connected := 0
+    var inspected := 0
+    while not ranked.is_empty() and connected < 12 and inspected < 24:
+        var best_index := 0
+        for index in range(1, ranked.size()):
+            if float(ranked[index].distance) < float(ranked[best_index].distance) - EPSILON:
+                best_index = index
+        var entry: Dictionary = ranked.pop_at(best_index)
+        inspected += 1
+        var candidate_id: int = int(entry.id)
+        if clear_segment(origin, _cached_points[candidate_id - 2], radius, ignore_id):
+            _cached_graph.connect_points(point_id, candidate_id)
+            connected += 1
 
 func _ensure_cached_graph(radius: float, ignore_id: int) -> void:
     if _cached_graph != null and is_equal_approx(_cached_radius, radius) and _cached_ignore_id == ignore_id:
@@ -216,8 +244,7 @@ func safe_landing(start: Vector2, requested: Vector2, radius: float = 0.0, ignor
         return requested
     if is_valid_position(requested, radius, ignore_id):
         return requested
-    var nearest: Vector2 = requested
-    var best: float = INF
+    var candidates: Array[Dictionary] = []
     var blocked_by_actor := false
     for id in actor_positions:
         if int(id) == ignore_id:
@@ -242,13 +269,26 @@ func safe_landing(start: Vector2, requested: Vector2, radius: float = 0.0, ignor
                 var candidate: Vector2 = centre + Vector2(cos(primary + offset), sin(primary + offset)) * float(ring)
                 if not is_valid_position(candidate, radius, ignore_id):
                     continue
-                # Prefer the near side of the clicked actor. The subsequent
-                # find_path still validates actual reachability and budget.
                 var quality: float = candidate.distance_to(requested) + 0.14 * candidate.distance_to(start)
-                if quality < best:
-                    best = quality
-                    nearest = candidate
-    return nearest if blocked_by_actor and best < INF else requested
+                candidates.append({"position":candidate,"quality":quality})
+    if not blocked_by_actor or candidates.is_empty():
+        return requested
+    # Preserve the old nearest-candidate preference when it is reachable.
+    # Only try alternatives when that candidate would freeze a legal click.
+    # Reusing the visibility graph makes these limited queries inexpensive.
+    var attempts := 0
+    while not candidates.is_empty() and attempts < 16:
+        var best_index := 0
+        for index in range(1, candidates.size()):
+            if float(candidates[index].quality) < float(candidates[best_index].quality) - EPSILON:
+                best_index = index
+        var landing: Vector2 = Vector2(candidates.pop_at(best_index).position)
+        attempts += 1
+        if landing.distance_to(start) < 0.25:
+            continue
+        if not find_path(start, landing, radius, ignore_id).is_empty():
+            return landing
+    return requested
 
 func path_length(path: PackedVector2Array) -> float:
     var total := 0.0

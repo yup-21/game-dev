@@ -49,6 +49,22 @@ func _run() -> void:
     var water: Vector2=spatial.bake.cell_center(Vector2i(7,2))
     _check(spatial.safe_landing(start,water,8.0)==water,
         "terrain water click never silently snaps onto nearby playable land")
+    # Two adjacent blockers in a bridge lane must not turn a reachable
+    # click on an actor into an unreachable landing preference.
+    var crowded_start: Vector2 = middle + Vector2(-65.0, 0.0)
+    spatial.set_actors({
+        42: {"position":middle,"radius":8.0,"alive":true},
+        43: {"position":middle + Vector2(-30.0, 0.0),"radius":8.0,"alive":true}})
+    _check(spatial.is_valid_position(crowded_start, 8.0),
+        "crowded fixture starts on legal feet")
+    var crowded_landing: Vector2 = spatial.safe_landing(crowded_start, middle, 8.0)
+    var crowded_route: PackedVector2Array = spatial.find_path(crowded_start, crowded_landing, 8.0)
+    _check(crowded_landing != middle and crowded_route.size() >= 2,
+        "multiple body circles still offer a reachable landing")
+    if crowded_route.size() >= 2:
+        for index in range(1, crowded_route.size()):
+            _check(spatial.clear_segment(crowded_route[index - 1], crowded_route[index], 8.0),
+                "each crowded path segment remains collision-free")
     spatial.set_actors({42: {"position":middle,"radius":8.0,"alive":false}})
     _check(spatial.find_path(start,finish,8.0).size()==2,
         "dead units are no longer movement obstacles")
