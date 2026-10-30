@@ -747,6 +747,72 @@ func _find_actions(uid: String, usage: String) -> Array:
             choices.append(action)
     return choices
 
+## A card can be chosen before entering range; the authoritative composite
+## validator determines whether a particular enemy is actually reachable.
+func _has_attack_damage(usage: Dictionary) -> bool:
+    for effect in usage.get("effects", []):
+        if str(effect.get("type", "")) == "deal_damage":
+            return true
+    return false
+
+func _can_approach_card(uid: String, usage_id: String) -> bool:
+    if model.state.spatial == null or str(snap.get("phase", "")) != "ACTION":
+        return false
+    var actor = model.state.get_actor(_decision_owner())
+    if actor == null or actor.hp_u <= 0 or not actor.hand.has(uid):
+        return false
+    var usage: Dictionary = model.cards.usage(uid,usage_id)
+    if usage.is_empty() or str(usage.get("timing", "")) != "ACTION" or str(usage.get("target", {}).get("kind", "")) != "enemy_actor" or not _has_attack_damage(usage):
+        return false
+    if not model.rules.condition_allows(actor,usage):
+        return false
+    var definition: Dictionary = model.cards.canonical_definition(uid)
+    if not model.cards.valid_definition(definition):
+        return false
+    if bool(usage.get("once_per_action",false)) and int(actor.card_uses.get(str(definition.id)+":"+usage_id,0)) > 0:
+        return false
+    var attack: Dictionary = {"kind":"PLAY_CARD","actor_id":actor.id,"target_id":-1,"card_uid":uid,"usage_id":usage_id}
+    var quote: Dictionary = model.costs.quote(actor,usage.get("cost",{}),model.rules.context(actor.id,attack))
+    return model.costs.can_pay(actor,quote)
+
+func _can_approach_technique(technique_id: String, node_id: String) -> bool:
+    if model.state.spatial == null or str(snap.get("phase", "")) != "ACTION":
+        return false
+    var actor = model.state.get_actor(_decision_owner())
+    if actor == null or actor.hp_u <= 0:
+        return false
+    for usage in model.techniques.available_nodes(actor,technique_id,"ACTION"):
+        if str(usage.get("id", "")) != node_id or str(usage.get("target", {}).get("kind", "")) != "enemy_actor" or not _has_attack_damage(usage):
+            continue
+        var current: bool=int(actor.technique_states[technique_id].last_used_action)==actor.turns_started
+        if not model.conditions.allows(actor,usage.get("when",{}),{"timing":"ACTION","tick":model.state.global_tick,"same_action":current}):
+            return false
+        var attack: Dictionary={"kind":"USE_ABILITY","actor_id":actor.id,"technique_id":technique_id,"node_id":node_id}
+        var quote: Dictionary=model.costs.quote(actor,model.techniques.cost(actor,technique_id,node_id),model.rules.context(actor.id,attack))
+        return model.costs.can_pay(actor,quote)
+    return false
+
+func _enemy_at(cell: Vector2i) -> int:
+    var owner: int = _decision_owner()
+    for target in model.state.actors:
+        if target.cell == cell and target.hp_u > 0 and model.state.is_hostile(owner, target.id):
+            return target.id
+    return -1
+
+func _submit_selected_approach(target_id: int) -> void:
+    if target_id < 0 or selected_kind.is_empty():
+        return
+    var params: Dictionary={"attack_kind":selected_kind,"target_id":target_id}
+    if selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id):
+        params["card_uid"]=selected_card_uid
+        params["usage_id"]=selected_usage_id
+    elif selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node):
+        params["technique_id"]=selected_technique
+        params["node_id"]=selected_node
+    else:
+        return
+    _submit("MOVE_AND_ATTACK",params)
+
 func _clear_selection() -> void:
     selected_card_uid = ""
     selected_usage_id = ""
