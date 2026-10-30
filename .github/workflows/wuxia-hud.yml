@@ -15,6 +15,7 @@ on:
       - 'demos/changfeng-battle/scripts/map_bake.gd'
       - 'demos/changfeng-battle/data/maps/**'
       - 'demos/changfeng-battle/checks/test_baked_bridge_grid.gd'
+      - 'demos/changfeng-battle/checks/test_hd2d_interactions.gd'
       - 'demos/changfeng-battle/assets/scenes/**'
       - 'demos/changfeng-battle/checks/test_illustrated_maps.gd'
       - 'demos/changfeng-battle/scripts/actor_facing.gd'
