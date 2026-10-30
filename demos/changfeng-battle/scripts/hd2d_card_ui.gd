@@ -1,7 +1,7 @@
 extends RefCounted
 ## Painterly wuxia card presentation. No game rules live here.
 ## Eight distinct illustrations are stored in one 4x2 PNG atlas.
-const Theme = preload("res://scripts/hd2d_ui_theme.gd")
+const WuxiaTheme = preload("res://scripts/hd2d_ui_theme.gd")
 const ATLAS: Texture2D = preload("res://assets/ui/technique_art_atlas_v1.png")
 const FRAME: Texture2D = preload("res://assets/ui/jade_card_filagree.svg")
 const SEAL: Texture2D = preload("res://assets/ui/jade_seal.svg")
@@ -67,7 +67,7 @@ static func make_card(uid: String, definition_id: String, title: String,
         title, usage, float(cost.get("qi", 0.0)), float(cost.get("hp", 0.0))]
     button.set_meta("card_uid", uid)
     button.set_meta("card_definition_id", definition_id)
-    Theme.apply_card(button, selected)
+    WuxiaTheme.apply_card(button, selected)
     button.custom_minimum_size = Vector2(176, 184)
     button.clip_contents = true
 
@@ -88,12 +88,12 @@ static func make_card(uid: String, definition_id: String, title: String,
     art_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
     button.add_child(art_shadow)
 
-    _text(button, title, 108, 17, Theme.PAPER, true)
-    _text(button, usage, 132, 13, Theme.JADE)
+    _text(button, title, 108, 17, WuxiaTheme.PAPER, true)
+    _text(button, usage, 132, 13, WuxiaTheme.JADE)
     var qi_cost := float(cost.get("qi", 0.0))
     var hp_cost := float(cost.get("hp", 0.0))
     _text(button, "◈  气 %.1f     血 %.1f" % [qi_cost, hp_cost], 157, 12,
-        Theme.RED if hp_cost > 0.0 else Theme.GOLD)
+        WuxiaTheme.RED if hp_cost > 0.0 else WuxiaTheme.GOLD)
 
     var filagree := TextureRect.new()
     filagree.texture = FRAME

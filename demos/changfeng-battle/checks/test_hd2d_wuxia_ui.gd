@@ -2,7 +2,6 @@ extends SceneTree
 ## Original wuxia UI smoke test: assets, actual hand buttons and model linkage.
 ## Run after editor --import: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_wuxia_ui.gd
 const CardUI = preload("res://scripts/hd2d_card_ui.gd")
-const Theme = preload("res://scripts/hd2d_ui_theme.gd")
 
 func _initialize() -> void:
     call_deferred("_run")

@@ -44,13 +44,13 @@ static func _clear_edge_matte(frame: Image) -> void:
     var queue := PackedInt32Array()
     for x in range(FRAME_SIZE):
         for y in [0, FRAME_SIZE - 1]:
-            var index := y * FRAME_SIZE + x
+            var index: int = y * FRAME_SIZE + x
             if visited[index] == 0 and _pale_matte(frame.get_pixel(x, y)):
                 visited[index] = 1
                 queue.append(index)
     for y in range(1, FRAME_SIZE - 1):
         for x in [0, FRAME_SIZE - 1]:
-            var index := y * FRAME_SIZE + x
+            var index: int = y * FRAME_SIZE + x
             if visited[index] == 0 and _pale_matte(frame.get_pixel(x, y)):
                 visited[index] = 1
                 queue.append(index)
