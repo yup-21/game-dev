@@ -459,7 +459,9 @@ func _painted_content(texture: Texture2D) -> bool:
 				mini(image.get_height() - 1, int(float(y) * float(image.get_height()) / 8.0)))
 			if pixel.a > 0.50 and minf(pixel.r, minf(pixel.g, pixel.b)) < 0.86:
 				painted += 1
-	return painted >= 6
+	# A genuine full-screen backdrop must have substantial coverage, not
+	# merely a few dark border pixels around a mostly white placeholder.
+	return painted >= 20
 
 func _load_temple_background() -> void:
 	temple_uses_fallback = false
