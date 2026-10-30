@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "black_blade",
+  "battle_actor_id": 4,
+  "name": "黑衣刀客",
+  "title": "炉锋刃",
+  "role": "追兵 · 破阵",
+  "faction": "神秘追兵",
+  "team_hint": "enemy",
+  "weapon": "黑刃长刀（离火劲）",
+  "personality": "性情刚烈，出手沉重，习惯正面压制。",
+  "biography": "随追镖首领而来的黑衣强攻手，刀势中贯穿离火劲。角色刀术与掌法的动作表现仍待美术统一。",
+  "school_id": "ember",
+  "attributes": {
+    "STR": 13,
+    "AGI": 9,
+    "CON": 12,
+    "MND": 9
+  },
+  "passives": {
+    "insight": 0,
+    "conceal": 0
+  },
+  "techniques": {},
+  "art": {
+    "portrait": "",
+    "sprite_sheet": "res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png",
+    "portrait_quality": "sprite_fallback",
+    "sheet_quality": "24_pose_preview"
+  }
+}

@@ -109,9 +109,16 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		audit.emit("RULE_ERROR",{"text":cards.load_error})
 		return
 	for actor in state.actors:
+		# Identity and starting character build are injected once by the
+		# CharacterRegistry; CombatantState remains the mutable authority.
+		actor.character_id=str(options.get("character_ids",{}).get(actor.id,""))
+		if options.get("character_names",{}).has(actor.id):
+			actor.name=str(options.character_names[actor.id])
 		attributes.configure(actor,options.get("attributes",{}).get(actor.id,{}),options.get("passives",{}).get(actor.id,{}))
 		var learned=options.get("techniques",{}).get(actor.id,{})
-		if learned is Dictionary and not options.has("technique_catalog_path"):
+		# Profiled actors have explicitly learned techniques; old unprofiled
+		# test fixtures retain the original automatic tutorial stance.
+		if learned is Dictionary and not options.has("technique_catalog_path") and not options.has("character_ids"):
 			learned=learned.duplicate(true)
 			for technique_id in techniques.auto_equipped():
 				if not learned.has(technique_id): learned[technique_id]=int(techniques.auto_equipped()[technique_id])

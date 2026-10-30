@@ -1,4 +1,6 @@
 extends RefCounted
+const CharacterRegistry = preload("res://scripts/character_registry.gd")
+var characters = CharacterRegistry.new()
 ## Read-only encounter data. No new combat engine or duplicate AI is created here.
 var encounters: Dictionary = {}
 var load_error: String = ""
@@ -34,6 +36,11 @@ func _init(path: String = "res://data/demo_scenario.json") -> void:
 			actor.id=int(actor.id)
 			actor.team_id=int(actor.team_id)
 			actor.cell=[int(cell[0]),int(cell[1])]
+			if actor.has("character_id"):
+				var definition: Dictionary=characters.get_profile(str(actor.character_id))
+				if definition.is_empty() or int(definition.battle_actor_id)!=int(actor.id) or str(actor.get("name",""))!=str(definition.name):
+					load_error="Encounter refers to unknown or mismatched character"
+					return
 		encounters[entry.id]=normalized
 
 func _valid_integer(value: Variant) -> bool:
@@ -48,7 +55,15 @@ func encounter(id: String) -> Dictionary:
 func battle_options(id: String) -> Dictionary:
 	var definition: Dictionary=encounter(id)
 	if definition.is_empty(): return {}
+	var roster: Array=definition.combatants.duplicate(true)
+	var ids: Dictionary={}
+	for actor in roster:
+		if actor.has("character_id"):
+			ids[int(actor.id)]=str(actor.character_id)
+	if not ids.is_empty():
+		return characters.battle_options(roster,ids)
+	# Legacy/custom encounter fixtures remain supported without profiles.
 	var schools: Dictionary={}
 	for key in definition.get("schools",{}):
 		schools[int(key)]=str(definition.schools[key])
-	return {"combatants":definition.combatants.duplicate(true),"schools":schools}
+	return {"combatants":roster,"schools":schools}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "pursuer_captain",
+  "battle_actor_id": 1,
+  "name": "追镖首领",
+  "title": "追索者",
+  "role": "追兵 · 重刀",
+  "faction": "神秘追兵",
+  "team_hint": "enemy",
+  "weapon": "重刀",
+  "personality": "冷厉、执拗，只为完成追索命令。",
+  "biography": "率众截镖的领头人物，身后势力尚不明朗。他所追寻的似乎并非镖车上的财物。",
+  "school_id": "saber",
+  "attributes": {
+    "STR": 13,
+    "AGI": 9,
+    "CON": 13,
+    "MND": 9
+  },
+  "passives": {
+    "insight": 0,
+    "conceal": 0
+  },
+  "techniques": {},
+  "art": {
+    "portrait": "",
+    "sprite_sheet": "res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg",
+    "portrait_quality": "sprite_fallback",
+    "sheet_quality": "provisional_concept"
+  }
+}
