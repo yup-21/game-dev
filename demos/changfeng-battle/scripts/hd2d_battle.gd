@@ -447,7 +447,7 @@ func _build_ui() -> void:
     UITheme.apply_button(auto_button)
     auto_button.pressed.connect(_toggle_auto_battle)
     help_label = Label.new()
-    help_label.text = "左键选目标 · C 角色卡 · Q 攻击 · G 格挡 · Space 收势/Pass · Esc 返回"
+    help_label.text = "左键选目标 · P 自由移步 · C 角色卡 · Q 攻击 · G 格挡 · Space 收势 · Esc 返回"
     help_label.visible = false
     ribbon.add_child(help_label)
 
