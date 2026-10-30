@@ -140,7 +140,7 @@ func attack_position(start: Vector2, target: Vector2, minimum_range: float,
     for radius in radii:
         for i in range(32):
             var angle := TAU * float(i) / 32.0
-            var destination := target + Vector2(cos(angle), sin(angle)) * radius
+            var destination: Vector2 = target + Vector2(cos(angle), sin(angle)) * float(radius)
             if not valid_position(destination, occupied, exclude_id):
                 continue
             var path := shortest_path(start, destination, occupied, exclude_id)
