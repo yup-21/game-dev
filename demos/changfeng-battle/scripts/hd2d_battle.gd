@@ -10,6 +10,8 @@ const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Animator = preload("res://scripts/hd2d_animation.gd")
 const VFX = preload("res://scripts/hd2d_vfx.gd")
 const ResponsePolicy = preload("res://scripts/hd2d_response_policy.gd")
+const CharacterRegistry = preload("res://scripts/character_registry.gd")
+const CharacterCardUI = preload("res://scripts/character_card_ui.gd")
 const ChargeRail = preload("res://scripts/hd2d_ctb_rail.gd")
 const COLS := 15
 const ROWS := 10
@@ -43,6 +45,7 @@ var command_actions: VBoxContainer
 var command_scroll: ScrollContainer
 var context_veil: TextureRect
 var charge_rail: Control
+var character_card: Control
 var selection_label: Label
 var selected_card_uid := ""
 var selected_usage_id := ""
@@ -66,7 +69,7 @@ func _ready() -> void:
     if story_encounter:
         model.reset(session.encounter_seed(), -1, "tingfeng", session.encounter_options())
     else:
-        model.reset(2026, -1, "tingfeng", {"schools":{0:"wind_sword", 1:"saber"}})
+        model.reset(2026, -1, "tingfeng", _quick_character_options())
     observer_id = _first_player_id()
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(_decision_owner())
@@ -75,6 +78,9 @@ func _ready() -> void:
     _build_ui()
     _refresh()
     _update_status()
+
+func _quick_character_options() -> Dictionary:
+    return CharacterRegistry.new().battle_options([], {0:"shen_changfeng",1:"pursuer_captain"})
 
 func _session():
     return get_node_or_null("/root/GameSession")
@@ -360,7 +366,7 @@ func _build_ui() -> void:
     phase_label.offset_top = 15.0
     phase_label.offset_bottom = 42.0
     help_label = Label.new()
-    help_label.text = "左键选目标 · Q 攻击 · G 格挡 · Space 收势/Pass · 右键取消 · Esc 返回"
+    help_label.text = "左键选目标 · C 角色卡 · Q 攻击 · G 格挡 · Space 收势/Pass · Esc 返回"
     help_label.visible = false
     ribbon.add_child(help_label)
 
@@ -415,7 +421,10 @@ func _build_ui() -> void:
         avatar.texture = ArtCatalog.avatar(actor_id, enemy)
         avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
         avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-        avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        avatar.mouse_filter = Control.MOUSE_FILTER_STOP
+        avatar.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+        avatar.tooltip_text = "查看 %s 的角色卡" % str(actor.name)
+        avatar.gui_input.connect(_on_roster_avatar_input.bind(actor_id))
         actor_row.add_child(avatar)
         var detail := VBoxContainer.new()
         detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -531,6 +540,9 @@ func _build_ui() -> void:
     charge_rail.offset_top = 63.0
     charge_rail.offset_bottom = -131.0
 
+    character_card = CharacterCardUI.new()
+    hud.add_child(character_card)
+
     # Chapter reveal is visual only, and cannot swallow user mouse input.
     intro_title = Label.new()
     intro_title.text = "雨 夜 追 兵" if story_encounter else "断 桥 听 风"
@@ -556,6 +568,14 @@ func _build_ui() -> void:
     intro_subtitle.offset_top = -90.0
     intro_subtitle.offset_bottom = -45.0
     intro_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+func _on_roster_avatar_input(event: InputEvent, id: int) -> void:
+    if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+        _open_character_card(id)
+
+func _open_character_card(id: int) -> void:
+    if character_card != null:
+        character_card.call("open_actor",model,id)
 
 func _refresh() -> void:
     # Read priority from the NEW state before choosing hand visibility.
@@ -1005,6 +1025,8 @@ func _process(delta: float) -> void:
         return
     if snap.get("outcome", "playing") != "playing":
         return
+    if character_card != null and character_card.visible:
+        return
     # Resolve up to both priority passes without any human prompt or AI
     # thinking delay. Stop immediately if damage/response animation begins.
     for _auto_step in range(2):
@@ -1126,6 +1148,11 @@ func _update_cursor() -> void:
         cursor_mesh.position = _world(hovered) + Vector3(0, 0.13, 0)
 
 func _unhandled_input(event: InputEvent) -> void:
+    if character_card != null and character_card.visible:
+        if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+            character_card.call("close_card")
+            get_viewport().set_input_as_handled()
+        return
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
         _clear_selection()
         _rebuild_actions()
@@ -1142,6 +1169,8 @@ func _unhandled_input(event: InputEvent) -> void:
                 _submit("MOVE", {"target_cell": move.target_cell})
     if event is InputEventKey and event.pressed and not event.echo:
         match event.keycode:
+            KEY_C:
+                _open_character_card(observer_id)
             KEY_Q:
                 var attack := _legal("BASIC_ATTACK")
                 if not attack.is_empty():
@@ -1156,7 +1185,7 @@ func _unhandled_input(event: InputEvent) -> void:
             KEY_R:
                 if story_encounter:
                     return
-                model.reset(2026, -1, "tingfeng", {"schools":{0:"wind_sword", 1:"saber"}})
+                model.reset(2026, -1, "tingfeng", _quick_character_options())
                 animation_driver.reset()
                 if effects_driver != null:
                     effects_driver.clear()
