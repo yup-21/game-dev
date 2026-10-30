@@ -91,6 +91,9 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 			var path: Array=state.find_path(actor.cell,action.target_cell,actor.id)
 			actor.normal_moves_used+=path.size()
 			move_actor(actor.id,action.target_cell,path)
+		"MOVE_FREE":
+			actor.normal_moves_used+=int(plan.move_units)
+			move_actor_free(actor.id,Vector2(action.target_position),Vector2i(action.target_cell),PackedVector2Array(plan.continuous_path))
 		"BASIC_ATTACK":
 			actor.basic_attack_used=true
 			declare_attack(actor.id,"","basic","basic",int(action.target_id),1,"thrust",0,[])
@@ -389,10 +392,34 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				for uid in effect.get("uids",[]):
 					if a.hand.has(uid): cards.leave_hand(a,str(uid),false)
 
+## Continuous-position movement publishes a typed pixel-space path for Sprite2D.
+## The legacy cell is maintained as a compatibility index until all attacks and
+## enemy AI have migrated to continuous geometry.
+func move_actor_free(actor_id: int, destination: Vector2, cell: Vector2i,
+		path: PackedVector2Array) -> void:
+	var actor=state.get_actor(actor_id)
+	var previous_position: Vector2=actor.position
+	var previous_cell: Vector2i=actor.cell
+	actor.position=destination
+	actor.cell=cell
+	if path.size()>1:
+		var segment: Vector2=path[-1]-path[-2]
+		actor.facing=Facing.from_delta(Vector2i(roundi(segment.x),roundi(segment.y)),actor.facing)
+	emit("MOVE_FREE",{"actor_id":actor_id,"from_position":previous_position,
+		"to_position":destination,"from":previous_cell,"to":cell,
+		"path":path,"facing":actor.facing,
+		"text":"%s 移步至 (%.1f, %.1f)" % [actor.name,destination.x,destination.y]})
+	emit("MOVE_FINISHED",{"actor_id":actor_id,"from":previous_cell,"to":cell,
+		"from_position":previous_position,"to_position":destination})
+
 func move_actor(actor_id: int,dest: Vector2i,path: Array) -> void:
 	var actor=state.get_actor(actor_id)
 	var previous: Vector2i=actor.cell
 	actor.cell=dest
+	if state.spatial != null:
+		actor.position=state.spatial.bake.cell_center(dest)
+	else:
+		actor.position=Vector2(dest)
 	# Follow the FINAL step of the actual resolved BFS/forced-move path.
 	# A bent route must not face toward the endpoint through an obstacle.
 	var from_cell: Vector2i=previous if path.size()<2 else Vector2i(path[path.size()-2])
