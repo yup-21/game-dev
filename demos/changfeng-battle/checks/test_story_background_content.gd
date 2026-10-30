@@ -27,6 +27,12 @@ func _run() -> void:
     view._enter_new_game()
     view.story.skip_cinematic()
     _check(view.story.phase=="explore","first act reaches real exploration phase")
+    await process_frame
+    var picture: TextureRect = view.temple_picture
+    _check(picture!=null and picture.texture==texture,
+        "first act paints its original texture through a real TextureRect node")
+    _check(picture!=null and picture.visible and picture.z_index<0,
+        "scenery layer is visible behind real actor sprites and UI in exploration")
     _check(view.temple_backdrop!=null,"cached backdrop remains available for exploration draw")
     print("STORY_BACKGROUND_PASS checks=%d failures=%d fallback=%s" % [
         checks,failures,str(view.temple_uses_fallback)])
