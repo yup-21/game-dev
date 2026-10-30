@@ -34,13 +34,12 @@ func options(actor, timing: String, reachable: Dictionary = {}) -> Array:
 	var ids: Array=actor.technique_states.keys()
 	ids.sort()
 	for id in ids:
-		var stage: String=str(actor.technique_states[id].node)
-		var definition: Dictionary=techniques.node(actor,str(id),stage)
-		if definition.is_empty() or str(definition.timing)!=timing: continue
-		if not conditions.allows(actor,definition.get("when",{}),{"timing":timing,"tick":state.global_tick,"same_action":int(actor.technique_states[id].last_used_action)==actor.turns_started}): continue
-		var base: Dictionary={"kind":"USE_ABILITY","actor_id":actor.id,"technique_id":str(id),"node_id":stage}
-		var plan: Dictionary=costs.quote(actor,techniques.cost(actor,str(id),stage),rules.context(actor.id,base))
-		if costs.can_pay(actor,plan): results.append_array(_targets(actor,base,definition,reachable))
+		for definition in techniques.available_nodes(actor,str(id),timing):
+			var stage: String=str(definition.id)
+			if not conditions.allows(actor,definition.get("when",{}),{"timing":timing,"tick":state.global_tick,"same_action":int(actor.technique_states[id].last_used_action)==actor.turns_started}): continue
+			var base: Dictionary={"kind":"USE_ABILITY","actor_id":actor.id,"technique_id":str(id),"node_id":stage}
+			var plan: Dictionary=costs.quote(actor,techniques.cost(actor,str(id),stage),rules.context(actor.id,base))
+			if costs.can_pay(actor,plan): results.append_array(_targets(actor,base,definition,reachable))
 	return results
 
 func _targets(actor,base: Dictionary,usage: Dictionary,reachable: Dictionary) -> Array:

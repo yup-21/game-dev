@@ -13,6 +13,7 @@ var combos: Array = []
 var load_error: String = ""
 var _all_status_ids: Dictionary = {}
 var _base_form_ids: Dictionary = {}
+var _generated_only_ids: Dictionary = {}
 
 func _init(path: String = "res://data/school_forms.json", base_path: String = "res://data/tingfeng_cards.json", legacy_path: String = "res://data/legacy_id_map.json") -> void:
 	var raw: Dictionary = _read(path)
@@ -83,6 +84,8 @@ func _load(raw: Dictionary, base: Dictionary, legacy_path: String) -> bool:
 	for item in base.cards:
 		if not item is Dictionary or not _text(item.get("id")) or _base_form_ids.has(item.id): return _fail("基础卡牌ID不合法或重复")
 		_base_form_ids[item.id] = true
+		if bool(item.get("generated_only",false)):
+			_generated_only_ids[item.id] = true
 	for item in raw.statuses:
 		if not _valid_status(item) or _all_status_ids.has(item.id): return _fail("新增状态定义不合法或重复")
 		statuses[item.id] = item.duplicate(true)
@@ -110,7 +113,7 @@ func _load(raw: Dictionary, base: Dictionary, legacy_path: String) -> bool:
 		var total: int = 0
 		for entry in school.deck.cards:
 			if not _keys(entry,["card_id","count"],["card_id","count"]) or not _text(entry.card_id) or not _number(entry.count,1,12): return _fail("流派牌组条目不合法")
-			if seen.has(entry.card_id) or (not _base_form_ids.has(entry.card_id) and entry.card_id not in school.core_forms): return _fail("流派牌组引用重复或跨门派")
+			if seen.has(entry.card_id) or _generated_only_ids.has(str(entry.card_id)) or (not _base_form_ids.has(entry.card_id) and entry.card_id not in school.core_forms): return _fail("流派牌组引用重复、衍生卡或跨门派")
 			seen[entry.card_id] = true
 			total += int(entry.count)
 		if total != 12 or not seen.has_all(school.core_forms): return _fail("流派牌组须含两核心式、合计12张")

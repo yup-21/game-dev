@@ -17,6 +17,17 @@ on:
       - 'demos/changfeng-battle/checks/test_hd2d_ui_assets.gd'
       - 'demos/changfeng-battle/checks/test_hd2d_unified_hud.gd'
       - 'demos/changfeng-battle/scripts/hd2d_card_art.gd'
+      - 'demos/changfeng-battle/scripts/card_system.gd'
+      - 'demos/changfeng-battle/scripts/combat_resolver.gd'
+      - 'demos/changfeng-battle/scripts/school_catalog.gd'
+      - 'demos/changfeng-battle/data/tingfeng_cards.json'
+      - 'demos/changfeng-battle/data/techniques.json'
+      - 'demos/changfeng-battle/scripts/technique_runtime.gd'
+      - 'demos/changfeng-battle/scripts/ability_system.gd'
+      - 'demos/changfeng-battle/scripts/battle_model.gd'
+      - 'demos/changfeng-battle/data/school_forms.json'
+      - 'demos/changfeng-battle/data/demo_scenario.json'
+      - 'demos/changfeng-battle/checks/test_derived_wuxue_decks.gd'
       - '.github/workflows/wuxia-hud.yml'
   workflow_dispatch:
 
@@ -49,6 +60,17 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
       - name: Verify automatic empty-response skips and authoritative clash resolution
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_auto_pass.gd
+      - name: Validate generated martial cards and actor-specific schools
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_derived_wuxue_decks.gd
+      - name: Check original multi-school V3 mechanics
+        run: |
+          godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_catalog.gd
+          godot --headless --path demos/changfeng-battle --script res://checks/test_generated_cards.gd
+      - name: Verify old Tingfeng rules, chained stages, and V3 school compatibility
+        run: |
+          godot --headless --path demos/changfeng-battle --script res://checks/test_tingfeng.gd
+          godot --headless --path demos/changfeng-battle --script res://checks/test_ability_framework.gd
+          godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
 

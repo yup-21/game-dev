@@ -53,11 +53,18 @@ func fixture(model, actor_id: int, ids: Array, qi: int = 6) -> void:
 	actor.qi_u = qi * UNIT
 	var selected: Array = []
 	for definition_id in ids:
+		var found := false
 		for uid in model.cards.instances:
 			var instance: Dictionary = model.cards.instances[uid]
 			if int(instance.get("owner_actor_id", instance.get("owner", -1))) == actor_id and str(instance.get("definition_id", "")) == definition_id and not selected.has(uid):
 				selected.append(uid)
+				found = true
 				break
+		# Synthetic fixtures can instantiate historical or derived-only cards,
+		# but runtime build_deck() continues to reject such IDs.
+		if not found and model.cards.definitions.has(str(definition_id)):
+			selected.append(model.cards.create_instance(actor,str(definition_id),"hand"))
+	actor.hand.clear()
 	for uid in model.cards.instances:
 		var instance: Dictionary = model.cards.instances[uid]
 		if int(instance.get("owner_actor_id", instance.get("owner", -1))) == actor_id:
@@ -117,7 +124,7 @@ func run_tests() -> void:
 
 func test_schema_and_requests() -> void:
 	var model = fresh()
-	check(model.cards.definitions.size() == 5, "five canonical forms")
+	check(model.cards.definitions.size() == 6, "five core martial forms plus one generated follow-up definition")
 	var usage_count: int = 0
 	for definition in model.cards.definitions.values(): usage_count += definition.get("usages", []).size()
 	check(usage_count == 12 and model.cards.instances.size() == 24, "twelve usages and 24 mirror instances")
@@ -190,7 +197,7 @@ func test_usages_and_combos() -> void:
 	fixture(model, 0, ["tf_probe", "tf_probe", "tf_guard"])
 	fixture(model, 1, [])
 	var hp: int = int(model.state.get_actor(1).hp_u)
-	check(not option(model, 0, "PLAY_CARD", "tf_probe", "probe").is_empty() and not option(model, 0, "PLAY_CARD", "tf_probe", "follow").is_empty(), "one probe instance offers both active usages")
+	check(not option(model, 0, "PLAY_CARD", "tf_probe", "probe").is_empty() and option(model, 0, "PLAY_CARD", "tf_probe", "follow").is_empty(), "probe is one starter usage; follow-up must be generated")
 	var selected: Dictionary = option(model, 0, "PLAY_CARD", "tf_probe", "probe")
 	var uid: String = str(selected.get("card_uid", selected.get("card_id", "")))
 	check(send(model, selected).success, "probe attack declares")
@@ -198,7 +205,7 @@ func test_usages_and_combos() -> void:
 	pass_clash(model)
 	check(model.state.get_actor(0).discard_pile.has(uid) and not model.state.get_actor(0).resolving.has(uid), "root instance discards once after resolution")
 	send(model, option(model, 0, "PLAY_CARD", "tf_guard", "guard"))
-	check(send(model, option(model, 0, "PLAY_CARD", "tf_probe", "follow")).success, "follow remains available after interleaved defense")
+	check(send(model, option(model, 0, "PLAY_CARD", "tf_follow", "follow")).success, "generated follow-up is playable after interleaved defense")
 	pass_clash(model)
 	check(model.state.get_actor(1).hp_u == hp - 5 * UNIT and event_has(model, "COMBO_TRIGGERED"), "probe follow combo deals 2 plus 3 and emits event")
 	model = fresh(25)
@@ -241,9 +248,13 @@ func test_chain() -> void:
 	send(model, option(model, 1, "PLAY_CARD", "tf_change", "defense_counter", Vector2i(-99, -99), 2))
 	check(send(model, option(model, 0, "PLAY_CARD", "tf_change", "attack_counter", Vector2i(-99, -99), 3)).success, "fourth response accepted")
 	var no_more: bool = true
-	for who in [0, 1]:
-		for candidate in model.legal_actions(who):
-			if str(candidate.get("kind", "")) == "PLAY_CARD": no_more = false
+	# The fourth response immediately resolves the CLASH. The actor may
+	# already hold a newly generated ACTION follow-up in hand; that is not
+	# a fifth clash response and must not fail this bounded-priority test.
+	if model.state.mode == "CLASH":
+		for who in [0, 1]:
+			for candidate in model.legal_actions(who):
+				if str(candidate.get("kind", "")) in ["PLAY_CARD", "USE_ABILITY"]: no_more = false
 	check(no_more, "at most two responses per actor and four total")
 	pass_clash(model)
 	check(model.state.get_actor(1).hp_u == hp - 2 * UNIT, "four-layer reverse resolution cancels yield")
@@ -280,10 +291,10 @@ func test_spatial_and_intercept() -> void:
 	for usage_id in ["probe", "follow", "heavy"]:
 		model = fresh(20)
 		adjacent(model)
-		fixture(model, 0, ["tf_sunder" if usage_id == "heavy" else "tf_probe"])
+		fixture(model, 0, ["tf_sunder" if usage_id == "heavy" else ("tf_follow" if usage_id == "follow" else "tf_probe")])
 		fixture(model, 1, ["tf_guard"])
 		var hp: int = int(model.state.get_actor(1).hp_u)
-		send(model, option(model, 0, "PLAY_CARD", "tf_sunder" if usage_id == "heavy" else "tf_probe", usage_id))
+		send(model, option(model, 0, "PLAY_CARD", "tf_sunder" if usage_id == "heavy" else ("tf_follow" if usage_id == "follow" else "tf_probe"), usage_id))
 		check(send(model, option(model, 1, "PLAY_CARD", "tf_guard", "intercept")).success, "intercept legal against " + usage_id)
 		pass_clash(model)
 		var expected_loss: int = {"probe": 0, "follow": 1, "heavy": 5}[usage_id]

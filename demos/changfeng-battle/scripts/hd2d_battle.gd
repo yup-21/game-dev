@@ -64,7 +64,7 @@ func _ready() -> void:
     if story_encounter:
         model.reset(session.encounter_seed(), -1, "tingfeng", session.encounter_options())
     else:
-        model.reset(2026)
+        model.reset(2026, -1, "tingfeng", {"schools":{0:"wind_sword", 1:"saber"}})
     observer_id = _first_player_id()
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(_decision_owner())
@@ -632,8 +632,13 @@ func _rebuild_actions() -> void:
         if seen_abilities.has(key):
             continue
         seen_abilities[key] = true
+        var technique_def: Dictionary = model.techniques.definitions.get(technique_id,{})
+        var stage_def: Dictionary = model.techniques.node(owner,technique_id,node_id)
         var button := CardUI.make_card(technique_id + ":" + node_id,
-            technique_id, "连携续式", node_id, {},
+            "tf_change" if technique_id == "tf_change_stage" else technique_id,
+            str(technique_def.get("name","武学续式")),
+            str(stage_def.get("name",node_id)),
+            model.techniques.cost(owner,technique_id,node_id),
             selected_technique == technique_id and selected_node == node_id)
         button.set_meta("technique_id", technique_id)
         button.set_meta("node_id", node_id)
@@ -817,8 +822,11 @@ func _update_status() -> void:
     var mode := "雨夜追兵 · 多人交锋" if story_encounter else "断桥论剑 · HD-2D"
     var priority = model.state.get_actor(_decision_owner())
     var active_name := str(priority.name) if priority != null else "等待结算"
-    status_label.text = "%s    /    %s    /    第 %d 拍    /    执剑者：%s" % [
-        mode, str(snap.get("phase", "")), int(snap.get("global_tick", 0)), active_name]
+    var school_name := str(priority.school_name) if priority != null else ""
+    var stance_ready: bool = priority != null and priority.technique_states.has("tf_change_stage") and str(priority.technique_states.tf_change_stage.node) == "ready"
+    status_label.text = "%s    /    %s    /    第 %d 拍    /    %s · %s%s" % [
+        mode, str(snap.get("phase", "")), int(snap.get("global_tick", 0)),
+        active_name, school_name, "    ◈ 变锋待发" if stance_ready else ""]
     if str(snap.get("outcome", "playing")) != "playing":
         status_label.text += "    ·    战斗结束：" + str(snap.get("outcome", ""))
     for actor in snap.get("actors", []):
@@ -1097,7 +1105,7 @@ func _unhandled_input(event: InputEvent) -> void:
             KEY_R:
                 if story_encounter:
                     return
-                model.reset(2026)
+                model.reset(2026, -1, "tingfeng", {"schools":{0:"wind_sword", 1:"saber"}})
                 animation_driver.reset()
                 if effects_driver != null:
                     effects_driver.clear()

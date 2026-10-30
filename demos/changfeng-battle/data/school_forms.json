@@ -47,7 +47,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -56,10 +56,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "wind_flow",
@@ -84,7 +80,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -93,10 +89,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "saber_charge",
@@ -121,7 +113,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -130,10 +122,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "tide_guard",
@@ -158,7 +146,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -167,10 +155,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "step_shadow",
@@ -195,7 +179,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -204,10 +188,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "finger_seal",
@@ -232,7 +212,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -241,10 +221,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "ember_fire",
@@ -269,7 +245,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -278,10 +254,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "whip_coil",
@@ -306,7 +278,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -315,10 +287,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "needle_rain",
@@ -343,7 +311,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -352,10 +320,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "taixu_breath",
@@ -380,7 +344,7 @@
         "cards": [
           {
             "card_id": "tf_probe",
-            "count": 1
+            "count": 2
           },
           {
             "card_id": "tf_step",
@@ -389,10 +353,6 @@
           {
             "card_id": "tf_guard",
             "count": 2
-          },
-          {
-            "card_id": "tf_change",
-            "count": 1
           },
           {
             "card_id": "blood_burn",

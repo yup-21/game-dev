@@ -111,6 +111,10 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	for actor in state.actors:
 		attributes.configure(actor,options.get("attributes",{}).get(actor.id,{}),options.get("passives",{}).get(actor.id,{}))
 		var learned=options.get("techniques",{}).get(actor.id,{})
+		if learned is Dictionary and not options.has("technique_catalog_path"):
+			learned=learned.duplicate(true)
+			for technique_id in techniques.auto_equipped():
+				if not learned.has(technique_id): learned[technique_id]=int(techniques.auto_equipped()[technique_id])
 		if not learned is Dictionary or not techniques.configure(actor,learned):
 			state.outcome="defeat"
 			state.mode="FINISHED"

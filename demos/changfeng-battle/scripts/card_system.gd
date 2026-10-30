@@ -32,8 +32,8 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 	deck=data.get("deck",{}).get("cards",[]).duplicate(true)
 	combos=data.get("combos",[]).duplicate(true)
 	for entry in deck:
-		if not definitions.has(entry.get("card_id","")) or not whole(entry.get("count"),1):
-			load_error="牌组引用不合法"
+		if not definitions.has(entry.get("card_id","")) or not whole(entry.get("count"),1) or bool(definitions[str(entry.card_id)].get("generated_only",false)):
+			load_error="牌组引用不合法（衍生卡不得进入起始牌组）"
 	catalog=SchoolCatalog.new()
 	if not catalog.load_error.is_empty():
 		load_error=catalog.load_error
@@ -138,7 +138,7 @@ func valid_definition(d: Dictionary) -> bool:
 func build_deck(actor, _seed: int = 0, _deck_ids: Array = []) -> bool:
 	var entries: Array=catalog.deck_for(actor.school_id,deck)
 	for entry in entries:
-		if not definitions.has(str(entry.card_id)): return false
+		if not definitions.has(str(entry.card_id)) or bool(definitions[str(entry.card_id)].get("generated_only",false)): return false
 		for _i in range(int(entry.count)):
 			var uid: String=create_instance(actor,str(entry.card_id),"draw_pile")
 			if uid.is_empty(): return false
