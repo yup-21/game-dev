@@ -66,8 +66,23 @@ func clear_segment(start: Vector2, finish: Vector2, radius_or_occupied: Variant 
     if radius_or_occupied is Array:
         return waypoint_compat.clear_segment(start, finish, radius_or_occupied, ignore_id)
     var radius: float = float(radius_or_occupied)
-    var length := start.distance_to(finish)
-    var stride: float = maxf(2.0, minf(bake.step.x, bake.step.y) * 0.15)
+    var vector: Vector2 = finish - start
+    var length: float = vector.length()
+    # Sampling the ground mask cannot reliably detect a thin actor collision.
+    # The exact nearest-point-to-segment check prevents tunnelling through
+    # crowded characters when the move endpoint is otherwise legal.
+    for id in actor_positions:
+        if int(id) == ignore_id:
+            continue
+        var body: Dictionary = actor_positions[id]
+        if not bool(body.get("alive", true)):
+            continue
+        var centre: Vector2 = body.get("position", Vector2.ZERO)
+        var t: float = clampf((centre - start).dot(vector) / maxf(vector.length_squared(), EPSILON), 0.0, 1.0)
+        var nearest: Vector2 = start + vector * t
+        if nearest.distance_to(centre) < radius + float(body.get("radius", 0.0)) - EPSILON:
+            return false
+    var stride: float = maxf(2.0, minf(minf(bake.step.x, bake.step.y) * 0.15, maxf(2.0, radius * 0.5)))
     var count := maxi(1, ceili(length / stride))
     for index in range(count + 1):
         if not is_valid_position(start.lerp(finish, float(index) / float(count)), radius, ignore_id):
@@ -94,7 +109,7 @@ func find_path(start: Vector2, finish: Vector2, radius: float = 0.0, ignore_id: 
             points.append(centre)
     # Polygonal approximation of each dynamic body's exclusion circle.
     # Outward offset protects the chords BETWEEN adjacent circle vertices.
-    const SECTORS := 16
+    const SECTORS = 16
     for id in actor_positions:
         if int(id) == ignore_id:
             continue
