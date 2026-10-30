@@ -4,10 +4,10 @@ extends RefCounted
 const FRAME_RATE := 9.0
 const FRAMES_PER_ROW := 6
 const STATE_ROW := {"idle": 0, "move": 1, "attack": 2, "guard": 3,
-    "hit": 3, "evade": 3, "skill": 3, "defeat": 3}
-const SINGLE_FRAMES := {"guard": 0, "hit": 1, "evade": 2, "skill": 4, "defeat": 1}
+    "hit": 3, "evade": 3, "skill": 3, "combo": 3, "defeat": 3}
+const SINGLE_FRAMES := {"guard": 0, "hit": 1, "evade": 2, "skill": 4, "combo": 4, "defeat": 1}
 const DURATIONS := {"idle": 1.0, "move": 0.55, "attack": 0.62,
-    "guard": 0.32, "hit": 0.40, "evade": 0.38, "skill": 0.55, "defeat": 1.0}
+    "guard": 0.38, "hit": 0.46, "evade": 0.38, "skill": 0.55, "combo": 0.78, "defeat": 1.0}
 var tracks: Dictionary = {}
 var timeline: Array = []
 var stage_left: float = 0.0
@@ -18,6 +18,7 @@ func register_actor(id: int, sprite: Sprite3D) -> void:
     sprite.hframes = 6
     sprite.vframes = 4
     sprite.frame = 0
+    sprite.scale = Vector3.ONE
 
 func play(id: int, state: String) -> void:
     if not tracks.has(id) or not STATE_ROW.has(state):
@@ -46,7 +47,7 @@ func events(emitted: Array) -> void:
             "ATTACK_DECLARED":
                 animation = "attack"
             "COMBO_TRIGGERED":
-                animation = "skill"
+                animation = "combo"
             "SHIELD", "INTERCEPT_JUDGED":
                 animation = "guard"
             "ATTACK_MISSED":
@@ -98,13 +99,34 @@ func update(delta: float, moving: Dictionary = {}) -> void:
         var index: int = 0
         if SINGLE_FRAMES.has(state):
             index = int(SINGLE_FRAMES[state])
-            if state == "evade" or state == "skill":
+            if state in ["evade", "skill", "combo"]:
                 index += mini(1, int(float(track.elapsed) / maxf(0.01, float(track.duration)) * 2.0))
         else:
             index = int(float(track.elapsed) * FRAME_RATE) % FRAMES_PER_ROW
         var sprite: Sprite3D = track.sprite
         if sprite != null:
             sprite.frame = int(STATE_ROW.get(state, 0)) * FRAMES_PER_ROW + index
+            # Pose accents stay presentation-only and never touch BattleModel.
+            var phase: float = clampf(float(track.elapsed) / maxf(0.01, float(track.duration)), 0.0, 1.0)
+            var thrust: float = sin(phase * PI)
+            var target_scale := Vector3.ONE
+            var tilt := 0.0
+            match state:
+                "move":
+                    target_scale.x = 1.0 + sin(float(track.elapsed) * 18.0) * 0.035
+                    tilt = sin(float(track.elapsed) * 12.0) * 0.045
+                "attack", "combo", "skill":
+                    target_scale = Vector3(1.0 + thrust * 0.14, 1.0 - thrust * 0.09, 1.0)
+                    tilt = -thrust * (0.18 if state == "combo" else 0.11)
+                "guard":
+                    target_scale = Vector3(1.0 + thrust * 0.08, 1.0 - thrust * 0.13, 1.0)
+                "hit":
+                    target_scale = Vector3(1.0 - thrust * 0.10, 1.0 + thrust * 0.07, 1.0)
+                    tilt = thrust * 0.15
+                "evade":
+                    tilt = thrust * 0.14
+            sprite.scale = sprite.scale.lerp(target_scale, minf(1.0, delta * 18.0))
+            sprite.rotation.z = lerpf(sprite.rotation.z, tilt, minf(1.0, delta * 17.0))
         tracks[id] = track
 
 func reset() -> void:
