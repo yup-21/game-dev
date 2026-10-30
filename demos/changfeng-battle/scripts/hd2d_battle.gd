@@ -2,6 +2,7 @@ extends Node3D
 ## HD-2D vertical slice. All tactical state and legality remain in BattleModel.
 ## Run res://battle_hd2d.tscn explicitly; the original 2D scene is untouched.
 const Model = preload("res://scripts/battle_model.gd")
+const CommandDispatcher = preload("res://scripts/battle_command_dispatcher.gd")
 const ContinuousSpace = preload("res://scripts/battle_spatial_service.gd")
 const ContinuousPreview = preload("res://scripts/continuous_move_preview.gd")
 const EnemyAI = preload("res://scripts/enemy_ai.gd")
@@ -1523,23 +1524,11 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
         owner = int(snap.get("clash", {}).get("priority_actor_id", -1))
     if not _player_decision():
         return
-    # Position-dependent commands are not finite legal-action enumerations.
-    # Their complete legality is checked transactionally by CombatRules.
-    if kind in ["MOVE_FREE", "MOVE_AND_ATTACK", "SET_SPATIAL_MODE", "PLAY_CARD_FREE_MOVE"]:
-        _accept(model.submit(model.request(kind, owner, params)))
-        return
-    # Enumerated legacy commands still require an exact legal-action match.
-    for candidate in model.legal_actions(owner):
-        if str(candidate.get("kind", "")) != kind:
-            continue
-        var matches := true
-        for key in params:
-            if not candidate.has(key) or candidate[key] != params[key]:
-                matches = false
-                break
-        if matches:
-            _accept(model.submit(model.request(kind, owner, params)))
-            return
+    # This view owns the interaction gates; the dispatcher owns the
+    # enumerated/dynamic command routing. BattleModel remains the authority.
+    var dispatched: Dictionary = CommandDispatcher.dispatch(model, owner, kind, params)
+    if bool(dispatched.get("dispatched", false)):
+        _accept(dispatched.get("result", {}))
 
 func _legal(kind: String, cell: Vector2i = Vector2i(-1, -1)) -> Dictionary:
     # Movement always requires a real target. The shared optional-cell
