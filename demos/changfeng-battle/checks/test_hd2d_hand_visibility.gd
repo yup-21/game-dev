@@ -49,6 +49,24 @@ func _run() -> void:
                 attack_uids[uid] = true
     _check(drawn.size() == 5, "first draw has five actual card instances")
     _check(attack_uids.size() > 0, "seeded 12-card school deck draws actual attacks")
+    _check(model.state.spatial_mode=="GRID","legacy grid mode remains default")
+    var grid_rendered: Dictionary = _rendered_cards(view)
+    var grey_attacks := 0
+    for uid in attack_uids:
+        for button in grid_rendered.get(uid,[]):
+            if button.disabled: grey_attacks+=1
+    _check(grey_attacks>0,"grid mode still greys out-of-range attacks")
+    var mode_change: Dictionary=model.submit(model.request("SET_SPATIAL_MODE",0,{"spatial_mode":"FREE"}))
+    _check(bool(mode_change.get("success",false)),"switch to free mode through the battle model")
+    if not bool(mode_change.get("success",false)):
+        view.queue_free()
+        quit(1)
+        return
+    view.call("_accept",mode_change)
+    var acknowledged: Dictionary=model.acknowledge_animation(int(mode_change.ticket))
+    view.set("animation_ticket",-1)
+    view.call("_accept",acknowledged)
+    _check(model.state.spatial_mode=="FREE","free geometry mode active")
     var before_revision := int(model.state.revision)
     var before_hand: Array = model.state.get_actor(0).hand.duplicate()
     view.call("_refresh")
@@ -79,6 +97,7 @@ func _run() -> void:
     # Simulate a legal adjacency without submitting an action; move only the
     # enemy fixture from (8,4) to the free bridge cell (7,4).
     model.state.get_actor(1).cell = Vector2i(7, 4)
+    model.state.get_actor(1).position=model.state.spatial.bake.cell_center(Vector2i(7,4))
     view.call("_refresh")
     await process_frame
     rendered = _rendered_cards(view)
