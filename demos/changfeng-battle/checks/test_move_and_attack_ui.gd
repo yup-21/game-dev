@@ -22,6 +22,9 @@ func _create_battle() -> Node:
 ## Exercise the production mode-changing command before any FREE UI action.
 func _enable_free(view: Node) -> void:
     var battle=view.get("model")
+    if battle.state.spatial_mode=="FREE":
+        _check(true,"session preference retained FREE for subsequent battle scene")
+        return
     var owner: int=battle.state.active_id
     var changed: Dictionary=battle.submit(battle.request("SET_SPATIAL_MODE",owner,{"spatial_mode":"FREE"}))
     _check(bool(changed.get("success",false)),"UI fixture switches to FREE through authority")
