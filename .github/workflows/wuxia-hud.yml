@@ -15,6 +15,7 @@ on:
       - 'demos/changfeng-battle/scripts/demo_result.gd'
       - 'demos/changfeng-battle/checks/test_single_battle_entry.gd'
       - 'demos/changfeng-battle/checks/opening_visual_check.gd'
+      - 'demos/changfeng-battle/checks/capture_opening_story_2d.gd'
       - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
       - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
       - 'demos/changfeng-battle/scripts/battle_command_dispatcher.gd'
@@ -200,11 +201,11 @@ jobs:
           test -s demos/changfeng-battle/captures/hd2d-validation/02-card-selection.png
           test -s demos/changfeng-battle/captures/hd2d-validation/03-character-dossier.png
           test -s demos/changfeng-battle/captures/hd2d-validation/04-baked-grid.png
-      - name: Capture real first-act story and injured elder
+      - name: Capture true first-act and elder dialogue frames
         shell: bash
         run: |
           set -euo pipefail
-          xvfb-run -a -s " -screen 0 1600x1000x24" godot --path demos/changfeng-battle -- --opening-visual-check
+          timeout --signal=TERM 150s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_opening_story_2d.gd
           test -s demos/changfeng-battle/captures/opening-explore.png
           test -s demos/changfeng-battle/captures/opening-dialogue.png
       - name: Upload screenshot evidence
