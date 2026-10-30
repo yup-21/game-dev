@@ -1480,7 +1480,7 @@ func _submit(kind: String, params: Dictionary = {}) -> void:
         return
     # Position-dependent commands are not finite legal-action enumerations.
     # Their complete legality is checked transactionally by CombatRules.
-    if kind in ["MOVE_FREE", "MOVE_AND_ATTACK"]:
+    if kind in ["MOVE_FREE", "MOVE_AND_ATTACK", "SET_SPATIAL_MODE"]:
         _accept(model.submit(model.request(kind, owner, params)))
         return
     # Enumerated legacy commands still require an exact legal-action match.
