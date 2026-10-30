@@ -76,9 +76,9 @@ func _run() -> void:
     var legal := model.legal_actions(player.id)
     var attack := {}
     for choice in legal:
-        if str(choice.get("kind", "")) == "PLAY_CARD"
+        if (str(choice.get("kind", "")) == "PLAY_CARD"
                 and str(choice.get("card_uid", "")) == first_uid
-                and str(choice.get("usage_id", "")) == "probe":
+                and str(choice.get("usage_id", "")) == "probe"):
             attack = choice
             break
     _check(not attack.is_empty(), "probe starter has a legal attack")
