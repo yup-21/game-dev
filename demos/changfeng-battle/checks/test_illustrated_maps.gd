@@ -14,7 +14,7 @@ func _initialize() -> void:
     call_deferred("_run")
 
 func _run() -> void:
-    var scene := load("res://battle_hd2d.tscn").instantiate()
+    var scene: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame
     var model = scene.get("model")
@@ -54,7 +54,7 @@ func _run() -> void:
     session.start_new_game()
     session.record_story_event("obtain_fragment")
     _check(session.begin_encounter(),"enter 3v3 story battle")
-    var battle = load("res://battle_hd2d.tscn").instantiate()
+    var battle: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(battle)
     await process_frame
     var bmap = battle.get("illustrated_map")
@@ -64,14 +64,14 @@ func _run() -> void:
     battle.queue_free()
     await process_frame
     session.return_to_menu()
-    var opening = load("res://opening.tscn").instantiate()
+    var opening: Node2D = load("res://opening.tscn").instantiate()
     root.add_child(opening)
     await process_frame
     _check(opening.story.load_error.is_empty(),"opening story loads unchanged")
     opening.call("_enter_new_game")
     opening.story.skip_cinematic()
     _check(opening.story.phase=="explore","first-act exploration uses existing dialogue mechanics")
-    _check(opening.ESCORT.distance_to(opening.player_pos)>175.0,
+    _check(Vector2(1050,560).distance_to(Vector2(opening.get("player_pos")))>175.0,
         "hero starts away from escort interaction point")
     opening.queue_free()
     await process_frame
