@@ -50,9 +50,12 @@ func _targets(actor,base: Dictionary,usage: Dictionary,reachable: Dictionary) ->
 			for target in state.actors:
 				if not state.is_hostile(actor.id,target.id) or target.hp_u<=0: continue
 				var max_dist: int=int(usage.get("attack_profile",{}).get("range",usage.target.get("max_distance",1)))
-				var dist: int=rules.distance(actor.cell,target.cell)
-				if dist<int(usage.target.get("min_distance",1)) or dist>max_dist: continue
-				if usage.target.get("line_of_sight",false) and not rules.line_clear(actor.cell,target.cell): continue
+				if state.spatial_mode=="FREE":
+					if not rules.free_target_legal(actor,target,usage): continue
+				else:
+					var dist: int=rules.distance(actor.cell,target.cell)
+					if dist<int(usage.target.get("min_distance",1)) or dist>max_dist: continue
+					if usage.target.get("line_of_sight",false) and not rules.line_clear(actor.cell,target.cell): continue
 				var option: Dictionary=base.duplicate(true)
 				option.target_id=target.id
 				result.append(option)
