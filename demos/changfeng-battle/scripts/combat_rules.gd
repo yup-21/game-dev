@@ -80,10 +80,6 @@ func raw_actions(actor_id: int) -> Array:
 		for school_id in actor.learned_schools:
 			if str(school_id)!=actor.school_id:
 				options.append({"kind":"SWITCH_SCHOOL","actor_id":actor_id,"school_id":str(school_id)})
-		if state.spatial!=null:
-			var next_mode: String="FREE" if state.spatial_mode=="GRID" else "GRID"
-			if next_mode=="FREE" or _can_reanchor_to_grid():
-				options.append({"kind":"SET_SPATIAL_MODE","actor_id":actor_id,"spatial_mode":next_mode})
 		if state.spatial_mode=="GRID":
 			var max_move: int=int(actor.stats.move_budget)-actor.normal_moves_used
 			for cell in state.terrain:
@@ -142,6 +138,8 @@ func validate(req: Dictionary) -> Dictionary:
 	if normalized.has("card_id") and not normalized.has("card_uid"): normalized.card_uid=normalized.card_id
 	# Arbitrary continuous targets cannot be enumerated in legal_actions().
 	# They must instead pass the same authoritative, precommit checks.
+	if str(normalized.get("kind",""))=="SET_SPATIAL_MODE":
+		return _validate_mode_change(normalized)
 	if str(normalized.get("kind",""))=="MOVE_FREE":
 		return _validate_free_move(normalized)
 	if str(normalized.get("kind",""))=="MOVE_AND_ATTACK":
@@ -396,3 +394,24 @@ func free_target_legal(actor,target,usage: Dictionary) -> bool:
 		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
 	spatial.set_actors(positions)
 	return spatial.attack_in_range(actor.position,target.position,float(minimum-1)*unit,float(maximum)*unit,8.0,8.0) and spatial.attack_line_clear(actor.position,target.position,[actor.id,target.id])
+
+## Changing rules never consumes movement, card uses, CTB or Qi. It is still
+## an authoritative revisioned command, blocked during attacks and animations.
+func _validate_mode_change(req: Dictionary) -> Dictionary:
+	if state.spatial==null: return failure("SPATIAL_UNAVAILABLE","当前地图没有连续空间校准")
+	if timing(int(req.actor_id))!="ACTION":
+		return failure("ILLEGAL_ACTION","只能在自己的行动阶段切换战斗规则")
+	if not req.has("spatial_mode") or str(req.spatial_mode) not in ["GRID","FREE"]:
+		return failure("MALFORMED_REQUEST","只能选择 GRID 或 FREE")
+	if req.has("target_cell") or req.has("target_position") or req.has("target_id"):
+		return failure("MALFORMED_REQUEST","模式切换不能包含行动目标")
+	var next_mode: String=str(req.spatial_mode)
+	if next_mode==state.spatial_mode:
+		return failure("MODE_UNCHANGED","当前已经是该战斗模式")
+	if next_mode=="GRID" and not _can_reanchor_to_grid():
+		return failure("GRID_REANCHOR_BLOCKED","角色占用相同格子或站位不可通行，不能安全切换到网格模式")
+	var checked: Dictionary=hooks.validate(context(int(req.actor_id),req))
+	if not bool(checked.get("success",false)):
+		return failure("HOOK_REJECTED",str(checked.get("message","规则拒绝切换模式")))
+	return {"success":true,"action":{"kind":"SET_SPATIAL_MODE","actor_id":int(req.actor_id),
+		"spatial_mode":next_mode},"plan":{"qi_u":0,"hp_u":0,"valid":true}}
