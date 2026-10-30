@@ -8,6 +8,8 @@ const FRAME: Texture2D = preload("res://assets/ui/jade_card_filagree.svg")
 const SEAL: Texture2D = preload("res://assets/ui/jade_seal.svg")
 const ATLAS_COLUMNS := 4
 const ATLAS_ROWS := 2
+const CARD_SIZE := Vector2(148, 186)
+const ART_SIZE := Vector2(132, 108)
 
 static func _image_index(definition_id: String, title: String) -> int:
     var key := definition_id.to_lower()
@@ -49,8 +51,8 @@ static func illustration(definition_id: String, title: String) -> Texture2D:
 static func _text(parent: Control, value: String, top: float, font_size: int, color: Color, weight: bool = false) -> Label:
     var label := Label.new()
     label.text = value
-    label.position = Vector2(12, top)
-    label.size = Vector2(151, 25)
+    label.position = Vector2(11, top)
+    label.size = Vector2(124, 23)
     label.clip_text = true
     label.mouse_filter = Control.MOUSE_FILTER_IGNORE
     label.add_theme_font_size_override("font_size", font_size)
@@ -74,14 +76,14 @@ static func make_card(uid: String, definition_id: String, title: String,
     button.set_meta("card_uid", uid)
     button.set_meta("card_definition_id", definition_id)
     WuxiaTheme.apply_card(button, selected)
-    button.custom_minimum_size = Vector2(176, 218)
+    button.custom_minimum_size = CARD_SIZE
     button.clip_contents = true
     button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
     var painting := TextureRect.new()
     painting.texture = illustration(definition_id, title)
-    painting.position = Vector2(10, 11)
-    painting.size = Vector2(156, 128)
+    painting.position = Vector2(8, 9)
+    painting.size = ART_SIZE
     painting.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     painting.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
     painting.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -90,22 +92,22 @@ static func make_card(uid: String, definition_id: String, title: String,
 
     var art_shadow := ColorRect.new()
     art_shadow.color = Color(0.05, 0.12, 0.12, 0.55)
-    art_shadow.position = Vector2(10, 121)
-    art_shadow.size = Vector2(156, 18)
+    art_shadow.position = Vector2(8, 99)
+    art_shadow.size = Vector2(132, 18)
     art_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
     button.add_child(art_shadow)
 
-    _text(button, title, 143, 17, WuxiaTheme.PAPER, true)
-    _text(button, usage, 168, 13, WuxiaTheme.JADE)
+    _text(button, title, 121, 15, WuxiaTheme.PAPER, true)
+    _text(button, usage, 142, 12, WuxiaTheme.JADE)
     var qi_cost := float(cost.get("qi", 0.0))
     var hp_cost := float(cost.get("hp", 0.0))
-    _text(button, "◈  气 %.1f     血 %.1f" % [qi_cost, hp_cost], 196, 12,
+    _text(button, "◈ 气 %.1f · 血 %.1f" % [qi_cost, hp_cost], 164, 11,
         WuxiaTheme.RED if hp_cost > 0.0 else WuxiaTheme.GOLD)
 
     var filagree := TextureRect.new()
     filagree.texture = FRAME
     filagree.position = Vector2.ZERO
-    filagree.size = Vector2(176, 218)
+    filagree.size = CARD_SIZE
     filagree.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     filagree.stretch_mode = TextureRect.STRETCH_SCALE
     filagree.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -113,8 +115,8 @@ static func make_card(uid: String, definition_id: String, title: String,
 
     var stamp := TextureRect.new()
     stamp.texture = SEAL
-    stamp.position = Vector2(142, 8)
-    stamp.size = Vector2(27, 27)
+    stamp.position = Vector2(119, 7)
+    stamp.size = Vector2(22, 22)
     stamp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     stamp.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
     stamp.mouse_filter = Control.MOUSE_FILTER_IGNORE

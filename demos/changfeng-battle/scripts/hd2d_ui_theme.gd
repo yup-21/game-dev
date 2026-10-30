@@ -52,7 +52,7 @@ static func command_style(hovered: bool = false) -> StyleBoxFlat:
     return style
 
 static func apply_button(button: Button) -> void:
-    button.custom_minimum_size = Vector2(120, 33)
+    button.custom_minimum_size = Vector2(104, 30)
     button.add_theme_stylebox_override("normal", command_style())
     button.add_theme_stylebox_override("hover", command_style(true))
     button.add_theme_stylebox_override("pressed", command_style(true))
@@ -61,7 +61,7 @@ static func apply_button(button: Button) -> void:
     button.add_theme_color_override("font_color", PAPER)
     button.add_theme_color_override("font_hover_color", Color.WHITE)
     button.add_theme_color_override("font_disabled_color", DIM)
-    button.add_theme_font_size_override("font_size", 14)
+    button.add_theme_font_size_override("font_size", 12)
     button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 static func card_style(selected: bool = false, hover: bool = false) -> StyleBoxFlat:
@@ -69,14 +69,14 @@ static func card_style(selected: bool = false, hover: bool = false) -> StyleBoxF
     box.bg_color = Color("203c38", 0.90) if hover or selected else Color("102b2c", 0.92)
     box.border_color = Color("f4d99e", 0.94) if selected else (Color("d8c187", 0.85) if hover else Color("81988b", 0.42))
     box.set_border_width_all(2 if selected else 1)
-    box.set_corner_radius_all(10)
+    box.set_corner_radius_all(7)
     box.shadow_color = Color(0.015, 0.04, 0.05, 0.77)
     box.shadow_size = 15 if selected else 8
     box.shadow_offset = Vector2(0, 6)
     return box
 
 static func apply_card(button: Button, selected: bool = false) -> void:
-    button.custom_minimum_size = Vector2(176, 218)
+    button.custom_minimum_size = Vector2(148, 186)
     button.add_theme_stylebox_override("normal", card_style(selected))
     button.add_theme_stylebox_override("hover", card_style(selected, true))
     button.add_theme_stylebox_override("pressed", card_style(true, true))
