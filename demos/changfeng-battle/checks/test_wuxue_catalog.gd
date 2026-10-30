@@ -66,6 +66,9 @@ func _initialize() -> void:
 	bad.schools[0].deck.cards[0].card_id = "missing"
 	bad_cases.append(bad)
 	bad = raw.duplicate(true)
+	bad.schools[0].deck.cards[0].card_id = "tf_change"
+	bad_cases.append(bad)
+	bad = raw.duplicate(true)
 	bad.combos[0].sequence[0].usage_id = "missing"
 	bad_cases.append(bad)
 	bad = raw.duplicate(true)

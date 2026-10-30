@@ -172,6 +172,13 @@ func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: St
 			if e.type=="modify_pending_damage": attack.attack_bonus+=int(e.get("flat_delta",0))
 	reactions.declare(attack)
 	emit("ATTACK_DECLARED",{"actor_id":actor_id,"target_id":target_id,"definition_id":definition_id,"usage_id":usage_id,"text":"%s 向 %s 出招" % [actor.name,target.name]})
+	# Root attack effects are usually deferred until hit/miss resolution.
+	# A grant_card at the root is different: create the derivative NOW, before
+	# the defender/attacker alternate response priority, so 变锋 can actually
+	# respond to the same clash. No other attack effects execute prematurely.
+	for effect in effects:
+		if str(effect.get("type", "")) == "grant_card":
+			apply_effects(actor_id, [effect], {"card_uid":uid})
 
 func resolve_clash() -> void:
 	if state.resolving_clash: return

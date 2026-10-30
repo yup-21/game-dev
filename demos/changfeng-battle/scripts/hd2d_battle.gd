@@ -63,7 +63,9 @@ func _ready() -> void:
     if story_encounter:
         model.reset(session.encounter_seed(), -1, "tingfeng", session.encounter_options())
     else:
-        model.reset(2026)
+        # Independent demo features different martial lineages, not a mirror
+        # match. Tests can still inject a deterministic mirror via the model.
+        model.reset(2026, -1, "tingfeng", {"schools":{0:"wind_sword", 1:"saber"}})
     observer_id = _first_player_id()
     snap = model.snapshot(observer_id)
     legals = model.legal_actions(_decision_owner())
@@ -1051,7 +1053,7 @@ func _unhandled_input(event: InputEvent) -> void:
             KEY_R:
                 if story_encounter:
                     return
-                model.reset(2026)
+                model.reset(2026, -1, "tingfeng", {"schools":{0:"wind_sword", 1:"saber"}})
                 animation_driver.reset()
                 if effects_driver != null:
                     effects_driver.clear()

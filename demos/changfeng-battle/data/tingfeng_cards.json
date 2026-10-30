@@ -3,7 +3,7 @@
   "implementation_status": "condensed_prototype",
   "meta": {
     "name": "听风五式：核心机制验证",
-    "notes": "5 种卡牌定义 / 12 种 usage / 每方 12 张；观势和藏锋为角色被动；明牌为照胆命中效果。"
+    "notes": "5 招式定义 / 12 种 usage：变锋式只由探锋攻击生成，不进入起始牌库；每方12张基础卡，配合11种武学流派选择。"
   },
   "rules": {
     "system": "CTB_ACTION_CLASH",
@@ -170,6 +170,13 @@
             {
               "type": "deal_damage",
               "amount": 2
+            },
+            {
+              "type": "grant_card",
+              "card_id": "tf_change",
+              "destination": "hand",
+              "count": 1,
+              "target": "self"
             }
           ],
           "target": {
@@ -197,6 +204,13 @@
             {
               "type": "deal_damage",
               "amount": 2
+            },
+            {
+              "type": "grant_card",
+              "card_id": "tf_change",
+              "destination": "hand",
+              "count": 1,
+              "target": "self"
             }
           ],
           "target": {
@@ -214,7 +228,13 @@
           },
           "name": "探锋·追风"
         }
-      ]
+      ],
+      "relations": {
+        "children": [
+          "tf_change"
+        ],
+        "related": []
+      }
     },
     {
       "id": "tf_sunder",
@@ -507,20 +527,27 @@
           },
           "name": "变锋·截势（守）"
         }
-      ]
+      ],
+      "generated_only": true,
+      "lifecycle": "exile_on_finish",
+      "relations": {
+        "parent": "tf_probe",
+        "children": [],
+        "related": []
+      }
     }
   ],
   "deck": {
     "id": "tingfeng_five_forms_mirror_12",
-    "actors_use_identical_deck": true,
+    "actors_use_identical_deck": false,
     "cards": [
       {
         "card_id": "tf_probe",
-        "count": 3
+        "count": 4
       },
       {
         "card_id": "tf_sunder",
-        "count": 2
+        "count": 3
       },
       {
         "card_id": "tf_step",
@@ -529,10 +556,6 @@
       {
         "card_id": "tf_guard",
         "count": 3
-      },
-      {
-        "card_id": "tf_change",
-        "count": 2
       }
     ]
   },
