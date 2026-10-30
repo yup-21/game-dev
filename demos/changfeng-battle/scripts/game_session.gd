@@ -11,6 +11,8 @@ var items: Dictionary={}
 var encounter_id: String=""
 var battle_outcome: String=""
 var winning_team: int=-1
+## Game-session preference: preserved across story scenes and encounter retries.
+var battle_spatial_mode: String="GRID"
 
 func start_new_game() -> void:
 	phase="story"
@@ -42,7 +44,15 @@ func begin_encounter(id: String="escort_ambush") -> bool:
 	return true
 
 func encounter_options() -> Dictionary:
-	return director.battle_options(encounter_id) if phase=="battle" else {}
+	if phase!="battle": return {}
+	var options: Dictionary=director.battle_options(encounter_id)
+	options["spatial_mode"]=battle_spatial_mode
+	return options
+
+func set_battle_spatial_mode(next_mode: String) -> bool:
+	if next_mode not in ["GRID","FREE"]: return false
+	battle_spatial_mode=next_mode
+	return true
 
 func encounter_seed() -> int:
 	return int(director.encounter(encounter_id).get("seed",2026))
