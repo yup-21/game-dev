@@ -19,6 +19,8 @@ const ResponsePolicy = preload("res://scripts/hd2d_response_policy.gd")
 const CharacterRegistry = preload("res://scripts/character_registry.gd")
 const CharacterCardUI = preload("res://scripts/character_card_ui.gd")
 const ChargeRail = preload("res://scripts/hd2d_ctb_rail.gd")
+const BattleHandView = preload("res://scripts/battle_hand_view.gd")
+const BattleHUDStatus = preload("res://scripts/battle_hud_status.gd")
 const COLS := 15
 const ROWS := 10
 const CELL := 1.5
@@ -694,20 +696,7 @@ func _request_fan_layout() -> void:
 
 func _layout_fan_cards() -> void:
     fan_layout_pending = false
-    if card_actions == null or not is_instance_valid(card_actions):
-        return
-    var cards: Array[Button] = []
-    for child in card_actions.get_children():
-        if child is Button and not child.is_queued_for_deletion():
-            cards.append(child)
-    var midpoint := (float(cards.size()) - 1.0) * 0.5
-    for i in range(cards.size()):
-        var card := cards[i]
-        var spread := float(i) - midpoint
-        card.pivot_offset = Vector2(card.size.x * 0.5, card.size.y)
-        card.rotation_degrees = clampf(spread * 5.2, -11.5, 11.5)
-        card.position.y = absf(spread) * 5.0 - (15.0 if _is_selected_card(card) else 0.0)
-        card.set_meta("fan_angle", card.rotation_degrees)
+    BattleHandView.layout_fan(card_actions, Callable(self, "_is_selected_card"))
 
 func _on_roster_avatar_input(event: InputEvent, id: int) -> void:
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -887,11 +876,8 @@ func _unavailable_card_hint(card: Dictionary, phase: String) -> String:
 func _add_visible_hand_card(card: Dictionary, usage: Dictionary, playable: bool) -> void:
     var uid := str(card.get("uid", card.get("card_id", "")))
     var usage_id := str(usage.get("id", ""))
-    var definition_id := str(card.get("definition_id", ""))
-    var cost: Dictionary = usage.get("quoted_cost", {})
-    var button := CardUI.make_card(uid, definition_id,
-        str(card.get("name", "招式")), str(usage.get("name", usage_id)), cost,
-        playable and selected_card_uid == uid and selected_usage_id == usage_id)
+    var button: Button = BattleHandView.make_physical_card(card, usage,
+        playable, selected_card_uid == uid and selected_usage_id == usage_id)
     button.set_meta("usage_id", usage_id)
     button.set_meta("display_only", not playable)
     if playable:
@@ -917,32 +903,13 @@ func _rebuild_actions() -> void:
         "CLASH", false, legals)
     # Never use legal_actions as the source of visible hand cards. That would
     # hide drawn attacks when the opponent starts outside their attack range.
-    var displayed_count := 0
-    var playable_count := 0
-    for card in snap.get("hand", []):
-        var uid := str(card.get("uid", card.get("card_id", "")))
-        var displayed := false
-        if available and not pass_only:
-            for usage in card.get("usages", []):
-                var usage_id: String = str(usage.get("id", ""))
-                if _find_actions(uid,usage_id).is_empty() and not _can_approach_card(uid,usage_id) and not _can_free_movement_card(uid,usage_id):
-                    continue
-                _add_visible_hand_card(card, usage, true)
-                displayed = true
-                playable_count += 1
-        if not displayed:
-            # One disabled tile per physical card, even if it defines several
-            # usages. Prefer the ACTION face over reaction-only alternatives.
-            var choices: Array = card.get("usages", [])
-            if choices.is_empty():
-                continue
-            var fallback: Dictionary = choices[0]
-            for usage in choices:
-                if str(usage.get("timing", "")) == "ACTION":
-                    fallback = usage
-                    break
-            _add_visible_hand_card(card, fallback, false)
-        displayed_count += 1
+    var hand_counts: Dictionary = BattleHandView.render_physical_hand(
+        snap.get("hand", []), available, pass_only,
+        Callable(self, "_find_actions"), Callable(self, "_can_approach_card"),
+        Callable(self, "_can_free_movement_card"),
+        Callable(self, "_add_visible_hand_card"))
+    var displayed_count: int = int(hand_counts.displayed_count)
+    var playable_count: int = int(hand_counts.playable_count)
     var hint := "%s · 手牌 %d 张" % [actor_name, displayed_count]
     if auto_battle:
         hint += "    自动托管中 · 按 A 恢复手动"
@@ -1204,68 +1171,15 @@ func _action_at(cell: Vector2i) -> Dictionary:
 func _update_status() -> void:
     if status_label == null or snap.is_empty():
         return
-    var mode := "雨夜追兵 · 多人交锋" if story_encounter else "断桥论剑 · HD-2D"
-    var priority = model.state.get_actor(_decision_owner())
-    var active_name := str(priority.name) if priority != null else "等待结算"
-    var school_name := str(priority.school_name) if priority != null else ""
-    var stance_ready: bool = priority != null and priority.technique_states.has("tf_change_stage") and str(priority.technique_states.tf_change_stage.node) == "ready"
-    status_label.text = "第 %d 拍  ·  %s%s" % [
-        int(snap.get("global_tick", 0)), active_name,
-        "  ◈ 变锋待发" if stance_ready else ""]
-    if auto_button != null:
-        auto_button.text = "自动战斗 · 开" if auto_battle else "自动战斗 · 关"
-    if spatial_mode_button != null:
-        spatial_mode_button.text = "无网格 · 自由" if model.state.spatial_mode=="FREE" else "网格 · 战棋"
-        spatial_mode_button.disabled = model.state.spatial==null or auto_battle or not _player_decision() or animation_ticket>=0 or bool(snap.get("animation_pending",false))
-    status_label.tooltip_text = "%s / %s / %s" % [mode,
-        str(snap.get("phase", "")), school_name]
-    if str(snap.get("outcome", "playing")) != "playing":
-        status_label.text += "    ·    战斗结束：" + str(snap.get("outcome", ""))
-    for actor in snap.get("actors", []):
-        var id := int(actor.id)
-        if not roster_labels.has(id):
-            continue
-        var marker := "◆" if id == _decision_owner() else "◇"
-        var role := "手动" if str(actor.get("controller", "")) == "PLAYER" else "自动"
-        var hp := float(actor.get("hp", 0.0))
-        var max_hp := maxf(1.0, float(actor.get("max_hp", 1.0)))
-        var qi := float(actor.get("qi", 0.0))
-        var gauge := int(actor.get("gauge", 0))
-        roster_labels[id].text = "%s %s" % [marker, str(actor.get("name", "江湖客"))]
-        roster_labels[id].tooltip_text = "%s  ·  集气 %d\n血 %.0f / %.0f  ·  气 %.1f" % [role, gauge, hp, max_hp, qi]
-        if roster_bars.has(id):
-            var bars: Dictionary = roster_bars[id]
-            var hp_bar: ProgressBar = bars["hp"]
-            hp_bar.max_value = max_hp
-            hp_bar.value = clampf(hp, 0.0, max_hp)
-            hp_bar.tooltip_text = "气血 %.0f / %.0f" % [hp, max_hp]
-            var qi_bar: ProgressBar = bars["qi"]
-            var max_qi := maxf(1.0, maxf(qi, float(actor.get("max_qi", 10.0))))
-            qi_bar.max_value = max_qi
-            qi_bar.value = clampf(qi, 0.0, max_qi)
-            qi_bar.tooltip_text = "真气 %.1f / %.1f" % [qi, max_qi]
-    if charge_rail != null:
-        charge_rail.call("set_state", snap.get("actors", []), _decision_owner())
-    # Reveal situational controls; the idle battlefield has no framed sidebar.
-    var in_clash := str(snap.get("phase", "")) == "CLASH"
-    var has_commands := command_actions != null and command_actions.get_child_count() > 0
-    if context_veil != null:
-        context_veil.visible = in_clash or (has_commands and _player_decision())
-    if command_scroll != null:
-        command_scroll.visible = has_commands and _player_decision()
-        command_scroll.offset_top = 78.0 if in_clash else 12.0
-    if clash_label != null:
-        clash_label.visible = in_clash
-    if phase_label != null:
-        phase_label.text = "◆  交 锋 应 变" if snap.get("phase", "") == "CLASH" else ("◆  我 方 行 动" if _player_decision() else "◆  敌 方 行 动")
-    if clash_label != null:
-        var clash: Dictionary = snap.get("clash", {})
-        if snap.get("phase", "") == "CLASH":
-            clash_label.text = "响应层 %d / 4    ·    Pass %d / 2\n%s持有响应权；可选择合法应对" % [
-                clash.get("stack", []).size(), int(clash.get("consecutive_passes", 0)),
-                "我方" if _player_decision() else "敌方"]
-        else:
-            clash_label.text = "走位  /  出招  /  护体  /  连携\n所有指令由原有规则与合法动作校验"
+    BattleHUDStatus.render(snap, _decision_owner(),
+        model.state.get_actor(_decision_owner()),
+        story_encounter, auto_battle, str(model.state.spatial_mode),
+        model.state.spatial != null, _player_decision(), animation_ticket,
+        {"status": status_label, "auto": auto_button,
+        "spatial": spatial_mode_button, "roster_labels": roster_labels,
+        "roster_bars": roster_bars, "rail": charge_rail,
+        "commands": command_actions, "veil": context_veil,
+        "scroll": command_scroll, "clash": clash_label, "phase": phase_label})
 
 func _auto_pass_unavailable_reactions() -> bool:
     # Work entirely through the authoritative, versioned submit pipeline.

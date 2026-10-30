@@ -5,6 +5,9 @@ on:
     paths:
       - 'demos/changfeng-battle/assets/ui/**'
       - 'demos/changfeng-battle/scripts/hd2d_card_ui.gd'
+      - 'demos/changfeng-battle/scripts/battle_hand_view.gd'
+      - 'demos/changfeng-battle/scripts/battle_hud_status.gd'
+      - 'demos/changfeng-battle/checks/test_battle_hand_view.gd'
       - 'demos/changfeng-battle/scripts/opening_flow.gd'
       - 'demos/changfeng-battle/scripts/opening_role_sprite.gd'
       - 'demos/changfeng-battle/assets/characters/concepts/escort_elder_injured.svg'
@@ -124,6 +127,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_unified_hud.gd
       - name: Check drawn attacks remain visible outside attack range
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_hand_visibility.gd
+      - name: Verify detached physical hand and its disabled card fallbacks
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_hand_view.gd
       - name: Check the right-side authoritative charge track
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_ctb_rail.gd
       - name: Check ornate fan tray, portraits and genuine CTB presentation
