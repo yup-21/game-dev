@@ -287,6 +287,10 @@ func _refresh_target_markers() -> void:
             for actor in snap.get("actors", []):
                 if int(actor.id) == int(action.target_id):
                     target_cells[actor.cell] = true
+    if not selected_kind.is_empty() and ((selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node))):
+        for target in model.state.actors:
+            if target.hp_u>0 and model.state.is_hostile(_decision_owner(),target.id):
+                target_cells[target.cell]=true
     if illustrated_map!=null:
         illustrated_map.set_highlights(target_cells,animation_ticket<0 and _player_decision() and not auto_battle)
         return
@@ -870,7 +874,8 @@ func _rebuild_actions() -> void:
         var displayed := false
         if available and not pass_only:
             for usage in card.get("usages", []):
-                if _find_actions(uid, str(usage.get("id", ""))).is_empty():
+                var usage_id: String = str(usage.get("id", ""))
+                if _find_actions(uid,usage_id).is_empty() and not _can_approach_card(uid,usage_id):
                     continue
                 _add_visible_hand_card(card, usage, true)
                 displayed = true
@@ -923,6 +928,28 @@ func _rebuild_actions() -> void:
         button.pressed.connect(_select_technique.bind(technique_id, node_id))
         card_actions.add_child(button)
         _bind_card_feedback(button)
+
+    # Make ranged-out staged martial attacks selectable as well.
+    if owner != null:
+        for technique_id in owner.technique_states:
+            for stage_def in model.techniques.available_nodes(owner,str(technique_id),"ACTION"):
+                var node_id: String=str(stage_def.get("id",""))
+                var key: String=str(technique_id)+":"+node_id
+                if seen_abilities.has(key) or not _can_approach_technique(str(technique_id),node_id):
+                    continue
+                seen_abilities[key]=true
+                var technique_def: Dictionary=model.techniques.definitions.get(str(technique_id),{})
+                var button := CardUI.make_card(key,
+                    "tf_change" if str(technique_id)=="tf_change_stage" else str(technique_id),
+                    str(technique_def.get("name","武学续式")),
+                    str(stage_def.get("name",node_id)),
+                    model.techniques.cost(owner,str(technique_id),node_id),
+                    selected_technique==str(technique_id) and selected_node==node_id)
+                button.set_meta("technique_id",str(technique_id))
+                button.set_meta("node_id",node_id)
+                button.pressed.connect(_select_technique.bind(str(technique_id),node_id))
+                card_actions.add_child(button)
+                _bind_card_feedback(button)
 
     var commands := {
         "BASIC_GUARD": "守势 · 格挡",
@@ -1078,6 +1105,11 @@ func _submit_legal(action: Dictionary) -> void:
 func _activate_selection() -> void:
     var actions := _selected_actions()
     if actions.is_empty():
+        if (selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node)):
+            selection_label.text="已选择攻击招式：点击敌方角色自动寻路接近并出招；右键取消。"
+            _paint_selection()
+            _refresh_target_markers()
+            return
         _clear_selection()
         return
     # Untargeted effects execute immediately. Link-targeted responses get buttons.
@@ -1092,7 +1124,7 @@ func _activate_selection() -> void:
         UITheme.apply_button(button)
         button.pressed.connect(_submit_legal.bind(action))
         command_actions.add_child(button)
-    selection_label.text = "已选择招式：点击绿色目标格或角色；右键取消。"
+    selection_label.text = "已选择招式：点击敌方角色直接出招，或自动接近后出招；右键取消。"
     _paint_selection()
     _refresh_target_markers()
 
@@ -1462,6 +1494,8 @@ func _hover_cell() -> Vector2i:
 func _update_cursor() -> void:
     hovered = _hover_cell()
     var usable := not _action_at(hovered).is_empty() if not selected_kind.is_empty() else not _legal("MOVE", hovered).is_empty()
+    if not selected_kind.is_empty() and _enemy_at(hovered)>=0:
+        usable=usable or (selected_kind=="PLAY_CARD" and _can_approach_card(selected_card_uid,selected_usage_id)) or (selected_kind=="USE_ABILITY" and _can_approach_technique(selected_technique,selected_node))
     if continuous_preview_enabled and selected_kind.is_empty():
         usable = false
     if illustrated_map!=null:
@@ -1525,8 +1559,15 @@ func _unhandled_input(event: InputEvent) -> void:
             var selected := _action_at(_hover_cell())
             if not selected.is_empty():
                 _submit_legal(selected)
+            else:
+                _submit_selected_approach(_enemy_at(_hover_cell()))
+            get_viewport().set_input_as_handled()
         elif continuous_preview_enabled and illustrated_map != null and _player_decision():
-            _submit("MOVE_FREE", {"target_position": get_viewport().get_mouse_position()})
+            var enemy_id: int=_enemy_at(_hover_cell())
+            if enemy_id>=0:
+                _submit("MOVE_AND_ATTACK",{"attack_kind":"BASIC_ATTACK","target_id":enemy_id})
+            else:
+                _submit("MOVE_FREE", {"target_position": get_viewport().get_mouse_position()})
             get_viewport().set_input_as_handled()
         else:
             var move := _legal("MOVE", _hover_cell())
