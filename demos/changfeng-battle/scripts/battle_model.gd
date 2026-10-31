@@ -58,8 +58,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	state.battle_id="battle:%d:%d" % [seed,_battle_serial]
 	state.root_action_id=state.battle_id+":initial"
 	# An authored battlefield owns the terrain for the entire combat graph.
-	# Legacy/unit-test battles without map_definition_path still use the old
-	# deterministic terrain for compatibility.
+	# Combat fixtures without an authored map use deterministic grid terrain.
 	var map_valid := true
 	if options.has("map_definition_path"):
 		if not options.map_definition_path is String or str(options.map_definition_path).is_empty():
@@ -99,7 +98,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	state.profile="tingfeng"
 	attributes=Attributes.new()
 	var schools=options.get("schools",{})
-	cards=Cards.new(state,SchoolCatalog.DEFAULT_TINGFENG,schools if schools is Dictionary else {},options.get("learned_schools",{}) if options.get("learned_schools",{}) is Dictionary else {})
+	cards=Cards.new(state,"res://data/content_manifest.tres",schools if schools is Dictionary else {},options.get("learned_schools",{}) if options.get("learned_schools",{}) is Dictionary else {})
 	if not schools is Dictionary: cards.load_error="schools必须是角色到流派ID的对象"
 	if not options.get("learned_schools",{}) is Dictionary: cards.load_error="learned_schools必须是角色到已学流派列表的对象"
 	statuses=Statuses.new(state,cards,attributes)

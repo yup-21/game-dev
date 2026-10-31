@@ -1,7 +1,7 @@
 extends RefCounted
 const Events = preload("res://scripts/story_event_executor.gd")
 ## Opening cutscene and branching dialogue state independent of Node2D / combat UI.
-## Each chapter supplies a WuxiaStoryDefinition; custom JSON paths are test fixtures.
+## Each chapter supplies a typed WuxiaStoryDefinition Resource.
 var phase: String = "menu" # menu / cinematic / explore / dialogue / complete
 var data: Dictionary = {}
 var nodes: Dictionary = {}
@@ -11,18 +11,11 @@ var pending_events: Array = []
 var load_error: String = ""
 
 func _init(path: String = "res://data/native/stories/rain_escort_prologue.tres") -> void:
-	var parsed: Variant = null
-	if path.ends_with(".tres"):
-		var definition: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
-		if not definition is WuxiaStoryDefinition:
-			load_error = "Invalid native story Resource: " + path
-			return
-		parsed = definition.to_record()
-	else:
-		if not FileAccess.file_exists(path):
-			load_error = "Missing story: " + path
-			return
-		parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var definition: Resource = ResourceLoader.load(path) if path.ends_with(".tres") and ResourceLoader.exists(path) else null
+	if not definition is WuxiaStoryDefinition:
+		load_error = "Invalid native story Resource: " + path
+		return
+	var parsed: Variant = definition.to_record()
 	if not parsed is Dictionary or parsed.get("schema_version") != 1:
 		load_error = "Invalid opening story format"
 		return
