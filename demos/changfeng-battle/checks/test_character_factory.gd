@@ -77,6 +77,12 @@ func _run() -> void:
     ], inventory) and inventory.snapshot() == before,
         "duplicate equipped slot is rejected without committing UIDs")
 
+    var legacy_inventory = Inventory.new()
+    check(Loadout.apply([
+        {"item_id":"healing_powder","count":2.0,"equip":false,"affixes":[]}
+    ], legacy_inventory) and legacy_inventory.stacks.get("healing_powder", 0) == 2,
+        "integer-valued legacy JSON numeric fields remain accepted")
+
     var session = Session.new()
     root.add_child(session)
     session.start_new_game()

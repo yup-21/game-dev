@@ -1,6 +1,7 @@
 extends RefCounted
 ## Validate and stage starting inventory atomically; never seed an active battle.
 const Inventory = preload("res://scripts/inventory_runtime.gd")
+const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 
 static func apply(entries: Variant, inventory) -> bool:
     if not entries is Array:
@@ -19,7 +20,7 @@ static func apply(entries: Variant, inventory) -> bool:
         var count: Variant = entry.get("count")
         var should_equip: Variant = entry.get("equip", false)
         var affixes: Variant = entry.get("affixes", [])
-        if not id is String or str(id).is_empty() or not count is int or count < 1 or count > 99:
+        if not id is String or str(id).is_empty() or not Modifiers._whole(count, 1, 99):
             return false
         if not should_equip is bool or not affixes is Array:
             return false
