@@ -28,6 +28,7 @@ on:
       - 'demos/changfeng-battle/checks/test_r32_native_action_timeline.gd'
       - 'demos/changfeng-battle/checks/test_r39_content_cleanup.gd'
       - 'demos/changfeng-battle/checks/test_r40_native_entry_closure.gd'
+      - 'demos/changfeng-battle/checks/test_r41_native_only.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -60,17 +61,17 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_effects.gd
       - name: R21 native chapters, stories, quests and encounters
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_story_quests.gd
-      - name: Preserve legacy chapter and dialogue session pipeline
+      - name: Preserve native chapter and dialogue session pipeline
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_chapter_pipeline.gd
       - name: R22 native asset manifest, bindings and VFX overlay
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_assets.gd
       - name: R23 native polygon maps and free-space navigation
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_maps.gd
-      - name: R25 original character roster native parity
+      - name: R25 native character runtime contracts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r25_native_roster.gd
-      - name: R25 equipment affix, item and buff native parity
+      - name: R25 native equipment, item and buff contracts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r25_native_inventory.gd
-      - name: R25 native production document parity
+      - name: R25 typed native content registration
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r25_native_documents.gd
       - name: R26 transactional story recruitment and native encounter
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r26_story_recruitment.gd
@@ -86,6 +87,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r39_content_cleanup.gd
       - name: R40 native entry and retired API closure
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r40_native_entry_closure.gd
+      - name: R41 native-only source and gameplay boundary
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r41_native_only.gd
       - name: R24 complete content-only vertical slice
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_content_closure.gd
       - name: R11 extensible catalogs and combo counts
@@ -94,7 +97,7 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_character_dynamic_identity.gd
       - name: R13 buff lifecycle and stat modifiers
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_status_modifiers.gd
-      - name: Preserve legacy Tingfeng V3 state and timing behavior
+      - name: Preserve Tingfeng V3 gameplay state and timing behavior
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
       - name: R14 inventory and persistent character equipment
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_inventory_equipment_runtime.gd
