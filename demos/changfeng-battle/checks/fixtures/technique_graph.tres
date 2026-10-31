@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://scripts/content/technique_definition.gd" id="2_tech"]
+[ext_resource type="Script" path="res://scripts/content/technique_node_definition.gd" id="3_node"]
+[ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="4_effect"]
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("4_effect")
+effect_type = "deal_damage"
+target = "enemy"
+amount = 1.0
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("4_effect")
+effect_type = "deal_damage"
+target = "enemy"
+amount = 1.0
+
+[sub_resource type="Resource" id="Effect_3"]
+script = ExtResource("4_effect")
+effect_type = "deal_damage"
+target = "enemy"
+amount = 1.0
+
+[sub_resource type="Resource" id="Node_1"]
+script = ExtResource("3_node")
+node_id = "one"
+next_node = "two"
+timing = "ACTION"
+cost_qi = 1
+target_kind = "enemy_actor"
+target_max_distance = 1
+attack_route = "thrust"
+attack_range = 1
+effects = Array[Resource]([SubResource("Effect_1")])
+
+[sub_resource type="Resource" id="Node_2"]
+script = ExtResource("3_node")
+node_id = "two"
+next_node = "three"
+unlock_rank = 2
+same_action_extra_qi = 2
+timing = "ACTION"
+cost_qi = 1
+target_kind = "enemy_actor"
+target_max_distance = 1
+attack_route = "sweep"
+attack_range = 1
+effects = Array[Resource]([SubResource("Effect_2")])
+
+[sub_resource type="Resource" id="Node_3"]
+script = ExtResource("3_node")
+node_id = "three"
+next_node = "one"
+unlock_rank = 3
+same_action_extra_qi = 1
+timing = "ACTION"
+cost_qi = 1
+target_kind = "enemy_actor"
+target_max_distance = 1
+attack_route = "crushing"
+attack_range = 1
+effects = Array[Resource]([SubResource("Effect_3")])
+
+[sub_resource type="Resource" id="Graph"]
+script = ExtResource("2_tech")
+content_id = "test_chain"
+entry_node = "one"
+hold_own_actions = 2
+nodes = Array[Resource]([SubResource("Node_1"), SubResource("Node_2"), SubResource("Node_3")])
+
+[resource]
+script = ExtResource("1_manifest")
+techniques = Array[Resource]([SubResource("Graph")])

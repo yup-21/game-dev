@@ -16,23 +16,10 @@ func _initialize() -> void:
     call_deferred("_run")
 
 func _run() -> void:
-    # New martial effects may reference an independent BuffCatalog entry.
-    var raw: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/school_forms.json"))
-    var expanded: Dictionary = raw.duplicate(true)
-    expanded.cards[0].usages[0].effects.append({
-        "type":"apply_status","status_id":"iron_body","stacks":1,"target":"self"
-    })
-    var fixture: String = "user://r15-martial-buff-link.json"
-    var file := FileAccess.open(fixture,FileAccess.WRITE)
-    check(file != null,"temporary content fixture writable")
-    if file == null:
-        quit(1)
-        return
-    file.store_string(JSON.stringify(expanded))
-    file.close()
-    var martial = SchoolCatalog.new(fixture)
-    check(martial.load_error.is_empty(),"martial forms may reference standalone buffs: "+martial.load_error)
-    DirAccess.remove_absolute(ProjectSettings.globalize_path(fixture))
+    var martial = SchoolCatalog.new()
+    check(martial.load_error.is_empty(), "martial Resource catalog valid")
+    check(martial._valid_effect({"type":"apply_status","status_id":"iron_body",
+        "stacks":1,"target":"self"}), "martial rules accept independently registered buff")
     var items = ItemCatalog.new()
     check(items.load_error.is_empty(),"equipment catalog still valid")
     var role = Runtime.new("shen_changfeng")

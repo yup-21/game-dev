@@ -1,56 +1,20 @@
 extends RefCounted
-## Optional, independent buff catalog. Add one JSON file and index entry.
+## Optional, independent buff catalog. Add typed Resources to the manifest.
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 const Conditions = preload("res://scripts/condition_evaluator.gd")
 const NativeContent = preload("res://scripts/content/content_registry.gd")
-const DEFAULT_INDEX = "res://data/buffs/index.json"
 var definitions: Dictionary = {}
 var load_error: String = ""
 
-func _init(index_path: String = DEFAULT_INDEX,
-        native_manifest_path: String = "res://data/content_manifest.tres") -> void:
-    if index_path == DEFAULT_INDEX and native_manifest_path == NativeContent.DEFAULT_MANIFEST:
-        var native = NativeContent.new(native_manifest_path)
-        if not native.load_error.is_empty():
-            load_error = native.load_error
-            return
-        for definition in native.entries("buff").values():
-            if not _valid(definition) or definitions.has(str(definition.id)):
-                load_error = "Invalid or duplicate native buff"
-                definitions.clear()
-                return
-            definitions[str(definition.id)] = definition.duplicate(true)
-        return
-    if not FileAccess.file_exists(index_path):
-        load_error = "Buff index missing: " + index_path
-        return
-    var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path))
-    if not index is Dictionary or index.get("schema_version") != 1 or not index.get("buffs") is Array:
-        load_error = "Invalid buff index"
-        return
-    var root: String = index_path.get_base_dir() + "/"
-    for filename in index.buffs:
-        if not filename is String or filename.contains("/") or filename.contains("..") or not filename.ends_with(".json"):
-            load_error = "Unsafe buff file name"
-            return
-        var path: String = root + filename
-        if not FileAccess.file_exists(path):
-            load_error = "Missing buff definition: " + filename
-            return
-        var definition: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-        if not _valid(definition) or definitions.has(str(definition.id)):
-            load_error = "Invalid or duplicate buff definition: " + filename
-            return
-        definitions[str(definition.id)] = definition.duplicate(true)
-
-
-    var native = NativeContent.new(native_manifest_path)
+func _init(manifest_path: String = NativeContent.DEFAULT_MANIFEST) -> void:
+    var native = NativeContent.new(manifest_path)
     if not native.load_error.is_empty():
         load_error = native.load_error
         return
     for definition in native.entries("buff").values():
         if not _valid(definition) or definitions.has(str(definition.id)):
-            load_error = "Invalid or duplicate native buff: " + str(definition.get("id", ""))
+            load_error = "Invalid or duplicate native buff"
+            definitions.clear()
             return
         definitions[str(definition.id)] = definition.duplicate(true)
 

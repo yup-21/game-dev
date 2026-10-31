@@ -1,53 +1,31 @@
 extends SceneTree
-## R25: canonical roster must load from native Resources, with exact old profile semantics.
+## Native character cards must provide identity, stats and runtime bindings.
 const Native = preload("res://scripts/content/content_registry.gd")
 const Registry = preload("res://scripts/character_registry.gd")
 const Factory = preload("res://scripts/character_factory.gd")
-var failures: int = 0
-
+var failures := 0
 func _initialize() -> void:
     call_deferred("_run")
-
 func check(ok: bool, label: String) -> void:
     if not ok:
         failures += 1
-        printerr("R25 ROSTER FAIL: " + label)
-
+        push_error("R25_ROSTER: " + label)
 func _run() -> void:
-    var n = Native.new()
-    var r = Registry.new()
-    check(n.load_error.is_empty() and r.load_error.is_empty(),
-        "canonical native manifest and registry load")
-    var expected: Array[String] = ["gu_qingshuang","green_wanderer",
-        "pursuer_captain","black_blade","night_assassin","escort_elder","river_messenger"]
-    check(n.entries("character").size() >= 9,
-        "all eight original characters plus the R24 recruit are native")
-    for id in expected:
-        var source_path: String = "res://data/characters/" + id + ".json"
-        var source: Variant = JSON.parse_string(FileAccess.get_file_as_string(source_path))
-        var actual: Dictionary = r.get_profile(id)
-        check(n.entries("character").has(id) and not actual.is_empty(),
-            "native replacement exists for " + id)
-        if not source is Dictionary or actual.is_empty(): continue
-        for key in ["id","battle_actor_id","name","title","role","faction",
-                "team_hint","weapon","personality","biography","school_id",
-                "techniques","learned_schools","art"]:
-            check(source.get(key) == actual.get(key),
-                "field parity " + id + "." + key)
-        for stat in ["STR","AGI","CON","MND"]:
-            check(int(source.attributes[stat]) == int(actual.attributes[stat]),
-                "attribute parity " + id + "." + stat)
-        for passive in ["insight","conceal"]:
-            check(int(source.passives[passive]) == int(actual.passives[passive]),
-                "passive parity " + id + "." + passive)
-    check(r.for_actor(0).get("id") == "shen_changfeng" and
-        r.for_actor(5).get("id") == "night_assassin",
-        "actor 0..5 bindings preserved")
+    var native = Native.new()
+    var registry = Registry.new()
+    check(native.load_error.is_empty() and registry.load_error.is_empty(),
+        "production Resource registry validates")
+    check(native.entries("character").size() >= 9 and registry.profiles.size() >= 9,
+        "original roster and recruit remain authored")
+    for id in native.entries("character"):
+        var expected: Dictionary = native.entries("character")[id]
+        var actual: Dictionary = registry.get_profile(str(id))
+        check(actual == expected, "identity, skills, attributes and art: " + str(id))
+        if int(expected.get("battle_actor_id",-1)) >= 0:
+            check(registry.for_actor(int(expected.battle_actor_id)).get("id") == id,
+                "actor binding: " + str(id))
     var factory = Factory.new()
-    check(factory.create_runtime("gu_qingshuang") != null and
-        factory.create_runtime("pursuer_captain") != null,
-        "migrated allies and enemies still construct through CharacterFactory")
-    check(r.get_profile("r24_lan_chen").get("id") == "r24_lan_chen",
-        "new native recruit remains registered")
-    print("R25_NATIVE_ROSTER_PASS failures=",failures)
-    quit(0 if failures == 0 else 1)
+    for id in ["shen_changfeng", "gu_qingshuang", "pursuer_captain", "r24_lan_chen"]:
+        check(factory.create_runtime(id) != null, "native card instantiates: " + id)
+    print("R25_NATIVE_ROSTER_PASS failures=", failures)
+    quit(1 if failures else 0)

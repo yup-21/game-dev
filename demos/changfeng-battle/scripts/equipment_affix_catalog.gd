@@ -3,45 +3,18 @@ extends RefCounted
 ## never to a shared item definition or a character-global stat table.
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 const NativeContent = preload("res://scripts/content/content_registry.gd")
-const INDEX_PATH = "res://data/affixes/index.json"
 const EQUIPMENT_SLOTS = ["weapon", "armor", "accessory"]
 var definitions: Dictionary = {}
 var load_error: String = ""
 
-func _init(index_path: String = INDEX_PATH) -> void:
-    if index_path == INDEX_PATH:
-        var native = NativeContent.new()
-        if not native.load_error.is_empty():
-            load_error = native.load_error
-            return
-        for definition in native.entries("affix").values():
-            if not _valid(definition) or definitions.has(str(definition.id)):
-                load_error = "Invalid or duplicate native affix"
-                definitions.clear()
-                return
-            definitions[str(definition.id)] = definition.duplicate(true)
+func _init(manifest_path: String = NativeContent.DEFAULT_MANIFEST) -> void:
+    var native = NativeContent.new(manifest_path)
+    if not native.load_error.is_empty():
+        load_error = native.load_error
         return
-    if not FileAccess.file_exists(index_path):
-        load_error = "Affix index missing: " + index_path
-        return
-    var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path))
-    if not index is Dictionary or index.get("schema_version") != 1 or not index.get("affixes") is Array:
-        load_error = "Invalid affix index"
-        return
-    var directory: String = index_path.get_base_dir() + "/"
-    for filename in index.affixes:
-        if not filename is String or filename.contains("/") or filename.contains("..") or not filename.ends_with(".json"):
-            load_error = "Unsafe affix filename"
-            definitions.clear()
-            return
-        var path: String = directory + filename
-        if not FileAccess.file_exists(path):
-            load_error = "Missing affix: " + filename
-            definitions.clear()
-            return
-        var definition: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+    for definition in native.entries("affix").values():
         if not _valid(definition) or definitions.has(str(definition.id)):
-            load_error = "Invalid or duplicate affix: " + filename
+            load_error = "Invalid or duplicate native affix"
             definitions.clear()
             return
         definitions[str(definition.id)] = definition.duplicate(true)

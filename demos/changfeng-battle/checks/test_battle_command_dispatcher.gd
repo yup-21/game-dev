@@ -41,7 +41,7 @@ func _run() -> void:
             "accepted ticket can be acknowledged once")
 
     model.reset(2026, -1, "tingfeng",
-        {"map_definition_path": "res://data/maps/rainy_bridge.json"})
+        {"map_definition_path": "res://data/maps/rainy_bridge.tres"})
     owner = int(model.state.active_id)
     var before_mode: int = int(model.state.revision)
     var switched: Dictionary = Dispatcher.dispatch(model, owner,

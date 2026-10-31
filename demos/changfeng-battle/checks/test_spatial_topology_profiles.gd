@@ -69,8 +69,8 @@ func _profile(name: String, map_path: String, start_cell: Vector2i,
         [name, expected.size(), cost, samples[int(samples.size() / 2)], p95, samples[-1]])
 
 func _run() -> void:
-    var open: String = "res://checks/fixtures/maps/qa_open_arena.json"
-    var obstacles: String = "res://checks/fixtures/maps/qa_obstacle_court.json"
+    var open: String = "res://checks/fixtures/maps/qa_open_arena.tres"
+    var obstacles: String = "res://checks/fixtures/maps/qa_obstacle_court.tres"
     _profile("open", open, Vector2i(2, 4), Vector2i(12, 4), [], false)
     _profile("obstacles", obstacles, Vector2i(3, 3), Vector2i(11, 3), [], true)
     var crowd: Array[Vector2i] = [

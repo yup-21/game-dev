@@ -45,24 +45,18 @@ func _run() -> void:
         return
     var timeline = Timeline.new()
     check(timeline.load_error.is_empty(), "typed timeline validates: " + timeline.load_error)
-    var old: Variant = JSON.parse_string(FileAccess.get_file_as_string(
-        "res://data/action_timelines.json"))
-    check(old is Dictionary, "historical fixture is test-only")
-    if not old is Dictionary:
-        quit(1)
-        return
-    check(timeline.profiles.size() == old.profiles.size() and
-        timeline.event_animations.size() == old.events.size(),
-        "no clips or event mappings lost")
-    for id in old.profiles:
+    var explicit = Timeline.new("res://data/native/action_timelines/r32_default.tres")
+    check(explicit.load_error.is_empty() and explicit.profiles == timeline.profiles
+        and explicit.event_animations == timeline.event_animations,
+        "authored timeline and default registry expose equivalent records")
+    for id in timeline.profiles:
         var clip: WuxiaActionClipDefinition = timeline.clip_definition(str(id))
-        check(clip != null and clip.valid_clip(),
-            "typed clip exists and validates: " + str(id))
-        check(same(timeline.clip(str(id)), old.profiles[id]),
-            "all phase, window and cue values unchanged: " + str(id))
-    for event in old.events:
-        check(timeline.animation_for_event(str(event)) == str(old.events[event]),
-            "event binding unchanged: " + str(event))
+        check(clip != null and clip.valid_clip(), "typed clip exists: " + str(id))
+        check(timeline.clip(str(id)) == explicit.clip(str(id)),
+            "typed clip has stable semantics: " + str(id))
+    for event in timeline.event_animations:
+        check(timeline.animation_for_event(str(event)) ==
+            explicit.animation_for_event(str(event)), "event binding: " + str(event))
     var invalid := WuxiaActionClipDefinition.new()
     invalid.clip_id = "invalid"
     invalid.duration_sec = 0.5
@@ -87,7 +81,7 @@ func _run() -> void:
     var duplicate_loader = Timeline.new(
         "res://data/native/action_timelines/r32_default.tres")
     check(duplicate_loader.load_error.is_empty() and
-        same(duplicate_loader.clip("combo"), old.profiles.combo),
+        same(duplicate_loader.clip("combo"), timeline.clip("combo")),
         "explicit .tres authoring path has identical semantics")
     check(timeline.window_open("evade", "invulnerable", 0.15) and
         not timeline.window_open("evade", "invulnerable", 0.35),

@@ -6,92 +6,26 @@ const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 const Inventory = preload("res://scripts/inventory_runtime.gd")
 const NativeContent = preload("res://scripts/content/content_registry.gd")
 const Loadout = preload("res://scripts/content/character_loadout.gd")
-const BASE := "res://data/characters/"
 var profiles: Dictionary = {}
 var by_actor: Dictionary = {}
 var by_name: Dictionary = {}
 var load_error: String = ""
 
-func _init(index_path: String = BASE + "index.json", definition_root: String = BASE,
-        native_manifest_path: String = "") -> void:
-    # Production roster is fully native. The old character JSON files are
-    # independent migration fixtures; they are never needed at game startup.
-    # Custom index arguments still exercise the original compatibility parser.
-    if index_path == BASE + "index.json" and definition_root == BASE and native_manifest_path.is_empty():
-        var natives = NativeContent.new()
-        if not natives.load_error.is_empty():
-            load_error = natives.load_error
-            return
-        var schools = SchoolCatalog.new()
-        if not schools.load_error.is_empty():
-            load_error = schools.load_error
-            return
-        var entries: Dictionary = natives.entries("character")
-        if entries.size() < 8:
-            load_error = "Incomplete native roster: expected all original combatants/NPCs"
-            return
-        for d in entries.values():
-            if not _valid(d, schools) or profiles.has(d.id) or by_name.has(d.name):
-                load_error = "Invalid or duplicate native character: " + str(d.get("id",""))
-                return
-            if int(d.battle_actor_id) >= 0 and by_actor.has(int(d.battle_actor_id)):
-                load_error = "Duplicate native actor ID: " + str(d.battle_actor_id)
-                return
-            profiles[str(d.id)] = d.duplicate(true)
-            by_name[str(d.name)] = str(d.id)
-            if int(d.battle_actor_id) >= 0:
-                by_actor[int(d.battle_actor_id)] = str(d.id)
-        return
-    if not FileAccess.file_exists(index_path):
-        load_error = "Character index missing: " + index_path
-        return
-    var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path))
-    if not index is Dictionary or index.get("schema_version") != 1 or not index.get("characters") is Array:
-        load_error = "Invalid character index"
+func _init(manifest_path: String = NativeContent.DEFAULT_MANIFEST) -> void:
+    var natives = NativeContent.new(manifest_path)
+    if not natives.load_error.is_empty():
+        load_error = natives.load_error
         return
     var schools = SchoolCatalog.new()
     if not schools.load_error.is_empty():
         load_error = schools.load_error
         return
-    for entry in index.characters:
-        if not entry is String or entry.contains("/") or entry.contains("..") or not entry.ends_with(".json"):
-            load_error = "Unsafe character file path"
-            return
-        var path: String = definition_root + entry
-        if not FileAccess.file_exists(path):
-            load_error = "Missing character definition: " + entry
-            return
-        var d: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-        if not _valid(d, schools) or profiles.has(d.id) or by_name.has(d.name):
-            load_error = "Invalid or duplicate character definition: " + entry
-            return
-        if int(d.battle_actor_id) >= 0 and by_actor.has(int(d.battle_actor_id)):
-            load_error = "Duplicate battle actor ID: " + str(d.battle_actor_id)
-            return
-        profiles[str(d.id)] = d.duplicate(true)
-        by_name[str(d.name)] = str(d.id)
-        if int(d.battle_actor_id) >= 0:
-            by_actor[int(d.battle_actor_id)] = str(d.id)
-
-
-    # New character cards are authored as Godot .tres Resources. Legacy JSON
-    # definitions remain readable while existing demo content is migrated.
-    # Custom legacy indexes are self-contained fixtures. Only the canonical
-    # index receives the production manifest implicitly.
-    if native_manifest_path.is_empty():
-        if index_path != BASE + "index.json" or definition_root != BASE:
-            return
-        native_manifest_path = NativeContent.DEFAULT_MANIFEST
-    var native = NativeContent.new(native_manifest_path)
-    if not native.load_error.is_empty():
-        load_error = native.load_error
-        return
-    for d in native.entries("character").values():
-        if not _valid(d, schools) or profiles.has(d.id) or by_name.has(d.name):
+    for d in natives.entries("character").values():
+        if not _valid(d, schools) or profiles.has(str(d.id)) or by_name.has(str(d.name)):
             load_error = "Invalid or duplicate native character: " + str(d.get("id", ""))
             return
         if int(d.battle_actor_id) >= 0 and by_actor.has(int(d.battle_actor_id)):
-            load_error = "Duplicate native battle actor ID: " + str(d.battle_actor_id)
+            load_error = "Duplicate native actor ID: " + str(d.battle_actor_id)
             return
         profiles[str(d.id)] = d.duplicate(true)
         by_name[str(d.name)] = str(d.id)
@@ -236,7 +170,7 @@ func battle_options(roster: Array, character_ids: Dictionary, builds: Dictionary
         output.equipment[id] = equipment.duplicate(true)
         output.passives[id] = profile.passives.duplicate(true)
         output.techniques[id] = {}
-        # JSON numbers are floats; TechniqueRuntime requires integral ranks.
+        # Typed card attributes are validated before constructing the battle.
         for technique_id in profile.techniques:
             output.techniques[id][str(technique_id)] = int(profile.techniques[technique_id])
         output.character_names[id] = str(profile.name)

@@ -5,42 +5,8 @@ const DEFAULT_PATH = NativeContent.DEFAULT_MANIFEST
 var definitions: Dictionary = {}
 var load_error: String = ""
 
-func _init(path: String = DEFAULT_PATH) -> void:
-	if path != DEFAULT_PATH and not FileAccess.file_exists(path):
-		load_error = "Technique catalog missing: " + path
-		return
-	var data = {} if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
-	if not data is Dictionary or (path != DEFAULT_PATH and (data.get("version") != 1 or not data.get("techniques") is Array)):
-		load_error = "Invalid technique catalog"
-		return
-	for d in data.get("techniques", []):
-		if not d is Dictionary or not d.get("id") is String or str(d.id).is_empty() or definitions.has(d.id):
-			load_error = "Duplicate or invalid technique id"
-			return
-		if not d.get("nodes") is Array or d.nodes.is_empty() or d.nodes.size() > 32: load_error = "Invalid graph nodes"; return
-		var ids: Dictionary = {}
-		for n in d.nodes:
-			if not n is Dictionary or not n.get("id") is String or ids.has(n.id): load_error = "Invalid node"; return
-			if n.get("timing", "") not in ["ACTION", "ATTACK_REACTION", "DEFENSE_REACTION"]: load_error = "Invalid timing"; return
-			if not n.get("effects", []) is Array or n.effects.is_empty(): load_error = "Invalid effects"; return
-			if not n.get("cost", {}) is Dictionary or not n.get("target", {}) is Dictionary: load_error = "Invalid costs or target"; return
-			ids[n.id] = true
-		if not ids.has(d.get("entry", "")): load_error = "Invalid entry"; return
-		for n in d.nodes:
-			if not ids.has(n.get("next", d.entry)): load_error = "Invalid transition"; return
-		var trigger: Dictionary=d.get("trigger",{})
-		if not trigger.is_empty():
-			if not trigger.get("card_id") is String or not trigger.get("usage_id") is String or not trigger.get("ready_stage") is String: load_error = "Invalid stage trigger"; return
-			var valid_stage := false
-			for n in d.nodes:
-				if str(n.get("stage",n.id)) == str(trigger.ready_stage): valid_stage=true
-			if not valid_stage: load_error = "Unknown ready stage"; return
-		definitions[d.id] = d.duplicate(true)
-
-	# Custom legacy fixtures stay self-contained; production also loads .tres.
-	if path != DEFAULT_PATH:
-		return
-	var native = NativeContent.new()
+func _init(manifest_path: String = DEFAULT_PATH) -> void:
+	var native = NativeContent.new(manifest_path)
 	if not native.load_error.is_empty():
 		load_error = native.load_error
 		return

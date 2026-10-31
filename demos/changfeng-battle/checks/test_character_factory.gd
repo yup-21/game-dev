@@ -54,8 +54,7 @@ func _run() -> void:
         "portrait and sprite sheet are reachable by native resource dependencies")
 
     # An optional PackedScene can be instantiated without touching BattleModel.
-    var fixture = Registry.new("res://data/characters/index.json", "res://data/characters/",
-        "res://data/native_examples.tres")
+    var fixture = Registry.new("res://data/native_examples.tres")
     var fixture_factory = Factory.new(fixture)
     var view = fixture_factory.instantiate_presentation("r18_guest_swordsman")
     check(view is Node2D and view.get_node_or_null("Portrait") is Sprite2D,
@@ -77,11 +76,11 @@ func _run() -> void:
     ], inventory) and inventory.snapshot() == before,
         "duplicate equipped slot is rejected without committing UIDs")
 
-    var legacy_inventory = Inventory.new()
+    var numeric_inventory = Inventory.new()
     check(Loadout.apply([
         {"item_id":"healing_powder","count":2.0,"equip":false,"affixes":[]}
-    ], legacy_inventory) and legacy_inventory.stacks.get("healing_powder", 0) == 2,
-        "integer-valued legacy JSON numeric fields remain accepted")
+    ], numeric_inventory) and numeric_inventory.stacks.get("healing_powder", 0) == 2,
+        "integer-valued numeric fields remain accepted")
 
     var session = Session.new()
     root.add_child(session)

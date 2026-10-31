@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=75 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=74 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -59,7 +59,6 @@
 
 [ext_resource type="Resource" path="res://data/native/rule_catalogs/r36_school_forms.tres" id="50_r36"]
 [ext_resource type="Resource" path="res://data/native/rule_catalogs/r37_tingfeng_cards.tres" id="51_r37"]
-[ext_resource type="Resource" path="res://data/native/legacy/legacy_skill_ids.tres" id="52_r38"]
 [ext_resource type="Resource" path="res://data/native/techniques/tf_change_stage.tres" id="53_r33"]
 [ext_resource type="Resource" path="res://data/native/encounters/escort_ambush.tres" id="54_r34"]
 [ext_resource type="Resource" path="res://data/native/encounters/river_watch_ambush.tres" id="79_r34"]
@@ -109,4 +108,3 @@ items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResour
 affixes = Array[Resource]([ExtResource("47_r25"), ExtResource("48_r25"), ExtResource("49_r25")])
 action_timelines = Array[Resource]([ExtResource("55_r32")])
 rule_catalogs = Array[Resource]([ExtResource("50_r36"), ExtResource("51_r37")])
-legacy_mappings = Array[Resource]([ExtResource("52_r38")])

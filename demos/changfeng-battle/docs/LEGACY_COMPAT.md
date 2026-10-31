@@ -1,15 +1,11 @@
-# 正式入口与兼容边界（R29）
+# R41 · 历史兼容代码已经移除
 
-玩家场景只有 `opening.tscn`、`battle_hd2d.tscn` 和结算 `demo_result.tscn`。旧 `battle.tscn`、`party_battle.tscn` 及其专用 View 已迁移测试后删除，不存在第二套战斗表现。
+这份文档仅保留迁移决策，不再定义受支持的旧文件接口。
 
-规则回归测试直接针对 `BattleModel`、命令分发和 GRID/FREE 空间服务；UI 回归测试针对唯一正式场景。保存的是玩法行为，而不是旧场景文件。
+R29–R40 逐步将历史战斗场景、独立 waypoint 寻路器、泛型 WuxiaDataDocument、旧内容 JSON 和旧 ID 导入映射隔离。**R41 已进一步删除源仓库内旧内容 JSON、旧武学 ID 对照表及其适配器、各生产 catalog 的 JSON 分支**。不再支持通过自定义 JSON 索引创建角色、物品、武学或剧情。
 
-旧 ID 适配器和少量旧数据 Schema 仍有真实规则消费者；历史 JSON 只用于主动传入的兼容/非法配置测试。新游戏没有承诺过未发布旧存档格式。
+正式玩家场景仍然只有 `opening.tscn`、`battle_hd2d.tscn` 和 `demo_result.tscn`。规则回归保留 `BattleModel`、`BattleSpatialService`、CTB、连携与两种移动模式；内容校验改为 `WuxiaContentManifest` + 类型化 Resource。旧数据仅存在于 Git 历史，不需要继续存储在源工程中。
 
-缺失美术使用 `assets/fallback/` 独立占位素材；不拿旧人物/旧场景原画替代。详见 [R29 说明](R29_NATIVE_CLEANUP.md)。
+注意：`assets/production_manifest.json` 属于离线的美术来源/授权审计清单，既不是游戏数据，也不会包含在发布包。存档/运行时记录可以序列化为数据结构，但不能反过来将其当成配置文件加载器。
 
-R32：动作时间轴已迁入强类型 `WuxiaActionTimelineDefinition`，生产中不再读取旧 `r25_action_timelines`；余六份复杂数据容器仍在迁移清单中。详见 [R32 时间轴迁移](R32_TYPED_ACTION_TIMELINE.md)。
-
-R39：剩余六份通用内容文档已迁入对应类型化 Resource，生产 Manifest 不再注册 `document`，`WuxiaDataDocument` 与原目录均已移除；旧技能 ID 仅通过 `WuxiaLegacyMappingDefinition` 为显式导入提供适配。历史 JSON 为测试用值对照，不承担生产加载。
-
-R40：快捷/剧情入口已经统一使用原生 Encounter 和 CharacterFactory，历史 JSON 不随发布包导出；旧 waypoint 并行实现及无引用的重复场景常量已删除。显式传入自定义 JSON 的校验分支只服务工程内的坏数据/历史数值测试，不是默认启动路径，也没有被发布包调用。原生旧 ID 导入器仍可用于主动转换历史配置；不作为当前武学加载的依赖。
+详见 [R41 技术收口](R41_NATIVE_ONLY_CLOSURE.md)。

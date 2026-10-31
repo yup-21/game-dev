@@ -5,7 +5,6 @@ extends WuxiaContentDefinition
 
 @export var entry_node: String = ""
 @export var nodes: Array[Resource] = []
-@export var trigger: Dictionary = {} # Legacy/editor fixtures only
 @export var display_name: String = ""
 @export var auto_equip: bool = false
 @export var hold_own_actions: int = 2
@@ -23,7 +22,7 @@ func to_record() -> Dictionary:
         if record.is_empty():
             return {}
         converted.append(record)
-    var trigger_record: Dictionary = trigger.duplicate(true)
+    var trigger_record: Dictionary = {}
     if trigger_definition != null:
         trigger_record = trigger_definition.to_record()
         if trigger_record.is_empty(): return {}
@@ -34,5 +33,5 @@ func to_record() -> Dictionary:
     }
     if not display_name.is_empty(): result["name"] = display_name
     if auto_equip: result["auto_equip"] = true
-    if hold_own_actions != 2: result["hold_own_actions"] = hold_own_actions
+    result["hold_own_actions"] = hold_own_actions
     return result
