@@ -1,0 +1,50 @@
+name: Portable Changfeng demo export
+
+on:
+  pull_request:
+    paths:
+      - 'demos/changfeng-battle/**/*.gd'
+      - 'demos/changfeng-battle/**/*.tscn'
+      - 'demos/changfeng-battle/**/*.json'
+      - 'demos/changfeng-battle/assets/**'
+      - 'demos/changfeng-battle/project.godot'
+      - 'demos/changfeng-battle/export_presets.cfg'
+      - '.github/workflows/wuxia-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: '4.7.2'
+          use-dotnet: false
+          include-templates: true
+      - name: Import Godot resources
+        run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Export portable Windows and Linux releases
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/build"
+          godot --headless --path demos/changfeng-battle --export-release "Windows Desktop" "$GITHUB_WORKSPACE/build/changfeng-demo.exe"
+          godot --headless --path demos/changfeng-battle --export-release "Linux" "$GITHUB_WORKSPACE/build/changfeng-demo.x86_64"
+          test -s build/changfeng-demo.exe
+          test -s build/changfeng-demo.x86_64
+          test -s build/changfeng-demo.pck
+      - name: Verify export pack from outside the checkout
+        run: |
+          cd build
+          timeout --signal=TERM 60s godot --headless --main-pack "$PWD/changfeng-demo.pck" --script res://checks/test_export_resources.gd
+          chmod +x changfeng-demo.x86_64
+          timeout --signal=TERM 30s ./changfeng-demo.x86_64 --headless --quit-after 20
+      - uses: actions/upload-artifact@v4
+        with:
+          name: changfeng-portable-demo
+          path: build/changfeng-demo.*
+          if-no-files-found: error
+          retention-days: 14
