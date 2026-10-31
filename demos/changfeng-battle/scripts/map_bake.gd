@@ -27,7 +27,7 @@ func _init(path: String = DEFAULT_PATH) -> void:
     if path.ends_with(".tres"):
         var grid_resource: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
         if grid_resource is WuxiaGridMapDefinition:
-            _load_grid_record(grid_resource.to_record())
+            _load_grid_record(grid_resource.to_record(), path)
         else:
             _load_native(path)
         return
@@ -35,9 +35,9 @@ func _init(path: String = DEFAULT_PATH) -> void:
         error = "Missing baked map: " + path
         return
     var data: Variant = Native.new().entries("map").get("rainy_bridge", {}) if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
-    _load_grid_record(data)
+    _load_grid_record(data, path)
 
-func _load_grid_record(data: Variant) -> void:
+func _load_grid_record(data: Variant, path: String) -> void:
     if not data is Dictionary or int(data.get("schema_version",0))!=1:
         error = "Invalid baked map schema: " + path
         return
