@@ -11,6 +11,7 @@ on:
       - 'demos/changfeng-battle/checks/test_modifier_bootstrap.gd'
       - 'demos/changfeng-battle/checks/test_inventory_equipment_runtime.gd'
       - 'demos/changfeng-battle/checks/test_modular_content_integration.gd'
+      - 'demos/changfeng-battle/checks/test_wuxue_v3.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -37,6 +38,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_character_dynamic_identity.gd
       - name: R13 buff lifecycle and stat modifiers
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_status_modifiers.gd
+      - name: Preserve legacy Tingfeng V3 state and timing behavior
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
       - name: R14 inventory and persistent character equipment
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_inventory_equipment_runtime.gd
       - name: R15 cross-module content integration
