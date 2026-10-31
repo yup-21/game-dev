@@ -26,6 +26,7 @@ on:
       - 'demos/changfeng-battle/checks/test_r28_legacy_cleanup.gd'
       - 'demos/changfeng-battle/checks/test_r29_native_cleanup.gd'
       - 'demos/changfeng-battle/checks/test_r32_native_action_timeline.gd'
+      - 'demos/changfeng-battle/checks/test_r39_content_cleanup.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -80,6 +81,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r29_native_cleanup.gd
       - name: R32 typed action time windows, clips and event binding parity
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r32_native_action_timeline.gd
+      - name: R39 no opaque documents and full native catalog smoke
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r39_content_cleanup.gd
       - name: R24 complete content-only vertical slice
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_content_closure.gd
       - name: R11 extensible catalogs and combo counts

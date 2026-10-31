@@ -9,3 +9,5 @@
 缺失美术使用 `assets/fallback/` 独立占位素材；不拿旧人物/旧场景原画替代。详见 [R29 说明](R29_NATIVE_CLEANUP.md)。
 
 R32：动作时间轴已迁入强类型 `WuxiaActionTimelineDefinition`，生产中不再读取旧 `r25_action_timelines`；余六份复杂数据容器仍在迁移清单中。详见 [R32 时间轴迁移](R32_TYPED_ACTION_TIMELINE.md)。
+
+R39：剩余六份通用内容文档已迁入对应类型化 Resource，生产 Manifest 不再注册 `document`，`WuxiaDataDocument` 与原目录均已移除；旧技能 ID 仅通过 `WuxiaLegacyMappingDefinition` 为显式导入提供适配。历史 JSON 为测试用值对照，不承担生产加载。

@@ -28,7 +28,7 @@ func _run() -> void:
         check(not FileAccess.file_exists(obsolete), "obsolete view removed: " + obsolete)
     var native = Native.new()
     check(native.load_error.is_empty()
-        and native.document("r25_school_forms").has("schools")
+        and native.entries("rule_catalog").has("r36_school_forms")
         and native.entries("character").has("shen_changfeng"),
         "canonical content remains registered in native Resources")
     print("R28_LEGACY_CLEANUP_PASS failures=",failures)

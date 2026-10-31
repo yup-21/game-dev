@@ -9,7 +9,6 @@ extends Resource
 @export var buffs: Array[Resource] = []
 @export var items: Array[Resource] = []
 @export var affixes: Array[Resource] = []
-@export var documents: Array[Resource] = []
 @export var rule_catalogs: Array[Resource] = []
 @export var legacy_mappings: Array[Resource] = []
 @export var action_timelines: Array[Resource] = []

@@ -19,7 +19,7 @@ func _run() -> void:
     var native = Native.new()
     check(native.load_error.is_empty(), "manifest resolves all native cards")
     for id in ["rain_escort_prologue","river_watch"]:
-        check(native.entries("chapter").has(id) and native.document("r25_" + id).is_empty(),
+        check(native.entries("chapter").has(id) and not ResourceLoader.exists("res://data/native/documents/" + id + ".tres"),
             "chapter migrated from opaque data: " + id)
     var original = native.entries("story").get("rain_escort_prologue_story",{})
     var nodes: Dictionary = {}
