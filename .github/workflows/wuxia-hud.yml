@@ -147,6 +147,10 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_story_background_content.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
+      - name: Validate data-driven second chapter and conditional story events
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_chapter_pipeline.gd
+      - name: Verify two consecutive battle inventories and equipment carryover
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_two_encounter_state.gd
 
 
   visual-evidence:

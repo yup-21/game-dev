@@ -147,7 +147,14 @@ func _report_story_result() -> void:
         return
     var session = _session()
     if session != null and session.phase == "battle":
-        session.report_battle(str(snap.get("outcome", "draw")), int(snap.get("winning_team", -1)))
+        var inventories: Dictionary = {}
+        for actor in model.state.actors:
+            if actor.team_id == 0 and session.character(str(actor.character_id)) != null:
+                inventories[int(actor.id)] = model.inventory_snapshot(int(actor.id))
+        if not session.report_battle(str(snap.get("outcome", "draw")),
+                int(snap.get("winning_team", -1)), inventories):
+            push_error("Story encounter result rejected; session state was not changed")
+            return
     result_reported = true
 
 func _build_world() -> void:

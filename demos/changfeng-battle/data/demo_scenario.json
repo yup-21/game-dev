@@ -74,6 +74,80 @@
         }
       ],
       "map_id": "rainy_bridge"
+    },
+    {
+      "id": "river_watch_ambush",
+      "title": "夜渡传书 · 断桥暗哨",
+      "seed": 2031,
+      "combatants": [
+        {
+          "id": 0,
+          "name": "沈长风",
+          "team_id": 0,
+          "controller": "PLAYER",
+          "cell": [
+            3,
+            3
+          ],
+          "character_id": "shen_changfeng"
+        },
+        {
+          "id": 2,
+          "name": "顾清霜",
+          "team_id": 0,
+          "controller": "PLAYER",
+          "cell": [
+            6,
+            4
+          ],
+          "character_id": "gu_qingshuang"
+        },
+        {
+          "id": 3,
+          "name": "青衫客",
+          "team_id": 0,
+          "controller": "AI",
+          "cell": [
+            4,
+            4
+          ],
+          "character_id": "green_wanderer"
+        },
+        {
+          "id": 1,
+          "name": "追镖首领",
+          "team_id": 1,
+          "controller": "AI",
+          "cell": [
+            13,
+            3
+          ],
+          "character_id": "pursuer_captain"
+        },
+        {
+          "id": 4,
+          "name": "黑衣刀客",
+          "team_id": 1,
+          "controller": "AI",
+          "cell": [
+            8,
+            4
+          ],
+          "character_id": "black_blade"
+        },
+        {
+          "id": 5,
+          "name": "夜行刺客",
+          "team_id": 1,
+          "controller": "AI",
+          "cell": [
+            12,
+            4
+          ],
+          "character_id": "night_assassin"
+        }
+      ],
+      "map_id": "rainy_bridge"
     }
   ]
 }

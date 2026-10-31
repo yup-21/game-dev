@@ -106,3 +106,7 @@ var options = registry.battle_options(roster,
 - 自定义角色可使用 `battle_actor_id: -1`，而本次战斗使用任意合法 `actor_id`。
 - 新美术路径限制为 `res://assets/`；正式导出时应验证动态路径资源包含在导出包中。
 - `checks/test_catalog_extensibility.gd`、`test_character_dynamic_identity.gd`、`test_status_modifiers.gd`、`test_inventory_equipment_runtime.gd`、`test_battle_consumables.gd` 和 `test_equipment_affixes.gd` 是内容扩展的最低自动回归。
+
+## V2–V3：剧情章节和战斗资源回写
+
+新增章节使用 `data/chapters/index.json`、每章 JSON、剧情 JSON 与 `data/demo_scenario.json`；剧情 `events` 通过 `StoryEventExecutor` 原子变更会话/常驻角色，结算通过经过校验的 `BattleModel.inventory_snapshot()` 回写消耗品。正式示例覆盖两章两场战斗，详见 [CHAPTER_AUTHORING_GUIDE.md](CHAPTER_AUTHORING_GUIDE.md)。

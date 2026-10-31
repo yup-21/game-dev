@@ -3,6 +3,11 @@ extends SceneTree
 ## Dynamic JSON references need an explicit export include_filter.
 const REQUIRED_JSON := [
     "res://data/demo_scenario.json",
+    "res://data/chapters/index.json",
+    "res://data/chapters/rain_escort_prologue.json",
+    "res://data/chapters/river_watch.json",
+    "res://data/river_watch_story.json",
+    "res://data/characters/river_messenger.json",
     "res://data/characters/index.json",
     "res://data/items/index.json",
     "res://data/affixes/index.json",

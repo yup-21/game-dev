@@ -14,6 +14,37 @@ const RED = Color("aa5548")
 const ESCORT = Vector2(1050, 560)
 const TEMPLE_PAINTING = "res://assets/scenes/story/ruined_temple_story.webp"
 var story = Story.new()
+var chapter_scene: Dictionary = {}
+var npc_position: Vector2 = ESCORT
+var background_path: String = TEMPLE_PAINTING
+var npc_character_id: String = "escort_elder"
+
+func _load_chapter_content() -> void:
+	var session = _session()
+	if session == null or not session.has_method("chapter_definition"):
+		return
+	var chapter: Dictionary = session.chapter_definition()
+	if chapter.is_empty():
+		return
+	chapter_scene = chapter.get("scene",{}).duplicate(true)
+	npc_character_id = str(chapter_scene.get("npc_character_id","escort_elder"))
+	npc_position = Vector2(float(chapter_scene.npc_position[0]),float(chapter_scene.npc_position[1]))
+	background_path = str(chapter_scene.get("background",TEMPLE_PAINTING))
+	player_pos = Vector2(float(chapter_scene.player_position[0]),float(chapter_scene.player_position[1]))
+	story = Story.new(str(chapter.story_path))
+	if session.phase == "story":
+		story.begin()
+
+func _scene_text(key: String, fallback: String) -> String:
+	return str(chapter_scene.get(key,fallback))
+
+func _visible_choices() -> Array:
+	var session = _session()
+	return story.available_choices(session.flags if session != null else {})
+
+func _npc_distance() -> float:
+	return player_pos.distance_to(npc_position)
+
 var temple_backdrop: Texture2D
 var temple_uses_fallback := false
 var temple_picture: TextureRect
@@ -32,6 +63,7 @@ var message: String = ""
 var message_left: float = 0.0
 
 func _ready() -> void:
+	_load_chapter_content()
 	_load_temple_background()
 	_build_temple_picture()
 	ui_font = SystemFont.new()
@@ -52,7 +84,7 @@ func _ready() -> void:
 		push_error("Cannot load Shen Changfeng story sprite")
 	characters_layer.add_child(player_sprite)
 	escort_sprite = RoleSprite.new()
-	if not escort_sprite.configure("escort_elder"):
+	if not escort_sprite.configure(npc_character_id):
 		push_error("Cannot load dedicated escort NPC portrait")
 	characters_layer.add_child(escort_sprite)
 	_sync_story_sprites(Vector2.ZERO,0.0)
@@ -79,7 +111,10 @@ func _process(delta: float) -> void:
 			if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT): vector.x -= 1
 			if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): vector.x += 1
 			if vector.length_squared() > 0:
-				player_pos = (player_pos+vector.normalized()*195.0*delta).clamp(Vector2(155,345),Vector2(1415,755))
+				var limits: Array = chapter_scene.get("player_bounds",[155,345,1415,755])
+				player_pos = (player_pos+vector.normalized()*195.0*delta).clamp(
+					Vector2(float(limits[0]),float(limits[1])),
+					Vector2(float(limits[2]),float(limits[3])))
 			_sync_story_sprites(vector,delta)
 		"dialogue":
 			var line: Dictionary = story.current_dialogue()
@@ -98,12 +133,12 @@ func _sync_story_sprites(motion: Vector2, delta: float) -> void:
 	var exploring: bool = story.phase == "explore"
 	characters_layer.visible = exploring
 	player_sprite.position = player_pos
-	escort_sprite.position = ESCORT + Vector2(0,10)
+	escort_sprite.position = npc_position + Vector2(0,10)
 	player_sprite.set_motion(motion,delta)
 	escort_sprite.set_motion(Vector2.ZERO,delta)
 	# Tile feet anchor sorting, not fixed painter's layers.
 	player_sprite.z_index = int(player_pos.y/100.0)
-	escort_sprite.z_index = int((ESCORT.y+10.0)/100.0)
+	escort_sprite.z_index = int((npc_position.y+10.0)/100.0)
 
 func _session():
 	return get_node_or_null("/root/GameSession")
@@ -111,10 +146,12 @@ func _session():
 func _enter_new_game() -> void:
 	var session=_session()
 	if session!=null: session.start_new_game()
+	_load_chapter_content()
 	story.begin()
 	cinematic_elapsed = 0.0
 	visible_characters = 0.0
-	player_pos = Vector2(350,705)
+	var spawn: Array = chapter_scene.get("player_position",[350,705])
+	player_pos = Vector2(float(spawn[0]),float(spawn[1]))
 	_sync_story_sprites(Vector2.ZERO,0.0)
 	message = ""
 
@@ -124,6 +161,7 @@ func _advance_cinematic() -> void:
 
 func _start_dialogue() -> void:
 	if story.interact():
+		_sync_story_events()
 		visible_characters = 0.0
 
 func _dialogue_next() -> void:
@@ -132,7 +170,7 @@ func _dialogue_next() -> void:
 	if visible_characters < float(str(node.get("text","")).length()):
 		visible_characters = float(str(node.text).length())
 		return
-	if node.get("choices", []).is_empty() and story.advance_dialogue():
+	if _visible_choices().is_empty() and story.advance_dialogue(_session().flags if _session()!=null else {}):
 		_sync_story_events()
 		visible_characters = 0.0
 
@@ -141,14 +179,21 @@ func _dialogue_choice(index: int) -> void:
 	var node: Dictionary=story.current_dialogue()
 	if visible_characters < float(str(node.get("text","")).length()): return
 	var session=_session()
-	if session!=null: session.record_choice(story.dialogue_id,index)
-	if story.choose(index):
+	var old_node: String=story.dialogue_id
+	if story.choose(index,session.flags if session!=null else {}):
+		if session!=null: session.record_choice(old_node,index)
 		_sync_story_events()
 		visible_characters=0.0
 
 func _sync_story_events() -> void:
 	var session=_session()
-	if session!=null and story.obtained_fragment: session.record_story_event("obtain_fragment")
+	if session==null: return
+	var events: Array=story.take_events()
+	if not events.is_empty() and not session.apply_story_events(events):
+		message="剧情事件配置错误，请检查章节数据"
+		message_left=4.0
+		push_error(message)
+	if story.obtained_fragment: session.record_story_event("obtain_fragment")
 
 func _change_scene(path: String) -> void:
 	var err: int = get_tree().change_scene_to_file(path)
@@ -164,15 +209,17 @@ func _action(action: String) -> void:
 		"story_battle":
 			var session=_session()
 			if session!=null and session.begin_encounter():
-				call_deferred("_change_scene", ACTIVE_BATTLE_SCENE)
+				call_deferred("_change_scene", session.scene_for("battle"))
 			else:
-				message="尚未获得残篇，无法进入剧情遭遇"
+				message="尚未满足本章战斗触发条件"
 				message_left=3.0
 		"quit": get_tree().quit()
 		"menu":
 			story.reset()
 			var session=_session()
-			if session!=null: session.return_to_menu()
+			if session!=null:
+				session.return_to_menu()
+				call_deferred("_change_scene",session.scene_for("menu"))
 		"skip": story.skip_cinematic()
 		"continue": _advance_cinematic()
 		"talk": _start_dialogue()
@@ -191,13 +238,13 @@ func _input(event: InputEvent) -> void:
 				elif event.keycode in [KEY_ENTER,KEY_SPACE]: _action("continue")
 			"explore":
 				if event.keycode in [KEY_E, KEY_ENTER, KEY_SPACE]:
-					if player_pos.distance_to(ESCORT) < 175.0: _action("talk")
+					if _npc_distance() < 175.0: _action("talk")
 					else:
 						message = "靠近受伤的镖头，再按 E 交谈。"
 						message_left = 2.3
 			"dialogue":
 				if event.keycode in [KEY_E,KEY_ENTER,KEY_SPACE]:
-					if story.current_dialogue().get("choices", []).is_empty(): _dialogue_next()
+					if _visible_choices().is_empty(): _dialogue_next()
 					elif visible_characters < float(str(story.current_dialogue().get("text","")).length()):
 						visible_characters = float(str(story.current_dialogue().text).length())
 				if event.keycode in [KEY_1,KEY_2,KEY_3]:
@@ -212,7 +259,7 @@ func _input(event: InputEvent) -> void:
 		match story.phase:
 			"cinematic": _action("continue")
 			"explore":
-				if event.position.distance_to(ESCORT) < 90.0 and player_pos.distance_to(ESCORT) < 175.0: _action("talk")
+				if event.position.distance_to(npc_position) < 90.0 and _npc_distance() < 175.0: _action("talk")
 			"dialogue": _dialogue_next()
 
 func _text(pos: Vector2, value: String, size: int = 19, color: Color = INK, calligraphy: bool = false) -> void:
@@ -422,7 +469,7 @@ func _draw_cinematic() -> void:
 	var caption: String=str(beat.get("caption",""))
 	var body: String=str(beat.get("text",""))
 	var drift: float = sin(cinematic_elapsed * 0.55) * 13.0
-	if story.cinematic_index==0 or not ResourceLoader.exists(TEMPLE_PAINTING):
+	if story.cinematic_index==0 or not ResourceLoader.exists(background_path):
 		_paint_pavilion(Vector2(1120 + drift,752),0.98)
 		_carriage(Vector2(800+sin(clock*.24)*7.0,743))
 		_lantern_light(Vector2(1250 + drift,724),clock)
@@ -466,8 +513,8 @@ func _painted_content(texture: Texture2D) -> bool:
 func _load_temple_background() -> void:
 	temple_uses_fallback = false
 	temple_backdrop = null
-	if ResourceLoader.exists(TEMPLE_PAINTING):
-		var original: Texture2D = load(TEMPLE_PAINTING) as Texture2D
+	if ResourceLoader.exists(background_path):
+		var original: Texture2D = load(background_path) as Texture2D
 		if _painted_content(original):
 			temple_backdrop = original
 	if temple_backdrop == null:
@@ -475,7 +522,7 @@ func _load_temple_background() -> void:
 		# silently drawing an opaque white WebP as the first act.
 		temple_backdrop = ArtCatalog.scenery("mountain")
 		temple_uses_fallback = true
-		push_warning("First-act painting is empty or unavailable: " + TEMPLE_PAINTING
+		push_warning("First-act painting is empty or unavailable: " + background_path
 			+ "; using bundled illustrated scene fallback.")
 	if not _painted_content(temple_backdrop):
 		push_error("No nonblank illustrated background is available for the first act")
@@ -518,16 +565,16 @@ func _paint_exploration() -> void:
 func _draw_explore() -> void:
 	_paint_exploration()
 	draw_rect(Rect2(0,0,1600,106),Color(0.05,0.10,0.12,0.77))
-	_text(Vector2(62,67),"第一幕 · 雨夜残镖",36,PAPER,true)
-	_text(Vector2(1090,65),"荒道破庙 / 暮秋 · 三更",17,GOLD)
-	var near: bool=player_pos.distance_to(ESCORT)<175.0
+	_text(Vector2(62,67),_scene_text("title","第一幕 · 雨夜残镖"),36,PAPER,true)
+	_text(Vector2(1090,65),_scene_text("place","荒道破庙 / 暮秋 · 三更"),17,GOLD)
+	var near: bool=_npc_distance()<175.0
 	if near:
-		draw_arc(ESCORT+Vector2(0,-14),75,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
-		_button(Rect2(850,363,440,54),"E  与受伤镖头交谈","talk",true)
+		draw_arc(npc_position+Vector2(0,-14),75,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
+		_button(Rect2(850,363,440,54),"E  "+_scene_text("talk_label","与受伤镖头交谈"),"talk",true)
 	else:
-		_text(Vector2(836,363),"老镖头  ·  似乎还有气息",18,Color("e1d2ac"))
+		_text(Vector2(836,363),_scene_text("talk_label","老镖头  ·  似乎还有气息"),18,Color("e1d2ac"))
 	_panel(Rect2(76,837,1448,125),Color(0.13,0.22,0.20,0.91),Color(GOLD,0.75))
-	_text(Vector2(112,881),"沿官道走近镖车，查探伤者。",23,PAPER,true)
+	_text(Vector2(112,881),_scene_text("prompt","沿官道走近镖车，查探伤者。"),23,PAPER,true)
 	_text(Vector2(114,920),"WASD / 方向键移动   ·   靠近后按 E 交谈",15,Color("d5c8aa"))
 	if message_left>0: _text(Vector2(120,810),message,18,GOLD)
 
@@ -546,7 +593,7 @@ func _draw_dialogue() -> void:
 	var clipped: String=full_text.substr(0,mini(full_text.length(),int(visible_characters)))
 	_wrapped(clipped,Vector2(419,740),983,25,INK,39)
 	if int(visible_characters)>=full_text.length():
-		var choices: Array=node.get("choices",[])
+		var choices: Array=_visible_choices()
 		if choices.is_empty():
 			_button(Rect2(1241,886,201,50),"继续  ▶","next",true)
 			_text(Vector2(422,922),"空格 / 回车 / 点击继续",15,Color("8b795b"))
@@ -566,14 +613,14 @@ func _draw_complete() -> void:
 	_rain(clock,90)
 	draw_rect(Rect2(0,0,1600,1000),Color(0.05,0.12,0.12,0.40))
 	_panel(Rect2(235,180,1130,696),Color("e9e4d6"),GOLD)
-	_center(Vector2(800,290),"江 湖 初 入",39,INK,true)
+	_center(Vector2(800,290),_scene_text("complete_title","江 湖 初 入"),39,INK,true)
 	draw_line(Vector2(446,324),Vector2(1154,324),Color(GOLD,0.55),2)
-	_center(Vector2(800,400),"《太虚引气残篇》",32,RED,true)
-	_center(Vector2(800,470),"一卷无名绢帛，一场未完的血案。",24,INK,true)
-	_center(Vector2(800,525),"你尚不知道，它将牵出多少江湖恩怨。",20,INK)
-	_center(Vector2(800,579),"远处的马蹄声越来越近……",19,Color("846d4e"))
+	_center(Vector2(800,400),_scene_text("reward_label","《太虚引气残篇》"),32,RED,true)
+	_center(Vector2(800,470),_scene_text("complete_caption","一卷无名绢帛，一场未完的血案。"),24,INK,true)
+	_center(Vector2(800,525),_scene_text("complete_subtitle","你尚不知道，它将牵出多少江湖恩怨。"),20,INK)
+	_center(Vector2(800,579),_scene_text("complete_text","远处的马蹄声越来越近……"),19,Color("846d4e"))
 	# The story encounter always opens the same illustrated multi-actor battle.
-	_button(Rect2(430,655,742,74),"迎战追兵 · 继续序章","story_battle",true)
+	_button(Rect2(430,655,742,74),_scene_text("battle_label","迎战追兵 · 继续序章"),"story_battle",true)
 	_button(Rect2(626,774,350,56),"返回主菜单","menu",true)
 
 func _draw() -> void:

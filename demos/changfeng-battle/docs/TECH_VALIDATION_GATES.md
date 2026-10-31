@@ -74,3 +74,10 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_bridge
 ## P1 权威架势原型
 
 见 [P1_COMBAT_RULES.md](P1_COMBAT_RULES.md)。新增 `deal_posture` / `recover_posture` Effect、破势后的 `opening` 状态与只读架势条；实际通过状态以最新 CI 为准，不以本节替代人工 3v3 验收。
+
+## V2–V3 双章节生产链补充验收
+
+- 第二章通过独立章节 JSON、剧情 JSON、NPC 角色定义和第二遭遇注册，无新增专用剧情脚本。
+- `test_chapter_pipeline.gd` 验证条件分支、剧情事件事务、章节路由与非法奖励不污染角色状态。
+- `test_two_encounter_state.gd` 使用两场真实 `BattleModel` 快照，验证消耗品回写、首次通关奖励防重复、装备 UID 与词条保留、错误快照拒绝。
+- 导出检查加入章节索引、第二章内容及 NPC 定义。**自动化通过后仍须 Godot GUI 手动完成两章连续试玩、性能采样及资源审核，不能以 headless 测试代替。**

@@ -1,80 +1,217 @@
 extends Node
-## Persistent glue between opening story, the existing combat engine and aftermath.
-## Stores demo-only progress; never replaces BattleModel, card zones or CTB.
+## The in-memory source of truth across chapters, battle snapshots and rewards.
+## A new chapter is registered in JSON; combat authority remains in BattleModel.
 const ScenarioDirector = preload("res://scripts/scenario_director.gd")
-var director=ScenarioDirector.new()
-var phase: String="menu"
-var chapter_id: String=""
-var choices: Array=[]
-var flags: Dictionary={}
-var items: Dictionary={}
-var encounter_id: String=""
-var battle_outcome: String=""
-var winning_team: int=-1
-## Game-session preference: preserved across story scenes and encounter retries.
-var battle_spatial_mode: String="GRID"
+const ChapterCatalog = preload("res://scripts/chapter_catalog.gd")
+const CharacterRuntime = preload("res://scripts/character_runtime.gd")
+const InventoryRuntime = preload("res://scripts/inventory_runtime.gd")
+const StoryEvents = preload("res://scripts/story_event_executor.gd")
+const SceneRouter = preload("res://scripts/chapter_scene_router.gd")
+var director = ScenarioDirector.new()
+var chapters = ChapterCatalog.new()
+var phase: String = "menu"
+var chapter_id: String = ""
+var choices: Array = []
+var flags: Dictionary = {}
+## Non-equippable story clues; actual consumables and equipment live on characters.
+var items: Dictionary = {}
+var characters: Dictionary = {}
+var cleared_encounters: Dictionary = {}
+var encounter_id: String = ""
+var battle_outcome: String = ""
+var winning_team: int = -1
+var battle_spatial_mode: String = "GRID"
 
 func start_new_game() -> void:
-	phase="story"
-	chapter_id="rain_escort_prologue"
-	choices.clear()
-	flags.clear()
-	items.clear()
-	encounter_id=""
-	battle_outcome=""
-	winning_team=-1
+    phase = "story"
+    chapter_id = chapters.first_chapter_id()
+    choices.clear()
+    flags.clear()
+    items.clear()
+    characters.clear()
+    cleared_encounters.clear()
+    encounter_id = ""
+    battle_outcome = ""
+    winning_team = -1
+    var chapter: Dictionary = chapter_definition()
+    for actor in director.encounter(str(chapter.get("encounter_id",""))).get("combatants",[]):
+        if int(actor.get("team_id",-1)) != 0:
+            continue
+        var id: String = str(actor.get("character_id",""))
+        if not id.is_empty() and not characters.has(id):
+            var character = CharacterRuntime.new(id)
+            if not character.load_error.is_empty():
+                characters[id] = character
+    ## Deterministic demo inventory/equipment seed. New chapters do not reseed.
+    var hero = characters.get("shen_changfeng",null)
+    if hero != null:
+        hero.inventory.add("healing_powder",2)
+        hero.inventory.add("breath_pill",1)
+        if hero.inventory.add("river_sword"):
+            var uid: String = str(hero.inventory.last_added_uids[0])
+            hero.inventory.set_affixes(uid,["keen_edge"])
+            hero.inventory.equip(uid)
+
+func chapter_definition() -> Dictionary:
+    return chapters.get_chapter(chapter_id)
+
+func character(id: String):
+    return characters.get(id,null)
+
+func scene_for(next_phase: String) -> String:
+    return SceneRouter.path_for(next_phase)
 
 func record_choice(node_id: String, option_id: int) -> void:
-	if phase!="story": return
-	choices.append({"node_id":node_id,"option":option_id})
-	flags["helped_escort"]=option_id==0 if node_id=="escort_urgent" else flags.get("helped_escort",false)
+    if phase != "story":
+        return
+    choices.append({"chapter_id":chapter_id,"node_id":node_id,"option":option_id})
+    ## Compatibility for the original demo's branch, without constraining
+    ## newly authored chapters, whose choices use declarative events.
+    if chapter_id == "rain_escort_prologue" and node_id == "escort_urgent":
+        flags["helped_escort"] = option_id == 0
 
 func record_story_event(event_id: String) -> void:
-	if phase!="story": return
-	if event_id=="obtain_fragment":
-		flags["obtained_fragment"]=true
-		items["taixu_fragment"]=1
+    if phase != "story":
+        return
+    ## Legacy opening_story.json still emits this named marker.
+    if event_id == "obtain_fragment" and not bool(flags.get("obtained_fragment",false)):
+        apply_story_events([
+            {"type":"set_flag","flag":"obtained_fragment","value":true},
+            {"type":"grant_clue","id":"taixu_fragment","count":1}
+        ])
 
-func begin_encounter(id: String="escort_ambush") -> bool:
-	if phase!="story" or not bool(flags.get("obtained_fragment",false)) or director.encounter(id).is_empty(): return false
-	phase="battle"
-	encounter_id=id
-	battle_outcome=""
-	winning_team=-1
-	return true
+func apply_story_events(events: Array) -> bool:
+    if phase != "story":
+        return false
+    var staged: Dictionary = StoryEvents.prepare(events,flags,items,characters)
+    if not bool(staged.get("ok",false)):
+        return false
+    _adopt(staged)
+    return true
+
+func _adopt(staged: Dictionary) -> void:
+    flags = staged.flags
+    items = staged.items
+    characters = staged.characters
+
+func begin_encounter(id: String = "") -> bool:
+    if phase != "story":
+        return false
+    var chapter: Dictionary = chapter_definition()
+    var expected: String = str(chapter.get("encounter_id",""))
+    var selected: String = expected if id.is_empty() else id
+    if selected != expected or director.encounter(selected).is_empty():
+        return false
+    if not StoryEvents.meets(chapter.get("requirements",[]),flags):
+        return false
+    for actor in director.encounter(selected).get("combatants",[]):
+        if int(actor.get("team_id",-1)) == 0:
+            var persistent_id: String = str(actor.get("character_id",""))
+            if not characters.has(persistent_id):
+                return false
+    phase = "battle"
+    encounter_id = selected
+    battle_outcome = ""
+    winning_team = -1
+    return true
 
 func encounter_options() -> Dictionary:
-	if phase!="battle": return {}
-	var options: Dictionary=director.battle_options(encounter_id)
-	options["spatial_mode"]=battle_spatial_mode
-	return options
+    if phase != "battle":
+        return {}
+    var builds: Dictionary = {}
+    for character_id in characters:
+        builds[str(character_id)] = characters[character_id].battle_build()
+    var options: Dictionary = director.battle_options(encounter_id,builds)
+    options["spatial_mode"] = battle_spatial_mode
+    return options
 
 func set_battle_spatial_mode(next_mode: String) -> bool:
-	if next_mode not in ["GRID","FREE"]: return false
-	battle_spatial_mode=next_mode
-	return true
+    if next_mode not in ["GRID","FREE"]:
+        return false
+    battle_spatial_mode = next_mode
+    return true
 
 func encounter_seed() -> int:
-	return int(director.encounter(encounter_id).get("seed",2026))
+    return int(director.encounter(encounter_id).get("seed",2026))
 
-func report_battle(outcome: String, team: int) -> bool:
-	if phase!="battle" or outcome not in ["victory","defeat","draw"]: return false
-	battle_outcome=outcome
-	winning_team=team
-	phase="aftermath"
-	return true
+func report_battle(outcome: String, team: int, battle_inventories: Dictionary = {}) -> bool:
+    if phase != "battle" or outcome not in ["victory","defeat","draw"]:
+        return false
+    var staged_characters: Dictionary = characters.duplicate()
+    if not battle_inventories.is_empty():
+        var roster: Dictionary = {}
+        for actor in director.encounter(encounter_id).get("combatants",[]):
+            roster[int(actor.id)] = actor
+        for actor_id in battle_inventories:
+            if not actor_id is int or not roster.has(actor_id):
+                return false
+            if int(roster[actor_id].get("team_id",-1)) != 0:
+                return false
+        for actor in roster.values():
+            if int(actor.get("team_id",-1)) != 0:
+                continue
+            var id: String = str(actor.get("character_id",""))
+            if not characters.has(id) or not battle_inventories.has(int(actor.id)):
+                return false
+            var incoming: Variant = battle_inventories[int(actor.id)]
+            if not incoming is Dictionary or not incoming.get("stacks") is Dictionary:
+                return false
+            var original: Dictionary = characters[id].inventory.snapshot()
+            ## Combat may spend stacks, not swap gear, forge UIDs or reroll affixes.
+            if incoming.get("instances") != original.instances or incoming.get("equipped") != original.equipped or incoming.get("next_uid") != original.next_uid:
+                return false
+            var merged: Dictionary = original.duplicate(true)
+            merged["stacks"] = incoming.get("stacks",{}).duplicate(true)
+            var staged_inventory = InventoryRuntime.new(characters[id].inventory.catalog)
+            if not staged_inventory.restore(merged):
+                return false
+            var cloned = CharacterRuntime.new(id)
+            if not cloned.restore(characters[id].snapshot()):
+                return false
+            cloned.inventory = staged_inventory
+            staged_characters[id] = cloned
+    var chapter: Dictionary = chapter_definition()
+    var first_clear: bool = outcome == "victory" and team == 0 and not cleared_encounters.has(encounter_id)
+    var rewards: Array = chapter.get("victory_events",[]) if first_clear else (chapter.get("defeat_events",[]) if outcome != "victory" else [])
+    var staged: Dictionary = StoryEvents.prepare(rewards,flags,items,staged_characters)
+    if not bool(staged.get("ok",false)):
+        return false
+    _adopt(staged)
+    if first_clear:
+        cleared_encounters[encounter_id] = true
+    battle_outcome = outcome
+    winning_team = team
+    phase = "aftermath"
+    return true
 
 func retry_encounter() -> bool:
-	if phase!="aftermath" or encounter_id.is_empty(): return false
-	phase="battle"
-	battle_outcome=""
-	winning_team=-1
-	return true
+    if phase != "aftermath" or encounter_id.is_empty():
+        return false
+    phase = "battle"
+    battle_outcome = ""
+    winning_team = -1
+    return true
+
+func can_advance_chapter() -> bool:
+    var next_id: String = str(chapter_definition().get("next_chapter_id",""))
+    return phase == "aftermath" and battle_outcome == "victory" and winning_team == 0 and not next_id.is_empty() and not chapters.get_chapter(next_id).is_empty()
+
+func advance_chapter() -> bool:
+    if not can_advance_chapter():
+        return false
+    chapter_id = str(chapter_definition().next_chapter_id)
+    phase = "story"
+    encounter_id = ""
+    battle_outcome = ""
+    winning_team = -1
+    return true
 
 func finish_demo() -> bool:
-	if phase!="aftermath": return false
-	phase="complete"
-	return true
+    if phase != "aftermath":
+        return false
+    phase = "complete"
+    return true
 
 func return_to_menu() -> void:
-	phase="menu"
+    phase = "menu"
+    chapter_id = ""

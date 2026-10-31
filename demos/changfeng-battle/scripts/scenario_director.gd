@@ -59,7 +59,7 @@ func _valid_integer(value: Variant) -> bool:
 func encounter(id: String) -> Dictionary:
 	return encounters.get(id,{}).duplicate(true)
 
-func battle_options(id: String) -> Dictionary:
+func battle_options(id: String, builds: Dictionary = {}) -> Dictionary:
 	var definition: Dictionary=encounter(id)
 	if definition.is_empty(): return {}
 	var roster: Array=definition.combatants.duplicate(true)
@@ -68,7 +68,7 @@ func battle_options(id: String) -> Dictionary:
 		if actor.has("character_id"):
 			ids[int(actor.id)]=str(actor.character_id)
 	if not ids.is_empty():
-		var configured: Dictionary=characters.battle_options(roster,ids)
+		var configured: Dictionary=characters.battle_options(roster,ids,builds)
 		if definition.has("map_id"):
 			configured["map_definition_path"]="res://data/maps/"+str(definition.map_id)+".json"
 		return configured
