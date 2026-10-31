@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="WuxiaTechniqueDefinition" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/technique_definition.gd" id="1_tech"]
+[ext_resource type="Script" path="res://scripts/content/technique_node_definition.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+[ext_resource type="Script" path="res://scripts/content/condition_definition.gd" id="4_condition"]
+
+[sub_resource type="Resource" id="Shield"]
+script = ExtResource("3_effect")
+effect_type = "add_shield"
+target = "self"
+amount = 1.0
+parameters = {"expires_after_global_ticks": 100}
+
+[sub_resource type="Resource" id="Qi"]
+script = ExtResource("3_effect")
+effect_type = "gain_qi"
+target = "self"
+amount = 1.0
+
+[sub_resource type="Resource" id="Gate"]
+script = ExtResource("4_condition")
+predicate = "self_status"
+text_value = "r24_mist_edge"
+
+[sub_resource type="Resource" id="Stage_one"]
+script = ExtResource("2_node")
+node_id = "start"
+stage = "雾起"
+next_node = "finish"
+timing = "ACTION"
+cost_qi = 0
+target_kind = "self"
+effects = Array[Resource]([SubResource("Qi")])
+
+[sub_resource type="Resource" id="Stage_two"]
+script = ExtResource("2_node")
+node_id = "finish"
+stage = "云开"
+next_node = "finish"
+timing = "ACTION"
+cost_qi = 1
+target_kind = "self"
+when = SubResource("Gate")
+effects = Array[Resource]([SubResource("Shield")])
+
+[resource]
+script = ExtResource("1_tech")
+content_id = "r24_mist_steps"
+entry_node = "start"
+nodes = Array[Resource]([SubResource("Stage_one"), SubResource("Stage_two")])

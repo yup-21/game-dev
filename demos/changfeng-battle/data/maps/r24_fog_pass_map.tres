@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Script" path="res://scripts/content/map_polygon_definition.gd" id="2_poly"]
+[ext_resource type="Texture2D" path="res://assets/scenes/battle/rainy_bridge_battle.webp" id="3_bg"]
+
+[sub_resource type="Resource" id="Fog_wall"]
+script = ExtResource("2_poly")
+terrain_kind = "rock"
+vertices = PackedVector2Array(740, 245, 780, 215, 840, 280, 860, 625, 800, 675, 745, 605)
+
+[sub_resource type="Resource" id="Bamboo"]
+script = ExtResource("2_poly")
+terrain_kind = "bamboo"
+vertices = PackedVector2Array(1060, 220, 1240, 230, 1280, 400, 1080, 390)
+
+[resource]
+script = ExtResource("1_map")
+content_id = "r24_fog_pass_map"
+background = ExtResource("3_bg")
+viewport_size = Vector2i(1600, 1000)
+area_bounds = Rect2(100, 100, 1400, 800)
+obstacles = Array[Resource]([SubResource("Fog_wall"), SubResource("Bamboo")])

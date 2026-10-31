@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://scripts/content/skill_usage_definition.gd" id="2_usage"]
+[ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+
+[sub_resource type="Resource" id="Damage"]
+script = ExtResource("3_effect")
+effect_type = "deal_damage"
+target = "enemy"
+amount = 1.0
+
+[sub_resource type="Resource" id="Usage"]
+script = ExtResource("2_usage")
+usage_id = "follow"
+display_name = "追雾"
+timing = "ACTION"
+cost_qi = 0
+target_kind = "enemy_actor"
+target_max_distance = 2
+attack_route = "sweep"
+effects = Array[Resource]([SubResource("Damage")])
+
+[resource]
+script = ExtResource("1_skill")
+content_id = "r24_mist_follow"
+display_name = "烟岚剑·追雾"
+school_id = "r24_mist_sword"
+generated_only = true
+lifecycle = "exile_on_finish"
+usages = Array[Resource]([SubResource("Usage")])

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="WuxiaBuffDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/buff_definition.gd" id="1_buff"]
+[ext_resource type="Script" path="res://scripts/content/buff_conditional_modifier_definition.gd" id="2_rule"]
+[ext_resource type="Script" path="res://scripts/content/condition_definition.gd" id="3_cond"]
+
+[sub_resource type="Resource" id="Gate"]
+script = ExtResource("3_cond")
+predicate = "self_status"
+text_value = "r24_dew_guard"
+
+[sub_resource type="Resource" id="Rule"]
+script = ExtResource("2_rule")
+when = SubResource("Gate")
+modifiers = Array[Dictionary]([{"stat": "attack", "op": "flat", "value": 3}])
+
+[resource]
+script = ExtResource("1_buff")
+content_id = "r24_mist_edge"
+display_name = "雾刃暗锋"
+is_public = true
+stack_limit = 1
+expiry_kind = "global_ticks_after_apply"
+duration_ticks = 500
+conditional_modifiers = Array[Resource]([SubResource("Rule")])

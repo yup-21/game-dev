@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WuxiaBuffDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/buff_definition.gd" id="1_buff"]
+
+[resource]
+script = ExtResource("1_buff")
+content_id = "r24_dew_guard"
+display_name = "露凝护体"
+is_public = true
+stack_limit = 1
+expiry_kind = "global_ticks_after_apply"
+duration_ticks = 500
+modifiers = Array[Dictionary]([{"stat": "CON", "op": "flat", "value": 1}])

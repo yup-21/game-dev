@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WuxiaItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+content_id = "r24_reed_sword"
+display_name = "青芦短剑"
+description = "入门烟岚剑式时配发的短剑。"
+kind = "equipment"
+slot = "weapon"
+stack_limit = 1
+modifiers = Array[Dictionary]([{"stat": "attack", "op": "flat", "value": 2}])

@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="WuxiaQuestDefinition" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/quest_definition.gd" id="1_quest"]
+[ext_resource type="Script" path="res://scripts/content/quest_objective_definition.gd" id="2_objective"]
+
+[sub_resource type="Resource" id="Scout"]
+script = ExtResource("2_objective")
+objective_id = "find_lan"
+label = "与岚尘结伴"
+objective_type = "flag"
+reference_id = "met_r24_lan"
+
+[sub_resource type="Resource" id="Elder"]
+script = ExtResource("2_objective")
+objective_id = "ask_elder"
+label = "问路老者"
+objective_type = "flag"
+reference_id = "met_r24_elder"
+
+[sub_resource type="Resource" id="Clue"]
+script = ExtResource("2_objective")
+objective_id = "route_hint"
+label = "取得暗径路标"
+objective_type = "clue"
+reference_id = "r24_hidden_route"
+required_count = 1
+
+[sub_resource type="Resource" id="Battle"]
+script = ExtResource("2_objective")
+objective_id = "clear_fog_ambush"
+label = "突破雾隘伏兵"
+objective_type = "encounter"
+reference_id = "r24_fog_pass_battle"
+
+[resource]
+script = ExtResource("1_quest")
+content_id = "r24_fog_pass_quest"
+title = "雾隘同行"
+description = "结识新同伴，问路取得线索，从雾隘突破追兵。"
+objectives = Array[Resource]([SubResource("Scout"), SubResource("Elder"), SubResource("Clue"), SubResource("Battle")])
