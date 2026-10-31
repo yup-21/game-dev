@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/content/encounter_definition.gd" id="1_encounter"]
 [ext_resource type="Script" path="res://scripts/content/encounter_combatant_definition.gd" id="2_actor"]
+[ext_resource type="Resource" path="res://data/maps/rainy_bridge.tres" id="3_map"]
 
 [sub_resource type="Resource" id="Hero"]
 script = ExtResource("2_actor")
@@ -26,3 +27,4 @@ script = ExtResource("1_encounter")
 content_id = "r21_gate_ambush"
 seed = 2110
 combatants = Array[Resource]([SubResource("Hero"), SubResource("Pursuer")])
+map_resource = ExtResource("3_map")

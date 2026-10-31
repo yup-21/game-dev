@@ -24,7 +24,7 @@ func _run() -> void:
     check(native.entries("encounter").has("r40_quick_duel"),
         "menu quick encounter is native Resource")
     for id in ["r40_quick_duel","escort_ambush","river_watch_ambush",
-            "r24_fog_pass_battle","r26_recruitment_trial_battle"]:
+            "r21_gate_ambush","r24_fog_pass_battle","r26_recruitment_trial_battle"]:
         var options: Dictionary=director.battle_options(id)
         check(not options.is_empty() and str(options.get("map_definition_path","")).ends_with(".tres"),
             "native encounter map references Resource: " + id)
