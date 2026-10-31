@@ -1,6 +1,6 @@
 extends SceneTree
 const Catalog = preload("res://scripts/school_catalog.gd")
-const Legacy = preload("res://scripts/legacy_skill_adapter.gd")
+const Native = preload("res://scripts/content/content_registry.gd")
 var checks: int = 0
 var failures: int = 0
 
@@ -50,14 +50,10 @@ func _initialize() -> void:
 	check(c.forms.ember_burst.usages[1].effects[0].conditional_bonus.consume_on_hit == "scorch","status consumed on hit")
 	check(c.forms.saber_river.usages[0].effects[1].effects[0].direction == "away_from_attacker","push normalized")
 	check(c.forms.whip_coil.usages[1].effects[1].effects[0].max_distance == 1,"pull normalized")
-	var mapping: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/legacy_id_map.json")).mapping
-	for id in mapping:
-		var mapped: Dictionary = Legacy.resolve_legacy(id)
-		check(mapped.get("definition_id") == mapping[id].card_id and mapped.get("card_id") == mapping[id].card_id and mapped.get("usage_id") == mapping[id].usage_id and mapped.size() == 3,"old ID: " + id)
-	check(Legacy.resolve_legacy("step_01","evasion").usage_id == "evasion","step_01 evasion")
-	check(Legacy.resolve_legacy("card:0:0001").is_empty(),"UID never mapped")
-	check(Legacy.resolve_legacy("missing").is_empty(),"unknown ID")
-	var raw: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/school_forms.json"))
+	var native = Native.new()
+	var raw: Dictionary = native.entries("rule_catalog").get("r36_school_forms", {}).get("data", {})
+	var base: Dictionary = native.entries("rule_catalog").get("r37_tingfeng_cards", {}).get("data", {})
+	check(not raw.is_empty() and not base.is_empty(), "native martial rulebooks available")
 	var bad_cases: Array = []
 	var bad: Dictionary = raw.duplicate(true)
 	bad.cards[0].usages[0].effects[0].amount = -1
@@ -84,14 +80,16 @@ func _initialize() -> void:
 	bad = raw.duplicate(true)
 	bad.cards[0].usages[0].effects[0].script = "ignored?"
 	bad_cases.append(bad)
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://captures/checks"))
-	var scratch: String = "res://captures/checks/catalog-invalid.json"
 	for invalid in bad_cases:
-		var file = FileAccess.open(scratch,FileAccess.WRITE)
-		file.store_string(JSON.stringify(invalid))
-		file.close()
-		var rejected = Catalog.new(scratch)
-		check(not rejected.load_error.is_empty() and rejected.forms.is_empty() and rejected.schools.is_empty(),"invalid schema/reference rejected atomically")
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(scratch))
-	print("CATALOG CHECK: %d checks, %d failures; schools=10 forms=20 statuses=3 combos=7 usages=41 legacy=40" % [checks,failures])
+		var rejected = Catalog.new()
+		rejected.schools.clear()
+		rejected.forms.clear()
+		rejected.statuses.clear()
+		rejected.combos.clear()
+		rejected._all_status_ids.clear()
+		rejected._base_form_ids.clear()
+		rejected._generated_only_ids.clear()
+		check(not rejected._load(invalid, base),
+			"invalid native rule record rejected by catalog validator")
+	print("CATALOG CHECK: %d checks, %d failures; schools=10 forms=20 statuses=3 combos=7 usages=41" % [checks,failures])
 	quit(0 if failures == 0 else 1)

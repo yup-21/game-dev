@@ -6,7 +6,6 @@ const Techniques = preload("res://scripts/technique_runtime.gd")
 const Scenarios = preload("res://scripts/scenario_director.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
 const Timeline = preload("res://scripts/battle_action_timeline.gd")
-const Legacy = preload("res://scripts/legacy_skill_adapter.gd")
 var failures: int = 0
 
 func check(ok: bool, description: String) -> void:
@@ -36,8 +35,7 @@ func _run() -> void:
         tingfeng.get("combos",[]).size() == 3 and
         tingfeng.get("deck",{}).get("cards",[]).size() == 4,
         "Tingfeng six definitions and four physical deck entries retained")
-    check(registry.entries("legacy_mapping").has("r38_legacy_skill_ids") and
-        registry.entries("action_timeline").has("r32_default_action_timeline") and
+    check(registry.entries("action_timeline").has("r32_default_action_timeline") and
         registry.entries("technique").has("tf_change_stage"),
         "typed adapters, animation timeline and stage graph registered")
     check(Schools.new().load_error.is_empty(), "martial catalogs retain existing validation")
@@ -53,7 +51,5 @@ func _run() -> void:
     check(timeline.load_error.is_empty() and timeline.profiles.size() == 9
         and timeline.event_animations.size() == 13,
         "all animation timings and events still exist")
-    check(Legacy.resolve_legacy("step_01","evasion").get("usage_id") == "evasion",
-        "legacy step alternate usage remains a data mapping")
     print("R39_NATIVE_CONTENT_PASS failures=", failures)
     quit(1 if failures else 0)

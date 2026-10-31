@@ -57,27 +57,12 @@ func _run() -> void:
 	check(actor.attributes.MND == 10,"permanent status removal recomputes")
 	check(not Modifiers.valid_spec({"stat":"unknown","op":"flat","value":1}),"unknown modifier attribute rejected")
 
-	var dir: String = "user://r13-buff-validation/"
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
 	var bad: Dictionary = {
 		"schema_version":1,"id":"bad_buff","name":"错误","public":true,
 		"stack_limit":2,"expiry":{"kind":"permanent"},
 		"modifiers":[{"stat":"unknown","op":"flat","value":1}]
 	}
-	var path: String = dir + "bad.json"
-	var index_path: String = dir + "index.json"
-	var file = FileAccess.open(path,FileAccess.WRITE)
-	if file != null:
-		file.store_string(JSON.stringify(bad))
-		file.close()
-	var index_file = FileAccess.open(index_path,FileAccess.WRITE)
-	if index_file != null:
-		index_file.store_string(JSON.stringify({"schema_version":1,"buffs":["bad.json"]}))
-		index_file.close()
-	check(not StatusCatalog.new(index_path).load_error.is_empty(),"invalid authored buff rejected")
-	for candidate in [path,index_path]:
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(candidate))
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(dir))
+	check(not StatusCatalog.new()._valid(bad), "invalid authored buff rejected")
 	print("R13_MODIFIER_PASS failures=",failures)
 	quit(0 if failures == 0 else 1)
 
