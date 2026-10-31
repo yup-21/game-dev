@@ -33,7 +33,6 @@ script = ExtResource("2_node")
 node_id = "sealed"
 display_name = "藏锋·待机"
 available = false
-stage = "sealed"
 next_node = "sealed"
 timing = "ACTION"
 target_kind = "self"
