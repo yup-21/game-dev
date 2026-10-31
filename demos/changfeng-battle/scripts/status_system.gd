@@ -14,8 +14,13 @@ func _sync_modifiers(actor, id: String, definition: Dictionary, stacks: int) -> 
 		var entry: Dictionary = spec.duplicate(true)
 		entry["stacks"] = stacks
 		entries.append(entry)
-	if entries.is_empty(): actor.modifier_sources.erase(token)
-	else: actor.modifier_sources[token] = entries
+	var previous: Variant = actor.modifier_sources.get(token,null)
+	if entries.is_empty():
+		if previous == null: return
+		actor.modifier_sources.erase(token)
+	else:
+		if previous == entries: return
+		actor.modifier_sources[token] = entries
 	if attributes != null: attributes.recalculate(actor)
 
 func has(actor_id: int, id: String) -> bool:
@@ -47,8 +52,10 @@ func remove(actor_id: int,id: String) -> void:
 	var actor=state.get_actor(actor_id)
 	if actor == null: return
 	actor.statuses.erase(id)
-	actor.modifier_sources.erase("status:" + id)
-	if attributes != null: attributes.recalculate(actor)
+	var token: String = "status:" + id
+	if actor.modifier_sources.has(token):
+		actor.modifier_sources.erase(token)
+		if attributes != null: attributes.recalculate(actor)
 
 func conditional_bonus(actor_id: int,target_id: int,c: Dictionary) -> int:
 	var a=state.get_actor(actor_id)

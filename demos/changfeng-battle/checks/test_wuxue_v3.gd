@@ -50,7 +50,7 @@ func run_tests() -> void:
 
 func test_catalog_decks() -> void:
 	var base = fresh()
-	check(base.cards.definitions.size() == 6 and base.cards.statuses.size() == 2 and base.cards.combos.size() == 2, "default five forms retain original schema")
+	check(base.cards.definitions.size() == 6 and base.cards.statuses.has_all(["opening","hand_exposed"]) and base.cards.combos.size() == 2, "original five forms, two base statuses and combos remain available")
 	var catalog = base.cards.catalog
 	check(catalog.load_error.is_empty() and catalog.schools.size() == 10 and catalog.forms.size() == 20 and catalog.statuses.size() == 3 and catalog.combos.size() == 7, "V3 catalog complete and validated")
 	check(base.school_options().size() == 11 and base.snapshot().school_catalog.size() == 11, "eleven public school options")

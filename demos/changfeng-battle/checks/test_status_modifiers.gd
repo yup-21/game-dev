@@ -16,6 +16,13 @@ func _run() -> void:
 	var actor = model.state.get_actor(0)
 	check(model.cards.statuses.has("iron_body"),"independent buff auto-registered")
 	check(actor.attributes.CON == 10 and actor.max_hp_u == 20*UNIT,"unchanged initial derived stats")
+	# A status without stat modifiers must not clobber runtime/test-derived fields.
+	actor.stats.hp_regen_u_per_100 = 0
+	check(model.statuses.add(0,"opening"),"apply legacy non-modifying status")
+	check(actor.stats.hp_regen_u_per_100 == 0,"legacy status application preserves derived override")
+	model.statuses.remove(0,"opening")
+	check(actor.stats.hp_regen_u_per_100 == 0,"legacy status removal preserves derived override")
+	actor.stats.hp_regen_u_per_100 = int(model.attributes.derive(actor.attributes).hp_regen_u_per_100)
 	check(model.statuses.add(0,"iron_body"),"apply buff")
 	check(actor.attributes.CON == 12 and actor.max_hp_u == 22*UNIT,"one stack modifies CON and max HP")
 	check(model.statuses.add(0,"iron_body"),"stack same buff")
