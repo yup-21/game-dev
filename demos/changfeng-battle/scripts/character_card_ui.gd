@@ -196,7 +196,12 @@ func open_actor(battle_model, id: int) -> bool:
     var gear_names: Array = []
     for slot in actor.equipment:
         var item: Dictionary = catalog.get_item(str(actor.equipment[slot]))
-        gear_names.append(str(slot) + " · " + str(item.get("name",actor.equipment[slot])))
+        var label: String = str(slot) + " · " + str(item.get("name",actor.equipment[slot]))
+        var affix_record: Dictionary = actor.equipment_affixes.get(slot,{})
+        var names: Array = affix_record.get("affix_names",[])
+        if not names.is_empty():
+            label += "（" + "、".join(names) + "）"
+        gear_names.append(label)
     status_label.text += ("装备：" + " / ".join(gear_names) if not gear_names.is_empty() else "装备：无")
     visible = true
     return true
