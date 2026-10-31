@@ -89,11 +89,11 @@ func _fail(message: String) -> bool:
 func _read(path: String) -> Dictionary:
 	var typed: Dictionary = {
 		"res://data/school_forms.json": "r36_school_forms",
-        DEFAULT_FORMS: "r36_school_forms",
 		"res://data/tingfeng_cards.json": "r37_tingfeng_cards",
-        DEFAULT_TINGFENG: "r37_tingfeng_cards",
 		"res://data/legacy_id_map.json": "r38_legacy_skill_ids"
 	}
+	typed[DEFAULT_FORMS] = "r36_school_forms"
+	typed[DEFAULT_TINGFENG] = "r37_tingfeng_cards"
 	if typed.has(path):
 		var native = NativeContent.new()
 		if not native.load_error.is_empty():
