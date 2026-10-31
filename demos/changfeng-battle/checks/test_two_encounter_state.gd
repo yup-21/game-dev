@@ -28,16 +28,31 @@ func _start_model(session):
     return model
 
 func _use(model, id: String) -> void:
+    # CTB owns the initiative: the preferred actor is only a tie-breaker.
+    # Exercise real END_ACTION commands until the hero is allowed to act.
+    for _step in range(24):
+        if model.state.active_id == 0 and model.state.mode == "ACTION":
+            break
+        var current_id: int = int(model.state.active_id)
+        if current_id < 0 or model.state.mode != "ACTION":
+            break
+        var advance: Dictionary = model.submit(model.request("END_ACTION",current_id))
+        if not bool(advance.get("success",false)):
+            break
+        if model.state.animation_pending:
+            model.acknowledge_animation(model.state.animation_ticket)
+    check(model.state.active_id == 0 and model.state.mode == "ACTION",
+        "CTB advances to the hero using authoritative commands")
     var actor = model.state.get_actor(0)
-    if actor==null:
-        check(false,"hero actor exists")
+    if actor == null or model.state.active_id != 0:
         return
-    if id=="healing_powder":
-        actor.hp_u = actor.max_hp_u-80000
+    if id == "healing_powder":
+        actor.hp_u = actor.max_hp_u - 80000
     else:
         actor.qi_u = 0
     var sent: Dictionary = model.submit(model.request("USE_ITEM",0,{"item_id":id}))
-    check(bool(sent.get("success",false)),"consume "+id+" with versioned battle command")
+    check(bool(sent.get("success",false)),
+        "consume %s with versioned battle command: %s" % [id,str(sent.get("error_code",""))])
     if model.state.animation_pending:
         check(bool(model.acknowledge_animation(model.state.animation_ticket).get("success",false)),
             "presentation ticket acknowledged independently of inventory")
