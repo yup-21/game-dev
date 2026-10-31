@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png" id="2_sprite_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+content_id = "black_blade"
+display_name = "黑衣刀客"
+title = "炉锋刃"
+role = "追兵 · 破阵"
+faction = "神秘追兵"
+weapon = "黑刃长刀（离火劲）"
+personality = "性情刚烈，出手沉重，习惯正面压制。"
+biography = "随追镖首领而来的黑衣强攻手，刀势中贯穿离火劲。角色刀术与掌法的动作表现仍待美术统一。"
+team_hint = "enemy"
+battle_actor_id = 4
+school_id = "ember"
+learned_schools = Array[String](["ember","saber"])
+attributes = {"STR":13,"AGI":9,"CON":12,"MND":9}
+passives = {"insight":0,"conceal":0}
+techniques = {}
+sprite_sheet = ExtResource("2_sprite_sheet")
+portrait_quality = "sprite_fallback"
+sheet_quality = "24_pose_preview"
+pose_quality = "none"

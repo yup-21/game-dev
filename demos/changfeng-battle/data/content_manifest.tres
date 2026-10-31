@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=35 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=42 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -40,10 +40,18 @@
 [ext_resource type="Resource" path="res://data/native/assets/r24_lan_actor.tres" id="33_r24"]
 [ext_resource type="Resource" path="res://data/native/assets/r24_status_vfx.tres" id="34_r24"]
 
+[ext_resource type="Resource" path="res://data/native/characters/gu_qingshuang.tres" id="35_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/green_wanderer.tres" id="36_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/pursuer_captain.tres" id="37_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/black_blade.tres" id="38_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/night_assassin.tres" id="39_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/escort_elder.tres" id="40_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/river_messenger.tres" id="41_r25"]
+
 [resource]
 script = ExtResource("1_manifest")
 schools = Array[Resource]([ExtResource("16_r24")])
-characters = Array[Resource]([ExtResource("2_hero"), ExtResource("25_r24")])
+characters = Array[Resource]([ExtResource("2_hero"), ExtResource("25_r24"), ExtResource("35_r25"), ExtResource("36_r25"), ExtResource("37_r25"), ExtResource("38_r25"), ExtResource("39_r25"), ExtResource("40_r25"), ExtResource("41_r25")])
 skills = Array[Resource]([ExtResource("3_probe"), ExtResource("4_follow"), ExtResource("17_r24"), ExtResource("18_r24"), ExtResource("19_r24")])
 techniques = Array[Resource]([ExtResource("5_guard"), ExtResource("20_r24")])
 effect_handlers = Array[Resource]([ExtResource("6_echo")])

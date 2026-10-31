@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://assets/characters/concepts/escort_captain_portrait.png" id="2_portrait"]
+[ext_resource type="Texture2D" path="res://assets/characters/concepts/escort_elder_injured.svg" id="3_static_pose"]
+
+[resource]
+script = ExtResource("1_def")
+content_id = "escort_elder"
+display_name = "老镖头"
+title = "血镖托孤"
+role = "剧情人物 · 镖头"
+faction = "旧镖局"
+weapon = "长刀（非战斗）"
+personality = "负伤垂危，仍竭力守护无名残篇。"
+biography = "雨夜残镖的幸存者，将《太虚引气残篇》交给沈长风，并警告追兵身后藏着不可轻信的势力。"
+team_hint = "neutral"
+battle_actor_id = -1
+school_id = ""
+learned_schools = Array[String]([])
+attributes = {"STR":10,"AGI":8,"CON":10,"MND":11}
+passives = {"insight":0,"conceal":0}
+techniques = {}
+portrait = ExtResource("2_portrait")
+static_pose = ExtResource("3_static_pose")
+portrait_quality = "integrated"
+sheet_quality = "none"
+pose_quality = "hand_drawn_svg_still"

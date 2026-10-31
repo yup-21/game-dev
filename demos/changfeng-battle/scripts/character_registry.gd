@@ -14,6 +14,34 @@ var load_error: String = ""
 
 func _init(index_path: String = BASE + "index.json", definition_root: String = BASE,
         native_manifest_path: String = "") -> void:
+    # Production roster is fully native. The old character JSON files are
+    # independent migration fixtures; they are never needed at game startup.
+    # Custom index arguments still exercise the original compatibility parser.
+    if index_path == BASE + "index.json" and definition_root == BASE and native_manifest_path.is_empty():
+        var natives = NativeContent.new()
+        if not natives.load_error.is_empty():
+            load_error = natives.load_error
+            return
+        var schools = SchoolCatalog.new()
+        if not schools.load_error.is_empty():
+            load_error = schools.load_error
+            return
+        var entries: Dictionary = natives.entries("character")
+        if entries.size() < 8:
+            load_error = "Incomplete native roster: expected all original combatants/NPCs"
+            return
+        for d in entries.values():
+            if not _valid(d, schools) or profiles.has(d.id) or by_name.has(d.name):
+                load_error = "Invalid or duplicate native character: " + str(d.get("id",""))
+                return
+            if int(d.battle_actor_id) >= 0 and by_actor.has(int(d.battle_actor_id)):
+                load_error = "Duplicate native actor ID: " + str(d.battle_actor_id)
+                return
+            profiles[str(d.id)] = d.duplicate(true)
+            by_name[str(d.name)] = str(d.id)
+            if int(d.battle_actor_id) >= 0:
+                by_actor[int(d.battle_actor_id)] = str(d.id)
+        return
     if not FileAccess.file_exists(index_path):
         load_error = "Character index missing: " + index_path
         return

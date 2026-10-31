@@ -29,6 +29,8 @@ extends WuxiaContentDefinition
 @export var portrait_quality: String = "approved"
 @export var sheet_quality: String = "approved"
 @export var battle_scene: PackedScene
+@export var static_pose: Texture2D
+@export var pose_quality: String = "none"
 
 func content_kind() -> String:
     return "character"
@@ -60,6 +62,9 @@ func to_record() -> Dictionary:
             "sheet_quality": sheet_quality
         }
     }
+    if static_pose != null:
+        record["art"]["static_pose"] = static_pose.resource_path
+        record["art"]["pose_quality"] = pose_quality
     if not starting_items.is_empty():
         var loadout: Array = []
         for entry in starting_items:
