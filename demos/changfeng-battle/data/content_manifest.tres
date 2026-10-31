@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=11 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -12,6 +12,12 @@
 [ext_resource type="Resource" path="res://data/native/quests/r21_find_the_path.tres" id="9_quest"]
 [ext_resource type="Resource" path="res://data/native/encounters/r21_gate_ambush.tres" id="10_encounter"]
 
+
+[ext_resource type="Resource" path="res://data/native/assets/r22_shen_portrait.tres" id="11_portrait"]
+[ext_resource type="Resource" path="res://data/native/assets/r22_messenger_sheet.tres" id="12_sheet"]
+[ext_resource type="Resource" path="res://data/native/assets/r22_vfx_probe.tres" id="13_vfx"]
+[ext_resource type="Resource" path="res://data/native/assets/r22_temple_scene.tres" id="14_scene"]
+
 [resource]
 script = ExtResource("1_manifest")
 characters = Array[Resource]([ExtResource("2_hero")])
@@ -23,3 +29,4 @@ stories = Array[Resource]([ExtResource("7_story")])
 chapters = Array[Resource]([ExtResource("8_chapter")])
 quests = Array[Resource]([ExtResource("9_quest")])
 encounters = Array[Resource]([ExtResource("10_encounter")])
+assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene")])

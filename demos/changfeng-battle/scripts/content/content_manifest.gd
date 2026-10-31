@@ -15,3 +15,4 @@ extends Resource
 @export var chapters: Array[Resource] = []
 @export var quests: Array[Resource] = []
 @export var encounters: Array[Resource] = []
+@export var assets: Array[Resource] = []

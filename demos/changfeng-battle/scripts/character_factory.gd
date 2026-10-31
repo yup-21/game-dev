@@ -5,8 +5,10 @@ const Registry = preload("res://scripts/character_registry.gd")
 const Runtime = preload("res://scripts/character_runtime.gd")
 const ItemCatalog = preload("res://scripts/item_catalog.gd")
 const Loadout = preload("res://scripts/content/character_loadout.gd")
+const Assets = preload("res://scripts/asset_registry.gd")
 var registry
 var items
+var assets = Assets.new()
 var load_error: String = ""
 
 func _init(source_registry = null, source_items = null) -> void:
@@ -16,6 +18,8 @@ func _init(source_registry = null, source_items = null) -> void:
         load_error = registry.load_error
     elif not items.load_error.is_empty():
         load_error = items.load_error
+    elif not assets.load_error.is_empty():
+        load_error = assets.load_error
 
 func create_runtime(character_id: String):
     if not load_error.is_empty():
@@ -37,10 +41,13 @@ func presentation_assets(character_id: String) -> Dictionary:
     var output: Dictionary = {}
     var art: Dictionary = profile.get("art", {})
     for key in ["portrait", "sprite_sheet"]:
+        var kind: String = "pose_sheet" if key == "sprite_sheet" else key
+        var bound: Texture2D = assets.texture_for_character(character_id,kind)
         var path: String = str(art.get(key, ""))
-        output[key] = ResourceLoader.load(path, "Texture2D") if not path.is_empty() else null
+        output[key] = bound if bound != null else (ResourceLoader.load(path, "Texture2D") if not path.is_empty() else null)
     var scene_path: String = str(profile.get("presentation", {}).get("battle_scene", ""))
-    output["battle_scene"] = ResourceLoader.load(scene_path, "PackedScene") if not scene_path.is_empty() else null
+    var scene: PackedScene = assets.scene_for_character(character_id)
+    output["battle_scene"] = scene if scene != null else (ResourceLoader.load(scene_path, "PackedScene") if not scene_path.is_empty() else null)
     return output
 
 func instantiate_presentation(character_id: String) -> Node2D:

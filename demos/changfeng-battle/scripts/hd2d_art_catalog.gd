@@ -4,6 +4,7 @@ extends RefCounted
 ## so white clothing inside a silhouette is not blindly keyed out.
 const IllustratedFallback = preload("res://scripts/hd2d_illustrated_factory.gd")
 const Registry = preload("res://scripts/character_registry.gd")
+const Assets = preload("res://scripts/asset_registry.gd")
 const FRAME_SIZE := 256
 const COLS := 6
 const ROWS := 4
@@ -35,6 +36,7 @@ const SCENES := {
     "rainy_bridge": preload("res://assets/concepts/2026-10-30/scenes/rainy_broken_bridge_battle_v1.jpg")
 }
 static var _registry = Registry.new()
+static var _asset_registry = Assets.new()
 static var _sheets: Dictionary = {}
 
 ## Resolve new assets from character data; preserve known preloads for exports.
@@ -45,11 +47,15 @@ static func _asset_texture(path: String, known: Dictionary) -> Texture2D:
     return load(path) as Texture2D
 
 static func portrait_for_character(character_id: String) -> Texture2D:
+    var native: Texture2D = _asset_registry.texture_for_character(character_id,"portrait")
+    if native != null: return native
     var profile: Dictionary = _registry.get_profile(character_id)
     var path: String = str(profile.get("art",{}).get("portrait",""))
     return _asset_texture(path,PORTRAITS_BY_PATH)
 
 static func story_pose_for_character(character_id: String) -> Texture2D:
+    var native: Texture2D = _asset_registry.texture_for_character(character_id,"static_pose")
+    if native != null: return native
     var definition: Dictionary = _registry.get_profile(character_id)
     var source: String = str(definition.get("art",{}).get("static_pose",""))
     return STORY_POSES_BY_PATH.get(source,null) as Texture2D
@@ -113,7 +119,8 @@ static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
 
 static func sheet_for_character(character_id: String, enemy: bool = false) -> Texture2D:
     var profile: Dictionary = _registry.get_profile(character_id)
-    var path: String = str(profile.get("art",{}).get("sprite_sheet",""))
+    var binding: Dictionary = _asset_registry.record_for_character(character_id,"pose_sheet")
+    var path: String = str(binding.get("path",profile.get("art",{}).get("sprite_sheet","")))
     if _asset_texture(path,SHEETS_BY_PATH) == null:
         return IllustratedFallback.make_sheet(enemy)
     if _sheets.has(path):
@@ -170,6 +177,8 @@ static func sheet_faces_left_for_character(character_id: String) -> bool:
     var profile: Dictionary = _registry.get_profile(character_id)
     var art: Dictionary = profile.get("art", {})
     var path: String = str(art.get("sprite_sheet", ""))
+    var binding: Dictionary = _asset_registry.record_for_character(character_id,"pose_sheet")
+    if not binding.is_empty(): return bool(binding.get("faces_left",true))
     return bool(art.get("faces_left", SHEETS_BY_PATH.has(path)))
 
 static func sheet_faces_left(actor_id: int) -> bool:
@@ -178,7 +187,8 @@ static func sheet_faces_left(actor_id: int) -> bool:
 
 static func uses_supplied_sheet_for_character(character_id: String) -> bool:
     var profile: Dictionary = _registry.get_profile(character_id)
-    var path: String = str(profile.get("art",{}).get("sprite_sheet",""))
+    var binding: Dictionary = _asset_registry.record_for_character(character_id,"pose_sheet")
+    var path: String = str(binding.get("path",profile.get("art",{}).get("sprite_sheet","")))
     return _asset_texture(path,SHEETS_BY_PATH) != null
 
 static func uses_supplied_sheet(actor_id: int) -> bool:
