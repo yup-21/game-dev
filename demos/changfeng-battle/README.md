@@ -4,7 +4,7 @@
 
 ## 唯一战斗入口与美术接入
 
-**正式战斗现已使用原生 2D 场景**：`battle_hd2d.tscn` 为 `Node2D + Camera2D`；`illustrated_battle_map.gd` 持有完整插画、共享脚点与 `Sprite2D` 演员；`battle_vfx_2d.gd` 只负责战斗特效。旧的 3D 地形构造已从正式场景删除，`hd2d_vfx.gd` / `hd2d_scenery.gd` 暂保留为历史模块，不参与玩家战斗。规则仍统一由 `BattleModel` 管理，支持 1v1 / 序章 3v3、CTB、武学卡牌、连携和 CLASH。
+**正式战斗现已使用原生 2D 场景**：`battle_hd2d.tscn` 为 `Node2D + Camera2D`；`illustrated_battle_map.gd` 持有完整插画、共享脚点与 `Sprite2D` 演员；`battle_vfx_2d.gd` 只负责战斗特效。旧的 3D 地形构造与未被引用的旧特效/场景脚本已经清理；正式战斗的特效由 `battle_vfx_2d.gd` 唯一承载。规则仍统一由 `BattleModel` 管理，支持 1v1 / 序章 3v3、CTB、武学卡牌、连携和 CLASH。
 
 **已拆分的职责**：`BattleInputController` 处理 FREE/GRID 点击意图，`BattleCommandController` 做人类输入门控，`BattleCommandDispatcher` 统一投递请求；`BattleHandView`、`BattleHUDStatus`、`ChargeRail` 与 `CharacterCardUI` 只消费投影；`BattlePresentationCoordinator` 管理 animation ticket 的完成、跳过和取消；`BattleSpatialFacade` 提供统一几何查询。上述改动保留原有数值、卡牌、派生与敌方 AI。
 
@@ -22,7 +22,7 @@
 
 ## 双章节剧情与跨战斗角色状态（V2–V3）
 
-现有序章胜利后可在结算页选择「进入下一幕」，进入数据定义的「夜渡传书」，在第二张插画背景中与河渡信使交谈，根据第一幕选择分支，领取回气丹，再进入独立的六人战斗遭遇。剧情角色、场景、遭遇、门槛、奖励和下一章关系统一由 `data/chapters/index.json` 注册，新增同类章节无需修改 `GameSession`。
+现有序章胜利后可在结算页选择「进入下一幕」，进入数据定义的「夜渡传书」，在第二张插画背景中与河渡信使交谈，根据第一幕选择分支，领取回气丹，再进入独立的六人战斗遭遇。剧情角色、场景、遭遇、门槛、奖励和下一章关系统一由 `data/content_manifest.tres` 中的原生 Resource 注册；旧章节索引仅作为回归测试数据，新增同类章节无需修改 `GameSession`。
 
 主角背包与装备跨两场战斗存在内存运行态：战斗中的 `USE_ITEM` 只消耗战斗快照，结算时通过完整我方角色快照校验并同步；首次胜利奖励仅领取一次，装备 UID、词条和角色成长来源保留。未实施存档、中途恢复以及临时 Buff/HP 跨场继承。
 
@@ -77,9 +77,9 @@
 
 ## 五式内容
 
-数据文件：`data/tingfeng_cards.json`。5 个定义、12 个用法、每人 12 张镜像实体牌，每个实例一次只能选一种用法。
+正式资源：`data/native/documents/tingfeng_cards.tres`。5 个定义、12 个用法、每人 12 张镜像实体牌，每个实例一次只能选一种用法；旧 JSON 文件仅用于字段一致性测试。
 
-新增武学定义位于 `data/school_forms.json`，由SchoolCatalog校验并规范化；40旧定义引用映射在 `data/legacy_id_map.json`。详见V3分析文档，不用于在战UID热替换。
+原有武学定义与旧 ID 映射已迁移至 `data/native/documents/school_forms.tres`、`data/native/documents/legacy_id_map.tres`，由 SchoolCatalog 校验并规范化；旧 JSON 留作兼容数据。详见V3分析文档，不用于在战UID热替换。
 
 | 招式 | 张数 | 用法 |
 | --- | ---: | --- |

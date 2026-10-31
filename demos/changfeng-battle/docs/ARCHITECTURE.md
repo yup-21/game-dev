@@ -3,6 +3,8 @@
 > 单一正式入口：`opening.tscn` → `battle_hd2d.tscn`；基础版本 `main@8d1486b4`，重构工作在 `refactor/battle-architecture-consolidation`（Draft PR #67）。
 > 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
+> **R28 现状（2026-10-31）**：正式内容入口已经切换为 `data/content_manifest.tres` 中的 Godot 原生 Resource；原有复杂目录存于 `data/native/documents/*.tres`。下文 R11–R15 的 JSON 索引图是当时阶段的设计记录，**不是现在的生产配置流程**。新内容制作请看 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
+
 ## 运行结构
 
 ```mermaid
@@ -41,7 +43,7 @@ flowchart TD
 ## 保留入口、资产与已知限制
 
 - 玩家入口唯一 `battle_hd2d.tscn`；`battle.tscn` / `party_battle.tscn` 作为历史规则视图保留，不触发删除。
-- `hd2d_vfx.gd`、`hd2d_scenery.gd` 是历史兼容实现，不再是正式演出依赖。
+- 无任何运行时或测试引用的旧 `hd2d_party_bridge.gd`、`hd2d_vfx.gd`、`hd2d_scenery.gd` 已清理；正式 UI 使用 `hd2d_battle.gd` 与 `battle_vfx_2d.gd`。
 - 美术素材既有 Kenney CC0，也有用户上传原画和生成的概念稿；用途/授权分开记录，未确认原创素材的许可证不能宣称 CC0。
 - 完整四方向逐帧图集、姿态条、动作型绝招、交锋慢镜头和音效编排不是这轮重构已完成的功能，属于结构稳定后的新增玩法；旧 6×4 图仅提供动作类别与水平镜像。
 - 目前仍有 UI 创建/AI 更新时间循环留在 `hd2d_battle.gd` 中；R2–R5 优先提取重要行为边界，后续可以继续迁移纯视图而不改规则。
