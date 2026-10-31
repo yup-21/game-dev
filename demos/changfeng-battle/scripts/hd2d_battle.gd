@@ -14,7 +14,8 @@ const Animator = preload("res://scripts/hd2d_animation.gd")
 const Facing = preload("res://scripts/actor_facing.gd")
 const VFX = preload("res://scripts/battle_vfx_2d.gd")
 const ResponsePolicy = preload("res://scripts/hd2d_response_policy.gd")
-const CharacterRegistry = preload("res://scripts/character_registry.gd")
+const CharacterFactory = preload("res://scripts/character_factory.gd")
+const ScenarioDirector = preload("res://scripts/scenario_director.gd")
 const CharacterRuntime = preload("res://scripts/character_runtime.gd")
 const CharacterCardUI = preload("res://scripts/character_card_ui.gd")
 const ChargeRail = preload("res://scripts/hd2d_ctb_rail.gd")
@@ -86,9 +87,10 @@ var intro_subtitle: Label
 func _ready() -> void:
     var session = _session()
     story_encounter = session != null and session.phase == "battle"
-    if story_encounter:
+    if session != null and session.phase in ["battle","quick_battle"]:
         model.reset(session.encounter_seed(), -1, "tingfeng", session.encounter_options())
     else:
+        # Direct scene previews also use the registered quick encounter.
         model.reset(2026, -1, "tingfeng", _quick_character_options())
     continuous_preview_enabled = model.state.spatial_mode == "FREE"
     observer_id = _first_player_id()
@@ -113,20 +115,17 @@ func _ready() -> void:
     _update_status()
 
 func _quick_character_options() -> Dictionary:
-    # Seed the quick-play demo with consumables so the new command can be
-    # exercised immediately. Scenario encounters still own their own loadouts.
-    var hero = CharacterRuntime.new("shen_changfeng")
-    var builds: Dictionary = {}
-    if hero.load_error.is_empty():
-        hero.inventory.add("healing_powder",2)
-        hero.inventory.add("breath_pill",1)
-        builds["shen_changfeng"] = hero.battle_build()
-    var configured: Dictionary=CharacterRegistry.new().battle_options(
-        [], {0:"shen_changfeng",1:"pursuer_captain"}, builds)
-    configured["map_definition_path"]="res://data/maps/rainy_bridge.json"
-    var session=get_node_or_null("/root/GameSession")
+    var director = ScenarioDirector.new()
+    var factory = CharacterFactory.new()
+    var hero = factory.create_runtime("shen_changfeng")
+    if not director.load_error.is_empty() or hero == null:
+        push_error("Native quick battle content cannot initialize")
+        return {}
+    var configured: Dictionary = director.battle_options(
+        "r40_quick_duel", {"shen_changfeng":hero.battle_build()})
+    var session = _session()
     if session != null:
-        configured["spatial_mode"]=str(session.get("battle_spatial_mode"))
+        configured["spatial_mode"] = str(session.battle_spatial_mode)
     return configured
 
 func _session():

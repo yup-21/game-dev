@@ -63,6 +63,7 @@
 [ext_resource type="Resource" path="res://data/native/techniques/tf_change_stage.tres" id="53_r33"]
 [ext_resource type="Resource" path="res://data/native/encounters/escort_ambush.tres" id="54_r34"]
 [ext_resource type="Resource" path="res://data/native/encounters/river_watch_ambush.tres" id="79_r34"]
+[ext_resource type="Resource" path="res://data/native/encounters/r40_quick_duel.tres" id="80_r40"]
 [ext_resource type="Resource" path="res://data/native/action_timelines/r32_default.tres" id="55_r32"]
 [ext_resource type="Resource" path="res://data/maps/rainy_bridge.tres" id="56_r35"]
 
@@ -100,7 +101,7 @@ effect_handlers = Array[Resource]([ExtResource("6_echo")])
 stories = Array[Resource]([ExtResource("75_prologue_story"), ExtResource("76_river_story"), ExtResource("7_story"), ExtResource("26_r24"), ExtResource("61_r26")])
 chapters = Array[Resource]([ExtResource("77_prologue_chapter"), ExtResource("78_river_chapter"), ExtResource("8_chapter"), ExtResource("27_r24"), ExtResource("62_r26")])
 quests = Array[Resource]([ExtResource("9_quest"), ExtResource("28_r24")])
-encounters = Array[Resource]([ExtResource("10_encounter"), ExtResource("29_r24"), ExtResource("63_r26"), ExtResource("54_r34"), ExtResource("79_r34")])
+encounters = Array[Resource]([ExtResource("10_encounter"), ExtResource("29_r24"), ExtResource("63_r26"), ExtResource("54_r34"), ExtResource("79_r34"), ExtResource("80_r40")])
 assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene"), ExtResource("31_r24"), ExtResource("32_r24"), ExtResource("33_r24"), ExtResource("34_r24"), ExtResource("64_r27"), ExtResource("65_r27"), ExtResource("66_r27"), ExtResource("67_r27"), ExtResource("68_r27"), ExtResource("69_r27"), ExtResource("70_r27"), ExtResource("71_r27"), ExtResource("72_r27"), ExtResource("73_r27"), ExtResource("74_r27")])
 maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24"), ExtResource("56_r35")])
 buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])

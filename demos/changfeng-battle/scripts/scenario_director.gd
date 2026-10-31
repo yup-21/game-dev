@@ -26,9 +26,9 @@ func _init(path: String = "res://data/demo_scenario.json") -> void:
 		load_error = native.load_error
 		return
 	for entry in native.entries("encounter").values():
-		if not _register_entry(entry): return
+		if not _register_entry(entry, native): return
 
-func _register_entry(entry: Variant) -> bool:
+func _register_entry(entry: Variant, native = null) -> bool:
 	if not entry is Dictionary or not entry.get("id") is String or str(entry.id).is_empty() or encounters.has(entry.id):
 		load_error="Invalid encounter ID"
 		return false
@@ -49,6 +49,25 @@ func _register_entry(entry: Variant) -> bool:
 			load_error="Invalid native map path"
 			return false
 	var normalized: Dictionary=entry.duplicate(true)
+	if native != null and entry.has("map_id"):
+		# Production ID references must resolve to a registered Resource.
+		var map_id: String = str(entry.map_id)
+		var map_resource: Resource = native.resource_for("map", map_id)
+		if map_resource == null or not map_resource.resource_path.begins_with("res://data/maps/") or not map_resource.resource_path.ends_with(".tres"):
+			load_error = "Encounter references missing native map: " + map_id
+			return false
+		normalized["map_definition_path"] = map_resource.resource_path
+	elif native != null and entry.has("map_definition_path"):
+		var direct_map_path: String = str(entry.map_definition_path)
+		var found: bool = false
+		for registered_id in native.entries("map"):
+			var authored_map: Resource = native.resource_for("map",str(registered_id))
+			if authored_map != null and authored_map.resource_path == direct_map_path:
+				found = true
+				break
+		if not found:
+			load_error = "Encounter references unregistered native map: " + direct_map_path
+			return false
 	if normalized.has("seed"): normalized.seed=int(normalized.seed)
 	for actor in normalized.combatants:
 		if not actor is Dictionary or not _valid_integer(actor.get("id")) or not _valid_integer(actor.get("team_id")):
@@ -94,7 +113,9 @@ func battle_options(id: String, builds: Dictionary = {}) -> Dictionary:
 		if definition.has("map_definition_path"):
 			configured["map_definition_path"]=str(definition.map_definition_path)
 		elif definition.has("map_id"):
-			configured["map_definition_path"]="res://data/maps/"+str(definition.map_id)+".json"
+			# Explicit legacy fixtures may refer to the historical map ID;
+			# production entries resolve to registered .tres at load time.
+			configured["map_definition_path"]= "res://data/maps/rainy_bridge.tres" if str(definition.map_id) == "rainy_bridge" else ""
 		return configured
 	# Legacy/custom encounter fixtures remain supported without profiles.
 	var schools: Dictionary={}
@@ -104,5 +125,7 @@ func battle_options(id: String, builds: Dictionary = {}) -> Dictionary:
 	if definition.has("map_definition_path"):
 		configured["map_definition_path"]=str(definition.map_definition_path)
 	elif definition.has("map_id"):
-		configured["map_definition_path"]="res://data/maps/"+str(definition.map_id)+".json"
+		# Explicit legacy fixtures may refer to the historical map ID;
+			# production entries resolve to registered .tres at load time.
+			configured["map_definition_path"]= "res://data/maps/rainy_bridge.tres" if str(definition.map_id) == "rainy_bridge" else ""
 	return configured

@@ -2,7 +2,7 @@ extends RefCounted
 ## Offline-authored terrain bake for one whole-image scene. The artwork and
 ## the tile mask are aligned through one fixed, horizontal orthographic lattice:
 ## cell centres, hit rectangles and actor feet use the SAME coordinates.
-const DEFAULT_PATH := "res://data/maps/rainy_bridge.json"
+const DEFAULT_PATH := "res://data/maps/rainy_bridge.tres"
 const BLOCKED := ["water","rock","bamboo"]
 const Native = preload("res://scripts/content/content_registry.gd")
 var id: String = ""
@@ -31,10 +31,10 @@ func _init(path: String = DEFAULT_PATH) -> void:
         else:
             _load_native(path)
         return
-    if path.is_empty() or (path != DEFAULT_PATH and not FileAccess.file_exists(path)):
+    if path.is_empty() or not FileAccess.file_exists(path):
         error = "Missing baked map: " + path
         return
-    var data: Variant = Native.new().entries("map").get("rainy_bridge", {}) if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
+    var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
     _load_grid_record(data, path)
 
 func _load_grid_record(data: Variant, path: String) -> void:

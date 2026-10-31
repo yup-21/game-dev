@@ -9,6 +9,7 @@ const InventoryRuntime = preload("res://scripts/inventory_runtime.gd")
 const StoryEvents = preload("res://scripts/story_event_executor.gd")
 const SceneRouter = preload("res://scripts/chapter_scene_router.gd")
 const Quests = preload("res://scripts/quest_runtime.gd")
+const QUICK_ENCOUNTER_ID := "r40_quick_duel"
 var director = ScenarioDirector.new()
 var chapters = ChapterCatalog.new()
 var quests = Quests.new()
@@ -48,6 +49,29 @@ func start_new_game(entry_chapter_id: String = "") -> void:
             var character = factory.create_runtime(id)
             if character != null:
                 characters[id] = character
+
+## Quick combat bypasses story progression, not encounter loading.
+func start_quick_battle() -> bool:
+    var quick: Dictionary = director.encounter(QUICK_ENCOUNTER_ID)
+    if quick.is_empty():
+        return false
+    var factory = CharacterFactory.new()
+    var staged: Dictionary = {}
+    for actor in quick.get("combatants", []):
+        if int(actor.get("team_id",-1)) != 0:
+            continue
+        var id: String = str(actor.get("character_id",""))
+        var runtime = factory.create_runtime(id)
+        if runtime == null:
+            return false
+        staged[id] = runtime
+    characters = staged
+    phase = "quick_battle"
+    chapter_id = ""
+    encounter_id = QUICK_ENCOUNTER_ID
+    battle_outcome = ""
+    winning_team = -1
+    return true
 
 func quest_status(id: String) -> Dictionary:
     return quests.status(id,flags,items,cleared_encounters)
@@ -102,7 +126,7 @@ func begin_encounter(id: String = "") -> bool:
     return true
 
 func encounter_options() -> Dictionary:
-    if phase != "battle":
+    if phase not in ["battle", "quick_battle"]:
         return {}
     var builds: Dictionary = {}
     for character_id in characters:
