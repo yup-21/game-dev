@@ -4,17 +4,17 @@ const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 var modifiers = Modifiers.new()
 
 func derive(a: Dictionary) -> Dictionary:
-	var ds: int=int(a.get("STR",10))-10
-	var da: int=int(a.get("AGI",10))-10
-	var dc: int=int(a.get("CON",10))-10
-	var dm: int=int(a.get("MND",10))-10
-	return {"max_hp":maxi(10,20+dc),"attack":maxi(1,10+ds),"defense":maxi(1,10+dc),
-		"break_power":10+floori(0.5*ds+0.25*da),"parry_power":10+floori(0.5*dm+0.25*da),
-		"max_qi_u":clampi(6+floori(float(dm)/5),4,10)*UNIT,
-		"qi_regen_u_per_100":clampi(30000+300*dm,20000,40000),
-		"hp_regen_u_per_100":clampi(2000+200*dc,0,6000),
-		"qi_cost_percent":clampi(100-dm,85,110),"charge_speed":clampi(100+2*da,75,130),
-		"move_budget":clampi(2+floori(float(maxi(0,da))/12),2,3)}
+    var ds: int=int(a.get("STR",10))-10
+    var da: int=int(a.get("AGI",10))-10
+    var dc: int=int(a.get("CON",10))-10
+    var dm: int=int(a.get("MND",10))-10
+    return {"max_hp":maxi(10,20+dc),"attack":maxi(1,10+ds),"defense":maxi(1,10+dc),
+        "break_power":10+floori(0.5*ds+0.25*da),"parry_power":10+floori(0.5*dm+0.25*da),
+        "max_qi_u":clampi(6+floori(float(dm)/5),4,10)*UNIT,
+        "qi_regen_u_per_100":clampi(30000+300*dm,20000,40000),
+        "hp_regen_u_per_100":clampi(2000+200*dc,0,6000),
+        "qi_cost_percent":clampi(100-dm,85,110),"charge_speed":clampi(100+2*da,75,130),
+        "move_budget":clampi(2+floori(float(maxi(0,da))/12),2,3)}
 
 func configure(actor, overrides: Dictionary = {}, talents: Dictionary = {}) -> void:
     actor.base_attributes = {}
