@@ -40,7 +40,6 @@ func _run() -> void:
         ["school_forms","school_forms.json"],
         ["tingfeng_cards","tingfeng_cards.json"],
         ["legacy_id_map","legacy_id_map.json"],
-        ["techniques","techniques.json"],
         ["demo_scenario","demo_scenario.json"],
         ["rainy_bridge","maps/rainy_bridge.json"]
     ]
@@ -73,6 +72,15 @@ func _run() -> void:
             historical.get("cinematic",[])) and authored.get("entry_node") == historical.get("entry_node")
             and authored.get("dialogues",[]).size() == historical.get("dialogues",[]).size(),
             "typed story preserves pacing and dialogue count " + str(pair[0]))
+    var legacy_techniques: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/techniques.json"))
+    var typed_technique: Dictionary = native.entries("technique").get("tf_change_stage", {})
+    check(not typed_technique.is_empty() and _same(typed_technique.get("nodes", []), legacy_techniques.techniques[0].nodes)
+        and typed_technique.get("name") == legacy_techniques.techniques[0].name
+        and typed_technique.get("auto_equip") == true
+        and typed_technique.get("hold_own_actions") == 1
+        and _same(typed_technique.get("trigger", {}), legacy_techniques.techniques[0].trigger),
+        "typed technique preserves all original four stages and trigger")
+    check(native.document("r25_techniques").is_empty(), "opaque technique document removed")
     var schools = Schools.new()
     var techniques = Techniques.new()
     var encounters = Scenarios.new()

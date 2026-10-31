@@ -1,0 +1,84 @@
+[gd_resource type="Resource" script_class="WuxiaTechniqueDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/technique_definition.gd" id="1_tech"]
+[ext_resource type="Script" path="res://scripts/content/technique_node_definition.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/content/technique_trigger_definition.gd" id="3_trigger"]
+[ext_resource type="Script" path="res://scripts/content/technique_effect_definition.gd" id="4_effect"]
+
+[sub_resource type="Resource" id="Trigger"]
+script = ExtResource("3_trigger")
+card_id = "tf_probe"
+usage_id = "probe"
+ready_stage = "ready"
+
+[sub_resource type="Resource" id="Effect_gain"]
+script = ExtResource("4_effect")
+effect_type = "gain_qi"
+amount = 0
+
+[sub_resource type="Resource" id="Effect_area"]
+script = ExtResource("4_effect")
+effect_type = "modify_attack_area"
+shape = "locked_cell_plus_orthogonal_neighbors"
+single_original_target_only = true
+respect_obstacles = true
+
+[sub_resource type="Resource" id="Effect_cancel"]
+script = ExtResource("4_effect")
+effect_type = "cancel_chain_link"
+target_ref = "chosen_opponent_unresolved_response_link"
+
+[sub_resource type="Resource" id="Node_sealed"]
+script = ExtResource("2_node")
+node_id = "sealed"
+display_name = "藏锋·待机"
+available = false
+stage = "sealed"
+next_node = "sealed"
+timing = "ACTION"
+target_kind = "self"
+cost_qi = 0
+effects = Array[Resource]([SubResource("Effect_gain")])
+
+[sub_resource type="Resource" id="Node_change"]
+script = ExtResource("2_node")
+node_id = "change"
+display_name = "变锋·追击"
+stage = "ready"
+next_node = "sealed"
+timing = "ATTACK_REACTION"
+target_kind = "pending_root_attack"
+cost_qi = 1
+effects = Array[Resource]([SubResource("Effect_area")])
+
+[sub_resource type="Resource" id="Node_attack_counter"]
+script = ExtResource("2_node")
+node_id = "attack_counter"
+display_name = "变锋·截势（攻）"
+stage = "ready"
+next_node = "sealed"
+timing = "ATTACK_REACTION"
+target_kind = "opponent_unresolved_response_link"
+cost_qi = 1
+effects = Array[Resource]([SubResource("Effect_cancel")])
+
+[sub_resource type="Resource" id="Node_defense_counter"]
+script = ExtResource("2_node")
+node_id = "defense_counter"
+display_name = "变锋·截势（守）"
+stage = "ready"
+next_node = "sealed"
+timing = "DEFENSE_REACTION"
+target_kind = "opponent_unresolved_response_link"
+cost_qi = 1
+effects = Array[Resource]([SubResource("Effect_cancel")])
+
+[resource]
+script = ExtResource("1_tech")
+content_id = "tf_change_stage"
+display_name = "变锋式"
+auto_equip = true
+hold_own_actions = 1
+entry_node = "sealed"
+trigger_definition = SubResource("Trigger")
+nodes = Array[Resource]([SubResource("Node_sealed"), SubResource("Node_change"), SubResource("Node_attack_counter"), SubResource("Node_defense_counter")])

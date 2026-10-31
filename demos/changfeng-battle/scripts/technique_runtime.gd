@@ -9,11 +9,11 @@ func _init(path: String = DEFAULT_PATH) -> void:
 	if path != DEFAULT_PATH and not FileAccess.file_exists(path):
 		load_error = "Technique catalog missing: " + path
 		return
-	var data = NativeContent.new().document("r25_techniques") if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
-	if not data is Dictionary or data.get("version") != 1 or not data.get("techniques") is Array:
+	var data = {} if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not data is Dictionary or (path != DEFAULT_PATH and (data.get("version") != 1 or not data.get("techniques") is Array)):
 		load_error = "Invalid technique catalog"
 		return
-	for d in data.techniques:
+	for d in data.get("techniques", []):
 		if not d is Dictionary or not d.get("id") is String or str(d.id).is_empty() or definitions.has(d.id):
 			load_error = "Duplicate or invalid technique id"
 			return

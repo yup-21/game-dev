@@ -60,7 +60,7 @@
 [ext_resource type="Resource" path="res://data/native/documents/school_forms.tres" id="50_r25"]
 [ext_resource type="Resource" path="res://data/native/documents/tingfeng_cards.tres" id="51_r25"]
 [ext_resource type="Resource" path="res://data/native/documents/legacy_id_map.tres" id="52_r25"]
-[ext_resource type="Resource" path="res://data/native/documents/techniques.tres" id="53_r25"]
+[ext_resource type="Resource" path="res://data/native/techniques/tf_change_stage.tres" id="53_r33"]
 [ext_resource type="Resource" path="res://data/native/documents/demo_scenario.tres" id="54_r25"]
 [ext_resource type="Resource" path="res://data/native/action_timelines/r32_default.tres" id="55_r32"]
 [ext_resource type="Resource" path="res://data/native/documents/rainy_bridge.tres" id="56_r25"]
@@ -93,7 +93,7 @@ script = ExtResource("1_manifest")
 schools = Array[Resource]([ExtResource("16_r24")])
 characters = Array[Resource]([ExtResource("2_hero"), ExtResource("25_r24"), ExtResource("35_r25"), ExtResource("36_r25"), ExtResource("37_r25"), ExtResource("38_r25"), ExtResource("39_r25"), ExtResource("40_r25"), ExtResource("41_r25")])
 skills = Array[Resource]([ExtResource("3_probe"), ExtResource("4_follow"), ExtResource("17_r24"), ExtResource("18_r24"), ExtResource("19_r24")])
-techniques = Array[Resource]([ExtResource("5_guard"), ExtResource("20_r24")])
+techniques = Array[Resource]([ExtResource("5_guard"), ExtResource("20_r24"), ExtResource("53_r33")])
 effect_handlers = Array[Resource]([ExtResource("6_echo")])
 
 stories = Array[Resource]([ExtResource("75_prologue_story"), ExtResource("76_river_story"), ExtResource("7_story"), ExtResource("26_r24"), ExtResource("61_r26")])
@@ -105,5 +105,5 @@ maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24")])
 buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])
 items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResource("42_r25"), ExtResource("43_r25"), ExtResource("44_r25"), ExtResource("45_r25")])
 affixes = Array[Resource]([ExtResource("47_r25"), ExtResource("48_r25"), ExtResource("49_r25")])
-documents = Array[Resource]([ExtResource("50_r25"), ExtResource("51_r25"), ExtResource("52_r25"), ExtResource("53_r25"), ExtResource("54_r25"), ExtResource("56_r25")])
+documents = Array[Resource]([ExtResource("50_r25"), ExtResource("51_r25"), ExtResource("52_r25"), ExtResource("54_r25"), ExtResource("56_r25")])
 action_timelines = Array[Resource]([ExtResource("55_r32")])
