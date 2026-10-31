@@ -2,6 +2,7 @@ extends RefCounted
 ## Item definitions are immutable data. Runtime inventory owns all mutable instances.
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 const Affixes = preload("res://scripts/equipment_affix_catalog.gd")
+const NativeContent = preload("res://scripts/content/content_registry.gd")
 const DEFAULT_INDEX = "res://data/items/index.json"
 const SLOTS = ["weapon","armor","accessory"]
 const CONSUMABLE_EFFECTS = ["heal_hp","gain_qi","add_shield"]
@@ -9,7 +10,8 @@ var definitions: Dictionary = {}
 var affixes
 var load_error: String = ""
 
-func _init(index_path: String = DEFAULT_INDEX, affix_catalog = null) -> void:
+func _init(index_path: String = DEFAULT_INDEX, affix_catalog = null,
+        native_manifest_path: String = "res://data/content_manifest.tres") -> void:
     affixes = Affixes.new() if affix_catalog == null else affix_catalog
     if not affixes.load_error.is_empty():
         load_error = affixes.load_error
@@ -33,6 +35,17 @@ func _init(index_path: String = DEFAULT_INDEX, affix_catalog = null) -> void:
         var definition: Variant = JSON.parse_string(FileAccess.get_file_as_string(file_path))
         if not _valid(definition) or definitions.has(str(definition.id)):
             load_error = "Invalid or duplicated item definition: " + filename
+            return
+        definitions[str(definition.id)] = definition.duplicate(true)
+
+
+    var native = NativeContent.new(native_manifest_path)
+    if not native.load_error.is_empty():
+        load_error = native.load_error
+        return
+    for definition in native.entries("item").values():
+        if not _valid(definition) or definitions.has(str(definition.id)):
+            load_error = "Invalid or duplicate native item: " + str(definition.get("id", ""))
             return
         definitions[str(definition.id)] = definition.duplicate(true)
 

@@ -1,11 +1,13 @@
 extends RefCounted
 ## Optional, independent buff catalog. Add one JSON file and index entry.
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
+const NativeContent = preload("res://scripts/content/content_registry.gd")
 const DEFAULT_INDEX = "res://data/buffs/index.json"
 var definitions: Dictionary = {}
 var load_error: String = ""
 
-func _init(index_path: String = DEFAULT_INDEX) -> void:
+func _init(index_path: String = DEFAULT_INDEX,
+        native_manifest_path: String = "res://data/content_manifest.tres") -> void:
     if not FileAccess.file_exists(index_path):
         load_error = "Buff index missing: " + index_path
         return
@@ -25,6 +27,17 @@ func _init(index_path: String = DEFAULT_INDEX) -> void:
         var definition: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
         if not _valid(definition) or definitions.has(str(definition.id)):
             load_error = "Invalid or duplicate buff definition: " + filename
+            return
+        definitions[str(definition.id)] = definition.duplicate(true)
+
+
+    var native = NativeContent.new(native_manifest_path)
+    if not native.load_error.is_empty():
+        load_error = native.load_error
+        return
+    for definition in native.entries("buff").values():
+        if not _valid(definition) or definitions.has(str(definition.id)):
+            load_error = "Invalid or duplicate native buff: " + str(definition.get("id", ""))
             return
         definitions[str(definition.id)] = definition.duplicate(true)
 

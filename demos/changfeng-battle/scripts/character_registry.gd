@@ -4,13 +4,15 @@ extends RefCounted
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 const Inventory = preload("res://scripts/inventory_runtime.gd")
+const NativeContent = preload("res://scripts/content/content_registry.gd")
 const BASE := "res://data/characters/"
 var profiles: Dictionary = {}
 var by_actor: Dictionary = {}
 var by_name: Dictionary = {}
 var load_error: String = ""
 
-func _init(index_path: String = BASE + "index.json", definition_root: String = BASE) -> void:
+func _init(index_path: String = BASE + "index.json", definition_root: String = BASE,
+        native_manifest_path: String = "res://data/content_manifest.tres") -> void:
     if not FileAccess.file_exists(index_path):
         load_error = "Character index missing: " + index_path
         return
@@ -36,6 +38,25 @@ func _init(index_path: String = BASE + "index.json", definition_root: String = B
             return
         if int(d.battle_actor_id) >= 0 and by_actor.has(int(d.battle_actor_id)):
             load_error = "Duplicate battle actor ID: " + str(d.battle_actor_id)
+            return
+        profiles[str(d.id)] = d.duplicate(true)
+        by_name[str(d.name)] = str(d.id)
+        if int(d.battle_actor_id) >= 0:
+            by_actor[int(d.battle_actor_id)] = str(d.id)
+
+
+    # New character cards are authored as Godot .tres Resources. Legacy JSON
+    # definitions remain readable while existing demo content is migrated.
+    var native = NativeContent.new(native_manifest_path)
+    if not native.load_error.is_empty():
+        load_error = native.load_error
+        return
+    for d in native.entries("character").values():
+        if not _valid(d, schools) or profiles.has(d.id) or by_name.has(d.name):
+            load_error = "Invalid or duplicate native character: " + str(d.get("id", ""))
+            return
+        if int(d.battle_actor_id) >= 0 and by_actor.has(int(d.battle_actor_id)):
+            load_error = "Duplicate native battle actor ID: " + str(d.battle_actor_id)
             return
         profiles[str(d.id)] = d.duplicate(true)
         by_name[str(d.name)] = str(d.id)
