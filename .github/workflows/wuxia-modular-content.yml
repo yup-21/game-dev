@@ -59,6 +59,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_maps.gd
       - name: R25 original character roster native parity
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r25_native_roster.gd
+      - name: R25 equipment affix, item and buff native parity
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r25_native_inventory.gd
       - name: R24 complete content-only vertical slice
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_content_closure.gd
       - name: R11 extensible catalogs and combo counts

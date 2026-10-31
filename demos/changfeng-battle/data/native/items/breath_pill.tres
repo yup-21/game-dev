@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="WuxiaItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+content_id = "breath_pill"
+display_name = "回气丹"
+description = "恢复少量内息。"
+kind = "consumable"
+stack_limit = 20
+effects = Array[Dictionary]([{"type":"gain_qi","amount":2}])

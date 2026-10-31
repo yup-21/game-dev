@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=42 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=50 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -48,6 +48,15 @@
 [ext_resource type="Resource" path="res://data/native/characters/escort_elder.tres" id="40_r25"]
 [ext_resource type="Resource" path="res://data/native/characters/river_messenger.tres" id="41_r25"]
 
+[ext_resource type="Resource" path="res://data/native/items/river_sword.tres" id="42_r25"]
+[ext_resource type="Resource" path="res://data/native/items/padded_armor.tres" id="43_r25"]
+[ext_resource type="Resource" path="res://data/native/items/healing_powder.tres" id="44_r25"]
+[ext_resource type="Resource" path="res://data/native/items/breath_pill.tres" id="45_r25"]
+[ext_resource type="Resource" path="res://data/native/buffs/iron_body.tres" id="46_r25"]
+[ext_resource type="Resource" path="res://data/native/affixes/keen_edge.tres" id="47_r25"]
+[ext_resource type="Resource" path="res://data/native/affixes/quickstep.tres" id="48_r25"]
+[ext_resource type="Resource" path="res://data/native/affixes/iron_guard.tres" id="49_r25"]
+
 [resource]
 script = ExtResource("1_manifest")
 schools = Array[Resource]([ExtResource("16_r24")])
@@ -62,5 +71,6 @@ quests = Array[Resource]([ExtResource("9_quest"), ExtResource("28_r24")])
 encounters = Array[Resource]([ExtResource("10_encounter"), ExtResource("29_r24")])
 assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene"), ExtResource("31_r24"), ExtResource("32_r24"), ExtResource("33_r24"), ExtResource("34_r24")])
 maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24")])
-buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24")])
-items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24")])
+buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])
+items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResource("42_r25"), ExtResource("43_r25"), ExtResource("44_r25"), ExtResource("45_r25")])
+affixes = Array[Resource]([ExtResource("47_r25"), ExtResource("48_r25"), ExtResource("49_r25")])

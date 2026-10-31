@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WuxiaItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+content_id = "padded_armor"
+display_name = "夹棉护衣"
+description = "便于行走的轻护衣。"
+kind = "equipment"
+stack_limit = 1
+slot = "armor"
+modifiers = Array[Dictionary]([{"stat":"CON","op":"flat","value":1}])
+affix_pool = Array[String](["iron_guard","quickstep"])
+max_affixes = 1

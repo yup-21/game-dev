@@ -16,6 +16,18 @@ func _init(index_path: String = DEFAULT_INDEX, affix_catalog = null,
     if not affixes.load_error.is_empty():
         load_error = affixes.load_error
         return
+    if index_path == DEFAULT_INDEX and native_manifest_path == NativeContent.DEFAULT_MANIFEST:
+        var native = NativeContent.new(native_manifest_path)
+        if not native.load_error.is_empty():
+            load_error = native.load_error
+            return
+        for definition in native.entries("item").values():
+            if not _valid(definition) or definitions.has(str(definition.id)):
+                load_error = "Invalid or duplicate native item"
+                definitions.clear()
+                return
+            definitions[str(definition.id)] = definition.duplicate(true)
+        return
     if not FileAccess.file_exists(index_path):
         load_error = "Item index missing: " + index_path
         return
