@@ -15,6 +15,7 @@ const Facing = preload("res://scripts/actor_facing.gd")
 const VFX = preload("res://scripts/battle_vfx_2d.gd")
 const ResponsePolicy = preload("res://scripts/hd2d_response_policy.gd")
 const CharacterRegistry = preload("res://scripts/character_registry.gd")
+const CharacterRuntime = preload("res://scripts/character_runtime.gd")
 const CharacterCardUI = preload("res://scripts/character_card_ui.gd")
 const ChargeRail = preload("res://scripts/hd2d_ctb_rail.gd")
 const BattleHandView = preload("res://scripts/battle_hand_view.gd")
@@ -112,7 +113,16 @@ func _ready() -> void:
     _update_status()
 
 func _quick_character_options() -> Dictionary:
-    var configured: Dictionary=CharacterRegistry.new().battle_options([], {0:"shen_changfeng",1:"pursuer_captain"})
+    # Seed the quick-play demo with consumables so the new command can be
+    # exercised immediately. Scenario encounters still own their own loadouts.
+    var hero = CharacterRuntime.new("shen_changfeng")
+    var builds: Dictionary = {}
+    if hero.load_error.is_empty():
+        hero.inventory.add("healing_powder",2)
+        hero.inventory.add("breath_pill",1)
+        builds["shen_changfeng"] = hero.battle_build()
+    var configured: Dictionary=CharacterRegistry.new().battle_options(
+        [], {0:"shen_changfeng",1:"pursuer_captain"}, builds)
     configured["map_definition_path"]="res://data/maps/rainy_bridge.json"
     var session=get_node_or_null("/root/GameSession")
     if session != null:
