@@ -82,6 +82,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_r8_components.gd
       - name: Validate data-driven R10 action timing and non-authoritative cues
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_action_timeline.gd
+      - name: Validate P1 authoritative posture break and guard recovery
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_posture_authority.gd
       - name: Validate legacy startup suite against canonical Sprite2D
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_startup.gd
       - name: Validate runtime art provenance and image atlas dimensions

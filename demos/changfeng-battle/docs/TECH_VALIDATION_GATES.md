@@ -9,7 +9,7 @@
 | 里程碑 | 可复现实证 | 当前状态 |
 | --- | --- | --- |
 | P0 规则与 CI 基线 | 完整 regression、三种地图拓扑、1v1/3v3 人工交互和帧分析 | **自动化回归通过；GUI 手动待验收** |
-| P1 战斗策略与动作机制 | 派生连击、交锋响应窗口、架势/取消的权威规则原型 | **待决策/待实施**；R10 时间窗目前仅表现 |
+| P1 战斗策略与动作机制 | 派生连击、交锋响应窗口、架势/取消的权威规则原型 | **架势/破势权威规则原型已接入（待 CI 验证）**；取消窗、完整闪避交锋仍待补全 |
 | P2 美术生产管线 | 一名主角 + 一名敌人的连续动画、导入检查及实机截图 | **资产清单、导入合同与 CI 已落地；连续角色动画待验收** |
 | P3 内容扩展闭环 | 武学/Buff/角色/装备/消耗品经正式战斗进出，回归通过 | **部分已接入**；R16–R17 回归通过，正式试玩仍待验收 |
 | P4 可交付构建 | Windows 导出产物、资源打包检查、导出包 Smoke Test | **Windows/Linux Export CI 与 PCK Smoke Test 已通过** |
@@ -69,3 +69,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_bridge
 - P2 素材清单和导入校验：[Wuxia HUD CI #41163635308](https://github.com/yup-21/game-dev/actions/runs/41163635308) PASS；[Modular content CI #41163635317](https://github.com/yup-21/game-dev/actions/runs/41163635317) PASS。
 - P4 发行导出：[Portable export CI #41163811832](https://github.com/yup-21/game-dev/actions/runs/41163811832) PASS；Windows/Linux 二进制、PCK 关键资源核对、Linux headless 启动均通过。完整玩家试玩、性能 P95/P99 和 Windows GUI 启动仍待人工验收。
 - **这些结论只适用于上述 CI 对应 commit；新代码需要重新运行工作流。**
+
+## P1 权威架势原型
+
+见 [P1_COMBAT_RULES.md](P1_COMBAT_RULES.md)。新增 `deal_posture` / `recover_posture` Effect、破势后的 `opening` 状态与只读架势条；实际通过状态以最新 CI 为准，不以本节替代人工 3v3 验收。

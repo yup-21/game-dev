@@ -40,9 +40,11 @@ static func render(snapshot: Dictionary, owner_id: int, priority: Variant,
         var max_hp := maxf(1.0, float(actor.get("max_hp", 1.0)))
         var qi := float(actor.get("qi", 0.0))
         var gauge := int(actor.get("gauge", 0))
+        var posture := int(actor.get("posture", 0))
+        var max_posture := maxi(1,int(actor.get("max_posture", 10)))
         roster_labels[id].text = "%s %s" % [marker, str(actor.get("name", "江湖客"))]
-        roster_labels[id].tooltip_text = "%s  ·  集气 %d\n血 %.0f / %.0f  ·  气 %.1f" % [
-            role, gauge, hp, max_hp, qi]
+        roster_labels[id].tooltip_text = "%s  ·  集气 %d\n血 %.0f / %.0f  ·  气 %.1f  ·  势 %d/%d" % [
+            role, gauge, hp, max_hp, qi, posture, max_posture]
         if roster_bars.has(id):
             var bars: Dictionary = roster_bars[id]
             var hp_bar: ProgressBar = bars.hp
@@ -54,6 +56,12 @@ static func render(snapshot: Dictionary, owner_id: int, priority: Variant,
             qi_bar.max_value = max_qi
             qi_bar.value = clampf(qi, 0.0, max_qi)
             qi_bar.tooltip_text = "真气 %.1f / %.1f" % [qi, max_qi]
+            if bars.has("posture"):
+                var stance_bar: ProgressBar = bars.posture
+                stance_bar.max_value = max_posture
+                stance_bar.value = clampi(posture, 0, max_posture)
+                stance_bar.tooltip_text = "架势累积 %d / %d，满则破势露隙" % [
+                    posture, max_posture]
     var rail: Control = controls.rail
     if rail != null:
         rail.call("set_state", snapshot.get("actors", []), owner_id)

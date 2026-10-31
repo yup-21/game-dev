@@ -1,6 +1,6 @@
 extends RefCounted
 ## Definitions are copied on access. Only UID instances reside in BattleState.
-const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add_shield","gain_qi","modify_pending_damage","modify_attack_area","cancel_chain_link","contest_intercept","interrupt_root_attack","apply_status","consume_status","force_move","draw_cards","discard_cards","grant_card"]
+const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add_shield","gain_qi","modify_pending_damage","modify_attack_area","cancel_chain_link","contest_intercept","interrupt_root_attack","apply_status","consume_status","force_move","draw_cards","discard_cards","grant_card","deal_posture","recover_posture"]
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const StatusCatalog = preload("res://scripts/status_catalog.gd")
 const DefinitionRegistry = preload("res://scripts/card_definition_registry.gd")
@@ -102,6 +102,7 @@ func valid_effect(e: Variant, depth: int = 0) -> bool:
 	if kind in ["deal_damage","add_shield","gain_qi"]:
 		var n=e.get("amount",-1)
 		if not (n is int or n is float) or not is_finite(float(n)) or float(n)<0 or float(n)>10000: return false
+	if kind in ["deal_posture","recover_posture"] and (not whole(e.get("amount"),1) or int(e.amount)>100): return false
 	if kind in ["move","force_move"] and not whole(e.get("max_distance"),1): return false
 	if kind in ["apply_status","consume_status"] and not statuses.has(str(e.get("status_id",""))): return false
 	if kind=="modify_pending_damage":

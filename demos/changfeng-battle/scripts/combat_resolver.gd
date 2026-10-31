@@ -4,6 +4,7 @@ const UNIT: int=10000
 const MAX_EFFECTS: int=32
 const Facing = preload("res://scripts/actor_facing.gd")
 const Geometry = preload("res://scripts/battle_spatial_facade.gd")
+const Posture = preload("res://scripts/posture_system.gd")
 var state
 var cards
 var costs
@@ -16,6 +17,7 @@ var audit
 var turns
 var reactions
 var techniques
+var posture = Posture.new()
 
 func _init(s,c,cost_system,validator,registry,combo_system,status_system,visibility_system,event_log) -> void:
 	state=s
@@ -398,6 +400,24 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				if not path.is_empty() and path.size()<=int(effect.max_distance): move_actor(source,choice.target_cell,path)
 			"add_shield": add_shield(target_id,float(effect.amount),int(effect.get("expires_after_global_ticks",100)))
 			"gain_qi": gain_qi(target_id,float(effect.amount))
+			"deal_posture":
+				var strained = state.get_actor(target_id)
+				if strained==null or strained.hp_u<=0: continue
+				var impact: Dictionary = posture.impact(strained,int(effect.amount))
+				if int(impact.delta)<=0: continue
+				emit("POSTURE_DAMAGED",{"actor_id":target_id,"source_actor_id":source,
+					"amount":int(impact.delta),"posture":int(impact.current),"max_posture":int(impact.max_posture)})
+				if bool(impact.broken):
+					add_status(target_id,"opening")
+					emit("POSTURE_BROKEN",{"actor_id":target_id,"source_actor_id":source,
+					"max_posture":int(impact.max_posture),"text":"%s 架势崩解 · 露隙" % strained.name})
+			"recover_posture":
+				var resting = state.get_actor(target_id)
+				if resting==null or resting.hp_u<=0: continue
+				var restored: Dictionary = posture.recover(resting,int(effect.amount))
+				if int(restored.delta)>0:
+					emit("POSTURE_RECOVERED",{"actor_id":target_id,"source_actor_id":source,
+						"amount":int(restored.delta),"posture":int(restored.current),"max_posture":int(restored.max_posture)})
 			"heal_hp": heal_hp(target_id,float(effect.amount))
 			"modify_pending_damage":
 				if state.attack.is_empty(): continue

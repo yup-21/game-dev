@@ -4,10 +4,10 @@ extends RefCounted
 const PRIMARY = ["STR","AGI","CON","MND"]
 const DERIVED = ["max_hp","attack","defense","break_power","parry_power",
     "max_qi_u","qi_regen_u_per_100","hp_regen_u_per_100",
-    "qi_cost_percent","charge_speed","move_budget"]
+    "qi_cost_percent","charge_speed","move_budget","max_posture"]
 const ALL_STATS = ["STR","AGI","CON","MND","max_hp","attack","defense",
     "break_power","parry_power","max_qi_u","qi_regen_u_per_100",
-    "hp_regen_u_per_100","qi_cost_percent","charge_speed","move_budget"]
+    "hp_regen_u_per_100","qi_cost_percent","charge_speed","move_budget","max_posture"]
 
 static func _whole(value: Variant, minimum: int, maximum: int) -> bool:
     if not (value is int or value is float): return false

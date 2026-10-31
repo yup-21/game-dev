@@ -226,7 +226,12 @@ func build(host: Node2D, story_encounter: bool, snapshot: Dictionary) -> Diction
         var qi := ProgressBar.new()
         UITheme.apply_meter(qi, UITheme.JADE)
         detail.add_child(qi)
-        roster_bars[actor_id] = {"hp": hp, "qi": qi}
+        # A third thin meter is a read-only posture projection, not a timer.
+        var posture_bar := ProgressBar.new()
+        posture_bar.name = "PostureMeter"
+        UITheme.apply_meter(posture_bar, UITheme.GOLD)
+        detail.add_child(posture_bar)
+        roster_bars[actor_id] = {"hp": hp, "qi": qi, "posture": posture_bar}
 
     # Contextual commands float beside, never instead of, the CTB rail.
     var context := Control.new()

@@ -27,6 +27,8 @@ var qi_u: int = 30000
 var max_qi_u: int = 60000
 var shield_u: int = 0
 var shield_expiry: int = -1
+## Accumulated authoritative posture strain; zero means balanced.
+var posture: int = 0
 var gauge: int = 10000
 var regen_qi_remainder: int = 0
 var regen_hp_remainder: int = 0
@@ -68,7 +70,7 @@ func _init(actor_id: int = 0, actor_name: String = "", start_cell: Vector2i = Ve
 func public_data(_include_hand: bool = false) -> Dictionary:
 	return {"id":id,"character_id":character_id,"name":name,"team_id":team_id,"controller":controller,"cell":cell,"position":position,"facing":facing,"hp":hp,"max_hp":max_hp,"qi":qi,"max_qi":max_qi,
 		"school_id":school_id,"school_name":school_name,"learned_schools":learned_schools.duplicate(),
-		"shield":shield,"gauge":gauge,"charge_speed":stats.get("charge_speed",100),
+		"shield":shield,"posture":posture,"max_posture":stats.get("max_posture",10),"gauge":gauge,"charge_speed":stats.get("charge_speed",100),
 		"attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),
 		"equipment":equipment.duplicate(true),"equipment_affixes":equipment_affixes.duplicate(true),
 		"turns_started":turns_started,"normal_moves_used":normal_moves_used,"move_budget":stats.get("move_budget",2),

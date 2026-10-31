@@ -14,7 +14,8 @@ func derive(a: Dictionary) -> Dictionary:
         "qi_regen_u_per_100":clampi(30000+300*dm,20000,40000),
         "hp_regen_u_per_100":clampi(2000+200*dc,0,6000),
         "qi_cost_percent":clampi(100-dm,85,110),"charge_speed":clampi(100+2*da,75,130),
-        "move_budget":clampi(2+floori(float(maxi(0,da))/12),2,3)}
+        "move_budget":clampi(2+floori(float(maxi(0,da))/12),2,3),
+        "max_posture":maxi(4,10+floori(float(dc)/2.0))}
 
 func configure(actor, overrides: Dictionary = {}, talents: Dictionary = {}) -> void:
     actor.base_attributes = {}
@@ -45,6 +46,8 @@ func recalculate(actor) -> void:
     actor.stats.qi_cost_percent = clampi(int(actor.stats.qi_cost_percent),0,1000)
     actor.stats.charge_speed = clampi(int(actor.stats.charge_speed),1,1000)
     actor.stats.move_budget = clampi(int(actor.stats.move_budget),0,10)
+    actor.stats.max_posture = clampi(int(actor.stats.max_posture),1,1000)
+    actor.posture = clampi(actor.posture,0,int(actor.stats.max_posture))
     actor.max_hp_u = int(actor.stats.max_hp) * UNIT
     actor.max_qi_u = int(actor.stats.max_qi_u)
     # Changing a cap does not grant free health/qi; removal clamps to the cap.
