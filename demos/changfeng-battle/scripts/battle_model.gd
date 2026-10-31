@@ -99,7 +99,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	cards=Cards.new(state,"res://data/tingfeng_cards.json",schools if schools is Dictionary else {},options.get("learned_schools",{}) if options.get("learned_schools",{}) is Dictionary else {})
 	if not schools is Dictionary: cards.load_error="schools必须是角色到流派ID的对象"
 	if not options.get("learned_schools",{}) is Dictionary: cards.load_error="learned_schools必须是角色到已学流派列表的对象"
-	statuses=Statuses.new(state,cards)
+	statuses=Statuses.new(state,cards,attributes)
 	visibility=Visibility.new(state,cards,statuses)
 	hooks=Hooks.new()
 	costs=Costs.new(state,hooks)

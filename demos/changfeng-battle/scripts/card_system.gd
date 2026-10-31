@@ -2,6 +2,7 @@ extends RefCounted
 ## Definitions are copied on access. Only UID instances reside in BattleState.
 const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add_shield","gain_qi","modify_pending_damage","modify_attack_area","cancel_chain_link","contest_intercept","interrupt_root_attack","apply_status","consume_status","force_move","draw_cards","discard_cards","grant_card"]
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
+const StatusCatalog = preload("res://scripts/status_catalog.gd")
 const DefinitionRegistry = preload("res://scripts/card_definition_registry.gd")
 var state
 var catalog
@@ -22,6 +23,15 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		return
 	for item in data.get("statuses",[]):
 		statuses[str(item.id)]=item.duplicate(true)
+	var buff_catalog = StatusCatalog.new()
+	if not buff_catalog.load_error.is_empty():
+		load_error = buff_catalog.load_error
+		return
+	for buff_id in buff_catalog.definitions:
+		if statuses.has(buff_id):
+			load_error = "Buff ID collides with base status: " + str(buff_id)
+			return
+		statuses[buff_id] = buff_catalog.get_buff(str(buff_id))
 	for item in data.get("cards",[]):
 		if not item is Dictionary or definitions.has(str(item.get("id",""))) or not valid_definition(item):
 			load_error="卡牌配置不合法"
@@ -63,7 +73,11 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		actor.school_id=selection
 		actor.school_name=str(school.name)
 	if not selected.is_empty():
-		for id in catalog.statuses: statuses[id]=catalog.statuses[id].duplicate(true)
+		for id in catalog.statuses:
+			if statuses.has(id):
+				load_error = "Duplicate status ID: " + str(id)
+				return
+			statuses[id]=catalog.statuses[id].duplicate(true)
 		for definition in catalog.forms.values():
 			if str(definition.school_id) not in selected: continue
 			if definitions.has(definition.id) or not valid_definition(definition):

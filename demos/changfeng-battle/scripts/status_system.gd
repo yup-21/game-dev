@@ -1,9 +1,22 @@
 extends RefCounted
 var state
 var cards
-func _init(s,c) -> void:
+var attributes
+func _init(s,c,attribute_system = null) -> void:
 	state=s
 	cards=c
+	attributes=attribute_system
+
+func _sync_modifiers(actor, id: String, definition: Dictionary, stacks: int) -> void:
+	var token: String = "status:" + id
+	var entries: Array = []
+	for spec in definition.get("modifiers",[]):
+		var entry: Dictionary = spec.duplicate(true)
+		entry["stacks"] = stacks
+		entries.append(entry)
+	if entries.is_empty(): actor.modifier_sources.erase(token)
+	else: actor.modifier_sources[token] = entries
+	if attributes != null: attributes.recalculate(actor)
 
 func has(actor_id: int, id: String) -> bool:
 	var a=state.get_actor(actor_id)
@@ -20,16 +33,22 @@ func stacks(actor_id: int, id: String) -> int:
 func add(actor_id: int, id: String, amount: int = 1) -> bool:
 	if not cards.statuses.has(id): return false
 	var actor=state.get_actor(actor_id)
+	if actor == null or amount <= 0: return false
 	var d: Dictionary=cards.statuses[id]
-	var expiry: int=state.global_tick+int(d.get("expiry",{}).get("duration",150))
+	var expiry: int=-1 if d.get("expiry",{}).get("kind","") == "permanent" else state.global_tick+int(d.get("expiry",{}).get("duration",150))
 	var next_tick: int=state.global_tick+100
 	if id=="scorch" and has(actor_id,id): next_tick=int(actor.statuses[id].get("next_tick",next_tick))
 	actor.statuses[id]={"expiry":expiry,"stacks":mini(int(d.get("stack_limit",1)),stacks(actor_id,id)+amount)}
 	if id=="scorch": actor.statuses[id]["next_tick"]=next_tick
+	_sync_modifiers(actor,id,d,int(actor.statuses[id].stacks))
 	return true
 
 func remove(actor_id: int,id: String) -> void:
-	state.get_actor(actor_id).statuses.erase(id)
+	var actor=state.get_actor(actor_id)
+	if actor == null: return
+	actor.statuses.erase(id)
+	actor.modifier_sources.erase("status:" + id)
+	if attributes != null: attributes.recalculate(actor)
 
 func conditional_bonus(actor_id: int,target_id: int,c: Dictionary) -> int:
 	var a=state.get_actor(actor_id)
@@ -67,6 +86,7 @@ func resolve_time_boundary(resolver) -> void:
 			if count>1:
 				entry.stacks=count-1
 				entry.next_tick=due+100
+				_sync_modifiers(actor,"scorch",cards.statuses["scorch"],count-1)
 			else:
 				remove(actor.id,"scorch")
 				resolver.emit("STATUS_REMOVED",{"actor_id":actor.id,"status_id":"scorch"})

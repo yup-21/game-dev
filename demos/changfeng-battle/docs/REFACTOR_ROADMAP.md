@@ -155,3 +155,11 @@ HUD 的 2D CanvasLayer 创建、布局、头像/控制绑定和完整饰件节�
 - `HD2DArtCatalog` 新增 `sheet_for_character`、`avatar_for_character`、`sheet_faces_left_for_character`，战场和 HUD 优先使用 snapshot 的 `character_id`，角色详情同样按身份解析；旧 actor-ID 入口继续兼容。
 - 为新增立绘/动作图提供安全的 `res://assets/` 资源路径解析，已有静态 preload 的导出行为保持；打包时新增动态引用资源仍需确保被导出。
 - 新增 `checks/test_character_dynamic_identity.gd` 验证动态 ID 的完整 BattleModel 路径和自定义新角色定义目录。
+
+## R13 — 统一属性修正及独立 Buff 目录（2026-10-31）
+
+- `StatModifierSystem` 用统一 `{stat, op, value}` 定义主属性和派生属性的加法、基点百分比修正；同类百分比叠加，先算 flat 再算百分比，源顺序不改变结果。
+- `CombatantState` 保留 `base_attributes` 和 `modifier_sources`；`AttributeSystem.recalculate()` 总是从基础属性重算，避免永久成长、装备、Buff 多次叠加漂移。上限变化只裁剪现有气血/真气，不凭空恢复。
+- 独立 `data/buffs/index.json` 与每个 Buff 自己的定义文件，由 `StatusCatalog` 校验；支持限时与永久状态及可配置叠层上限。旧状态、卡牌效果及交锋分支仍照旧运行。
+- `StatusSystem` 应用、重叠、移除、到期时更新同名修正源；`CardSystem` 统一注册独立 Buff，武学目录允许引用它们。
+- `checks/test_status_modifiers.gd` 覆盖增益重叠、卸载恢复、装备/成长修正、限时到期和无效定义拒绝。

@@ -9,7 +9,10 @@ var cell: Vector2i
 ## Authoritative feet position in battle-space; mapped encounters use pixel-calibrated coordinates.
 var position: Vector2 = Vector2.ZERO
 var facing: Vector2i = Vector2i.RIGHT
+var base_attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
 var attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
+## Stable source token -> array of declarative stat modifications.
+var modifier_sources: Dictionary = {}
 var stats: Dictionary = {}
 var passives: Dictionary = {"insight":0,"conceal":0}
 var learned_schools: Array = ["tingfeng"]
