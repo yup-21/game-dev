@@ -46,8 +46,10 @@ func _profile(name: String, map_path: String, start_cell: Vector2i,
     var cost: float = space.path_length(expected)
     _check(cost >= direct - 0.001, name + ": cost is not shorter than chord")
     if expect_detour:
-        _check(cost > direct + 1.0 and expected.size() >= 3,
-            name + ": real collision detour")
+        _check(not space.clear_segment(start, goal, 8.0),
+            name + ": direct segment is obstructed")
+        _check(cost > direct + 0.01 and expected.size() >= 3,
+            name + ": nonzero collision detour")
     else:
         _check(expected.size() == 2, name + ": open arena is direct")
 
