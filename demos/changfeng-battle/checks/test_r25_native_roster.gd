@@ -31,9 +31,15 @@ func _run() -> void:
         if not source is Dictionary or actual.is_empty(): continue
         for key in ["id","battle_actor_id","name","title","role","faction",
                 "team_hint","weapon","personality","biography","school_id",
-                "attributes","passives","techniques","learned_schools","art"]:
+                "techniques","learned_schools","art"]:
             check(source.get(key) == actual.get(key),
                 "field parity " + id + "." + key)
+        for stat in ["STR","AGI","CON","MND"]:
+            check(int(source.attributes[stat]) == int(actual.attributes[stat]),
+                "attribute parity " + id + "." + stat)
+        for passive in ["insight","conceal"]:
+            check(int(source.passives[passive]) == int(actual.passives[passive]),
+                "passive parity " + id + "." + passive)
     check(r.for_actor(0).get("id") == "shen_changfeng" and
         r.for_actor(5).get("id") == "night_assassin",
         "actor 0..5 bindings preserved")
