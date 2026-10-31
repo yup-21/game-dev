@@ -54,8 +54,8 @@ func test_catalog_decks() -> void:
 	for combo in base.cards.combos: combo_ids.append(str(combo.get("id", "")))
 	check(base.cards.definitions.size() == 6 and base.cards.statuses.has_all(["opening","hand_exposed"]) and combo_ids.has("probe_to_follow") and combo_ids.has("opening_to_expose"), "original five forms, two base statuses and combos remain available")
 	var catalog = base.cards.catalog
-	check(catalog.load_error.is_empty() and catalog.schools.size() == 10 and catalog.forms.size() == 20 and catalog.statuses.size() == 3 and catalog.combos.size() == 7, "V3 catalog complete and validated")
-	check(base.school_options().size() == 11 and base.snapshot().school_catalog.size() == 11, "eleven public school options")
+	check(catalog.load_error.is_empty() and catalog.schools.size() >= 10 and catalog.forms.size() == 20 and catalog.statuses.size() == 3 and catalog.combos.size() == 7, "V3 catalog complete and validated")
+	check(base.school_options().size() == catalog.schools.size() + 1 and base.snapshot().school_catalog.size() == catalog.schools.size() + 1, "eleven public school options")
 	for entry in catalog.schools:
 		var id: String = str(entry.id) if entry is Dictionary else str(entry)
 		var model = school(id, "needle" if id != "needle" else "saber")

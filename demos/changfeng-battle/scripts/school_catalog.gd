@@ -1,6 +1,9 @@
 extends RefCounted
 ## Definition data only: this catalog never constructs card instances or touches battle state.
 const StatusCatalog = preload("res://scripts/status_catalog.gd")
+const NativeContent = preload("res://scripts/content/content_registry.gd")
+const DEFAULT_FORMS = "res://data/native/rule_catalogs/r36_school_forms.tres"
+const DEFAULT_TINGFENG = "res://data/native/rule_catalogs/r37_tingfeng_cards.tres"
 const DEFAULT_SCHOOL = {"id":"tingfeng","name":"听风五式","identity":"观势藏锋、变招交锋"}
 const CHILD_EFFECTS = ["effects","on_success","on_contested","on_failure","on_hit"]
 const TARGETS = ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]
@@ -16,15 +19,51 @@ var _all_status_ids: Dictionary = {}
 var _base_form_ids: Dictionary = {}
 var _generated_only_ids: Dictionary = {}
 
-func _init(path: String = "res://data/school_forms.json", base_path: String = "res://data/tingfeng_cards.json", legacy_path: String = "res://data/legacy_id_map.json") -> void:
+func _init(path: String = DEFAULT_FORMS, base_path: String = DEFAULT_TINGFENG,
+		legacy_path: String = "") -> void:
 	var raw: Dictionary = _read(path)
 	var base: Dictionary = _read(base_path)
 	if not load_error.is_empty(): return
-	if not _load(raw,base,legacy_path):
+	var loaded: bool = _load(raw,base,legacy_path)
+	if loaded and path in [DEFAULT_FORMS, "res://data/school_forms.json"] and base_path in [DEFAULT_TINGFENG, "res://data/tingfeng_cards.json"]:
+		loaded = _load_native_schools()
+	if not loaded:
 		schools.clear()
 		forms.clear()
 		statuses.clear()
 		combos.clear()
+
+func _load_native_schools() -> bool:
+	var native = NativeContent.new()
+	if not native.load_error.is_empty(): return _fail(native.load_error)
+	var skills: Dictionary = native.entries("skill")
+	for item in native.entries("school").values():
+		var id: String = str(item.get("id",""))
+		if id.is_empty() or id == "tingfeng" or not get_school(id).is_empty():
+			return _fail("Native school ID collision: " + id)
+		if not _text(item.get("name")) or not _text(item.get("identity")):
+			return _fail("Native school metadata invalid: " + id)
+		var core: Variant = item.get("core_forms")
+		var deck: Variant = item.get("deck",{}).get("cards",[])
+		if not core is Array or core.size() != 2 or core[0] == core[1] or not deck is Array:
+			return _fail("Native school requires two core forms and a deck: " + id)
+		for form_id in core:
+			var definition: Dictionary = skills.get(str(form_id),{})
+			if definition.is_empty() or str(definition.get("school_id","")) != id or bool(definition.get("generated_only",true)):
+				return _fail("Native school core form missing or generated: " + str(form_id))
+		var seen: Dictionary = {}
+		var total: int = 0
+		for entry in deck:
+			if not entry is Dictionary: return _fail("Native deck entry invalid: " + id)
+			var card_id: String = str(entry.get("card_id",""))
+			if card_id not in core or seen.has(card_id) or not _number(entry.get("count"),1,12):
+				return _fail("Native deck contains duplicates or non-core cards: " + id)
+			seen[card_id] = true
+			total += int(entry.count)
+		if total != 12 or not seen.has_all(core):
+			return _fail("Native school deck must contain 12 core cards: " + id)
+		schools.append(item.duplicate(true))
+	return true
 
 func options() -> Array:
 	var result: Array = [DEFAULT_SCHOOL.duplicate(true)]
@@ -48,6 +87,22 @@ func _fail(message: String) -> bool:
 	return false
 
 func _read(path: String) -> Dictionary:
+	var typed: Dictionary = {
+		"res://data/school_forms.json": "r36_school_forms",
+		"res://data/tingfeng_cards.json": "r37_tingfeng_cards",
+		"res://data/legacy_id_map.json": "r38_legacy_skill_ids"
+	}
+	typed[DEFAULT_FORMS] = "r36_school_forms"
+	typed[DEFAULT_TINGFENG] = "r37_tingfeng_cards"
+	if typed.has(path):
+		var native = NativeContent.new()
+		if not native.load_error.is_empty():
+			_fail(native.load_error)
+			return {}
+		var kind: String = "legacy_mapping" if path == "res://data/legacy_id_map.json" else "rule_catalog"
+		var record: Dictionary = native.entries(kind).get(str(typed[path]),{}).get("data",{})
+		if record.is_empty(): _fail("Native martial rule catalog missing: " + path)
+		return record
 	if not FileAccess.file_exists(path):
 		_fail("目录文件不存在: " + path)
 		return {}
@@ -132,7 +187,7 @@ func _load(raw: Dictionary, base: Dictionary, legacy_path: String) -> bool:
 		if not _valid_combo(item) or combo_ids.has(item.id): return _fail("连携定义不合法或重复")
 		combo_ids[item.id] = true
 		combos.append(item.duplicate(true))
-	return _valid_legacy(_read(legacy_path))
+	return true if legacy_path.is_empty() else _valid_legacy(_read(legacy_path))
 
 func _valid_status(item: Variant) -> bool:
 	if not _keys(item,["id","name","public","stack_limit","expiry"],["id","name","public","stack_limit","expiry"]): return false
@@ -304,6 +359,10 @@ func _usage_exists(card_id: Variant, usage_id: Variant) -> bool:
 	for usage in forms[card_id].usages:
 		if usage.id == usage_id: return true
 	return false
+
+## Explicit import boundary only: normal gameplay must not require old IDs.
+func validate_legacy_mapping(data: Dictionary) -> bool:
+	return _valid_legacy(data)
 
 func _valid_legacy(data: Dictionary) -> bool:
 	if not load_error.is_empty(): return false

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WuxiaItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+content_id = "river_sword"
+display_name = "江行长剑"
+description = "旧制精钢长剑。"
+kind = "equipment"
+stack_limit = 1
+slot = "weapon"
+modifiers = Array[Dictionary]([{"stat":"attack","op":"flat","value":2}])
+affix_pool = Array[String](["keen_edge","quickstep"])
+max_affixes = 1

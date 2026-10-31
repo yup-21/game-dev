@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_character"]
+[ext_resource type="Texture2D" path="res://assets/characters/concepts/shen_changfeng_portrait.png" id="2_portrait"]
+
+[ext_resource type="PackedScene" path="res://scenes/character_presentation_preview.tscn" id="3_scene"]
+
+[resource]
+script = ExtResource("1_character")
+content_id = "r18_guest_swordsman"
+display_name = "试剑游侠"
+title = "过客"
+role = "剑客"
+faction = "江湖散人"
+weapon = "长剑"
+personality = "沉着，重信。"
+biography = "用于验证原生角色卡导入的新侠客。"
+team_hint = "ally"
+battle_actor_id = -1
+school_id = "wind_sword"
+learned_schools = Array[String](["wind_sword"])
+attributes = {"STR": 11, "AGI": 12, "CON": 10, "MND": 10}
+passives = {"insight": 0, "conceal": 0}
+techniques = {}
+portrait = ExtResource("2_portrait")
+portrait_quality = "concept_preview"
+sheet_quality = "concept_preview"
+battle_scene = ExtResource("3_scene")

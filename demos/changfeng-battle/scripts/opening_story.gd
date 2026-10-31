@@ -1,21 +1,28 @@
 extends RefCounted
 const Events = preload("res://scripts/story_event_executor.gd")
 ## Opening cutscene and branching dialogue state independent of Node2D / combat UI.
-## A later chapter can replace the JSON file without editing the presentation script.
+## Each chapter supplies a WuxiaStoryDefinition; custom JSON paths are test fixtures.
 var phase: String = "menu" # menu / cinematic / explore / dialogue / complete
 var data: Dictionary = {}
 var nodes: Dictionary = {}
 var cinematic_index: int = 0
 var dialogue_id: String = ""
-var obtained_fragment: bool = false
 var pending_events: Array = []
 var load_error: String = ""
 
-func _init(path: String = "res://data/opening_story.json") -> void:
-	if not FileAccess.file_exists(path):
-		load_error = "Missing story: " + path
-		return
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+func _init(path: String = "res://data/native/stories/rain_escort_prologue.tres") -> void:
+	var parsed: Variant = null
+	if path.ends_with(".tres"):
+		var definition: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
+		if not definition is WuxiaStoryDefinition:
+			load_error = "Invalid native story Resource: " + path
+			return
+		parsed = definition.to_record()
+	else:
+		if not FileAccess.file_exists(path):
+			load_error = "Missing story: " + path
+			return
+		parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not parsed is Dictionary or parsed.get("schema_version") != 1:
 		load_error = "Invalid opening story format"
 		return
@@ -71,14 +78,12 @@ func begin() -> void:
 	phase = "cinematic"
 	cinematic_index = 0
 	dialogue_id = ""
-	obtained_fragment = false
 	pending_events.clear()
 
 func reset() -> void:
 	phase = "menu"
 	cinematic_index = 0
 	dialogue_id = ""
-	obtained_fragment = false
 	pending_events.clear()
 
 func current_beat() -> Dictionary:
@@ -94,8 +99,13 @@ func skip_cinematic() -> void:
 	if phase == "cinematic": phase = "explore"
 
 func interact() -> bool:
+	return interact_at("")
+
+func interact_at(trigger_id: String = "") -> bool:
 	if phase != "explore": return false
-	_open_node(str(data.get("entry_node", "")))
+	var node_id: String = trigger_id if not trigger_id.is_empty() else str(data.get("entry_node",""))
+	if not nodes.has(node_id): return false
+	_open_node(node_id)
 	phase = "dialogue"
 	return true
 
@@ -105,13 +115,18 @@ func current_dialogue() -> Dictionary:
 
 func _open_node(id: String) -> void:
 	if not nodes.has(id):
-		phase = "complete"
+		phase = "explore" if bool(data.get("return_to_explore",false)) else "complete"
 		dialogue_id = ""
 		return
 	dialogue_id = id
 	pending_events.append_array(nodes[id].get("events",[]).duplicate(true))
-	if str(nodes[id].get("event", "")) == "obtain_fragment":
-		obtained_fragment = true
+
+func complete_if_ready(flags: Dictionary) -> bool:
+	if phase != "explore" or not bool(data.get("return_to_explore",false)): return false
+	var requirements: Array = data.get("completion_requirements",[])
+	if requirements.is_empty() or not Events.meets(requirements,flags): return false
+	phase = "complete"
+	return true
 
 func advance_dialogue(flags: Dictionary = {}) -> bool:
 	if phase != "dialogue": return false

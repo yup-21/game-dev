@@ -2,17 +2,27 @@
 
 > **唯一对玩家开放的战斗场景：`battle_hd2d.tscn`。** 启动 Godot 时进入 `opening.tscn`；主菜单仅提供「初入江湖 · 新游戏」和「进入战斗 · HD-2D」两条游戏路径。序章「迎战追兵」、战斗结算后的「重新挑战」也复用这个场景，不再分流到旧版 2D Demo。
 
+## R40 最终入口统一
+
+`opening.tscn` 主菜单的「进入战斗 · HD-2D」现在通过 `GameSession.start_quick_battle()` 启动正式登记的 `r40_quick_duel.tres`，而非直接手工拼装旧双人规则。玩家与追镖首领的初始位置来自 `WuxiaEncounterDefinition`，主角药品/气丸/装备来自 `WuxiaCharacterDefinition`，队伍快照由 `CharacterFactory` 和 `ScenarioDirector` 生成；剧情遭遇和快捷战斗最终都进入唯一 `battle_hd2d.tscn` 和 `BattleModel`。
+
+正式遭遇引用 `map_resource` 或已在 `ContentRegistry` 注册的 `map_id`；运行时仅使用实际的 `.tres` 路径。FREE 路线与自动接近统一由 `BattleSpatialService` 的当前连续空间算法实现，旧 `battle_spatial_waypoint.gd` 已删除。剧情探索角色与战斗角色均使用 `AnimationPlayer` 操控原生 6×4 动作图集，缺少动画图集的受伤老镖头仍使用专门的静态原画。
+
+历史 `data/*.json` 作为回归和非法输入测试基准留在源仓库，但 **Windows/Linux 发布包明确排除所有 JSON**。导出 CI 在仓库外加载 PCK 后检查旧 JSON 缺席、正式原生目录及遭遇与美术完好，确认游戏运行不依赖测试数据。
+
+详见 [R40 最终收口审计](docs/R40_FINAL_CLOSURE.md) 及 [原生内容制作指南](../../docs/changfeng-native-authoring.md)。
+
 ## 唯一战斗入口与美术接入
 
-**正式战斗现已使用原生 2D 场景**：`battle_hd2d.tscn` 为 `Node2D + Camera2D`；`illustrated_battle_map.gd` 持有完整插画、共享脚点与 `Sprite2D` 演员；`battle_vfx_2d.gd` 只负责战斗特效。旧的 3D 地形构造已从正式场景删除，`hd2d_vfx.gd` / `hd2d_scenery.gd` 暂保留为历史模块，不参与玩家战斗。规则仍统一由 `BattleModel` 管理，支持 1v1 / 序章 3v3、CTB、武学卡牌、连携和 CLASH。
+**正式战斗现已使用原生 2D 场景**：`battle_hd2d.tscn` 为 `Node2D + Camera2D`；`illustrated_battle_map.gd` 持有完整插画、共享脚点与 `Sprite2D` 演员；`battle_vfx_2d.gd` 只负责战斗特效。旧的 3D 地形构造与未被引用的旧特效/场景脚本已经清理；正式战斗的特效由 `battle_vfx_2d.gd` 唯一承载。规则仍统一由 `BattleModel` 管理，支持 1v1 / 序章 3v3、CTB、武学卡牌、连携和 CLASH。
 
 **已拆分的职责**：`BattleInputController` 处理 FREE/GRID 点击意图，`BattleCommandController` 做人类输入门控，`BattleCommandDispatcher` 统一投递请求；`BattleHandView`、`BattleHUDStatus`、`ChargeRail` 与 `CharacterCardUI` 只消费投影；`BattlePresentationCoordinator` 管理 animation ticket 的完成、跳过和取消；`BattleSpatialFacade` 提供统一几何查询。上述改动保留原有数值、卡牌、派生与敌方 AI。
 
-**素材覆盖边界**：角色 ID 2–5 使用已提交的24姿态动作图；沈长风（ID 0）和追兵首领（ID 1）仍有插画 atlas 回退。精细逐帧动画尚不完整，新增素材应替换角色表现资源，不应新增第二套规则战场。
+**素材覆盖边界**：现有角色仍优先使用已绑定的原创动作图、立绘和场景原画。未提供有效资源时使用 `assets/fallback/` 下独立的中性 SVG 占位图，不回退其他旧画面。精细逐帧动画仍可持续补充，而不新增第二套战斗规则。
 
 本轮长期重构分支的统一依据：[当前技术架构](docs/ARCHITECTURE.md) · [分阶段重构计划与回归矩阵](docs/REFACTOR_ROADMAP.md)。
 
-`battle.tscn`（旧双人 2D）与 `party_battle.tscn`（旧多人 2D）**已经弃用、从所有玩家菜单和重试入口隐藏**。文件和历史检查保留给开发/回归，不应继续扩展为另一套正式战斗 UI。详见 [战斗入口及弃用说明](docs/battle-entry-status.md)。
+R29 已删除旧双人/多人场景与专用 UI；规则回归转向 `BattleModel` 及唯一正式场景。序章两支剧情已迁为原生 `.tres` 事件，缺图使用 `assets/fallback/` 独立默认素材，不回退旧画面。详见 [R29 说明](docs/R29_NATIVE_CLEANUP.md)。
 
 当前默认场景已经迁入听风五式：**CTB 集气 → 自由行动 → 有限连锁交锋**。保留原来的 15×10 断桥地图、河流浅滩、角色与移动/受伤表现。玩家和敌人使用同一个 BattleState、校验、费用、牌区与效果结算，仅决策来源不同。
 
@@ -22,7 +32,7 @@
 
 ## 双章节剧情与跨战斗角色状态（V2–V3）
 
-现有序章胜利后可在结算页选择「进入下一幕」，进入数据定义的「夜渡传书」，在第二张插画背景中与河渡信使交谈，根据第一幕选择分支，领取回气丹，再进入独立的六人战斗遭遇。剧情角色、场景、遭遇、门槛、奖励和下一章关系统一由 `data/chapters/index.json` 注册，新增同类章节无需修改 `GameSession`。
+现有序章胜利后可在结算页选择「进入下一幕」，进入数据定义的「夜渡传书」，在第二张插画背景中与河渡信使交谈，根据第一幕选择分支，领取回气丹，再进入独立的六人战斗遭遇。剧情角色、场景、遭遇、门槛、奖励和下一章关系统一由 `data/content_manifest.tres` 中的原生 Resource 注册；旧章节索引仅作为回归测试数据，新增同类章节无需修改 `GameSession`。
 
 主角背包与装备跨两场战斗存在内存运行态：战斗中的 `USE_ITEM` 只消耗战斗快照，结算时通过完整我方角色快照校验并同步；首次胜利奖励仅领取一次，装备 UID、词条和角色成长来源保留。未实施存档、中途恢复以及临时 Buff/HP 跨场继承。
 
@@ -77,9 +87,9 @@
 
 ## 五式内容
 
-数据文件：`data/tingfeng_cards.json`。5 个定义、12 个用法、每人 12 张镜像实体牌，每个实例一次只能选一种用法。
+正式资源：`data/native/rule_catalogs/r37_tingfeng_cards.tres`。听风本体与派生共 6 项卡牌定义，初始实体牌由卡组 Resource 配置；每张 CardInstance 的使用方式仍由既有 `CardSystem` 按规则判定，旧 JSON 仅用于字段一致性测试。
 
-新增武学定义位于 `data/school_forms.json`，由SchoolCatalog校验并规范化；40旧定义引用映射在 `data/legacy_id_map.json`。详见V3分析文档，不用于在战UID热替换。
+原有十套武学及旧技能 ID 映射分别位于 `data/native/rule_catalogs/r36_school_forms.tres` 与 `data/native/legacy/legacy_skill_ids.tres`，由 `SchoolCatalog` 和 `LegacySkillAdapter` 读取；旧 JSON 仅为静态回归 fixture，不用于对战 UID 热替换。
 
 | 招式 | 张数 | 用法 |
 | --- | ---: | --- |
@@ -133,7 +143,7 @@
 
 `Opening` 检查序章数据、分支和场景脚本，`Parties` 检查多人队伍、目标、胜负及无效阵容重开。
 
-`DemoFlow` 检查剧情会话、JSON 遭遇配置、战斗与结算的衔接。
+`DemoFlow` 检查剧情会话、原生遭遇 Resource、战斗与结算的衔接。
 
 `HD2DStartup` 直接加载纯 2D 插画战场，检查模型、当前相机、界面、角色图集、动画队列与剑光特效。`HD2DInteractions` 检查该场景的按钮、棋盘鼠标、键盘操作和动画／AI衔接。`-Stage HD2D` 合并运行这两项；`All` 也包含这两项，避免仅检查默认序章而漏掉可选场景。
 
@@ -147,14 +157,14 @@
 
 ```powershell
 New-Item -ItemType Directory -Path captures -Force | Out-Null
-& $env:GODOT_BIN --path . --log-file captures/tingfeng-ui-render-run.log res://battle.tscn -- --tingfeng-visual-check
+& $env:GODOT_BIN --path . --log-file captures/hd2d-ui-render-run.log --script res://checks/capture_hd2d_unified_hud.gd
 ```
 
 图形检查前将 `GODOT_BIN` 指向 Godot 可执行文件。检查会自动退出。控制台检查日志生成于 `captures/checks/`，对局记录生成于 `checks/tingfeng-playthrough-results.json`，运行截图生成于 `captures/tingfeng-*.png`；这些生成文件均忽略提交。已选取的界面截图见 [docs/screenshots](docs/screenshots)，验证摘要见 [reports/validation.md](reports/validation.md)。
 
 ## 本地美术资源（CC0）
 
-本分支已将 Kenney 的 18 张 CC0 原始 PNG **实际提交到 `assets/kenney/`**，用于双人/多人战场的人物精灵、地形装饰、卡牌外框和序章菜单按钮。来源、逐组许可和固定上游版本详见 [素材来源与许可](docs/asset-licenses.md)。
+本分支已将 Kenney 的 18 张 CC0 原始 PNG **实际提交到 `assets/kenney/`**，作为独立 CC0 资源与导入回归素材；正式战斗视觉优先使用原生 AssetRegistry 中的现有原创素材。来源、逐组许可和固定上游版本详见 [素材来源与许可](docs/asset-licenses.md)。
 
 ```powershell
 .\checks\verify.ps1 -Stage ArtAssets
@@ -168,7 +178,7 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 
 自动 Pass 不是跳过结算：一次 Pass 交给对方，两次连续 Pass 后仍由 `ReactionController` 逆序结算交锋。纯 `PRIORITY_PASSED` 自动跳过不再等待空动画，若 Pass 触发伤害/死亡等结算事件，保留真实攻击命中/受击动画票据。已有 CTB、LIFO、内息、武学时机与 AI 决策保持不变。
 
-主菜单直达 `battle_hd2d.tscn` 目前仍是 **1v1** 的独立测试战斗；序章追兵进入同一场景，使用 **3v3** 六人队伍，包含两名玩家操控角色及一名友方 AI。当前修改只处理交锋响应的输入体验，未更改人数配置或剧情遭遇。
+主菜单快捷入口使用原生 `r40_quick_duel` **1v1** 遭遇；序章追兵进入同一场景，使用原生 `escort_ambush` **3v3** 六人队伍，包含两名玩家操控角色及一名友方 AI。当前修改只处理交锋响应的输入体验，未更改人数配置或剧情遭遇。
 
 
 ## 武学派生与人物流派（2026-10-30）

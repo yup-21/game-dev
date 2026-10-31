@@ -63,6 +63,6 @@ func _initialize() -> void:
 	check(resolver.declaration(actor,next_card,next_usage).get("id","") == extra.id,"second activation")
 	actor.combo_used.append(extra.id)
 	check(resolver.declaration(actor,next_card,next_usage).is_empty(),"third activation rejected")
-	check(Catalog.new().schools.size() == 10,"original catalog unmodified")
+	check(Catalog.new().schools.size() >= 10,"original schools preserved alongside native additions")
 	print("R11_CATALOG_PASS failures=",failures)
 	quit(0 if failures == 0 else 1)

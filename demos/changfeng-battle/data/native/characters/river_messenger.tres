@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png" id="2_sprite_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+content_id = "river_messenger"
+display_name = "河渡信使"
+title = "夜渡传书"
+role = "剧情人物 · 信使"
+faction = "旧镖局"
+weapon = "短剑（不参战）"
+personality = "谨慎沉着，只在暗夜里递交密信。"
+biography = "在断桥渡口传递老镖头留下的线索，为第二章提供可交互的独立 NPC 数据合同。"
+team_hint = "neutral"
+battle_actor_id = -1
+school_id = ""
+learned_schools = Array[String]([])
+attributes = {"STR":8,"AGI":13,"CON":9,"MND":12}
+passives = {"insight":0,"conceal":0}
+techniques = {}
+sprite_sheet = ExtResource("2_sprite_sheet")
+portrait_quality = "sprite_fallback"
+sheet_quality = "prototype_reuse"
+pose_quality = "none"

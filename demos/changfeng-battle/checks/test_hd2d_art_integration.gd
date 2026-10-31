@@ -1,4 +1,5 @@
 extends SceneTree
+const StoryFixture = preload("res://checks/story_test_helper.gd")
 ## Regression: committed character/landscape artwork is consumed by both runtime scenes.
 ## Run after Godot's import pass:
 ## godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_art_integration.gd
@@ -54,7 +55,7 @@ func _run() -> void:
         _fail("GameSession autoload unavailable")
         return
     session.start_new_game()
-    session.record_story_event("obtain_fragment")
+    StoryFixture.finish_prologue(session)
     if not session.begin_encounter():
         _fail("prologue encounter did not start")
         return

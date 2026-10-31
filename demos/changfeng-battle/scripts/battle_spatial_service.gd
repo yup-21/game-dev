@@ -3,12 +3,9 @@ extends RefCounted
 ## Version 1 uses the authored MapBake mask as an obstacle source; actors
 ## have continuous feet positions, while detours use baked-cell waypoints.
 const MapBake = preload("res://scripts/map_bake.gd")
-## Keep the visibility-graph API introduced by PR #57 available to callers.
-const WaypointCompatibility = preload("res://scripts/battle_spatial_waypoint.gd")
 const EPSILON := 0.001
 var bake
 var actor_positions: Dictionary = {}
-var waypoint_compat
 ## Disabled in regular play. Enable only for headless diagnostics; counters
 ## themselves add overhead and must not be used for timing comparisons.
 var diagnostics_enabled: bool = false
@@ -29,17 +26,8 @@ func reset_diagnostics() -> void:
 func diagnostic_snapshot() -> Dictionary:
     return diagnostics.duplicate()
 
-## Compatibility with the public clearance property exposed by PR #57.
-var clearance: float:
-    get:
-        return float(waypoint_compat.clearance) if waypoint_compat != null else 10.0
-    set(value):
-        if waypoint_compat != null:
-            waypoint_compat.clearance = maxf(0.0, value)
-
-func _init(map_path: String = MapBake.DEFAULT_PATH, actor_clearance: float = 10.0) -> void:
+func _init(map_path: String = MapBake.DEFAULT_PATH) -> void:
     bake = MapBake.new(map_path)
-    waypoint_compat = WaypointCompatibility.new(map_path, actor_clearance)
     reset_diagnostics()
 
 func set_actors(positions: Dictionary) -> void:
@@ -54,27 +42,30 @@ func is_valid_position(point: Vector2, radius: float = 0.0, ignore_id: int = -1)
         return false
     if bake.error != "":
         return false
-    var base: Vector2i = bake.cell_at_screen(point,true)
-    if base==Vector2i(-1,-1): return false
-    # The footprint must remain INSIDE the calibrated battlefield bounds.
-    var bounds_min: Vector2=bake.cell_rect(Vector2i.ZERO).position
-    var bounds_max: Vector2=bake.cell_rect(Vector2i(bake.width-1,bake.height-1)).end
-    if point.x-radius < bounds_min.x-EPSILON or point.y-radius < bounds_min.y-EPSILON or point.x+radius > bounds_max.x+EPSILON or point.y+radius > bounds_max.y+EPSILON:
-        return false
-    # Only obstacles within one footprint radius can collide. Iterating all
-    # 150 baked cells for every A* sample makes AI approach search O(cells).
-    var nearby_x: int=maxi(1,ceili(radius/bake.step.x)+1)
-    var nearby_y: int=maxi(1,ceili(radius/bake.step.y)+1)
-    for y in range(base.y-nearby_y,base.y+nearby_y+1):
-        for x in range(base.x-nearby_x,base.x+nearby_x+1):
-            var cell:=Vector2i(x,y)
-            if not bake.tiles.has(cell) or bool(bake.tiles[cell].walkable):
-                continue
-            var rect: Rect2=bake.cell_rect(cell)
-            var nearest:=Vector2(clampf(point.x,rect.position.x,rect.end.x),
-                clampf(point.y,rect.position.y,rect.end.y))
-            if point.distance_to(nearest)<radius+EPSILON:
-                return false
+    if bake.polygon_mode:
+        if not bake.is_walkable_point(point,radius): return false
+    else:
+        var base: Vector2i = bake.cell_at_screen(point,true)
+        if base==Vector2i(-1,-1): return false
+        # The footprint must remain INSIDE the calibrated battlefield bounds.
+        var bounds_min: Vector2=bake.cell_rect(Vector2i.ZERO).position
+        var bounds_max: Vector2=bake.cell_rect(Vector2i(bake.width-1,bake.height-1)).end
+        if point.x-radius < bounds_min.x-EPSILON or point.y-radius < bounds_min.y-EPSILON or point.x+radius > bounds_max.x+EPSILON or point.y+radius > bounds_max.y+EPSILON:
+            return false
+        # Only obstacles within one footprint radius can collide. Iterating all
+        # 150 baked cells for every A* sample makes AI approach search O(cells).
+        var nearby_x: int=maxi(1,ceili(radius/bake.step.x)+1)
+        var nearby_y: int=maxi(1,ceili(radius/bake.step.y)+1)
+        for y in range(base.y-nearby_y,base.y+nearby_y+1):
+            for x in range(base.x-nearby_x,base.x+nearby_x+1):
+                var cell:=Vector2i(x,y)
+                if not bake.tiles.has(cell) or bool(bake.tiles[cell].walkable):
+                    continue
+                var rect: Rect2=bake.cell_rect(cell)
+                var nearest:=Vector2(clampf(point.x,rect.position.x,rect.end.x),
+                    clampf(point.y,rect.position.y,rect.end.y))
+                if point.distance_to(nearest)<radius+EPSILON:
+                    return false
     for id in actor_positions:
         if int(id) == ignore_id:
             continue
@@ -87,12 +78,10 @@ func is_valid_position(point: Vector2, radius: float = 0.0, ignore_id: int = -1)
             return false
     return true
 
-func clear_segment(start: Vector2, finish: Vector2, radius_or_occupied: Variant = 0.0, ignore_id: int = -1) -> bool:
+func clear_segment(start: Vector2, finish: Vector2, radius: float = 0.0, ignore_id: int = -1) -> bool:
     if diagnostics_enabled:
         diagnostics["segment_queries"] = int(diagnostics.segment_queries) + 1
-    if radius_or_occupied is Array:
-        return waypoint_compat.clear_segment(start, finish, radius_or_occupied, ignore_id)
-    var radius: float = float(radius_or_occupied)
+    if bake.polygon_mode and bake.segment_blocked(start,finish,radius): return false
     var vector: Vector2 = finish - start
     var length: float = vector.length()
     # Sampling the ground mask cannot reliably detect a thin actor collision.
@@ -140,7 +129,7 @@ func _find_path_impl(start: Vector2, finish: Vector2, radius: float = 0.0, ignor
     _ensure_cached_graph(radius, ignore_id)
     _cached_graph.add_point(0, start)
     _cached_graph.add_point(1, finish)
-    var max_edge: float = maxf(bake.step.x, bake.step.y) * 2.1
+    var max_edge: float = maxf(bake.step.x, bake.step.y) * (5.0 if bake.polygon_mode else 2.1)
     for index in range(_cached_points.size()):
         var point: Vector2 = _cached_points[index]
         if start.distance_to(point) <= max_edge and clear_segment(start, point, radius, ignore_id):
@@ -203,6 +192,19 @@ func _ensure_cached_graph(radius: float, ignore_id: int) -> void:
         var centre: Vector2 = bake.cell_center(cell)
         if is_valid_position(centre, radius, ignore_id):
             points.append(centre)
+    # Native polygons provide real vertex detours in addition to a compatibility
+    # waypoint lattice. FREE collision remains exact, never cell centre based.
+    if bake.polygon_mode:
+        for obstacle in bake.polygons:
+            var contour: PackedVector2Array = obstacle.points
+            var centre := Vector2.ZERO
+            for vertex in contour: centre += vertex
+            centre /= float(contour.size())
+            for vertex in contour:
+                var outward: Vector2 = (vertex - centre).normalized()
+                var candidate: Vector2 = vertex + outward * (radius + 5.0)
+                if is_valid_position(candidate,radius,ignore_id):
+                    points.append(candidate)
     # Candidate body-ring waypoints are tied to the authoritative actor layout.
     const SECTORS = 16
     for id in actor_positions:
@@ -403,20 +405,3 @@ func find_attack_approach(source: Vector2, target: Vector2, min_range: float,
     if not best.is_empty():
         best.erase("order")
     return best
-
-## PR #57 API compatibility: use its exact visibility-graph implementation,
-## without changing the continuous battle authority introduced by PR #62.
-func valid_position(point: Vector2, occupied: Array = [], exclude_id: int = -1) -> bool:
-    return waypoint_compat.valid_position(point, occupied, exclude_id)
-
-func shortest_path(start: Vector2, goal: Vector2, occupied: Array = [], exclude_id: int = -1) -> PackedVector2Array:
-    return waypoint_compat.shortest_path(start, goal, occupied, exclude_id)
-
-func within_budget(path: PackedVector2Array, budget: float) -> Vector2:
-    return waypoint_compat.within_budget(path, budget)
-
-func attack_position(start: Vector2, target: Vector2, minimum_range: float,
-        maximum_range: float, move_budget: float, occupied: Array = [],
-        exclude_id: int = -1) -> Dictionary:
-    return waypoint_compat.attack_position(start, target, minimum_range,
-        maximum_range, move_budget, occupied, exclude_id)

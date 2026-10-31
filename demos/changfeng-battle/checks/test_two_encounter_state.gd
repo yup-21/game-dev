@@ -1,4 +1,5 @@
 extends SceneTree
+const StoryFixture = preload("res://checks/story_test_helper.gd")
 ## Two real BattleModel encounters exchange only validated consumable snapshots.
 ## Equipment, UID, affixes and chapter rewards remain in CharacterRuntime.
 const Session = preload("res://scripts/game_session.gd")
@@ -69,7 +70,7 @@ func _run() -> void:
     check(hero.inventory.stacks.get("healing_powder",0)==2
         and hero.inventory.stacks.get("breath_pill",0)==1,
         "starting party inventory is defined once")
-    session.record_story_event("obtain_fragment")
+    StoryFixture.finish_prologue(session)
     check(session.begin_encounter(),"first encounter gates on narrative clue")
     var first = _start_model(session)
     check(first.snapshot(0).get("inventory",{}).get("stacks",{}).get("healing_powder",0)==2,

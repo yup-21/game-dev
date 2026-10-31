@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WuxiaChapterDefinition" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/chapter_definition.gd" id="chapter"]
+[ext_resource type="Script" path="res://scripts/content/chapter_scene_definition.gd" id="scene"]
+[ext_resource type="Script" path="res://scripts/content/chapter_npc_definition.gd" id="npc"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="req"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="event"]
+[ext_resource type="Resource" path="res://data/native/stories/river_watch.tres" id="story"]
+[ext_resource type="Texture2D" path="res://assets/scenes/battle/rainy_bridge_battle.webp" id="bg"]
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("npc")
+character_id = "river_messenger"
+position = Vector2(1150, 620)
+talk_label = "与渡口信使交谈"
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("scene")
+background = ExtResource("bg")
+primary_npc = SubResource("c0")
+player_position = Vector2(340, 720)
+player_bounds = Rect2(155, 345, 1260, 410)
+title = "第二幕 · 夜渡传书"
+place = "断桥渡口 / 雨后 · 四更"
+prompt = "沿着断桥渡口前行，与守候的信使交谈。"
+talk_label = "与渡口信使交谈"
+complete_title = "断 桥 余 音"
+complete_text = "信使抬手指向河谷，暗哨的火把悄然逼近……"
+battle_label = "守住断桥 · 开始遭遇"
+reward_label = "渡口密信"
+complete_caption = "一封暗信指向断桥彼岸。"
+complete_subtitle = "河谷的暗哨早已等候，众人握紧了兵刃。"
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("req")
+flag_id = "met_messenger"
+equals = true
+
+[sub_resource type="Resource" id="c3"]
+script = ExtResource("event")
+event_type = "grant_item"
+character_id = "shen_changfeng"
+item_id = "breath_pill"
+count = 1
+
+[resource]
+script = ExtResource("chapter")
+content_id = "river_watch"
+chapter_order = 1
+story = ExtResource("story")
+encounter_id = "river_watch_ambush"
+next_chapter_id = ""
+scene = SubResource("c1")
+requirements = Array[Resource]([SubResource("c2")])
+victory_events = Array[Resource]([SubResource("c3")])
+defeat_events = Array[Resource]([])

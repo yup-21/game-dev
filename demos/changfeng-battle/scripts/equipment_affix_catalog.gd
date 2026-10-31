@@ -2,12 +2,25 @@ extends RefCounted
 ## Immutable, indexed equipment affixes. A rolled affix belongs to an item UID,
 ## never to a shared item definition or a character-global stat table.
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
+const NativeContent = preload("res://scripts/content/content_registry.gd")
 const INDEX_PATH = "res://data/affixes/index.json"
 const EQUIPMENT_SLOTS = ["weapon", "armor", "accessory"]
 var definitions: Dictionary = {}
 var load_error: String = ""
 
 func _init(index_path: String = INDEX_PATH) -> void:
+    if index_path == INDEX_PATH:
+        var native = NativeContent.new()
+        if not native.load_error.is_empty():
+            load_error = native.load_error
+            return
+        for definition in native.entries("affix").values():
+            if not _valid(definition) or definitions.has(str(definition.id)):
+                load_error = "Invalid or duplicate native affix"
+                definitions.clear()
+                return
+            definitions[str(definition.id)] = definition.duplicate(true)
+        return
     if not FileAccess.file_exists(index_path):
         load_error = "Affix index missing: " + index_path
         return

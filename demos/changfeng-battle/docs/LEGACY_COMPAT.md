@@ -1,22 +1,15 @@
-# 历史场景与兼容模块（保留）
+# 正式入口与兼容边界（R29）
 
-## 正式/历史入口边界
+玩家场景只有 `opening.tscn`、`battle_hd2d.tscn` 和结算 `demo_result.tscn`。旧 `battle.tscn`、`party_battle.tscn` 及其专用 View 已迁移测试后删除，不存在第二套战斗表现。
 
-| 文件 | 用途 | 是否玩家入口 |
-| --- | --- | --- |
-| `opening.tscn` | 序章及主菜单 | 是 |
-| `battle_hd2d.tscn` | 唯一正式 Node2D 战斗，1v1 与 3v3 | 是 |
-| `battle.tscn` + `battle_view.gd` | 原双人 2D 引擎/UI 回归 | 否 |
-| `party_battle.tscn` + `party_battle_view.gd` | 原多人 2D 引擎/UI 回归 | 否 |
-| `hd2d_vfx.gd` + `hd2d_scenery.gd` | 原 3D/2D 混合表现兼容代码 | 否 |
+规则回归测试直接针对 `BattleModel`、命令分发和 GRID/FREE 空间服务；UI 回归测试针对唯一正式场景。保存的是玩法行为，而不是旧场景文件。
 
-历史场景仍有旧版规则、组合和画面测试依赖，不做大规模路径迁移与删除。原文件位置保持不变，以免 `res://` 引用和历史录像重现失效。
+旧 ID 适配器和少量旧数据 Schema 仍有真实规则消费者；历史 JSON 只用于主动传入的兼容/非法配置测试。新游戏没有承诺过未发布旧存档格式。
 
-## 后续删除门槛
+缺失美术使用 `assets/fallback/` 独立占位素材；不拿旧人物/旧场景原画替代。详见 [R29 说明](R29_NATIVE_CLEANUP.md)。
 
-1. `rg` 搜索所有 `preload/load`、`.tscn`、脚本与检查用例引用，列出真实消费者。
-2. 用等价正式场景测试替换依赖，核对失败场景的可复现证据。
-3. 移动资源单独提交，Godot 导入和完整 CI 均通过。
-4. 不得删除玩家提交的原创图片、姿态稿与概念原画。
+R32：动作时间轴已迁入强类型 `WuxiaActionTimelineDefinition`，生产中不再读取旧 `r25_action_timelines`；余六份复杂数据容器仍在迁移清单中。详见 [R32 时间轴迁移](R32_TYPED_ACTION_TIMELINE.md)。
 
-**此阶段的结果是隔离和注释遗留资产，不是将旧规则强制迁入新控制层。**
+R39：剩余六份通用内容文档已迁入对应类型化 Resource，生产 Manifest 不再注册 `document`，`WuxiaDataDocument` 与原目录均已移除；旧技能 ID 仅通过 `WuxiaLegacyMappingDefinition` 为显式导入提供适配。历史 JSON 为测试用值对照，不承担生产加载。
+
+R40：快捷/剧情入口已经统一使用原生 Encounter 和 CharacterFactory，历史 JSON 不随发布包导出；旧 waypoint 并行实现及无引用的重复场景常量已删除。显式传入自定义 JSON 的校验分支只服务工程内的坏数据/历史数值测试，不是默认启动路径，也没有被发布包调用。原生旧 ID 导入器仍可用于主动转换历史配置；不作为当前武学加载的依赖。

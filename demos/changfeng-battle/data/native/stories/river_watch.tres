@@ -1,0 +1,117 @@
+[gd_resource type="Resource" script_class="WuxiaStoryDefinition" load_steps=22 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/story_definition.gd" id="story"]
+[ext_resource type="Script" path="res://scripts/content/story_beat_definition.gd" id="beat"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="event"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_node_definition.gd" id="node"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_choice_definition.gd" id="choice"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="req"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("beat")
+caption = "断桥 · 四更"
+text = "雨势稍歇，六人踏过残桥，河谷中有微弱灯火闪烁。"
+duration = 2.6
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("beat")
+caption = "渡口来客"
+text = "青衣信使拦下众人，袖中露出一枚染血的镖局铜牌。"
+duration = 2.6
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "met_messenger"
+flag_value = true
+
+[sub_resource type="Resource" id="r3"]
+script = ExtResource("node")
+node_id = "river_intro"
+speaker = "旁白"
+text = "河水拍打桥墩，一名信使在乱石旁等候。"
+next_node = "river_warning"
+events = Array[Resource]([SubResource("r2")])
+
+[sub_resource type="Resource" id="r4"]
+script = ExtResource("node")
+node_id = "river_warning"
+speaker = "河渡信使"
+text = "老镖头的信到了。你们护住的残篇，还有半卷在河谷。"
+next_node = "river_choice"
+
+[sub_resource type="Resource" id="r5"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "messenger_trust"
+flag_value = true
+
+[sub_resource type="Resource" id="r6"]
+script = ExtResource("req")
+flag_id = "helped_escort"
+equals = true
+
+[sub_resource type="Resource" id="r7"]
+script = ExtResource("choice")
+text = "他伤重仍托付于我，我会守诺。"
+next_node = "river_reward"
+events = Array[Resource]([SubResource("r5")])
+requires = Array[Resource]([SubResource("r6")])
+
+[sub_resource type="Resource" id="r8"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "scouted_bridge"
+flag_value = true
+
+[sub_resource type="Resource" id="r9"]
+script = ExtResource("choice")
+text = "先谈桥头埋伏与退路。"
+next_node = "river_reward"
+events = Array[Resource]([SubResource("r8")])
+
+[sub_resource type="Resource" id="r10"]
+script = ExtResource("node")
+node_id = "river_choice"
+speaker = "河渡信使"
+text = "他可曾说过追兵来历？要拿到另一半残篇，须先过桥。"
+next_node = ""
+choices = Array[Resource]([SubResource("r7"), SubResource("r9")])
+
+[sub_resource type="Resource" id="r11"]
+script = ExtResource("event")
+event_type = "grant_item"
+character_id = "shen_changfeng"
+item_id = "breath_pill"
+count = 1
+
+[sub_resource type="Resource" id="r12"]
+script = ExtResource("node")
+node_id = "river_reward"
+speaker = "河渡信使"
+text = "这颗回气丹留给你。渡口有埋伏，莫轻敌。"
+next_node = "river_oath"
+events = Array[Resource]([SubResource("r11")])
+
+[sub_resource type="Resource" id="r13"]
+script = ExtResource("node")
+node_id = "river_oath"
+speaker = "沈长风"
+text = "信我收下了。暗哨既已露面，便从断桥杀出一条路。"
+next_node = "river_finale"
+
+[sub_resource type="Resource" id="r14"]
+script = ExtResource("node")
+node_id = "river_finale"
+speaker = "旁白"
+text = "河谷的火光逐渐逼近。众人拔剑，第二场交锋一触即发。"
+next_node = ""
+
+[resource]
+script = ExtResource("story")
+content_id = "river_watch_story"
+title = "夜渡传书"
+subtitle = "第二幕 · 断桥灯火，暗影相随"
+entry_node = "river_intro"
+cinematic_beats = Array[Resource]([SubResource("r0"), SubResource("r1")])
+dialogue_nodes = Array[Resource]([SubResource("r3"), SubResource("r4"), SubResource("r10"), SubResource("r12"), SubResource("r13"), SubResource("r14")])

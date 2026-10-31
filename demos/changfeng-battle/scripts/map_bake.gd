@@ -2,7 +2,7 @@ extends RefCounted
 ## Offline-authored terrain bake for one whole-image scene. The artwork and
 ## the tile mask are aligned through one fixed, horizontal orthographic lattice:
 ## cell centres, hit rectangles and actor feet use the SAME coordinates.
-const DEFAULT_PATH := "res://data/maps/rainy_bridge.json"
+const DEFAULT_PATH := "res://data/maps/rainy_bridge.tres"
 const BLOCKED := ["water","rock","bamboo"]
 var id: String = ""
 var image_path: String = ""
@@ -16,13 +16,27 @@ var width: int = 0
 var height: int = 0
 var terrain: Dictionary = {}
 var tiles: Dictionary = {}
+var polygon_mode: bool = false
+var polygons: Array = []
+var markers: Dictionary = {}
+var area_bounds: Rect2 = Rect2()
 var error: String = ""
 
 func _init(path: String = DEFAULT_PATH) -> void:
+    if path.ends_with(".tres"):
+        var grid_resource: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
+        if grid_resource is WuxiaGridMapDefinition:
+            _load_grid_record(grid_resource.to_record(), path)
+        else:
+            _load_native(path)
+        return
     if path.is_empty() or not FileAccess.file_exists(path):
         error = "Missing baked map: " + path
         return
     var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+    _load_grid_record(data, path)
+
+func _load_grid_record(data: Variant, path: String) -> void:
     if not data is Dictionary or int(data.get("schema_version",0))!=1:
         error = "Invalid baked map schema: " + path
         return
@@ -100,8 +114,11 @@ func cell_at_screen(screen: Vector2, navigable_only: bool = true) -> Vector2i:
     var cell := Vector2i(floori(offset.x/step.x),floori(offset.y/step.y))
     if not tiles.has(cell) or not cell_rect(cell).has_point(screen):
         return Vector2i(-1,-1)
-    if navigable_only and not bool(tiles[cell].walkable):
-        return Vector2i(-1,-1)
+    if navigable_only:
+        if polygon_mode and not is_walkable_point(screen):
+            return Vector2i(-1,-1)
+        if not polygon_mode and not bool(tiles[cell].walkable):
+            return Vector2i(-1,-1)
     return cell
 
 func is_walkable(cell: Vector2i) -> bool:
@@ -109,3 +126,136 @@ func is_walkable(cell: Vector2i) -> bool:
 
 func baked_terrain() -> Dictionary:
     return terrain.duplicate(true)
+
+## R23: a freeform painted polygon map also supplies a conservative 15x10
+## compatibility index for legacy GRID battle interfaces. FREE collision does
+## not use this index; the authored vertices are authoritative.
+func _load_native(path: String) -> void:
+    var resource: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
+    if not resource is WuxiaMapDefinition:
+        error = "Missing or invalid native map: " + path
+        return
+    var spec: Dictionary = resource.to_record()
+    if spec.is_empty() or str(spec.get("id","")).is_empty():
+        error = "Invalid native map definition"
+        return
+    var bounds: Array = spec.get("bounds",[])
+    if bounds.size() != 4 or not _valid_pair([bounds[0],bounds[1]]) or \
+            not _valid_pair([bounds[2],bounds[3]]):
+        error = "Invalid polygon map bounds"
+        return
+    area_bounds = Rect2(float(bounds[0]),float(bounds[1]),float(bounds[2]),float(bounds[3]))
+    viewport_size = _vec(spec.viewport)
+    source_size = Vector2i(_vec(spec.source_size))
+    image_path = str(spec.background)
+    image_rotation_degrees = float(spec.get("rotation_degrees",0.0))
+    image_scale = float(spec.get("image_scale",1.0))
+    id = str(spec.id)
+    if not image_path.begins_with("res://assets/scenes/battle/") or \
+            not ResourceLoader.exists(image_path) or area_bounds.position.x < 0 or \
+            area_bounds.position.y < 0 or area_bounds.end.x > viewport_size.x or \
+            area_bounds.end.y > viewport_size.y or image_scale <= 0.0:
+        error = "Invalid native artwork/calibration"
+        return
+    var source_polygons: Variant = spec.get("obstacles",[])
+    if not source_polygons is Array or source_polygons.size() > 64:
+        error = "Invalid native obstacle count"
+        return
+    for obstacle in source_polygons:
+        if not obstacle is Dictionary or not obstacle.get("vertices") is Array or \
+                obstacle.vertices.size() < 3 or obstacle.vertices.size() > 64:
+            error = "Invalid native obstacle polygon"
+            return
+        var vertices := PackedVector2Array()
+        for coordinates in obstacle.vertices:
+            if not _valid_pair(coordinates):
+                error = "Invalid native obstacle coordinate"
+                return
+            var point: Vector2 = _vec(coordinates)
+            if not area_bounds.has_point(point):
+                error = "Obstacle outside native map bounds"
+                return
+            vertices.append(point)
+        polygons.append({"kind":str(obstacle.get("kind","blocked")),"points":vertices})
+    for marker in spec.get("markers",[]):
+        if not marker is Dictionary or not marker.get("position") is Array or \
+                not _valid_pair(marker.position) or \
+                str(marker.get("kind","")) not in ["spawn","story_trigger","vfx_anchor"]:
+            error = "Invalid authored map marker"
+            return
+        var point: Vector2 = _vec(marker.position)
+        if not area_bounds.has_point(point) or markers.has(str(marker.get("id",""))):
+            error = "Duplicate or out-of-bounds map marker"
+            return
+        for obstacle in polygons:
+            if Geometry2D.is_point_in_polygon(point,obstacle.points):
+                error = "Map marker placed inside a blocked polygon"
+                return
+        markers[str(marker.id)] = marker.duplicate(true)
+    polygon_mode = true
+    width = 15
+    height = 10
+    step = area_bounds.size / Vector2(float(width),float(height))
+    origin = area_bounds.position + step * 0.5
+    for y in range(height):
+        for x in range(width):
+            var cell := Vector2i(x,y)
+            var centre: Vector2 = cell_center(cell)
+            var terrain_kind: String = "road"
+            for obstacle in polygons:
+                if Geometry2D.is_point_in_polygon(centre,obstacle.points):
+                    terrain_kind = str(obstacle.kind)
+                    break
+            var walkable: bool = terrain_kind == "road"
+            terrain[cell] = terrain_kind
+            tiles[cell] = {"cell":cell,"terrain":terrain_kind,
+                "walkable":walkable,"foot_anchor":centre,"bounds":cell_rect(cell),
+                "move_cost":1 if walkable else 0}
+
+func is_walkable_point(point: Vector2, radius: float = 0.0) -> bool:
+    if not polygon_mode or radius < 0.0 or not is_finite(point.x) or \
+            not is_finite(point.y) or not area_bounds.grow(-radius).has_point(point):
+        return false
+    for obstacle in polygons:
+        var points: PackedVector2Array = obstacle.points
+        if Geometry2D.is_point_in_polygon(point,points):
+            return false
+        for i in range(points.size()):
+            var a: Vector2 = points[i]
+            var b: Vector2 = points[(i+1) % points.size()]
+            if point.distance_to(Geometry2D.get_closest_point_to_segment(point,a,b)) < radius + 0.001:
+                return false
+    return true
+
+func segment_blocked(start: Vector2, finish: Vector2, radius: float = 0.0) -> bool:
+    if not polygon_mode: return false
+    for obstacle in polygons:
+        var points: PackedVector2Array = obstacle.points
+        if Geometry2D.is_point_in_polygon(start,points) or \
+                Geometry2D.is_point_in_polygon(finish,points):
+            return true
+        for i in range(points.size()):
+            var a: Vector2 = points[i]
+            var b: Vector2 = points[(i+1) % points.size()]
+            if Geometry2D.segment_intersects_segment(start,finish,a,b) != null:
+                return true
+            if radius > 0.0 and (a.distance_to(Geometry2D.get_closest_point_to_segment(a,start,finish)) <= radius or \
+                    b.distance_to(Geometry2D.get_closest_point_to_segment(b,start,finish)) <= radius or \
+                    start.distance_to(Geometry2D.get_closest_point_to_segment(start,a,b)) <= radius or \
+                    finish.distance_to(Geometry2D.get_closest_point_to_segment(finish,a,b)) <= radius):
+                return true
+    return false
+
+## Shared authoring coordinates for encounters, story triggers and effect spawns.
+func marker_position(marker_id: String) -> Vector2:
+    var record: Dictionary = markers.get(marker_id,{})
+    var pair: Variant = record.get("position",[])
+    return _vec(pair) if _valid_pair(pair) else Vector2.INF
+
+func markers_of_kind(kind: String) -> Array:
+    var result: Array = []
+    for marker_id in markers:
+        if str(markers[marker_id].get("kind","")) == kind:
+            result.append(str(marker_id))
+    result.sort()
+    return result

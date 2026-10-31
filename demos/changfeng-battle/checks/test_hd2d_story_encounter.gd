@@ -1,4 +1,5 @@
 extends SceneTree
+const StoryFixture = preload("res://checks/story_test_helper.gd")
 ## Regression: the prologue must load the authoritative multi-party encounter.
 func _initialize() -> void:
     call_deferred("_run")
@@ -13,7 +14,7 @@ func _run() -> void:
         _fail("GameSession autoload missing")
         return
     session.start_new_game()
-    session.record_story_event("obtain_fragment")
+    StoryFixture.finish_prologue(session)
     if not session.begin_encounter():
         _fail("prologue encounter was not started")
         return

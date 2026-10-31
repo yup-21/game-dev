@@ -1,14 +1,16 @@
 extends RefCounted
-## Migrates saved definition/usage references only. UIDs and live battle state are never read.
+## Legacy authored skill IDs are resolved only at import boundaries.
+## Never touches a live CardInstance UID or combat rule state.
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
+const Native = preload("res://scripts/content/content_registry.gd")
 
 static func resolve_legacy(legacy_id: String, old_usage: String = "main") -> Dictionary:
-	var catalog = SchoolCatalog.new()
-	if not catalog.load_error.is_empty(): return {}
-	var data = JSON.parse_string(FileAccess.get_file_as_string("res://data/legacy_id_map.json"))
-	if not data is Dictionary: return {}
-	var entry: Dictionary = data.get("mapping",{}).get(legacy_id,{})
-	if entry.is_empty(): return {}
-	var definition_id: String = str(entry.card_id)
-	var usage_id: String = "evasion" if legacy_id == "step_01" and old_usage == "evasion" else str(entry.usage_id)
-	return {"definition_id":definition_id,"card_id":definition_id,"usage_id":usage_id}.duplicate(true)
+    var registry = Native.new()
+    if not registry.load_error.is_empty(): return {}
+    var mapping: Resource = registry.resource_for("legacy_mapping", "r38_legacy_skill_ids")
+    if not mapping is WuxiaLegacyMappingDefinition: return {}
+    var catalog = SchoolCatalog.new()
+    if not catalog.load_error.is_empty() or not catalog.validate_legacy_mapping(
+            mapping.to_record().get("data",{})):
+        return {}
+    return mapping.resolve(legacy_id, old_usage)

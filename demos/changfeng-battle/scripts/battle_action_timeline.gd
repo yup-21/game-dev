@@ -1,65 +1,93 @@
 extends RefCounted
-## R10: validated, data-driven action clips and semantic cue windows.
-## Presentation metadata NEVER grants invulnerability, damage, or legal actions.
-const DEFAULT_PATH := "res://data/action_timelines.json"
-const REQUIRED := ["idle","move","attack","guard","hit","evade","skill","combo","defeat"]
-var profiles: Dictionary = {}
-var event_animations: Dictionary = {}
+## R32: typed Resource clips, events and visual cue windows.
+## Presentation timing never grants damage, i-frames, or legal actions.
+const Native = preload("res://scripts/content/content_registry.gd")
+const DEFAULT_PATH := "res://data/native/action_timelines/r32_default.tres"
+const DEFAULT_ID := "r32_default_action_timeline"
+const REQUIRED := ["idle", "move", "attack", "guard", "hit", "evade", "skill", "combo", "defeat"]
+var profiles: Dictionary = {} # id -> WuxiaActionClipDefinition
+var event_animations: Dictionary = {} # semantic event -> clip id
 var load_error: String = ""
 
 func _init(path: String = DEFAULT_PATH) -> void:
-    if not FileAccess.file_exists(path):
-        load_error = "Action timeline catalog missing"
+    var definition: Resource
+    if path == DEFAULT_PATH:
+        var registry = Native.new()
+        if not registry.load_error.is_empty():
+            load_error = registry.load_error
+            return
+        definition = registry.resource_for("action_timeline", DEFAULT_ID)
+    elif ResourceLoader.exists(path):
+        definition = ResourceLoader.load(path)
+    if not definition is WuxiaActionTimelineDefinition:
+        load_error = "Native action timeline Resource missing or has wrong type"
         return
-    var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-    if not parsed is Dictionary or parsed.get("schema_version") != 1 or not parsed.get("profiles") is Dictionary or not parsed.get("events") is Dictionary:
-        load_error = "Invalid action timeline schema"
+    var parsed: WuxiaActionTimelineDefinition = definition as WuxiaActionTimelineDefinition
+    if parsed.schema_version != 1:
+        load_error = "Invalid native action timeline schema"
         return
+    var clips: Dictionary = {}
+    for entry in parsed.clips:
+        if not _valid_profile(entry):
+            load_error = "Invalid native action clip"
+            return
+        var clip_resource: WuxiaActionClipDefinition = entry as WuxiaActionClipDefinition
+        var id: String = clip_resource.clip_id
+        if clips.has(id):
+            load_error = "Duplicate action clip: " + id
+            return
+        clips[id] = clip_resource
     for id in REQUIRED:
-        if not parsed.profiles.has(id) or not _valid_profile(parsed.profiles[id]):
-            load_error = "Invalid action clip: " + id
+        if not clips.has(id):
+            load_error = "Missing action clip: " + id
             return
-    for name in parsed.events:
-        if not name is String or not parsed.events[name] is String or not parsed.profiles.has(parsed.events[name]):
-            load_error = "Invalid semantic event animation mapping"
+    var event_map: Dictionary = {}
+    for entry in parsed.event_bindings:
+        if not entry is WuxiaActionEventBinding:
+            load_error = "Invalid native event binding"
             return
-    profiles = parsed.profiles.duplicate(true)
-    event_animations = parsed.events.duplicate(true)
+        var binding: WuxiaActionEventBinding = entry as WuxiaActionEventBinding
+        var event_type: String = binding.event_type
+        var id: String = binding.clip_id
+        if event_type.is_empty() or not clips.has(id) or event_map.has(event_type):
+            load_error = "Invalid or duplicate event clip binding: " + event_type
+            return
+        event_map[event_type] = id
+    profiles = clips
+    event_animations = event_map
 
 func _valid_profile(profile: Variant) -> bool:
-    if not profile is Dictionary:
-        return false
-    for key in ["duration","startup","active","recovery"]:
-        if not profile.has(key) or not (profile[key] is float or profile[key] is int):
-            return false
-        if not is_finite(float(profile[key])) or float(profile[key]) < 0.0:
-            return false
-    var duration: float = float(profile.duration)
-    if duration <= 0.0 or absf(float(profile.startup) + float(profile.active) +
-            float(profile.recovery) - duration) > 0.002:
-        return false
-    for name in ["cancel","reaction","invulnerable"]:
-        if not profile.has(name):
-            continue
-        var window: Variant = profile[name]
-        if not window is Array or window.size() != 2 or not (window[0] is float or window[0] is int) or not (window[1] is float or window[1] is int):
-            return false
-        if not is_finite(float(window[0])) or not is_finite(float(window[1])) or float(window[0]) < 0.0 or float(window[0]) >= float(window[1]) or float(window[1]) > duration + 0.001:
-            return false
-    if not profile.get("cues", []) is Array:
-        return false
-    for cue in profile.get("cues", []):
-        if not cue is Dictionary or not cue.get("name") is String or not (cue.get("at") is float or cue.get("at") is int):
-            return false
-        if not is_finite(float(cue.at)) or float(cue.at) < 0.0 or float(cue.at) > duration:
-            return false
-    return true
+    return profile is WuxiaActionClipDefinition and profile.valid_clip()
 
+func clip_definition(id: String) -> WuxiaActionClipDefinition:
+    return profiles.get(id) as WuxiaActionClipDefinition
+
+## Transitional read API for presentation callers; authored data is typed Resource.
 func clip(id: String) -> Dictionary:
-    return profiles.get(id, {}).duplicate(true)
+    var source: WuxiaActionClipDefinition = clip_definition(id)
+    if source == null:
+        return {}
+    var record: Dictionary = {
+        "duration": source.duration_sec,
+        "startup": source.startup_sec,
+        "active": source.active_sec,
+        "recovery": source.recovery_sec
+    }
+    for kind in ["cancel", "reaction", "invulnerable"]:
+        var window: WuxiaActionTimeWindow = source.window(kind)
+        if window != null:
+            record[kind] = [window.from_sec, window.to_sec]
+    if not source.cues.is_empty():
+        var cues: Array = []
+        for entry in source.cues:
+            var cue: WuxiaActionCueDefinition = entry as WuxiaActionCueDefinition
+            cues.append({"name": cue.cue_name, "at": cue.at_sec})
+        record["cues"] = cues
+    return record
 
 func duration_for(id: String, fallback: float = 0.4) -> float:
-    return float(profiles.get(id, {}).get("duration", fallback))
+    var source: WuxiaActionClipDefinition = clip_definition(id)
+    return source.duration_sec if source != null else fallback
 
 func animation_for_event(event_type: String) -> String:
     return str(event_animations.get(event_type, ""))
@@ -72,36 +100,34 @@ func _clip_time(id: String, elapsed: float, actual_duration: float) -> float:
     return clampf(elapsed / duration * authored, 0.0, authored)
 
 func phase_at(id: String, elapsed: float, actual_duration: float = -1.0) -> String:
-    var profile: Dictionary = profiles.get(id, {})
-    if profile.is_empty():
+    var source: WuxiaActionClipDefinition = clip_definition(id)
+    if source == null:
         return "none"
     var t: float = _clip_time(id, elapsed, actual_duration)
-    if t < float(profile.startup):
+    if t < source.startup_sec:
         return "startup"
-    if t < float(profile.startup) + float(profile.active):
+    if t < source.startup_sec + source.active_sec:
         return "active"
     return "recovery"
 
 func window_open(id: String, kind: String, elapsed: float,
         actual_duration: float = -1.0) -> bool:
-    if kind not in ["cancel","reaction","invulnerable"]:
+    var source: WuxiaActionClipDefinition = clip_definition(id)
+    if source == null:
         return false
-    var window: Array = profiles.get(id, {}).get(kind, [])
-    if window.size() != 2:
-        return false
-    var t: float = _clip_time(id, elapsed, actual_duration)
-    return t >= float(window[0]) and t < float(window[1])
+    var window: WuxiaActionTimeWindow = source.window(kind)
+    return window != null and window.contains(_clip_time(id, elapsed, actual_duration))
 
 func cues_between(id: String, previous: float, current: float,
         actual_duration: float = -1.0) -> Array:
-    var found: Array = []
-    var profile: Dictionary = profiles.get(id, {})
-    if profile.is_empty():
-        return found
+    var result: Array = []
+    var source: WuxiaActionClipDefinition = clip_definition(id)
+    if source == null:
+        return result
     var start: float = _clip_time(id, previous, actual_duration)
     var end: float = _clip_time(id, current, actual_duration)
-    for cue in profile.get("cues", []):
-        var at: float = float(cue.at)
-        if start < at and at <= end:
-            found.append({"profile":id,"name":str(cue.name),"at":at})
-    return found
+    for entry in source.cues:
+        var cue: WuxiaActionCueDefinition = entry as WuxiaActionCueDefinition
+        if start < cue.at_sec and cue.at_sec <= end:
+            result.append({"profile": id, "name": cue.cue_name, "at": cue.at_sec})
+    return result

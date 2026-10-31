@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
+[ext_resource type="Resource" path="res://data/native/characters/guest_swordsman.tres" id="2_character"]
+[ext_resource type="Resource" path="res://data/native/buffs/steady_breath.tres" id="3_buff"]
+[ext_resource type="Resource" path="res://data/native/items/field_medicine.tres" id="4_item"]
+[ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="5_hero"]
+
+[resource]
+script = ExtResource("1_manifest")
+characters = Array[Resource]([ExtResource("2_character"), ExtResource("5_hero")])
+buffs = Array[Resource]([ExtResource("3_buff")])
+items = Array[Resource]([ExtResource("4_item")])

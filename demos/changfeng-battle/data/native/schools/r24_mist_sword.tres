@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WuxiaSchoolDefinition" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/school_definition.gd" id="1_school"]
+[ext_resource type="Script" path="res://scripts/content/school_deck_entry_definition.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://data/native/skills/r24_mist_veil.tres" id="3_veil"]
+[ext_resource type="Resource" path="res://data/native/skills/r24_mist_cut.tres" id="4_cut"]
+
+[sub_resource type="Resource" id="Deck_veil"]
+script = ExtResource("2_entry")
+card = ExtResource("3_veil")
+count = 6
+
+[sub_resource type="Resource" id="Deck_cut"]
+script = ExtResource("2_entry")
+card = ExtResource("4_cut")
+count = 6
+
+[resource]
+script = ExtResource("1_school")
+content_id = "r24_mist_sword"
+display_name = "烟岚剑派"
+identity = "烟行雾隐，以蓄势引出追击衍生式"
+core_forms = Array[Resource]([ExtResource("3_veil"), ExtResource("4_cut")])
+deck = Array[Resource]([SubResource("Deck_veil"), SubResource("Deck_cut")])

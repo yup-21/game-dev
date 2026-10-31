@@ -1,0 +1,112 @@
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=75 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
+[ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
+[ext_resource type="Resource" path="res://data/native/skills/r20_probe.tres" id="3_probe"]
+[ext_resource type="Resource" path="res://data/native/skills/r20_follow.tres" id="4_follow"]
+[ext_resource type="Resource" path="res://data/native/techniques/r20_guard_stage.tres" id="5_guard"]
+[ext_resource type="Resource" path="res://data/native/effect_handlers/r20_qi_by_status.tres" id="6_echo"]
+
+[ext_resource type="Resource" path="res://data/native/stories/r21_crossroads.tres" id="7_story"]
+[ext_resource type="Resource" path="res://data/native/chapters/r21_crossroads.tres" id="8_chapter"]
+[ext_resource type="Resource" path="res://data/native/quests/r21_find_the_path.tres" id="9_quest"]
+[ext_resource type="Resource" path="res://data/native/encounters/r21_gate_ambush.tres" id="10_encounter"]
+
+
+[ext_resource type="Resource" path="res://data/native/assets/r22_shen_portrait.tres" id="11_portrait"]
+[ext_resource type="Resource" path="res://data/native/assets/r22_messenger_sheet.tres" id="12_sheet"]
+[ext_resource type="Resource" path="res://data/native/assets/r22_vfx_probe.tres" id="13_vfx"]
+[ext_resource type="Resource" path="res://data/native/assets/r22_temple_scene.tres" id="14_scene"]
+
+[ext_resource type="Resource" path="res://data/maps/r23_free_brush_map.tres" id="15_map"]
+
+[ext_resource type="Resource" path="res://data/native/schools/r24_mist_sword.tres" id="16_r24"]
+[ext_resource type="Resource" path="res://data/native/skills/r24_mist_veil.tres" id="17_r24"]
+[ext_resource type="Resource" path="res://data/native/skills/r24_mist_cut.tres" id="18_r24"]
+[ext_resource type="Resource" path="res://data/native/skills/r24_mist_follow.tres" id="19_r24"]
+[ext_resource type="Resource" path="res://data/native/techniques/r24_mist_steps.tres" id="20_r24"]
+[ext_resource type="Resource" path="res://data/native/buffs/r24_dew_guard.tres" id="21_r24"]
+[ext_resource type="Resource" path="res://data/native/buffs/r24_mist_edge.tres" id="22_r24"]
+[ext_resource type="Resource" path="res://data/native/items/r24_reed_sword.tres" id="23_r24"]
+[ext_resource type="Resource" path="res://data/native/items/r24_mist_pill.tres" id="24_r24"]
+[ext_resource type="Resource" path="res://data/native/characters/r24_lan_chen.tres" id="25_r24"]
+[ext_resource type="Resource" path="res://data/native/stories/r24_fog_pass.tres" id="26_r24"]
+[ext_resource type="Resource" path="res://data/native/chapters/r24_fog_pass.tres" id="27_r24"]
+[ext_resource type="Resource" path="res://data/native/quests/r24_fog_pass_quest.tres" id="28_r24"]
+[ext_resource type="Resource" path="res://data/native/encounters/r24_fog_pass_battle.tres" id="29_r24"]
+[ext_resource type="Resource" path="res://data/maps/r24_fog_pass_map.tres" id="30_r24"]
+[ext_resource type="Resource" path="res://data/native/assets/r24_lan_portrait.tres" id="31_r24"]
+[ext_resource type="Resource" path="res://data/native/assets/r24_lan_sheet.tres" id="32_r24"]
+[ext_resource type="Resource" path="res://data/native/assets/r24_lan_actor.tres" id="33_r24"]
+[ext_resource type="Resource" path="res://data/native/assets/r24_status_vfx.tres" id="34_r24"]
+
+[ext_resource type="Resource" path="res://data/native/characters/gu_qingshuang.tres" id="35_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/green_wanderer.tres" id="36_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/pursuer_captain.tres" id="37_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/black_blade.tres" id="38_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/night_assassin.tres" id="39_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/escort_elder.tres" id="40_r25"]
+[ext_resource type="Resource" path="res://data/native/characters/river_messenger.tres" id="41_r25"]
+
+[ext_resource type="Resource" path="res://data/native/items/river_sword.tres" id="42_r25"]
+[ext_resource type="Resource" path="res://data/native/items/padded_armor.tres" id="43_r25"]
+[ext_resource type="Resource" path="res://data/native/items/healing_powder.tres" id="44_r25"]
+[ext_resource type="Resource" path="res://data/native/items/breath_pill.tres" id="45_r25"]
+[ext_resource type="Resource" path="res://data/native/buffs/iron_body.tres" id="46_r25"]
+[ext_resource type="Resource" path="res://data/native/affixes/keen_edge.tres" id="47_r25"]
+[ext_resource type="Resource" path="res://data/native/affixes/quickstep.tres" id="48_r25"]
+[ext_resource type="Resource" path="res://data/native/affixes/iron_guard.tres" id="49_r25"]
+
+[ext_resource type="Resource" path="res://data/native/rule_catalogs/r36_school_forms.tres" id="50_r36"]
+[ext_resource type="Resource" path="res://data/native/rule_catalogs/r37_tingfeng_cards.tres" id="51_r37"]
+[ext_resource type="Resource" path="res://data/native/legacy/legacy_skill_ids.tres" id="52_r38"]
+[ext_resource type="Resource" path="res://data/native/techniques/tf_change_stage.tres" id="53_r33"]
+[ext_resource type="Resource" path="res://data/native/encounters/escort_ambush.tres" id="54_r34"]
+[ext_resource type="Resource" path="res://data/native/encounters/river_watch_ambush.tres" id="79_r34"]
+[ext_resource type="Resource" path="res://data/native/encounters/r40_quick_duel.tres" id="80_r40"]
+[ext_resource type="Resource" path="res://data/native/action_timelines/r32_default.tres" id="55_r32"]
+[ext_resource type="Resource" path="res://data/maps/rainy_bridge.tres" id="56_r35"]
+
+[ext_resource type="Resource" path="res://data/native/stories/r26_recruitment_trial.tres" id="61_r26"]
+[ext_resource type="Resource" path="res://data/native/chapters/r26_recruitment_trial.tres" id="62_r26"]
+[ext_resource type="Resource" path="res://data/native/encounters/r26_recruitment_trial_battle.tres" id="63_r26"]
+
+[ext_resource type="Resource" path="res://data/native/assets/r27_gu_portrait.tres" id="64_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_gu_sheet.tres" id="65_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_green_sheet.tres" id="66_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_black_sheet.tres" id="67_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_night_sheet.tres" id="68_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_elder_portrait.tres" id="69_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_elder_still.tres" id="70_r27"]
+
+[ext_resource type="Resource" path="res://data/native/assets/r27_pursuer_study.tres" id="71_r27"]
+
+[ext_resource type="Resource" path="res://data/native/assets/r27_scenery_mountain.tres" id="72_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_scenery_snow.tres" id="73_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_scenery_rainy_bridge.tres" id="74_r27"]
+
+[ext_resource type="Resource" path="res://data/native/stories/rain_escort_prologue.tres" id="75_prologue_story"]
+[ext_resource type="Resource" path="res://data/native/stories/river_watch.tres" id="76_river_story"]
+[ext_resource type="Resource" path="res://data/native/chapters/rain_escort_prologue.tres" id="77_prologue_chapter"]
+[ext_resource type="Resource" path="res://data/native/chapters/river_watch.tres" id="78_river_chapter"]
+
+[resource]
+script = ExtResource("1_manifest")
+schools = Array[Resource]([ExtResource("16_r24")])
+characters = Array[Resource]([ExtResource("2_hero"), ExtResource("25_r24"), ExtResource("35_r25"), ExtResource("36_r25"), ExtResource("37_r25"), ExtResource("38_r25"), ExtResource("39_r25"), ExtResource("40_r25"), ExtResource("41_r25")])
+skills = Array[Resource]([ExtResource("3_probe"), ExtResource("4_follow"), ExtResource("17_r24"), ExtResource("18_r24"), ExtResource("19_r24")])
+techniques = Array[Resource]([ExtResource("5_guard"), ExtResource("20_r24"), ExtResource("53_r33")])
+effect_handlers = Array[Resource]([ExtResource("6_echo")])
+
+stories = Array[Resource]([ExtResource("75_prologue_story"), ExtResource("76_river_story"), ExtResource("7_story"), ExtResource("26_r24"), ExtResource("61_r26")])
+chapters = Array[Resource]([ExtResource("77_prologue_chapter"), ExtResource("78_river_chapter"), ExtResource("8_chapter"), ExtResource("27_r24"), ExtResource("62_r26")])
+quests = Array[Resource]([ExtResource("9_quest"), ExtResource("28_r24")])
+encounters = Array[Resource]([ExtResource("10_encounter"), ExtResource("29_r24"), ExtResource("63_r26"), ExtResource("54_r34"), ExtResource("79_r34"), ExtResource("80_r40")])
+assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene"), ExtResource("31_r24"), ExtResource("32_r24"), ExtResource("33_r24"), ExtResource("34_r24"), ExtResource("64_r27"), ExtResource("65_r27"), ExtResource("66_r27"), ExtResource("67_r27"), ExtResource("68_r27"), ExtResource("69_r27"), ExtResource("70_r27"), ExtResource("71_r27"), ExtResource("72_r27"), ExtResource("73_r27"), ExtResource("74_r27")])
+maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24"), ExtResource("56_r35")])
+buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])
+items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResource("42_r25"), ExtResource("43_r25"), ExtResource("44_r25"), ExtResource("45_r25")])
+affixes = Array[Resource]([ExtResource("47_r25"), ExtResource("48_r25"), ExtResource("49_r25")])
+action_timelines = Array[Resource]([ExtResource("55_r32")])
+rule_catalogs = Array[Resource]([ExtResource("50_r36"), ExtResource("51_r37")])
+legacy_mappings = Array[Resource]([ExtResource("52_r38")])

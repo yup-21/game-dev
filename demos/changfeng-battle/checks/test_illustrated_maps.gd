@@ -1,4 +1,5 @@
 extends SceneTree
+const StoryFixture = preload("res://checks/story_test_helper.gd")
 ## Validate actual 2D battle presentation, role anchoring and story scene.
 const MapBake = preload("res://scripts/map_bake.gd")
 var failures := 0
@@ -66,7 +67,7 @@ func _run() -> void:
     await process_frame
     var session=root.get_node_or_null("GameSession")
     session.start_new_game()
-    session.record_story_event("obtain_fragment")
+    StoryFixture.finish_prologue(session)
     _check(session.begin_encounter(),"enter 3v3 story battle")
     var battle: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(battle)

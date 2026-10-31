@@ -1,0 +1,157 @@
+[gd_resource type="Resource" script_class="WuxiaStoryDefinition" load_steps=28 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/story_definition.gd" id="story"]
+[ext_resource type="Script" path="res://scripts/content/story_beat_definition.gd" id="beat"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="event"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_node_definition.gd" id="node"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_choice_definition.gd" id="choice"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="req"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("beat")
+caption = "暮秋 · 江南道"
+text = "秋雨连夜。旧武馆的门楣，早已烧成灰烬。"
+duration = 3.5
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("beat")
+caption = "荒道 · 三更"
+text = "一辆残破的镖车，停在无名破庙外。血沿车辕，混入雨水。"
+duration = 4
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("beat")
+caption = "无名之卷"
+text = "有些江湖事，始于一场劫镖；也有人为此搭上一生。"
+duration = 3.6
+
+[sub_resource type="Resource" id="r3"]
+script = ExtResource("node")
+node_id = "escort_intro"
+speaker = "旁白"
+text = "破庙前，风雨几乎掩住人声。镖车旁靠着一名浑身是血的老镖头。"
+next_node = "escort_warning"
+
+[sub_resource type="Resource" id="r4"]
+script = ExtResource("node")
+node_id = "escort_warning"
+speaker = "老镖头"
+text = "别……别往官道走。那些人还在找我。"
+next_node = "hero_answer"
+
+[sub_resource type="Resource" id="r5"]
+script = ExtResource("node")
+node_id = "hero_answer"
+speaker = "沈长风"
+text = "你伤得太重。我先替你止血。"
+next_node = "escort_urgent"
+
+[sub_resource type="Resource" id="r6"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "helped_escort"
+flag_value = true
+
+[sub_resource type="Resource" id="r7"]
+script = ExtResource("choice")
+text = "先替他包扎伤口"
+next_node = "help_wound"
+events = Array[Resource]([SubResource("r6")])
+
+[sub_resource type="Resource" id="r8"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "helped_escort"
+flag_value = false
+
+[sub_resource type="Resource" id="r9"]
+script = ExtResource("choice")
+text = "追问是谁截了镖"
+next_node = "ask_pursuers"
+events = Array[Resource]([SubResource("r8")])
+
+[sub_resource type="Resource" id="r10"]
+script = ExtResource("node")
+node_id = "escort_urgent"
+speaker = "老镖头"
+text = "来不及了。这趟镖……原本就不该出门。小兄弟，你若真想知道缘由……"
+next_node = ""
+choices = Array[Resource]([SubResource("r7"), SubResource("r9")])
+
+[sub_resource type="Resource" id="r11"]
+script = ExtResource("node")
+node_id = "help_wound"
+speaker = "沈长风"
+text = "撑住。我学过些粗浅的止血手法。"
+next_node = "help_answer"
+
+[sub_resource type="Resource" id="r12"]
+script = ExtResource("node")
+node_id = "help_answer"
+speaker = "老镖头"
+text = "你有这份心，我记下了。可他们要的不是银两……"
+next_node = "escort_fragment"
+
+[sub_resource type="Resource" id="r13"]
+script = ExtResource("node")
+node_id = "ask_pursuers"
+speaker = "沈长风"
+text = "追你的人是谁？江湖仇家，还是官府？"
+next_node = "ask_answer"
+
+[sub_resource type="Resource" id="r14"]
+script = ExtResource("node")
+node_id = "ask_answer"
+speaker = "老镖头"
+text = "我只认得其中一人的令牌。那东西……不该出现在寻常匪徒身上。"
+next_node = "escort_fragment"
+
+[sub_resource type="Resource" id="r15"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "obtained_fragment"
+flag_value = true
+
+[sub_resource type="Resource" id="r16"]
+script = ExtResource("event")
+event_type = "grant_clue"
+clue_id = "taixu_fragment"
+count = 1
+
+[sub_resource type="Resource" id="r17"]
+script = ExtResource("node")
+node_id = "escort_fragment"
+speaker = "旁白"
+text = "老镖头颤抖着扯开衣襟，将一卷浸血的无名绢帛塞进你手中。"
+next_node = "escort_title"
+events = Array[Resource]([SubResource("r15"), SubResource("r16")])
+
+[sub_resource type="Resource" id="r18"]
+script = ExtResource("node")
+node_id = "escort_title"
+speaker = "老镖头"
+text = "《太虚引气残篇》……别信那些满口仁义的人。若能活下去，替我问一句：这卷东西，究竟值几条人命？"
+next_node = "hero_oath"
+
+[sub_resource type="Resource" id="r19"]
+script = ExtResource("node")
+node_id = "hero_oath"
+speaker = "沈长风"
+text = "我会查清楚。你且在此避雨，追兵若来，我挡上一挡。"
+next_node = "finale"
+
+[sub_resource type="Resource" id="r20"]
+script = ExtResource("node")
+node_id = "finale"
+speaker = "旁白"
+text = "远处马蹄踏碎积水，火把在雨幕中亮起。你握紧绢帛，知道自己已经踏进了这场风波。"
+next_node = ""
+
+[resource]
+script = ExtResource("story")
+content_id = "rain_escort_prologue_story"
+title = "雨夜残镖"
+subtitle = "第一幕 · 微末草莽，风雨入局"
+entry_node = "escort_intro"
+cinematic_beats = Array[Resource]([SubResource("r0"), SubResource("r1"), SubResource("r2")])
+dialogue_nodes = Array[Resource]([SubResource("r3"), SubResource("r4"), SubResource("r5"), SubResource("r10"), SubResource("r11"), SubResource("r12"), SubResource("r13"), SubResource("r14"), SubResource("r17"), SubResource("r18"), SubResource("r19"), SubResource("r20")])

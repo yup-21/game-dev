@@ -1,4 +1,5 @@
 extends SceneTree
+const StoryFixture = preload("res://checks/story_test_helper.gd")
 ## Graphical acceptance snapshots only; interaction correctness is verified
 ## by the separate headless input test, avoiding software-renderer frame timing.
 const OUTPUT := "res://captures/hd2d-validation/"
@@ -96,7 +97,7 @@ func _run() -> void:
         quit(1)
         return
     session.start_new_game()
-    session.record_story_event("obtain_fragment")
+    StoryFixture.finish_prologue(session)
     if not session.begin_encounter():
         push_error("HUD_CAPTURE: cannot enter real six-actor prologue")
         quit(1)

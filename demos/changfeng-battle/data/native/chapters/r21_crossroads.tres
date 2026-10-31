@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="WuxiaChapterDefinition" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/chapter_definition.gd" id="1_chapter"]
+[ext_resource type="Script" path="res://scripts/content/chapter_scene_definition.gd" id="2_scene"]
+[ext_resource type="Script" path="res://scripts/content/chapter_npc_definition.gd" id="3_npc"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="4_req"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="5_event"]
+[ext_resource type="Resource" path="res://data/native/stories/r21_crossroads.tres" id="6_story"]
+[ext_resource type="Texture2D" path="res://assets/scenes/story/ruined_temple_story.webp" id="7_background"]
+
+[sub_resource type="Resource" id="Primary_npc"]
+script = ExtResource("3_npc")
+character_id = "river_messenger"
+position = Vector2(1050, 560)
+talk_label = "听信使指路"
+trigger_id = "r21_offer"
+
+[sub_resource type="Resource" id="Second_npc"]
+script = ExtResource("3_npc")
+character_id = "escort_elder"
+position = Vector2(1220, 600)
+talk_label = "询问镖头"
+trigger_id = "r21_intro"
+
+[sub_resource type="Resource" id="Scene"]
+script = ExtResource("2_scene")
+background = ExtResource("7_background")
+primary_npc = SubResource("Primary_npc")
+npcs = Array[Resource]([SubResource("Second_npc")])
+player_position = Vector2(350, 705)
+player_bounds = Rect2(155, 345, 1260, 410)
+title = "第三幕 · 山口问路"
+place = "江南山口 / 清晨"
+prompt = "与信使交谈，寻找通过山口的道路。"
+talk_label = "与信使交谈"
+complete_title = "山 口 风 云"
+complete_text = "远处刀光一闪，追兵逼近山口。"
+battle_label = "穿过山口 · 应战"
+
+[sub_resource type="Resource" id="Req_guide"]
+script = ExtResource("4_req")
+flag_id = "met_r21_guide"
+equals = true
+
+[sub_resource type="Resource" id="Win_reward"]
+script = ExtResource("5_event")
+event_type = "grant_clue"
+clue_id = "r21_victory_token"
+count = 1
+
+[resource]
+script = ExtResource("1_chapter")
+content_id = "r21_crossroads"
+story = ExtResource("6_story")
+encounter_id = "r21_gate_ambush"
+scene = SubResource("Scene")
+requirements = Array[Resource]([SubResource("Req_guide")])
+victory_events = Array[Resource]([SubResource("Win_reward")])

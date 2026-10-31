@@ -1,0 +1,292 @@
+[gd_resource type="Resource" script_class="WuxiaLegacyMappingDefinition" load_steps=44 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/legacy_mapping_definition.gd" id="1_map"]
+[ext_resource type="Script" path="res://scripts/content/legacy_mapping_entry_definition.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_01"]
+script = ExtResource("2_entry")
+old_id = "wind_01"
+card_id = "wind_flow"
+usage_id = "probe"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_02"]
+script = ExtResource("2_entry")
+old_id = "wind_02"
+card_id = "wind_flow"
+usage_id = "follow"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_03"]
+script = ExtResource("2_entry")
+old_id = "wind_03"
+card_id = "wind_final"
+usage_id = "expose"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_04"]
+script = ExtResource("2_entry")
+old_id = "wind_04"
+card_id = "wind_final"
+usage_id = "finisher"
+note = "原终式直线2格的目标范围保留，但由于射程限制改为最远2格"
+
+[sub_resource type="Resource" id="Entry_05"]
+script = ExtResource("2_entry")
+old_id = "saber_01"
+card_id = "saber_charge"
+usage_id = "charge"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_06"]
+script = ExtResource("2_entry")
+old_id = "saber_02"
+card_id = "saber_charge"
+usage_id = "cleave"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_07"]
+script = ExtResource("2_entry")
+old_id = "saber_03"
+card_id = "saber_river"
+usage_id = "reap"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_08"]
+script = ExtResource("2_entry")
+old_id = "saber_04"
+card_id = "saber_river"
+usage_id = "finisher"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_09"]
+script = ExtResource("2_entry")
+old_id = "tide_01"
+card_id = "tide_guard"
+usage_id = "guard"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_10"]
+script = ExtResource("2_entry")
+old_id = "tide_02"
+card_id = "tide_guard"
+usage_id = "yield"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_11"]
+script = ExtResource("2_entry")
+old_id = "tide_03"
+card_id = "tide_return"
+usage_id = "return"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_12"]
+script = ExtResource("2_entry")
+old_id = "tide_04"
+card_id = "tide_return"
+usage_id = "shelter"
+note = "移除完全防守后额外回气的特例，保留高额减伤；如要恢复请注册专用 Hook"
+
+[sub_resource type="Resource" id="Entry_13"]
+script = ExtResource("2_entry")
+old_id = "step_01"
+card_id = "step_shadow"
+usage_id = "step"
+note = "原卡具有主动/闪避两种 usage，迁移时按原 usage 选择 step/evasion"
+alternative_old_usage = "evasion"
+alternative_new_usage = "evasion"
+
+[sub_resource type="Resource" id="Entry_14"]
+script = ExtResource("2_entry")
+old_id = "step_02"
+card_id = "step_swallow"
+usage_id = "guard_step"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_15"]
+script = ExtResource("2_entry")
+old_id = "step_03"
+card_id = "step_swallow"
+usage_id = "strike"
+note = "原先移动后攻击的原子双步骤缩减为近战一击，需移动时搭配踏雪步式"
+
+[sub_resource type="Resource" id="Entry_16"]
+script = ExtResource("2_entry")
+old_id = "step_04"
+card_id = "step_shadow"
+usage_id = "evasion"
+note = "雪尽无踪的2格超远闪避被合并为1格常规闪避，失手暴露可另经 Hook 加回"
+
+[sub_resource type="Resource" id="Entry_17"]
+script = ExtResource("2_entry")
+old_id = "finger_01"
+card_id = "finger_seal"
+usage_id = "tap"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_18"]
+script = ExtResource("2_entry")
+old_id = "finger_02"
+card_id = "finger_seal"
+usage_id = "seal"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_19"]
+script = ExtResource("2_entry")
+old_id = "finger_03"
+card_id = "finger_finish"
+usage_id = "opening"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_20"]
+script = ExtResource("2_entry")
+old_id = "finger_04"
+card_id = "finger_finish"
+usage_id = "finish"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_21"]
+script = ExtResource("2_entry")
+old_id = "ember_01"
+card_id = "ember_fire"
+usage_id = "spark"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_22"]
+script = ExtResource("2_entry")
+old_id = "ember_02"
+card_id = "ember_burst"
+usage_id = "fan"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_23"]
+script = ExtResource("2_entry")
+old_id = "ember_03"
+card_id = "ember_fire"
+usage_id = "blaze"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_24"]
+script = ExtResource("2_entry")
+old_id = "ember_04"
+card_id = "ember_burst"
+usage_id = "detonate"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_25"]
+script = ExtResource("2_entry")
+old_id = "whip_01"
+card_id = "whip_coil"
+usage_id = "probe"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_26"]
+script = ExtResource("2_entry")
+old_id = "whip_02"
+card_id = "whip_coil"
+usage_id = "pull"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_27"]
+script = ExtResource("2_entry")
+old_id = "whip_03"
+card_id = "whip_cut"
+usage_id = "expose"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_28"]
+script = ExtResource("2_entry")
+old_id = "whip_04"
+card_id = "whip_cut"
+usage_id = "finisher"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_29"]
+script = ExtResource("2_entry")
+old_id = "needle_01"
+card_id = "needle_rain"
+usage_id = "shoot"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_30"]
+script = ExtResource("2_entry")
+old_id = "needle_02"
+card_id = "needle_hidden"
+usage_id = "draw"
+note = "敛袖藏锋仅是招式名，不会触发角色的藏锋情报被动"
+
+[sub_resource type="Resource" id="Entry_31"]
+script = ExtResource("2_entry")
+old_id = "needle_03"
+card_id = "needle_rain"
+usage_id = "expose"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_32"]
+script = ExtResource("2_entry")
+old_id = "needle_04"
+card_id = "needle_hidden"
+usage_id = "finisher"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_33"]
+script = ExtResource("2_entry")
+old_id = "taixu_01"
+card_id = "taixu_breath"
+usage_id = "breathe"
+note = "每次角色行动中同一纳元 usage 最多使用一次"
+
+[sub_resource type="Resource" id="Entry_34"]
+script = ExtResource("2_entry")
+old_id = "taixu_02"
+card_id = "taixu_guard"
+usage_id = "guard"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_35"]
+script = ExtResource("2_entry")
+old_id = "taixu_03"
+card_id = "taixu_breath"
+usage_id = "cycle"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_36"]
+script = ExtResource("2_entry")
+old_id = "taixu_04"
+card_id = "taixu_guard"
+usage_id = "focus"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_37"]
+script = ExtResource("2_entry")
+old_id = "blood_01"
+card_id = "blood_burn"
+usage_id = "convert"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_38"]
+script = ExtResource("2_entry")
+old_id = "blood_02"
+card_id = "blood_burn"
+usage_id = "strike"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_39"]
+script = ExtResource("2_entry")
+old_id = "blood_03"
+card_id = "blood_finish"
+usage_id = "empower"
+note = "由独立卡压缩为核心式的一种使用方式"
+
+[sub_resource type="Resource" id="Entry_40"]
+script = ExtResource("2_entry")
+old_id = "blood_04"
+card_id = "blood_finish"
+usage_id = "finisher"
+note = "燃血后气血低于50%时附加伤害，气血费用不能直接杀死自身"
+
+[resource]
+script = ExtResource("1_map")
+content_id = "r38_legacy_skill_ids"
+note = "仅迁移旧技能配置的定义ID/使用方式引用；不直接迁移运行中的 CardInstance UID、牌区或正在进行的战斗。"
+entries = Array[Resource]([SubResource("Entry_01"), SubResource("Entry_02"), SubResource("Entry_03"), SubResource("Entry_04"), SubResource("Entry_05"), SubResource("Entry_06"), SubResource("Entry_07"), SubResource("Entry_08"), SubResource("Entry_09"), SubResource("Entry_10"), SubResource("Entry_11"), SubResource("Entry_12"), SubResource("Entry_13"), SubResource("Entry_14"), SubResource("Entry_15"), SubResource("Entry_16"), SubResource("Entry_17"), SubResource("Entry_18"), SubResource("Entry_19"), SubResource("Entry_20"), SubResource("Entry_21"), SubResource("Entry_22"), SubResource("Entry_23"), SubResource("Entry_24"), SubResource("Entry_25"), SubResource("Entry_26"), SubResource("Entry_27"), SubResource("Entry_28"), SubResource("Entry_29"), SubResource("Entry_30"), SubResource("Entry_31"), SubResource("Entry_32"), SubResource("Entry_33"), SubResource("Entry_34"), SubResource("Entry_35"), SubResource("Entry_36"), SubResource("Entry_37"), SubResource("Entry_38"), SubResource("Entry_39"), SubResource("Entry_40")])

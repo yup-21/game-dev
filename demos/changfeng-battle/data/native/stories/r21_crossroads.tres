@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="WuxiaStoryDefinition" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/story_definition.gd" id="1_story"]
+[ext_resource type="Script" path="res://scripts/content/story_beat_definition.gd" id="2_beat"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="3_event"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_node_definition.gd" id="4_node"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_choice_definition.gd" id="5_choice"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="6_req"]
+
+[sub_resource type="Resource" id="Beat_crossroads"]
+script = ExtResource("2_beat")
+caption = "山口 · 清晨"
+text = "古道岔开两条山径，雾中传来引路人的呼喊。"
+duration = 2.0
+
+[sub_resource type="Resource" id="Event_met"]
+script = ExtResource("3_event")
+event_type = "set_flag"
+flag_id = "met_r21_guide"
+flag_value = true
+
+[sub_resource type="Resource" id="Event_clue"]
+script = ExtResource("3_event")
+event_type = "grant_clue"
+clue_id = "r21_map_piece"
+count = 1
+
+[sub_resource type="Resource" id="Req_guide"]
+script = ExtResource("6_req")
+flag_id = "met_r21_guide"
+equals = true
+
+[sub_resource type="Resource" id="Choice_accept"]
+script = ExtResource("5_choice")
+text = "收下山口地图，准备迎敌"
+next_node = "r21_end"
+events = Array[Resource]([SubResource("Event_clue")])
+requires = Array[Resource]([SubResource("Req_guide")])
+
+[sub_resource type="Resource" id="Node_intro"]
+script = ExtResource("4_node")
+node_id = "r21_intro"
+speaker = "河渡信使"
+text = "此去山口，埋伏者不止一人。"
+next_node = "r21_offer"
+events = Array[Resource]([SubResource("Event_met")])
+
+[sub_resource type="Resource" id="Node_offer"]
+script = ExtResource("4_node")
+node_id = "r21_offer"
+speaker = "河渡信使"
+text = "我有一幅简图，拿好便能寻到小径。"
+choices = Array[Resource]([SubResource("Choice_accept")])
+
+[sub_resource type="Resource" id="Node_end"]
+script = ExtResource("4_node")
+node_id = "r21_end"
+speaker = "沈长风"
+text = "多谢。此路虽险，也要查个明白。"
+
+[resource]
+script = ExtResource("1_story")
+content_id = "r21_crossroads_story"
+title = "山口问路"
+subtitle = "第三幕 · 岔路迷踪"
+entry_node = "r21_intro"
+cinematic_beats = Array[Resource]([SubResource("Beat_crossroads")])
+dialogue_nodes = Array[Resource]([SubResource("Node_intro"), SubResource("Node_offer"), SubResource("Node_end")])
