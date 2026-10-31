@@ -11,6 +11,7 @@ extends Resource
 @export_enum("self", "enemy_actor", "reachable_cell", "pending_root_attack",
     "opponent_unresolved_response_link") var target_kind: String = "self"
 @export var effects: Array[Resource] = []
+@export var when: Resource
 
 func to_record() -> Dictionary:
     var converted: Array = []
@@ -21,9 +22,17 @@ func to_record() -> Dictionary:
         if record.is_empty():
             return {}
         converted.append(record)
-    return {
+    var result: Dictionary = {
         "id": node_id, "stage": stage if not stage.is_empty() else node_id,
         "next": next_node if not next_node.is_empty() else node_id,
         "timing": timing, "cost": {"qi": cost_qi},
         "target": {"kind": target_kind}, "effects": converted
     }
+    if when != null:
+        if not when is WuxiaConditionDefinition:
+            return {}
+        var condition: Dictionary = when.to_record()
+        if condition.is_empty():
+            return {}
+        result["when"] = condition
+    return result

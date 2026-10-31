@@ -16,8 +16,10 @@ func check(ok: bool, label: String) -> void:
 
 func _run() -> void:
     var catalog = Chapters.new()
-    check(catalog.load_error.is_empty(),"two chapter definitions load and cross-reference")
-    check(catalog.chapter_order.size()==2 and catalog.first_chapter_id()=="rain_escort_prologue",
+    check(catalog.load_error.is_empty(),"legacy and native chapter definitions load and cross-reference")
+    check(catalog.chapter_order.slice(0,2)==["rain_escort_prologue","river_watch"]
+        and catalog.first_chapter_id()=="rain_escort_prologue"
+        and catalog.chapter_order.has("r21_crossroads"),
         "chapter index has deterministic entry and order")
     var second: Dictionary = catalog.get_chapter("river_watch")
     check(second.get("encounter_id","")=="river_watch_ambush"

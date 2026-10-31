@@ -12,10 +12,18 @@ var pending_events: Array = []
 var load_error: String = ""
 
 func _init(path: String = "res://data/opening_story.json") -> void:
-	if not FileAccess.file_exists(path):
-		load_error = "Missing story: " + path
-		return
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var parsed: Variant = null
+	if path.ends_with(".tres"):
+		var definition: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
+		if not definition is WuxiaStoryDefinition:
+			load_error = "Invalid native story Resource: " + path
+			return
+		parsed = definition.to_record()
+	else:
+		if not FileAccess.file_exists(path):
+			load_error = "Missing story: " + path
+			return
+		parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not parsed is Dictionary or parsed.get("schema_version") != 1:
 		load_error = "Invalid opening story format"
 		return

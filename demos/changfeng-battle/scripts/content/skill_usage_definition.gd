@@ -15,6 +15,7 @@ extends Resource
 @export var attack_break_bonus: int = 0
 @export var once_per_action: bool = false
 @export var effects: Array[Resource] = []
+@export var when: Resource
 
 func to_record() -> Dictionary:
     var converted: Array = []
@@ -38,4 +39,11 @@ func to_record() -> Dictionary:
             "route": attack_route, "break_bonus": attack_break_bonus,
             "range": target_max_distance
         }
+    if when != null:
+        if not when is WuxiaConditionDefinition:
+            return {}
+        var condition: Dictionary = when.to_record()
+        if condition.is_empty():
+            return {}
+        result["when"] = condition
     return result

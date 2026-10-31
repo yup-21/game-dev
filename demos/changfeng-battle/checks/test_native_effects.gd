@@ -75,6 +75,10 @@ func _run() -> void:
             battle.acknowledge_animation(battle.state.animation_ticket)
     check(battle.state.active_id == 0 and battle.state.mode == "ACTION",
         "native skill uses an actual CTB action window")
+    var stage_condition: Dictionary = battle.techniques.definitions["r20_guard_stage"].nodes[0].get("when", {})
+    check(not stage_condition.is_empty()
+        and not battle.conditions.allows(hero,stage_condition,{"timing":"ACTION"}),
+        "authored condition blocks guard before iron_body")
     var qi_before: int = hero.qi_u
     var request: Dictionary = battle.request("PLAY_CARD",0,{
         "card_uid":uid,"usage_id":"probe"
@@ -82,6 +86,8 @@ func _run() -> void:
     var result: Dictionary = battle.submit(request)
     check(bool(result.get("success",false)), "native probe is accepted by battle commands")
     check(hero.statuses.has("iron_body"), "native apply_status component executed")
+    check(battle.conditions.allows(hero,stage_condition,{"timing":"ACTION"}),
+        "authored condition permits guard after iron_body")
     check(hero.qi_u > qi_before, "new scripted effect gained Qi per active status stack")
     var generated: Array = []
     for card_uid in hero.hand:

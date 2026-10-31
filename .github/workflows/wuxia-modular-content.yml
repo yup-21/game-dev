@@ -17,6 +17,8 @@ on:
       - 'demos/changfeng-battle/checks/test_native_content_resources.gd'
       - 'demos/changfeng-battle/checks/test_character_factory.gd'
       - 'demos/changfeng-battle/checks/test_native_effects.gd'
+      - 'demos/changfeng-battle/checks/test_native_story_quests.gd'
+      - 'demos/changfeng-battle/checks/test_chapter_pipeline.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -43,6 +45,10 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_character_factory.gd
       - name: R20 native skills and effect handlers
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_effects.gd
+      - name: R21 native chapters, stories, quests and encounters
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_story_quests.gd
+      - name: Preserve legacy chapter and dialogue session pipeline
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_chapter_pipeline.gd
       - name: R11 extensible catalogs and combo counts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_catalog_extensibility.gd
       - name: R12 character identity decoupling

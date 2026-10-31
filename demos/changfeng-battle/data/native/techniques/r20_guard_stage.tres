@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="WuxiaTechniqueDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="WuxiaTechniqueDefinition" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/technique_definition.gd" id="1_tech"]
 [ext_resource type="Script" path="res://scripts/content/technique_node_definition.gd" id="2_node"]
 [ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+[ext_resource type="Script" path="res://scripts/content/condition_definition.gd" id="4_condition"]
 
 [sub_resource type="Resource" id="Resource_shield"]
 script = ExtResource("3_effect")
@@ -10,6 +11,12 @@ effect_type = "add_shield"
 target = "self"
 amount = 1.0
 parameters = {"expires_after_global_ticks": 100}
+
+[sub_resource type="Resource" id="Resource_requires"]
+script = ExtResource("4_condition")
+mode = "leaf"
+predicate = "has_status"
+text_value = "iron_body"
 
 [sub_resource type="Resource" id="Resource_guard"]
 script = ExtResource("2_node")
@@ -19,6 +26,7 @@ next_node = "guard"
 timing = "ACTION"
 cost_qi = 1
 target_kind = "self"
+when = SubResource("Resource_requires")
 effects = Array[Resource]([SubResource("Resource_shield")])
 
 [resource]

@@ -8,8 +8,10 @@ const CharacterFactory = preload("res://scripts/character_factory.gd")
 const InventoryRuntime = preload("res://scripts/inventory_runtime.gd")
 const StoryEvents = preload("res://scripts/story_event_executor.gd")
 const SceneRouter = preload("res://scripts/chapter_scene_router.gd")
+const Quests = preload("res://scripts/quest_runtime.gd")
 var director = ScenarioDirector.new()
 var chapters = ChapterCatalog.new()
+var quests = Quests.new()
 var phase: String = "menu"
 var chapter_id: String = ""
 var choices: Array = []
@@ -23,9 +25,11 @@ var battle_outcome: String = ""
 var winning_team: int = -1
 var battle_spatial_mode: String = "GRID"
 
-func start_new_game() -> void:
+func start_new_game(entry_chapter_id: String = "") -> void:
+    var first: String = chapters.first_chapter_id() if entry_chapter_id.is_empty() else entry_chapter_id
+    if chapters.get_chapter(first).is_empty(): return
     phase = "story"
-    chapter_id = chapters.first_chapter_id()
+    chapter_id = first
     choices.clear()
     flags.clear()
     items.clear()
@@ -44,6 +48,9 @@ func start_new_game() -> void:
             var character = factory.create_runtime(id)
             if character != null:
                 characters[id] = character
+
+func quest_status(id: String) -> Dictionary:
+    return quests.status(id,flags,items,cleared_encounters)
 
 func chapter_definition() -> Dictionary:
     return chapters.get_chapter(chapter_id)

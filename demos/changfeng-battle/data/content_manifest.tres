@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -7,9 +7,19 @@
 [ext_resource type="Resource" path="res://data/native/techniques/r20_guard_stage.tres" id="5_guard"]
 [ext_resource type="Resource" path="res://data/native/effect_handlers/r20_qi_by_status.tres" id="6_echo"]
 
+[ext_resource type="Resource" path="res://data/native/stories/r21_crossroads.tres" id="7_story"]
+[ext_resource type="Resource" path="res://data/native/chapters/r21_crossroads.tres" id="8_chapter"]
+[ext_resource type="Resource" path="res://data/native/quests/r21_find_the_path.tres" id="9_quest"]
+[ext_resource type="Resource" path="res://data/native/encounters/r21_gate_ambush.tres" id="10_encounter"]
+
 [resource]
 script = ExtResource("1_manifest")
 characters = Array[Resource]([ExtResource("2_hero")])
 skills = Array[Resource]([ExtResource("3_probe"), ExtResource("4_follow")])
 techniques = Array[Resource]([ExtResource("5_guard")])
 effect_handlers = Array[Resource]([ExtResource("6_echo")])
+
+stories = Array[Resource]([ExtResource("7_story")])
+chapters = Array[Resource]([ExtResource("8_chapter")])
+quests = Array[Resource]([ExtResource("9_quest")])
+encounters = Array[Resource]([ExtResource("10_encounter")])

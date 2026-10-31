@@ -11,7 +11,7 @@ static var _default_cache_ready: bool = false
 static var _default_cache: Dictionary = {}
 
 
-var definitions: Dictionary = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}}
+var definitions: Dictionary = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}}
 var load_error: String = ""
 
 func _init(path: String = DEFAULT_MANIFEST) -> void:
@@ -27,13 +27,13 @@ func _init(path: String = DEFAULT_MANIFEST) -> void:
         _default_cache_ready = true
 
 func import_manifest(manifest: Resource) -> bool:
-    var staged: Dictionary = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}}
+    var staged: Dictionary = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}}
     load_error = ""
     if not manifest is Manifest:
         return _fail("Native content manifest has wrong resource type")
     var ids: Dictionary = {}
-    for kind in ["character", "buff", "item", "skill", "technique", "effect_handler"]:
-        var property_name: String = kind + "s"
+    for kind in ["character", "buff", "item", "skill", "technique", "effect_handler", "story", "chapter", "quest", "encounter"]:
+        var property_name: String = "stories" if kind == "story" else kind + "s"
         var records: Array = manifest.get(property_name)
         for i in range(records.size()):
             var definition: Resource = records[i]
@@ -52,7 +52,7 @@ func import_manifest(manifest: Resource) -> bool:
 
 func _fail(message: String) -> bool:
     load_error = message
-    definitions = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}}
+    definitions = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}}
     return false
 
 func _valid_id(id: String) -> bool:

@@ -10,3 +10,8 @@ extends Resource
 @export var skills: Array[Resource] = []
 @export var techniques: Array[Resource] = []
 @export var effect_handlers: Array[Resource] = []
+
+@export var stories: Array[Resource] = []
+@export var chapters: Array[Resource] = []
+@export var quests: Array[Resource] = []
+@export var encounters: Array[Resource] = []
