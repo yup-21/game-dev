@@ -59,3 +59,38 @@ R8：`BattleWorld2D` 持有插画战场与视觉移动，`BattleHUDView` 持有�
 R9：SPACE 统一通过 `BattleSpatialFacade` 完成 FREE 落点、自动接近复核、强制轴向位移及 GRID 远程 LOS；AI 路径入口与同状态预览缓存也复用 facade。底层 FREE 为 `AStar2D` 可见性图。
 
 R10：新增 `BattleActionTimeline` 和 `data/action_timelines.json`，描述 startup/active/recovery、cancel/reaction/visual-invulnerable 窗口及 cue。**全部属于表现时序元数据**；目前仍由 BattleModel 先结算规则，再由 Presentation 消费语义事件。想实现真正的实时闪避/i-frame 必须扩展权威协议，不能直接让动画驱动修改状态。
+
+
+## R11–R15 内容扩展架构
+
+重构遵守「**静态定义 → 独立运行时 → 战斗规则结算 → 只读视图**」的单向边界。新增武学、Buff、角色和物品通常只增加 `data/` 内索引及定义文件，不应更改 `BattleModel` 的分支逻辑。
+
+```mermaid
+flowchart TD
+    A["data/: 武学 / Buff / 角色 / 物品 JSON"] --> B["Catalog: School / Status / Character / Item"]
+    B --> C["CharacterRuntime + InventoryRuntime"]
+    B --> D["CardSystem / StatusSystem"]
+    C --> E["BattleModel: 唯一状态与命令入口"]
+    D --> E
+    E --> F["CombatResolver / AttributeSystem / StatModifierSystem"]
+    F --> G["snapshot / events / ticket"]
+    G --> H["BattleHUD / CharacterCard / Presentation"]
+```
+
+| 扩展域 | 定义与运行时边界 | 对战斗的接入方式 |
+| --- | --- | --- |
+| 武学与卡牌（R11） | `SchoolCatalog` 读取武学索引及招式/连携定义；`ComboResolver` 按可配置触发次数计算 | `CardSystem` 接管招式牌、状态引用及武学规则，保持原出牌命令校验 |
+| 角色（R12） | `CharacterRegistry` 按稳定 `character_id` 查档，兼容独立 `battle_actor_id`；美术通过 `HD2DArtCatalog` 查找 | 创建战斗时构造 `battle_options`，HUD 不再假设角色 ID 必等于演员序号 |
+| Buff 与属性（R13） | `StatusCatalog` 独立声明 Buff；`StatModifierSystem` 对基础属性叠加来源确定的 flat/percent_bp 修正 | `StatusSystem` 负责层数、期限、来源同步，`AttributeSystem` 基于 `base_attributes` 重算，防止增益反复滚存 |
+| 物品与装备（R14） | `ItemCatalog` 管定义，`InventoryRuntime` 管唯一实例、可堆叠数量及装备槽，`CharacterRuntime` 管角色成长与持有状态 | 角色战斗构筑 `battle_build` 引入装备属性，战斗属性只由权威状态持有 |
+| 合同与回归（R15） | 模块化 Godot Actions 验证逐域测试及跨域使用场景 | 与原 HUD/剧情/战斗回归独立运行，避免新内容破坏老存量行为 |
+
+### 对外扩展契约
+
+1. **索引驱动**：新增卡牌、武学、Buff、物品时先登记各自索引；目录扫描或全局硬编码枚举不是正式注册协议。添加角色时使用角色定义和稳定 ID。
+2. **身份分离**：`character_id` 是剧情/档案/美术身份，`battle_actor_id` 是单场对战索引，装备实例另有 UID；不能用数组位置互相替代。
+3. **属性来源可追溯**：角色基础值、成长、装备、Buff 各自携带来源；移除 Buff 或卸下装备后重新派生属性，不逆向猜测原始数值。
+4. **规则单一写入方**：`Catalog` 只给定义、`InventoryRuntime` 只做物品持有操作。消耗品目前仅产出效果意图，**尚未**将 `USE_ITEM` 命令接入 `BattleCommandDispatcher` 和 `CombatResolver`，不能声称实战中可直接饮药。
+5. **兼容性门槛**：任一新增内容既要通过模块契约测试，也要保证既有 CTB、连携、FREE/GRID、绘制及旧武学测试不回退。下一阶段若扩展装备随机词条或存档迁移，应另设 schema/version 合同。
+
+扩展步骤与 JSON 示例见 [模块化内容扩展指南](MODULAR_CONTENT_GUIDE.md)，详尽阶段完成情况见 [重构路线图](REFACTOR_ROADMAP.md)。
