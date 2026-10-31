@@ -11,6 +11,7 @@ extends Resource
 @export var affixes: Array[Resource] = []
 @export var documents: Array[Resource] = []
 @export var rule_catalogs: Array[Resource] = []
+@export var legacy_mappings: Array[Resource] = []
 @export var action_timelines: Array[Resource] = []
 @export var skills: Array[Resource] = []
 @export var techniques: Array[Resource] = []

@@ -37,7 +37,6 @@ func _run() -> void:
     var native = Native.new()
     check(native.load_error.is_empty(), "manifest: " + native.load_error)
     var pairs: Array = [
-        ["legacy_id_map","legacy_id_map.json"],
     ]
     for pair in pairs:
         var id: String = "r25_" + str(pair[0])
@@ -58,6 +57,16 @@ func _run() -> void:
     check(native.document("r25_school_forms").is_empty()
         and native.document("r25_tingfeng_cards").is_empty(),
         "opaque martial and Tingfeng card documents removed")
+
+    var legacy_original: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(
+        "res://data/legacy_id_map.json"))
+    var legacy_native: Dictionary = native.entries("legacy_mapping").get("r38_legacy_skill_ids",{}).get("data",{})
+    check(not legacy_native.is_empty() and _same(legacy_native, legacy_original),
+        "all 40 legacy skill IDs are typed and preserve original mappings")
+    check(native.document("r25_legacy_id_map").is_empty(), "opaque legacy ID map removed")
+    var legacy_resource: WuxiaLegacyMappingDefinition = native.resource_for("legacy_mapping", "r38_legacy_skill_ids") as WuxiaLegacyMappingDefinition
+    check(legacy_resource != null and legacy_resource.resolve("step_01", "evasion").get("usage_id") == "evasion",
+        "alternate legacy evasion usage is data, not hardcoded in the adapter")
 
     # The two playable chapters no longer use opaque WuxiaDataDocument blobs.
     for name in ["rain_escort_prologue","river_watch"]:

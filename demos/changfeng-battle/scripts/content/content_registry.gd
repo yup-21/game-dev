@@ -12,7 +12,7 @@ static var _default_cache: Dictionary = {}
 static var _default_resource_cache: Dictionary = {}
 
 
-var definitions: Dictionary = {"school": {}, "character": {}, "buff": {}, "item": {}, "affix": {}, "document": {}, "rule_catalog": {}, "action_timeline": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}, "asset": {}, "map": {}}
+var definitions: Dictionary = {"school": {}, "character": {}, "buff": {}, "item": {}, "affix": {}, "document": {}, "rule_catalog": {}, "legacy_mapping": {}, "action_timeline": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}, "asset": {}, "map": {}}
 var definition_resources: Dictionary = {}
 var load_error: String = ""
 
@@ -31,13 +31,13 @@ func _init(path: String = DEFAULT_MANIFEST) -> void:
         _default_cache_ready = true
 
 func import_manifest(manifest: Resource) -> bool:
-    var staged: Dictionary = {"school": {}, "character": {}, "buff": {}, "item": {}, "affix": {}, "document": {}, "rule_catalog": {}, "action_timeline": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}, "asset": {}, "map": {}}
+    var staged: Dictionary = {"school": {}, "character": {}, "buff": {}, "item": {}, "affix": {}, "document": {}, "rule_catalog": {}, "legacy_mapping": {}, "action_timeline": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}, "asset": {}, "map": {}}
     var staged_resources: Dictionary = {}
     load_error = ""
     if not manifest is Manifest:
         return _fail("Native content manifest has wrong resource type")
     var ids: Dictionary = {}
-    for kind in ["school", "character", "buff", "item", "affix", "document", "rule_catalog", "action_timeline", "skill", "technique", "effect_handler", "story", "chapter", "quest", "encounter", "asset", "map"]:
+    for kind in ["school", "character", "buff", "item", "affix", "document", "rule_catalog", "legacy_mapping", "action_timeline", "skill", "technique", "effect_handler", "story", "chapter", "quest", "encounter", "asset", "map"]:
         var property_name: String = "stories" if kind == "story" else ("affixes" if kind == "affix" else kind + "s")
         var records: Array = manifest.get(property_name)
         staged_resources[kind] = {}
@@ -61,7 +61,7 @@ func import_manifest(manifest: Resource) -> bool:
 func _fail(message: String) -> bool:
     load_error = message
     definition_resources = {}
-    definitions = {"school": {}, "character": {}, "buff": {}, "item": {}, "affix": {}, "document": {}, "rule_catalog": {}, "action_timeline": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}, "asset": {}, "map": {}}
+    definitions = {"school": {}, "character": {}, "buff": {}, "item": {}, "affix": {}, "document": {}, "rule_catalog": {}, "legacy_mapping": {}, "action_timeline": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}, "asset": {}, "map": {}}
     return false
 
 func _valid_id(id: String) -> bool:

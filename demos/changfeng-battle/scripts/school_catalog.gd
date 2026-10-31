@@ -86,19 +86,19 @@ func _fail(message: String) -> bool:
 func _read(path: String) -> Dictionary:
     var typed: Dictionary = {
         "res://data/school_forms.json": "r36_school_forms",
-        "res://data/tingfeng_cards.json": "r37_tingfeng_cards"
+        "res://data/tingfeng_cards.json": "r37_tingfeng_cards",
+        "res://data/legacy_id_map.json": "r38_legacy_skill_ids"
     }
     if typed.has(path):
         var native = NativeContent.new()
         if not native.load_error.is_empty():
             _fail(native.load_error)
             return {}
-        var record: Dictionary = native.entries("rule_catalog").get(str(typed[path]),{}).get("data",{})
+        var kind: String = "legacy_mapping" if path == "res://data/legacy_id_map.json" else "rule_catalog"
+        var record: Dictionary = native.entries(kind).get(str(typed[path]),{}).get("data",{})
         if record.is_empty(): _fail("Native martial rule catalog missing: " + path)
         return record
-	var documents: Dictionary = {
-		"res://data/legacy_id_map.json":"r25_legacy_id_map"
-	}
+	var documents: Dictionary = {}
 	if documents.has(path):
 		var native = NativeContent.new()
 		if not native.load_error.is_empty():
