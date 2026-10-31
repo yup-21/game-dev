@@ -77,9 +77,9 @@ R29 已删除旧双人/多人场景与专用 UI；规则回归转向 `BattleMode
 
 ## 五式内容
 
-正式资源：`data/native/documents/tingfeng_cards.tres`。5 个定义、12 个用法、每人 12 张镜像实体牌，每个实例一次只能选一种用法；旧 JSON 文件仅用于字段一致性测试。
+正式资源：`data/native/rule_catalogs/r37_tingfeng_cards.tres`。听风本体与派生共 6 项卡牌定义，初始实体牌由卡组 Resource 配置；每张 CardInstance 的使用方式仍由既有 `CardSystem` 按规则判定，旧 JSON 仅用于字段一致性测试。
 
-原有武学定义与旧 ID 映射已迁移至 `data/native/documents/school_forms.tres`、`data/native/documents/legacy_id_map.tres`，由 SchoolCatalog 校验并规范化；旧 JSON 留作兼容数据。详见V3分析文档，不用于在战UID热替换。
+原有十套武学及旧技能 ID 映射分别位于 `data/native/rule_catalogs/r36_school_forms.tres` 与 `data/native/legacy/legacy_skill_ids.tres`，由 `SchoolCatalog` 和 `LegacySkillAdapter` 读取；旧 JSON 仅为静态回归 fixture，不用于对战 UID 热替换。
 
 | 招式 | 张数 | 用法 |
 | --- | ---: | --- |
@@ -133,7 +133,7 @@ R29 已删除旧双人/多人场景与专用 UI；规则回归转向 `BattleMode
 
 `Opening` 检查序章数据、分支和场景脚本，`Parties` 检查多人队伍、目标、胜负及无效阵容重开。
 
-`DemoFlow` 检查剧情会话、JSON 遭遇配置、战斗与结算的衔接。
+`DemoFlow` 检查剧情会话、原生遭遇 Resource、战斗与结算的衔接。
 
 `HD2DStartup` 直接加载纯 2D 插画战场，检查模型、当前相机、界面、角色图集、动画队列与剑光特效。`HD2DInteractions` 检查该场景的按钮、棋盘鼠标、键盘操作和动画／AI衔接。`-Stage HD2D` 合并运行这两项；`All` 也包含这两项，避免仅检查默认序章而漏掉可选场景。
 

@@ -3,7 +3,7 @@
 > 单一正式入口：`opening.tscn` → `battle_hd2d.tscn`；基础版本 `main@8d1486b4`，重构工作在 `refactor/battle-architecture-consolidation`（Draft PR #67）。
 > 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
-> **R29 现状（2026-10-31）**：正式内容入口是 `data/content_manifest.tres`；序章与第二幕已改为强类型 Story/Chapter Resource，剩余七份复杂规则表仍在 `data/native/documents/*.tres`。下文 R11–R15 的 JSON 索引图是当时阶段的设计记录，**不是现在的生产配置流程**。新内容制作请看 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
+> **R39 现状（2026-11-01）**：正式内容统一从 `data/content_manifest.tres` 加载，包括十套武学、听风卡牌、技法、遭遇、GRID/FREE 地图、动作时间轴和导入用旧 ID 映射。原七份 `WuxiaDataDocument` 已迁移并删除，运行时不再使用旧 JSON。下文 R11–R15 的 JSON 索引图是历史阶段记录，**不是当前生产配置流程**。新内容制作请参阅 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
 
 ## 运行结构
 
