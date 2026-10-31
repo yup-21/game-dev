@@ -11,36 +11,15 @@ var chapter_order: Array = []
 var load_error: String = ""
 
 func _init(index_path: String = ROOT + "index.json", definition_root: String = ROOT) -> void:
-    if (index_path != ROOT + "index.json" or definition_root != ROOT) and not FileAccess.file_exists(index_path):
-        load_error = "Chapter index missing: " + index_path
-        return
     var is_production: bool = index_path == ROOT + "index.json" and definition_root == ROOT
-    var index: Variant = {"schema_version":1,"chapters":["rain_escort_prologue.json","river_watch.json"]} if is_production else JSON.parse_string(FileAccess.get_file_as_string(index_path))
-    if not index is Dictionary or index.get("schema_version") != 1 or not index.get("chapters") is Array or index.chapters.is_empty():
-        load_error = "Invalid chapter index"
-        return
     var director = ScenarioDirector.new()
     var characters = CharacterRegistry.new()
     if not director.load_error.is_empty() or not characters.load_error.is_empty():
         load_error = "Chapter prerequisites are invalid"
         return
-    for entry in index.chapters:
-        if not entry is String or entry.contains("/") or entry.contains("..") or not entry.ends_with(".json"):
-            load_error = "Unsafe chapter file: " + str(entry)
-            return
-        var path: String = definition_root + entry
-        if not is_production and not FileAccess.file_exists(path):
-            load_error = "Chapter file missing: " + path
-            return
-        var data: Variant = Native.new().document("r25_" + entry.trim_suffix(".json")) if is_production else JSON.parse_string(FileAccess.get_file_as_string(path))
-        if not _valid(data,director,characters) or chapters.has(str(data.get("id",""))):
-            load_error = "Invalid or duplicate chapter: " + str(entry)
-            return
-        chapters[str(data.id)] = data.duplicate(true)
-        chapter_order.append(str(data.id))
-    # Native chapters share the validated catalog; custom legacy fixture roots
-    # remain self-contained and never silently import production content.
-    if index_path == ROOT + "index.json" and definition_root == ROOT:
+
+    if is_production:
+        # Production chapters are only the Inspector-authored native Resources.
         var native = Native.new()
         if not native.load_error.is_empty():
             load_error = native.load_error
@@ -52,6 +31,38 @@ func _init(index_path: String = ROOT + "index.json", definition_root: String = R
                 return
             chapters[chapter_id] = chapter.duplicate(true)
             chapter_order.append(chapter_id)
+        # Entry sequence is content metadata, not a special-case JSON index.
+        chapter_order.sort_custom(func(a, b):
+            var left: int = int(chapters[a].get("order",100))
+            var right: int = int(chapters[b].get("order",100))
+            return str(a) < str(b) if left == right else left < right)
+    else:
+        # Explicit custom fixture roots remain useful for importer validation.
+        if not FileAccess.file_exists(index_path):
+            load_error = "Chapter index missing: " + index_path
+            return
+        var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path))
+        if not index is Dictionary or index.get("schema_version") != 1 or \
+                not index.get("chapters") is Array or index.chapters.is_empty():
+            load_error = "Invalid chapter index"
+            return
+        for entry in index.chapters:
+            if not entry is String or entry.contains("/") or entry.contains("..") or not entry.ends_with(".json"):
+                load_error = "Unsafe chapter file: " + str(entry)
+                return
+            var path: String = definition_root + entry
+            if not FileAccess.file_exists(path):
+                load_error = "Chapter file missing: " + path
+                return
+            var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+            if not _valid(data,director,characters) or chapters.has(str(data.get("id",""))):
+                load_error = "Invalid or duplicate chapter: " + str(entry)
+                return
+            chapters[str(data.id)] = data.duplicate(true)
+            chapter_order.append(str(data.id))
+    if chapter_order.is_empty():
+        load_error = "No chapters registered"
+        return
     for id in chapter_order:
         var next_id: String = str(chapters[id].get("next_chapter_id",""))
         if not next_id.is_empty() and (next_id == id or not chapters.has(next_id)):

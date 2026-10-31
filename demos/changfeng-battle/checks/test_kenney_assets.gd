@@ -17,7 +17,7 @@ func _verify() -> void:
 			if texture==null or texture.get_width()<1 or texture.get_height()<1:
 				errors+=1
 				push_error("ASSET_IMPORT_FAILED "+path)
-	for scene in ["res://opening.tscn","res://battle.tscn","res://party_battle.tscn"]:
+	for scene in ["res://opening.tscn","res://battle_hd2d.tscn"]:
 		if load(scene)==null:
 			errors+=1
 			push_error("SCENE_IMPORT_FAILED "+scene)

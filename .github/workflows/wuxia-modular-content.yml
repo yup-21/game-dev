@@ -24,6 +24,7 @@ on:
       - 'demos/changfeng-battle/project.godot'
       - 'demos/changfeng-battle/checks/test_chapter_pipeline.gd'
       - 'demos/changfeng-battle/checks/test_r28_legacy_cleanup.gd'
+      - 'demos/changfeng-battle/checks/test_r29_native_cleanup.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -70,6 +71,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r27_authoring_pipeline.gd
       - name: R28 safe legacy presentation cleanup and entry contracts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r28_legacy_cleanup.gd
+      - name: R29 declarative prologue, canonical battle and neutral art fallback
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r29_native_cleanup.gd
       - name: R24 complete content-only vertical slice
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_content_closure.gd
       - name: R11 extensible catalogs and combo counts

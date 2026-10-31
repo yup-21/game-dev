@@ -3,7 +3,7 @@
 > 单一正式入口：`opening.tscn` → `battle_hd2d.tscn`；基础版本 `main@8d1486b4`，重构工作在 `refactor/battle-architecture-consolidation`（Draft PR #67）。
 > 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
-> **R28 现状（2026-10-31）**：正式内容入口已经切换为 `data/content_manifest.tres` 中的 Godot 原生 Resource；原有复杂目录存于 `data/native/documents/*.tres`。下文 R11–R15 的 JSON 索引图是当时阶段的设计记录，**不是现在的生产配置流程**。新内容制作请看 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
+> **R29 现状（2026-10-31）**：正式内容入口是 `data/content_manifest.tres`；序章与第二幕已改为强类型 Story/Chapter Resource，剩余七份复杂规则表仍在 `data/native/documents/*.tres`。下文 R11–R15 的 JSON 索引图是当时阶段的设计记录，**不是现在的生产配置流程**。新内容制作请看 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
 
 ## 运行结构
 
@@ -42,7 +42,7 @@ flowchart TD
 
 ## 保留入口、资产与已知限制
 
-- 玩家入口唯一 `battle_hd2d.tscn`；`battle.tscn` / `party_battle.tscn` 作为历史规则视图保留，不触发删除。
+- 玩家入口唯一 `battle_hd2d.tscn`；旧双人/多人 View 和场景已删除，规则测试转到正式场景与 `BattleModel`。
 - 无任何运行时或测试引用的旧 `hd2d_party_bridge.gd`、`hd2d_vfx.gd`、`hd2d_scenery.gd` 已清理；正式 UI 使用 `hd2d_battle.gd` 与 `battle_vfx_2d.gd`。
 - 美术素材既有 Kenney CC0，也有用户上传原画和生成的概念稿；用途/授权分开记录，未确认原创素材的许可证不能宣称 CC0。
 - 完整四方向逐帧图集、姿态条、动作型绝招、交锋慢镜头和音效编排不是这轮重构已完成的功能，属于结构稳定后的新增玩法；旧 6×4 图仅提供动作类别与水平镜像。
@@ -56,7 +56,7 @@ GitHub Actions `Original Wuxia HUD regression` 对 PR 的正式场景、FREE/GRI
 
 ## R8–R10 组件演进
 
-R8：`BattleWorld2D` 持有插画战场与视觉移动，`BattleHUDView` 持有手牌/状态投影，`BattlePresentationPlayer` 持有 Sprite2D 动画、VFX 和单次 ticket。旧场景接口保持向后兼容。
+R8：`BattleWorld2D` 持有插画战场与视觉移动，`BattleHUDView` 持有手牌/状态投影，`BattlePresentationPlayer` 持有 Sprite2D 动画、VFX 和单次 ticket。不再维护旧场景接口；正式战斗命令合同保持不变。
 
 R9：SPACE 统一通过 `BattleSpatialFacade` 完成 FREE 落点、自动接近复核、强制轴向位移及 GRID 远程 LOS；AI 路径入口与同状态预览缓存也复用 facade。底层 FREE 为 `AStar2D` 可见性图。
 

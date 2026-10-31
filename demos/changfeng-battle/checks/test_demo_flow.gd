@@ -1,7 +1,7 @@
 extends SceneTree
+const StoryFixture = preload("res://checks/story_test_helper.gd")
 ## End-to-end encounter wiring and chapter ownership, without graphical inputs.
 const Session = preload("res://scripts/game_session.gd")
-const Story = preload("res://scripts/opening_story.gd")
 const Model = preload("res://scripts/battle_model.gd")
 const Director = preload("res://scripts/scenario_director.gd")
 var failures: int=0
@@ -78,26 +78,17 @@ func check_numeric_catalog(director) -> void:
 func _run() -> void:
 	var session=Session.new()
 	root.add_child(session)
-	var story=Story.new()
 	if not check(session.director.load_error.is_empty(),"encounter data validates"):
 		finish(session)
 		return
 	check(session.phase=="menu" and not session.begin_encounter(),"menu cannot bypass the story")
 	session.start_new_game()
 	check(session.phase=="story" and session.items.is_empty(),"new game clears old progress")
-	session.record_choice("escort_urgent",0)
-	check(bool(session.flags.get("helped_escort",false)),"dialogue decision is tracked")
-	story.begin()
-	story.skip_cinematic()
-	check(story.interact(),"can speak after cutscene")
-	for _i in range(20):
-		if story.phase!="dialogue": break
-		if not story.current_dialogue().get("choices",[]).is_empty():
-			check(story.choose(0),"choose to aid escort")
-		else:
-			story.advance_dialogue()
-		if story.obtained_fragment: session.record_story_event("obtain_fragment")
-	check(story.phase=="complete" and session.items.get("taixu_fragment",0)==1,"story reward persists")
+	check(StoryFixture.finish_prologue(session,0),"authored dialogue completes")
+	check(bool(session.flags.get("helped_escort",false))
+		and session.choices.size()==1,"dialogue decision is tracked through emitted events")
+	check(session.items.get("taixu_fragment",0)==1
+		and bool(session.flags.get("obtained_fragment",false)),"story reward persists")
 	if not check(session.begin_encounter(),"chapter can launch its encounter"):
 		finish(session)
 		return

@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WuxiaChapterDefinition" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/chapter_definition.gd" id="chapter"]
+[ext_resource type="Script" path="res://scripts/content/chapter_scene_definition.gd" id="scene"]
+[ext_resource type="Script" path="res://scripts/content/chapter_npc_definition.gd" id="npc"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="req"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="event"]
+[ext_resource type="Resource" path="res://data/native/stories/rain_escort_prologue.tres" id="story"]
+[ext_resource type="Texture2D" path="res://assets/scenes/story/ruined_temple_story.webp" id="bg"]
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("npc")
+character_id = "escort_elder"
+position = Vector2(1050, 560)
+talk_label = "与受伤镖头交谈"
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("scene")
+background = ExtResource("bg")
+primary_npc = SubResource("c0")
+player_position = Vector2(350, 705)
+player_bounds = Rect2(155, 345, 1260, 410)
+title = "第一幕 · 雨夜残镖"
+place = "荒道破庙 / 暮秋 · 三更"
+prompt = "沿官道走近镖车，查探伤者。"
+talk_label = "与受伤镖头交谈"
+complete_title = "江 湖 初 入"
+complete_text = "远处马蹄声越来越近……"
+battle_label = "迎战追兵 · 继续序章"
+reward_label = "《太虚引气残篇》"
+complete_caption = "一卷无名绢帛，一场未完的血案。"
+complete_subtitle = "你尚不知道，它将牵出多少江湖恩怨。"
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("req")
+flag_id = "obtained_fragment"
+equals = true
+
+[sub_resource type="Resource" id="c3"]
+script = ExtResource("event")
+event_type = "grant_item"
+character_id = "shen_changfeng"
+item_id = "healing_powder"
+count = 1
+
+[resource]
+script = ExtResource("chapter")
+content_id = "rain_escort_prologue"
+chapter_order = 0
+story = ExtResource("story")
+encounter_id = "escort_ambush"
+next_chapter_id = "river_watch"
+scene = SubResource("c1")
+requirements = Array[Resource]([SubResource("c2")])
+victory_events = Array[Resource]([SubResource("c3")])
+defeat_events = Array[Resource]([])

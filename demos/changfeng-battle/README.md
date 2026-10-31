@@ -12,7 +12,7 @@
 
 本轮长期重构分支的统一依据：[当前技术架构](docs/ARCHITECTURE.md) · [分阶段重构计划与回归矩阵](docs/REFACTOR_ROADMAP.md)。
 
-`battle.tscn`（旧双人 2D）与 `party_battle.tscn`（旧多人 2D）**已经弃用、从所有玩家菜单和重试入口隐藏**。文件和历史检查保留给开发/回归，不应继续扩展为另一套正式战斗 UI。详见 [战斗入口及弃用说明](docs/battle-entry-status.md)。
+R29 已删除旧双人/多人场景与专用 UI；规则回归转向 `BattleModel` 及唯一正式场景。序章两支剧情已迁为原生 `.tres` 事件，缺图使用 `assets/fallback/` 独立默认素材，不回退旧画面。详见 [R29 说明](docs/R29_NATIVE_CLEANUP.md)。
 
 当前默认场景已经迁入听风五式：**CTB 集气 → 自由行动 → 有限连锁交锋**。保留原来的 15×10 断桥地图、河流浅滩、角色与移动/受伤表现。玩家和敌人使用同一个 BattleState、校验、费用、牌区与效果结算，仅决策来源不同。
 
@@ -147,7 +147,7 @@
 
 ```powershell
 New-Item -ItemType Directory -Path captures -Force | Out-Null
-& $env:GODOT_BIN --path . --log-file captures/tingfeng-ui-render-run.log res://battle.tscn -- --tingfeng-visual-check
+& $env:GODOT_BIN --path . --log-file captures/hd2d-ui-render-run.log res://battle_hd2d.tscn
 ```
 
 图形检查前将 `GODOT_BIN` 指向 Godot 可执行文件。检查会自动退出。控制台检查日志生成于 `captures/checks/`，对局记录生成于 `checks/tingfeng-playthrough-results.json`，运行截图生成于 `captures/tingfeng-*.png`；这些生成文件均忽略提交。已选取的界面截图见 [docs/screenshots](docs/screenshots)，验证摘要见 [reports/validation.md](reports/validation.md)。

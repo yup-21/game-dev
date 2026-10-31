@@ -65,20 +65,6 @@ func record_choice(node_id: String, option_id: int) -> void:
     if phase != "story":
         return
     choices.append({"chapter_id":chapter_id,"node_id":node_id,"option":option_id})
-    ## Compatibility for the original demo's branch, without constraining
-    ## newly authored chapters, whose choices use declarative events.
-    if chapter_id == "rain_escort_prologue" and node_id == "escort_urgent":
-        flags["helped_escort"] = option_id == 0
-
-func record_story_event(event_id: String) -> void:
-    if phase != "story":
-        return
-    ## Legacy opening_story.json still emits this named marker.
-    if event_id == "obtain_fragment" and not bool(flags.get("obtained_fragment",false)):
-        apply_story_events([
-            {"type":"set_flag","flag":"obtained_fragment","value":true},
-            {"type":"grant_clue","id":"taixu_fragment","count":1}
-        ])
 
 func apply_story_events(events: Array) -> bool:
     if phase != "story":

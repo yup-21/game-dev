@@ -35,19 +35,17 @@ func configure(id: String) -> bool:
             var path: String = str(role.art.sprite_sheet)
             if ResourceLoader.exists(path):
                 texture = load(path) as Texture2D
+            if texture == null:
+                texture = Art.sheet_for_character(character_id)
         else:
             texture = Art.sheet_for_actor(int(role.battle_actor_id),false)
-            if not Art.uses_supplied_sheet(int(role.battle_actor_id)):
-                load_error = "Missing actor sprite sheet: " + character_id
-                push_error(load_error)
-                return false
     else:
         # A genuine artist-authored transparent SVG character, NOT the old
         # runtime SVG generator or the rectangular dialogue portrait.
         # It is intentionally static because the elder has no animation yet.
         texture = Art.story_pose_for_character(character_id)
     if texture == null:
-        load_error = "Missing story sprite/portrait: " + character_id
+        load_error = "No imported fallback available: " + character_id
         push_error(load_error)
         return false
     body = Sprite2D.new()
@@ -55,7 +53,7 @@ func configure(id: String) -> bool:
     body.texture = texture
     body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
     if is_sheet:
-        body.set_meta("faces_left_unflipped", true if int(role.battle_actor_id) < 0 else Art.sheet_faces_left(int(role.battle_actor_id)))
+        body.set_meta("faces_left_unflipped", Art.sheet_faces_left_for_character(character_id))
         body.flip_h = bool(body.get_meta("faces_left_unflipped")) # Initial look east
     body.centered = true
     if is_sheet:

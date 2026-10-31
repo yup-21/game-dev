@@ -100,7 +100,10 @@ func run(view) -> void:
 		else:
 			view.visible_characters=float(node.text.length())
 			view._dialogue_next()
-	if view.story.phase!="complete" or not view.story.obtained_fragment:
+	var session = view.get_node_or_null("/root/GameSession")
+	if view.story.phase!="complete" or session==null or \
+			not bool(session.flags.get("obtained_fragment",false)) or \
+			int(session.items.get("taixu_fragment",0)) != 1:
 		_fail(view,"dialogue fails to reach final fragment")
 		return
 	await _wait(view)

@@ -5,7 +5,6 @@ extends Resource
 @export var speaker: String = ""
 @export_multiline var text: String = ""
 @export var next_node: String = ""
-@export var legacy_marker: String = ""
 @export var events: Array[Resource] = []
 @export var choices: Array[Resource] = []
 
@@ -26,5 +25,4 @@ func to_record() -> Dictionary:
         normalized_choices.append(entry)
     var result: Dictionary = {"id":node_id,"speaker":speaker,"text":text,
         "next":next_node,"events":normalized_events,"choices":normalized_choices}
-    if not legacy_marker.is_empty(): result["event"] = legacy_marker
     return result

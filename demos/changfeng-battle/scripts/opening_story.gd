@@ -1,18 +1,16 @@
 extends RefCounted
 const Events = preload("res://scripts/story_event_executor.gd")
-const Native = preload("res://scripts/content/content_registry.gd")
 ## Opening cutscene and branching dialogue state independent of Node2D / combat UI.
-## A later chapter can replace the JSON file without editing the presentation script.
+## Each chapter supplies a WuxiaStoryDefinition; custom JSON paths are test fixtures.
 var phase: String = "menu" # menu / cinematic / explore / dialogue / complete
 var data: Dictionary = {}
 var nodes: Dictionary = {}
 var cinematic_index: int = 0
 var dialogue_id: String = ""
-var obtained_fragment: bool = false
 var pending_events: Array = []
 var load_error: String = ""
 
-func _init(path: String = "res://data/opening_story.json") -> void:
+func _init(path: String = "res://data/native/stories/rain_escort_prologue.tres") -> void:
 	var parsed: Variant = null
 	if path.ends_with(".tres"):
 		var definition: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
@@ -20,9 +18,6 @@ func _init(path: String = "res://data/opening_story.json") -> void:
 			load_error = "Invalid native story Resource: " + path
 			return
 		parsed = definition.to_record()
-	elif path in ["res://data/opening_story.json","res://data/river_watch_story.json"]:
-		var document_id: String = "r25_opening_story" if path.ends_with("opening_story.json") else "r25_river_watch_story"
-		parsed = Native.new().document(document_id)
 	else:
 		if not FileAccess.file_exists(path):
 			load_error = "Missing story: " + path
@@ -83,7 +78,6 @@ func begin() -> void:
 	phase = "cinematic"
 	cinematic_index = 0
 	dialogue_id = ""
-	obtained_fragment = false
 	pending_events.clear()
 
 func reset() -> void:
@@ -127,8 +121,6 @@ func _open_node(id: String) -> void:
 		return
 	dialogue_id = id
 	pending_events.append_array(nodes[id].get("events",[]).duplicate(true))
-	if str(nodes[id].get("event", "")) == "obtain_fragment":
-		obtained_fragment = true
 
 func complete_if_ready(flags: Dictionary) -> bool:
 	if phase != "explore" or not bool(data.get("return_to_explore",false)): return false

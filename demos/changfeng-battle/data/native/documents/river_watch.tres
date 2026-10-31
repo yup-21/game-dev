@@ -1,8 +1,0 @@
-[gd_resource type="Resource" script_class="WuxiaDataDocument" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/content/data_document.gd" id="1_document"]
-
-[resource]
-script = ExtResource("1_document")
-content_id = "r25_river_watch"
-data = {"schema_version":1,"id":"river_watch","story_path":"res://data/river_watch_story.json","encounter_id":"river_watch_ambush","next_chapter_id":"","scene":{"background":"res://assets/scenes/battle/rainy_bridge_battle.webp","npc_character_id":"river_messenger","npc_position":[1150,620],"player_position":[340,720],"player_bounds":[155,345,1415,755],"title":"第二幕 · 夜渡传书","place":"断桥渡口 / 雨后 · 四更","prompt":"沿着断桥渡口前行，与守候的信使交谈。","talk_label":"与渡口信使交谈","complete_title":"断 桥 余 音","complete_text":"信使抬手指向河谷，暗哨的火把悄然逼近……","battle_label":"守住断桥 · 开始遭遇","reward_label":"渡口密信","complete_caption":"一封暗信指向断桥彼岸。","complete_subtitle":"河谷的暗哨早已等候，众人握紧了兵刃。"},"requirements":[{"flag":"met_messenger","equals":true}],"victory_events":[{"type":"grant_item","character_id":"shen_changfeng","item_id":"breath_pill","count":1}],"defeat_events":[]}

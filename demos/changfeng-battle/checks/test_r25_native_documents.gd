@@ -43,11 +43,7 @@ func _run() -> void:
         ["techniques","techniques.json"],
         ["demo_scenario","demo_scenario.json"],
         ["action_timelines","action_timelines.json"],
-        ["rainy_bridge","maps/rainy_bridge.json"],
-        ["opening_story","opening_story.json"],
-        ["river_watch_story","river_watch_story.json"],
-        ["rain_escort_prologue","chapters/rain_escort_prologue.json"],
-        ["river_watch","chapters/river_watch.json"]
+        ["rainy_bridge","maps/rainy_bridge.json"]
     ]
     for pair in pairs:
         var id: String = "r25_" + str(pair[0])
@@ -56,6 +52,28 @@ func _run() -> void:
         var replacement: Dictionary = native.document(id)
         check(original is Dictionary and not replacement.is_empty()
             and _same(original,replacement), "native document parity " + id)
+
+    # The two playable chapters no longer use opaque WuxiaDataDocument blobs.
+    for name in ["rain_escort_prologue","river_watch"]:
+        var chapter: Dictionary = native.entries("chapter").get(name,{})
+        var historical: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(
+            "res://data/chapters/" + name + ".json"))
+        check(not chapter.is_empty() and chapter.get("encounter_id") == historical.get("encounter_id")
+            and chapter.get("next_chapter_id") == historical.get("next_chapter_id")
+            and chapter.get("scene",{}).get("background") == historical.get("scene",{}).get("background")
+            and _same(chapter.get("victory_events",[]),historical.get("victory_events",[])),
+            "typed chapter preserves gameplay fields " + name)
+        check(native.document("r25_" + name).is_empty(),
+            "obsolete chapter blob removed from production manifest " + name)
+    for pair in [["rain_escort_prologue_story","opening_story.json"],
+            ["river_watch_story","river_watch_story.json"]]:
+        var authored: Dictionary = native.entries("story").get(str(pair[0]),{})
+        var historical: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(
+            "res://data/" + str(pair[1])))
+        check(not authored.is_empty() and _same(authored.get("cinematic",[]),
+            historical.get("cinematic",[])) and authored.get("entry_node") == historical.get("entry_node")
+            and authored.get("dialogues",[]).size() == historical.get("dialogues",[]).size(),
+            "typed story preserves pacing and dialogue count " + str(pair[0]))
     var schools = Schools.new()
     var techniques = Techniques.new()
     var encounters = Scenarios.new()
@@ -71,7 +89,7 @@ func _run() -> void:
         "default encounter consumes Resource")
     check(chapters.load_error.is_empty() and chapters.get_chapter("river_watch").has("scene"),
         "default chapter consumes Resource")
-    check(story.load_error.is_empty() and story.data.get("id","") == "rain_escort_prologue",
+    check(story.load_error.is_empty() and story.data.get("id","") == "rain_escort_prologue_story",
         "default story consumes Resource")
     check(map.error.is_empty() and map.id == "rainy_bridge",
         "default grid map consumes Resource")

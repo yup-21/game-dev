@@ -1,4 +1,5 @@
 extends SceneTree
+const StoryFixture = preload("res://checks/story_test_helper.gd")
 ## Windowed result screen regression: the finish click must redraw its new controls.
 var failed: int = 0
 
@@ -18,7 +19,7 @@ func frames() -> void:
 func run() -> void:
 	var session = root.get_node("GameSession")
 	session.start_new_game()
-	session.record_story_event("obtain_fragment")
+	StoryFixture.finish_prologue(session)
 	if not session.begin_encounter():
 		check(false,"story encounter initializes")
 		quit(1)

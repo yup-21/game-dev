@@ -23,9 +23,9 @@ func _run() -> void:
     check(load("res://opening.tscn") is PackedScene
         and load("res://battle_hd2d.tscn") is PackedScene,
         "player opening and battle scenes remain valid")
-    check(load("res://battle.tscn") is PackedScene
-        and load("res://party_battle.tscn") is PackedScene,
-        "historical regression scenes remain loadable")
+    for obsolete in ["res://battle.tscn", "res://party_battle.tscn",
+            "res://scripts/battle_view.gd", "res://scripts/party_battle_view.gd"]:
+        check(not FileAccess.file_exists(obsolete), "obsolete view removed: " + obsolete)
     var native = Native.new()
     check(native.load_error.is_empty()
         and native.document("r25_school_forms").has("schools")

@@ -5,6 +5,7 @@ extends WuxiaContentDefinition
 @export var story: Resource
 @export var encounter_id: String = ""
 @export var next_chapter_id: String = ""
+@export_range(0, 100000, 1) var chapter_order: int = 100
 @export var scene: Resource
 @export var requirements: Array[Resource] = []
 @export var victory_events: Array[Resource] = []
@@ -40,6 +41,6 @@ func to_record() -> Dictionary:
         return {}
     return {"schema_version":schema_version,"id":content_id,
         "story_path":story.resource_path,"story_id":story.content_id,
-        "encounter_id":encounter_id,
+        "encounter_id":encounter_id,"order":chapter_order,
         "next_chapter_id":next_chapter_id,"scene":scene_record,
         "requirements":gates,"victory_events":win,"defeat_events":lose}

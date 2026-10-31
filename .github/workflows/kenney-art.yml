@@ -7,7 +7,8 @@ on:
   pull_request:
     paths:
       - 'demos/changfeng-battle/assets/**'
-      - 'demos/changfeng-battle/scripts/battle_art.gd'
+      - 'demos/changfeng-battle/scripts/hd2d_art_catalog.gd'
+      - 'demos/changfeng-battle/scripts/fallback_assets.gd'
       - 'demos/changfeng-battle/scripts/opening_flow.gd'
       - 'demos/changfeng-battle/checks/test_kenney_assets.gd'
       - '.github/workflows/kenney-art.yml'

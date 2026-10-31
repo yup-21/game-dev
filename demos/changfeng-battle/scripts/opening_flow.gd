@@ -4,6 +4,7 @@ extends Node2D
 const Story = preload("res://scripts/opening_story.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const RoleSprite = preload("res://scripts/opening_role_sprite.gd")
+const Fallback = preload("res://scripts/fallback_assets.gd")
 ## Only player-facing combat scene. Legacy battle demos remain for regression tests.
 const ACTIVE_BATTLE_SCENE := "res://battle_hd2d.tscn"
 const PAPER = Color("eee9dc")
@@ -229,7 +230,6 @@ func _sync_story_events() -> void:
 		message="剧情事件配置错误，请检查章节数据"
 		message_left=4.0
 		push_error(message)
-	if story.obtained_fragment: session.record_story_event("obtain_fragment")
 	story.complete_if_ready(session.flags)
 
 func _change_scene(path: String) -> void:
@@ -558,12 +558,12 @@ func _load_temple_background() -> void:
 		if _painted_content(original):
 			temple_backdrop = original
 	if temple_backdrop == null:
-		# A visible, previously shipped HD painterly scene is better than
-		# silently drawing an opaque white WebP as the first act.
-		temple_backdrop = ArtCatalog.scenery("mountain")
+		# Missing or blank artwork uses the dedicated original placeholder.
+		# Never substitute another chapter's painting.
+		temple_backdrop = Fallback.SCENE
 		temple_uses_fallback = true
 		push_warning("First-act painting is empty or unavailable: " + background_path
-			+ "; using bundled illustrated scene fallback.")
+			+ "; using dedicated default scene.")
 	if not _painted_content(temple_backdrop):
 		push_error("No nonblank illustrated background is available for the first act")
 
@@ -583,7 +583,7 @@ func _build_temple_picture() -> void:
 	temple_picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	temple_picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	temple_picture.z_index = -100
-	temple_picture.modulate = Color(0.75,0.83,0.87) if temple_uses_fallback else Color.WHITE
+	temple_picture.modulate = Color.WHITE
 	temple_picture.visible = false
 	add_child(temple_picture)
 
