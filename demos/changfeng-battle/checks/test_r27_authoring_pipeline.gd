@@ -50,12 +50,13 @@ func _run() -> void:
     check(not MapBake.new(blocked_path).error.is_empty(),
         "map load rejects markers overlapping collision polygons")
     var assets = Assets.new()
-    check(assets.load_error.is_empty() and assets.definitions.size() >= 15,
+    check(assets.load_error.is_empty() and assets.definitions.size() >= 16,
         "original character art bindings join native registry: " + assets.load_error)
     for pair in [["gu_qingshuang","portrait"],["gu_qingshuang","pose_sheet"],
         ["green_wanderer","pose_sheet"],["black_blade","pose_sheet"],
         ["night_assassin","pose_sheet"],["escort_elder","portrait"],
-        ["escort_elder","static_pose"],["river_messenger","pose_sheet"]]:
+        ["escort_elder","static_pose"],["river_messenger","pose_sheet"],
+        ["pursuer_captain","portrait"]]:
         var record: Dictionary = assets.record_for_character(pair[0],pair[1])
         check(not record.is_empty() and record.get("rights","") == "owner_review_required"
             and record.get("status","") == "candidate"
