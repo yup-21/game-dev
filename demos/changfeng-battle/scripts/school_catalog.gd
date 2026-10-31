@@ -84,20 +84,20 @@ func _fail(message: String) -> bool:
 	return false
 
 func _read(path: String) -> Dictionary:
-    var documents: Dictionary = {
-        "res://data/school_forms.json":"r25_school_forms",
-        "res://data/tingfeng_cards.json":"r25_tingfeng_cards",
-        "res://data/legacy_id_map.json":"r25_legacy_id_map"
-    }
-    if documents.has(path):
-        var native = NativeContent.new()
-        if not native.load_error.is_empty():
-            _fail(native.load_error)
-            return {}
-        var record: Dictionary = native.document(str(documents[path]))
-        if record.is_empty():
-            _fail("Native martial-arts document missing: " + path)
-        return record
+	var documents: Dictionary = {
+		"res://data/school_forms.json":"r25_school_forms",
+		"res://data/tingfeng_cards.json":"r25_tingfeng_cards",
+		"res://data/legacy_id_map.json":"r25_legacy_id_map"
+	}
+	if documents.has(path):
+		var native = NativeContent.new()
+		if not native.load_error.is_empty():
+			_fail(native.load_error)
+			return {}
+		var record: Dictionary = native.document(str(documents[path]))
+		if record.is_empty():
+			_fail("Native martial-arts document missing: " + path)
+		return record
 	if not FileAccess.file_exists(path):
 		_fail("目录文件不存在: " + path)
 		return {}
