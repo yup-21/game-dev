@@ -1,5 +1,0 @@
-{
-  "schema_version": 1, "id": "healing_powder", "name": "金疮药",
-  "description": "用于外伤的常备药粉。", "kind": "consumable", "stack_limit": 20,
-  "effects": [{ "type": "heal_hp", "amount": 5 }]
-}
