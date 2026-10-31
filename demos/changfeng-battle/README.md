@@ -8,7 +8,7 @@
 
 **已拆分的职责**：`BattleInputController` 处理 FREE/GRID 点击意图，`BattleCommandController` 做人类输入门控，`BattleCommandDispatcher` 统一投递请求；`BattleHandView`、`BattleHUDStatus`、`ChargeRail` 与 `CharacterCardUI` 只消费投影；`BattlePresentationCoordinator` 管理 animation ticket 的完成、跳过和取消；`BattleSpatialFacade` 提供统一几何查询。上述改动保留原有数值、卡牌、派生与敌方 AI。
 
-**素材覆盖边界**：角色 ID 2–5 使用已提交的24姿态动作图；沈长风（ID 0）和追兵首领（ID 1）仍有插画 atlas 回退。精细逐帧动画尚不完整，新增素材应替换角色表现资源，不应新增第二套规则战场。
+**素材覆盖边界**：现有角色仍优先使用已绑定的原创动作图、立绘和场景原画。未提供有效资源时使用 `assets/fallback/` 下独立的中性 SVG 占位图，不回退其他旧画面。精细逐帧动画仍可持续补充，而不新增第二套战斗规则。
 
 本轮长期重构分支的统一依据：[当前技术架构](docs/ARCHITECTURE.md) · [分阶段重构计划与回归矩阵](docs/REFACTOR_ROADMAP.md)。
 
@@ -147,14 +147,14 @@ R29 已删除旧双人/多人场景与专用 UI；规则回归转向 `BattleMode
 
 ```powershell
 New-Item -ItemType Directory -Path captures -Force | Out-Null
-& $env:GODOT_BIN --path . --log-file captures/hd2d-ui-render-run.log res://battle_hd2d.tscn
+& $env:GODOT_BIN --path . --log-file captures/hd2d-ui-render-run.log --script res://checks/capture_hd2d_unified_hud.gd
 ```
 
 图形检查前将 `GODOT_BIN` 指向 Godot 可执行文件。检查会自动退出。控制台检查日志生成于 `captures/checks/`，对局记录生成于 `checks/tingfeng-playthrough-results.json`，运行截图生成于 `captures/tingfeng-*.png`；这些生成文件均忽略提交。已选取的界面截图见 [docs/screenshots](docs/screenshots)，验证摘要见 [reports/validation.md](reports/validation.md)。
 
 ## 本地美术资源（CC0）
 
-本分支已将 Kenney 的 18 张 CC0 原始 PNG **实际提交到 `assets/kenney/`**，用于双人/多人战场的人物精灵、地形装饰、卡牌外框和序章菜单按钮。来源、逐组许可和固定上游版本详见 [素材来源与许可](docs/asset-licenses.md)。
+本分支已将 Kenney 的 18 张 CC0 原始 PNG **实际提交到 `assets/kenney/`**，作为独立 CC0 资源与导入回归素材；正式战斗视觉优先使用原生 AssetRegistry 中的现有原创素材。来源、逐组许可和固定上游版本详见 [素材来源与许可](docs/asset-licenses.md)。
 
 ```powershell
 .\checks\verify.ps1 -Stage ArtAssets
