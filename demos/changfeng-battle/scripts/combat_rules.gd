@@ -92,6 +92,11 @@ func raw_actions(actor_id: int) -> Array:
 				if state.is_hostile(actor_id,target.id) and target.hp_u>0 and _basic_attack_in_range(actor,target):
 					options.append({"kind":"BASIC_ATTACK","actor_id":actor_id,"target_id":target.id})
 		if not actor.basic_guard_used and actor.qi_u>=10000: options.append({"kind":"BASIC_GUARD","actor_id":actor_id})
+		if not actor.item_used:
+			var inventory = state.inventories.get(actor_id,null)
+			if inventory != null:
+				for item in inventory.available_consumables():
+					options.append({"kind":"USE_ITEM","actor_id":actor_id,"item_id":str(item.item_id)})
 		if not actor.pitch_used:
 			for uid in actor.hand: options.append({"kind":"PITCH_CARD","actor_id":actor_id,"card_uid":uid,"card_id":uid})
 	else:
@@ -120,7 +125,7 @@ func validate(req: Dictionary) -> Dictionary:
 	# Check types before comparisons: Variant Array == String is a runtime error in Godot.
 	var fields: Dictionary={"kind":TYPE_STRING,"actor_id":TYPE_INT,"battle_id":TYPE_STRING,
 		"expected_revision":TYPE_INT,"request_version":TYPE_INT,"request_id":TYPE_STRING,"action_id":TYPE_STRING,
-		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"attack_kind":TYPE_STRING,"spatial_mode":TYPE_STRING,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
+		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"attack_kind":TYPE_STRING,"spatial_mode":TYPE_STRING,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING,"item_id":TYPE_STRING}
 	for key in fields:
 		if req.has(key) and typeof(req[key])!=int(fields[key]): return failure("MALFORMED_REQUEST","请求字段类型错误："+str(key))
 	if not req.has("kind") or not req.has("actor_id"): return failure("MALFORMED_REQUEST","缺少行动或操作者")
@@ -150,7 +155,7 @@ func validate(req: Dictionary) -> Dictionary:
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
-		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id","school_id","spatial_mode"]:
+		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id","school_id","spatial_mode","item_id"]:
 			if normalized.get(key)!=o.get(key): matches=false
 		if matches:
 			canonical=o

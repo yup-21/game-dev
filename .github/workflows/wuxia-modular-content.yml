@@ -12,6 +12,8 @@ on:
       - 'demos/changfeng-battle/checks/test_inventory_equipment_runtime.gd'
       - 'demos/changfeng-battle/checks/test_modular_content_integration.gd'
       - 'demos/changfeng-battle/checks/test_wuxue_v3.gd'
+      - 'demos/changfeng-battle/checks/test_battle_consumables.gd'
+      - 'demos/changfeng-battle/checks/test_equipment_affixes.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -44,3 +46,7 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_inventory_equipment_runtime.gd
       - name: R15 cross-module content integration
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_modular_content_integration.gd
+      - name: R16 authoritative battle consumable commands
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_battle_consumables.gd
+      - name: R17 per-instance equipment affix contracts
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_equipment_affixes.gd

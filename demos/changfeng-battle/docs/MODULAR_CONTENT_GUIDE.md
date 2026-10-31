@@ -1,4 +1,4 @@
-# 模块化内容制作指南（R11–R15）
+# 模块化内容制作指南（R11–R17）
 
 本项目保持 **定义层 / 运行态 / 规则执行 / 表现层** 分离。添加内容应优先修改 JSON 资源与索引，不再修改 `BattleModel`、`CombatResolver`、`BattleHUDView`。
 
@@ -9,8 +9,8 @@
 | 角色 | `data/characters/index.json` + 角色 JSON | `CharacterRuntime` | `CharacterRegistry.battle_options()` |
 | 武学与招式 | `data/school_forms.json` | `CardSystem` / `ComboResolver` | `BattleModel` |
 | Buff / Debuff | `data/buffs/index.json` + 单独 JSON | `StatusSystem` | `StatModifierSystem` |
-| 装备 | `data/items/index.json` + 单独 JSON | `InventoryRuntime` 的 item UID / equipment | 开局 `modifier_sources` |
-| 消耗品 | 同一 `ItemCatalog` | `InventoryRuntime` 的 stack count | 返回 effects；战斗使用指令尚未接入 |
+| 装备与词条 | `data/items/index.json`、`data/affixes/index.json` + 单独 JSON | `InventoryRuntime` 的 item UID、affixes / equipment | 以 `equipment:slot` 与 `affix:slot:uid:id` 独立来源生成开局属性 |
+| 消耗品 | 同一 `ItemCatalog` | `InventoryRuntime` 的 stack count | `USE_ITEM` 通过 `BattleModel` 校验，`CombatResolver` 扣除并执行效果 |
 
 所有定义校验失败时返回错误，不得在失败目录中悄悄使用半套配置。
 
@@ -50,13 +50,28 @@
   "kind": "equipment",
   "slot": "weapon",
   "stack_limit": 1,
+  "affix_pool": ["keen_edge", "quickstep"],
+  "max_affixes": 1,
   "modifiers": [{ "stat": "attack", "op": "flat", "value": 1 }]
 }
 ```
 
 再把文件名加入 `data/items/index.json`。装备槽位目前为 `weapon`、`armor`、`accessory`。相同定义的多件装备各有独立 item UID；装备不会消耗持有的物品实例。
 
-消耗品通过 `effects` 描述 `heal_hp`、`gain_qi` 或 `add_shield`。**重要：** 目前 `InventoryRuntime.consume()` 只负责原子扣除并返回声明式效果，不能直接改动战斗气血、卡牌或回合状态。接入战斗时需要定义版本化 `USE_ITEM` 请求，由统一指令分发器校验费用、阶段、合法目标、动画及重放安全性后执行，避免消耗物品和战斗结算分离。
+词条单独注册在 `data/affixes/index.json`，定义包含 `id`、`name`、`allowed_slots` 和 `modifiers`，例如 `keen_edge.json`：
+```json
+{
+  "schema_version": 1, "id": "keen_edge", "name": "锐锋",
+  "allowed_slots": ["weapon"],
+  "modifiers": [{ "stat": "attack", "op": "flat", "value": 2 }]
+}
+```
+
+装备定义中的 `affix_pool` 限制可用词条，`max_affixes`（1–3）限制容量。装备实例默认没有随机词条，掉落、奖励或锻造系统可明确调用 `inventory.set_affixes(uid, ["keen_edge"])`，或使用 `inventory.reroll_affixes(uid, seed)` 进行**确定性**词条生成。两者均在战斗外调用；当前重掷不扣材料，正式锻造应由经济模块授权。重复词条、超容量及不匹配装备槽位会被拒绝，失败时不改变已有实例。词条经各自的 UID 来源叠加属性，卸下装备不留下残余加成。
+
+消耗品通过 `effects` 描述 `heal_hp`、`gain_qi` 或 `add_shield`。在每场战斗中，`CharacterRuntime.battle_build()` 将背包快照传入 `CharacterRegistry.battle_options()`，`BattleModel.reset()` 校验并复制为该场战斗的权威库存。仅当角色行动阶段、背包有库存、上一个演出已确认且该行动尚未用药时，`legal_actions()` 才会列出 `USE_ITEM`。HUD 的“药囊”按钮通过 `BattleCommandDispatcher` 提交带版本的 `item_id` 请求，`CombatRules` 检查权限及库存，`CombatResolver` 原子扣除一次并执行原有资源/护盾逻辑。重复、过期、伪造、越权操作无法消耗物品。
+
+当前消费目标仅限自身、每次 CTB 行动最多使用一件物品；治疗不超过气血上限，回气不超过内息上限。`battle.snapshot(observer_id).consumables` 只包含观察者本人库存，`battle.inventory_snapshot(actor_id)` 可在战斗后取得副本并由上层协调回写角色的常驻背包。**本轮不实施战斗中途存档，也不在战斗结算时自动回写剧情背包。**
 
 ## 角色构建与装备入场
 
@@ -90,4 +105,4 @@ var options = registry.battle_options(roster,
 - 旧 `GRID` 与 `FREE` 模式、CTB、牌组 12 张规则、连携次数和原有伤害逻辑不受内容数量变化影响。
 - 自定义角色可使用 `battle_actor_id: -1`，而本次战斗使用任意合法 `actor_id`。
 - 新美术路径限制为 `res://assets/`；正式导出时应验证动态路径资源包含在导出包中。
-- `checks/test_catalog_extensibility.gd`、`test_character_dynamic_identity.gd`、`test_status_modifiers.gd` 和 `test_inventory_equipment_runtime.gd` 是内容扩展的最低自动回归。
+- `checks/test_catalog_extensibility.gd`、`test_character_dynamic_identity.gd`、`test_status_modifiers.gd`、`test_inventory_equipment_runtime.gd`、`test_battle_consumables.gd` 和 `test_equipment_affixes.gd` 是内容扩展的最低自动回归。

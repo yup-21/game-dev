@@ -488,7 +488,8 @@ func _rebuild_actions() -> void:
         "PASS_REACTION": "按兵 · 交还响应",
         "PITCH_CARD": "弃牌 · 调息",
         "RESET_TECHNIQUE": "收招 · 复位",
-        "SWITCH_SCHOOL": "切换武学"
+        "SWITCH_SCHOOL": "切换武学",
+        "USE_ITEM": "使用物品"
     }
     var command_seen: Dictionary = {}
     var pitch_actions: Array = []
@@ -503,7 +504,7 @@ func _rebuild_actions() -> void:
         if kind == "SWITCH_SCHOOL":
             school_switch_available = true
             continue
-        var key := kind + ":" + str(action.get("card_uid", action.get("technique_id", "")))
+        var key := kind + ":" + str(action.get("item_id", action.get("card_uid", action.get("technique_id", ""))))
         if command_seen.has(key):
             continue
         command_seen[key] = true
@@ -511,6 +512,11 @@ func _rebuild_actions() -> void:
         command_button.text = str(commands[kind])
         if kind == "RESET_TECHNIQUE":
             command_button.text = "复位 · " + str(action.get("technique_id", ""))
+        if kind == "USE_ITEM":
+            for item in snap.get("consumables",[]):
+                if str(item.get("item_id","")) == str(action.get("item_id","")):
+                    command_button.text = "药囊 · %s ×%d" % [str(item.name),int(item.count)]
+                    break
         UITheme.apply_button(command_button)
         command_button.pressed.connect(_submit_legal.bind(action))
         command_actions.add_child(command_button)
@@ -627,7 +633,7 @@ func _selected_actions() -> Array:
 
 func _submit_legal(action: Dictionary) -> void:
     var params: Dictionary = {}
-    for key in ["card_uid", "card_id", "usage_id", "technique_id", "node_id", "target_cell", "target_id", "link_id", "school_id"]:
+    for key in ["card_uid", "card_id", "usage_id", "technique_id", "node_id", "target_cell", "target_id", "link_id", "school_id", "item_id"]:
         if action.has(key):
             params[key] = action[key]
     _clear_selection()

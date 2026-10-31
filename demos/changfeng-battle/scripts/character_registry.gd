@@ -3,6 +3,7 @@ extends RefCounted
 ## default attributes/learned arts live here; BattleModel owns mutable state.
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
+const Inventory = preload("res://scripts/inventory_runtime.gd")
 const BASE := "res://data/characters/"
 var profiles: Dictionary = {}
 var by_actor: Dictionary = {}
@@ -108,7 +109,7 @@ func battle_options(roster: Array, character_ids: Dictionary, builds: Dictionary
     ## builds supply growth, learned schools, equipment and modifiers.
     var output: Dictionary = {"character_ids": {}, "schools": {}, "attributes": {},
         "passives": {}, "techniques": {}, "character_names": {}, "learned_schools": {},
-        "modifier_sources": {}, "equipment": {}}
+        "modifier_sources": {}, "equipment": {}, "equipment_affixes": {}, "inventories": {}}
     if not roster.is_empty():
         output["combatants"] = []
     var schools = SchoolCatalog.new()
@@ -142,6 +143,17 @@ func battle_options(roster: Array, character_ids: Dictionary, builds: Dictionary
                 if not Modifiers.valid_spec(spec): return {}
         var equipment: Variant = build.get("equipment",{})
         if not equipment is Dictionary: return {}
+        # A battle owns a validated copy; the mutable overworld inventory is never shared.
+        if build.has("inventory"):
+            var checked_inventory = Inventory.new()
+            if not checked_inventory.restore(build.inventory): return {}
+            if checked_inventory.equipment_definitions() != equipment: return {}
+            if checked_inventory.modifier_sources() != sources:
+                # Sources may also contain permanent growth modifiers.
+                for key in checked_inventory.modifier_sources():
+                    if sources.get(key) != checked_inventory.modifier_sources()[key]: return {}
+            output.inventories[id] = checked_inventory.snapshot()
+            output.equipment_affixes[id] = checked_inventory.equipment_affixes()
         output.character_ids[id] = str(profile.id)
         output.schools[id] = selected
         output.learned_schools[id] = learned.duplicate(true)

@@ -19,6 +19,8 @@ const Resolver = preload("res://scripts/combat_resolver.gd")
 const Techniques = preload("res://scripts/technique_runtime.gd")
 const Conditions = preload("res://scripts/condition_evaluator.gd")
 const Abilities = preload("res://scripts/ability_system.gd")
+const ItemCatalog = preload("res://scripts/item_catalog.gd")
+const Inventory = preload("res://scripts/inventory_runtime.gd")
 const COLS: int=15
 const ROWS: int=10
 var state
@@ -145,6 +147,28 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		state.phase="FINISHED"
 		audit.emit("RULE_ERROR",{"text":cards.load_error})
 		return
+	# The battle owns its inventory copies. Invalid item data fails before any
+	# opening draw or action can consume resources.
+	var raw_inventories: Variant = options.get("inventories",{})
+	var item_catalog = ItemCatalog.new()
+	if not raw_inventories is Dictionary or not item_catalog.load_error.is_empty():
+		state.outcome="defeat"
+		state.mode="FINISHED"
+		state.phase="FINISHED"
+		audit.emit("RULE_ERROR",{"text":"Invalid inventory options or item catalog: "+item_catalog.load_error})
+		_busy=false
+		return
+	for combatant in state.actors:
+		var owned = Inventory.new(item_catalog)
+		var initial: Variant = raw_inventories.get(combatant.id,{})
+		if not initial is Dictionary or (not initial.is_empty() and not owned.restore(initial)):
+			state.outcome="defeat"
+			state.mode="FINISHED"
+			state.phase="FINISHED"
+			audit.emit("RULE_ERROR",{"text":"Invalid inventory for actor %d" % combatant.id})
+			_busy=false
+			return
+		state.inventories[combatant.id]=owned
 	for actor in state.actors:
 		# Identity and starting character build are injected once by the
 		# CharacterRegistry; CombatantState remains the mutable authority.
@@ -160,6 +184,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		var equipment: Variant = options.get("equipment",{}).get(actor.id,{})
 		if equipment is Dictionary:
 			actor.equipment = equipment.duplicate(true)
+		actor.equipment_affixes = state.inventories[actor.id].equipment_affixes()
 		var learned=options.get("techniques",{}).get(actor.id,{})
 		# Profiled actors have explicitly learned techniques; old unprofiled
 		# test fixtures retain the original automatic tutorial stance.
@@ -261,13 +286,21 @@ func snapshot(observer_id: int = 0) -> Dictionary:
 		clash={"priority_actor_id":state.clash.priority_actor_id,"consecutive_passes":state.clash.consecutive_passes,"counts":state.clash.counts.duplicate(true),"stack":[]}
 		for link in state.clash.stack:
 			clash.stack.append({"id":link.id,"link_id":link.id,"actor_id":link.actor_id,"definition_id":link.definition_id,"usage_id":link.usage_id,"name":link.name,"canceled":link.canceled,"resolved":link.resolved})
-	return {"profile":"tingfeng","mode":state.mode,"phase":state.phase,"global_tick":state.global_tick,"action_no":state.action_no,
+	var own_inventory = state.inventories.get(observer_id,null)
+	return {"inventory":{} if own_inventory==null else own_inventory.snapshot(),
+		"consumables":[] if own_inventory==null else own_inventory.available_consumables(),
+		"profile":"tingfeng","mode":state.mode,"phase":state.phase,"global_tick":state.global_tick,"action_no":state.action_no,
 		"school_catalog":school_options(),
 		"active_id":state.active_id,"reaction":state.reaction_window,"responder_id":rules.responder_id(),
 		"battle_id":state.battle_id,"revision":state.revision,"request_version":state.revision,"event_seq":state.event_seq,
 		"animation_pending":state.animation_pending,"ticket":state.animation_ticket,"seed":state.seed,"round_no":state.round_no,
 		"outcome":state.outcome,"spatial_mode":state.spatial_mode,"winner_id":state.winner_id,"winning_team":state.winning_team,"terrain":state.terrain.duplicate(true),"actors":actors,"hand":hand,
 		"attack":state.attack.duplicate(true),"clash":clash,"logs":state.logs.duplicate(true),"phase_history":state.phase_history.duplicate(true)}
+
+## Read-only copy for transferring battle consumptions back to overworld runtime.
+func inventory_snapshot(actor_id: int) -> Dictionary:
+	var inventory = state.inventories.get(actor_id,null)
+	return {} if inventory == null else inventory.snapshot()
 
 func school_options() -> Array:
 	return cards.catalog.options() if cards!=null and cards.catalog!=null else []

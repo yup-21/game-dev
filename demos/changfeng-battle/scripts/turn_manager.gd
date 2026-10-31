@@ -52,6 +52,7 @@ func begin_next_action() -> void:
 			a.basic_attack_used=false
 			a.basic_guard_used=false
 			a.pitch_used=false
+			a.item_used=false
 			a.combo_used.clear()
 			a.attack_history.clear()
 			a.card_uses.clear()

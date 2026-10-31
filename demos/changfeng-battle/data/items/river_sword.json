@@ -1,5 +1,6 @@
 {
   "schema_version": 1, "id": "river_sword", "name": "江行长剑",
   "description": "旧制精钢长剑。", "kind": "equipment", "slot": "weapon", "stack_limit": 1,
+  "affix_pool": ["keen_edge", "quickstep"], "max_affixes": 1,
   "modifiers": [{ "stat": "attack", "op": "flat", "value": 2 }]
 }

@@ -118,6 +118,17 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 					play_card(actor,strike)
 				"USE_ABILITY":
 					play_ability(actor,strike)
+		"USE_ITEM":
+			# The validated stock is spent exactly once in the authoritative resolver.
+			# Failed or replayed commands never reach this branch.
+			var inventory = state.inventories.get(actor.id,null)
+			var consumed: Dictionary = inventory.consume(str(action.item_id))
+			assert(bool(consumed.get("ok",false)))
+			actor.item_used=true
+			var definition: Dictionary = inventory.catalog.get_item(str(action.item_id))
+			emit("ITEM_USED",{"actor_id":actor.id,"item_id":str(action.item_id),
+				"name":str(definition.name),"text":"%s 使用 %s" % [actor.name,str(definition.name)]})
+			apply_effects(actor.id,consumed.effects)
 		"BASIC_ATTACK":
 			actor.basic_attack_used=true
 			declare_attack(actor.id,"","basic","basic",int(action.target_id),1,"thrust",0,[])
@@ -387,6 +398,7 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				if not path.is_empty() and path.size()<=int(effect.max_distance): move_actor(source,choice.target_cell,path)
 			"add_shield": add_shield(target_id,float(effect.amount),int(effect.get("expires_after_global_ticks",100)))
 			"gain_qi": gain_qi(target_id,float(effect.amount))
+			"heal_hp": heal_hp(target_id,float(effect.amount))
 			"modify_pending_damage":
 				if state.attack.is_empty(): continue
 				var delta: int=int(effect.get("flat_delta",0))
@@ -502,6 +514,13 @@ func add_shield(actor_id: int,amount: float,duration: int) -> void:
 	a.shield_expiry=maxi(a.shield_expiry,state.global_tick+duration)
 	emit("SHIELD",{"actor_id":actor_id,"amount":amount,"text":"%s 护体 +%s" % [a.name,str(amount)]})
 	emit("SHIELD_ADDED",{"actor_id":actor_id,"amount":amount})
+
+func heal_hp(actor_id: int,amount: float) -> void:
+	var a=state.get_actor(actor_id)
+	if a==null or a.hp_u<=0: return
+	var before: int=a.hp_u
+	a.hp_u=mini(a.max_hp_u,a.hp_u+roundi(amount*UNIT))
+	emit("HP_HEALED",{"actor_id":actor_id,"amount":float(a.hp_u-before)/UNIT})
 
 func gain_qi(actor_id: int,amount: float) -> void:
 	var a=state.get_actor(actor_id)

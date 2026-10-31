@@ -1,0 +1,5 @@
+{
+  "schema_version": 1, "id": "quickstep", "name": "轻捷",
+  "allowed_slots": ["weapon", "armor", "accessory"],
+  "modifiers": [{ "stat": "AGI", "op": "flat", "value": 1 }]
+}

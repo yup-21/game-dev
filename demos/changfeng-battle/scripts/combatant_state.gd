@@ -14,6 +14,7 @@ var attributes: Dictionary = {"STR":10,"AGI":10,"CON":10,"MND":10}
 ## Stable source token -> array of declarative stat modifications.
 var modifier_sources: Dictionary = {}
 var equipment: Dictionary = {}
+var equipment_affixes: Dictionary = {}
 var stats: Dictionary = {}
 var passives: Dictionary = {"insight":0,"conceal":0}
 var learned_schools: Array = ["tingfeng"]
@@ -34,6 +35,7 @@ var normal_moves_used: int = 0
 var basic_attack_used: bool = false
 var basic_guard_used: bool = false
 var pitch_used: bool = false
+var item_used: bool = false
 var hand: Array = []
 var draw_pile: Array = []
 var discard_pile: Array = []
@@ -68,7 +70,7 @@ func public_data(_include_hand: bool = false) -> Dictionary:
 		"school_id":school_id,"school_name":school_name,"learned_schools":learned_schools.duplicate(),
 		"shield":shield,"gauge":gauge,"charge_speed":stats.get("charge_speed",100),
 		"attributes":attributes.duplicate(true),"statuses":statuses.duplicate(true),
-		"equipment":equipment.duplicate(true),
+		"equipment":equipment.duplicate(true),"equipment_affixes":equipment_affixes.duplicate(true),
 		"turns_started":turns_started,"normal_moves_used":normal_moves_used,"move_budget":stats.get("move_budget",2),
-		"basic_attack_used":basic_attack_used,"basic_guard_used":basic_guard_used,"pitch_used":pitch_used,
+		"basic_attack_used":basic_attack_used,"basic_guard_used":basic_guard_used,"pitch_used":pitch_used,"item_used":item_used,
 		"hand_count":hand.size(),"draw_count":draw_pile.size(),"discard_count":discard_pile.size(),"resolving_count":resolving.size(),"exile_count":exile_pile.size()}

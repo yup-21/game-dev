@@ -1,0 +1,5 @@
+{
+  "schema_version": 1, "id": "keen_edge", "name": "锐锋",
+  "allowed_slots": ["weapon"],
+  "modifiers": [{ "stat": "attack", "op": "flat", "value": 2 }]
+}

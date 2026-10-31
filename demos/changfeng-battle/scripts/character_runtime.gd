@@ -54,7 +54,8 @@ func battle_build() -> Dictionary:
         sources[source] = growth_sources[source].duplicate(true)
     return {"character_id":character_id,"attributes":attributes.duplicate(true),
         "school_id":school_id,"learned_schools":learned_schools.duplicate(true),
-        "modifier_sources":sources,"equipment":inventory.equipment_definitions()}
+        "modifier_sources":sources,"equipment":inventory.equipment_definitions(),
+        "equipment_affixes":inventory.equipment_affixes(),"inventory":inventory.snapshot()}
 
 func snapshot() -> Dictionary:
     return {"schema_version":1,"character_id":character_id,
