@@ -65,7 +65,13 @@ static func portrait(speaker: String) -> Texture2D:
     return portrait_for_character(str(profile.get("id","")))
 
 static func scenery(name: String) -> Texture2D:
-    return SCENES.get(name, null) as Texture2D
+    var ids: Dictionary = {
+        "mountain":"r27_scenery_mountain",
+        "snow":"r27_scenery_snow",
+        "rainy_bridge":"r27_scenery_rainy_bridge"
+    }
+    var native: Texture2D = _asset_registry.texture(str(ids.get(name,"")))
+    return native if native != null else SCENES.get(name,null) as Texture2D
 
 static func _pale_matte(color: Color) -> bool:
     if color.a < 0.04:

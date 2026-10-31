@@ -50,7 +50,7 @@ func _run() -> void:
     check(not MapBake.new(blocked_path).error.is_empty(),
         "map load rejects markers overlapping collision polygons")
     var assets = Assets.new()
-    check(assets.load_error.is_empty() and assets.definitions.size() >= 16,
+    check(assets.load_error.is_empty() and assets.definitions.size() >= 19,
         "original character art bindings join native registry: " + assets.load_error)
     for pair in [["gu_qingshuang","portrait"],["gu_qingshuang","pose_sheet"],
         ["green_wanderer","pose_sheet"],["black_blade","pose_sheet"],
@@ -64,6 +64,10 @@ func _run() -> void:
             "art has Resource binding, import and pending rights: " + str(pair))
     check(Art.sheet_for_character("green_wanderer") != null,
         "illustrated actor factory uses manifest-linked pose sheet")
+    for scenery_id in ["mountain","snow","rainy_bridge"]:
+        check(assets.texture("r27_scenery_" + scenery_id) != null
+            and Art.scenery(scenery_id) != null,
+            "historical scene art resolves via native asset registry: " + scenery_id)
     var config := ConfigFile.new()
     check(config.load("res://addons/wuxia_map_editor/plugin.cfg") == OK
         and config.get_value("plugin","script","") == "plugin.gd",
