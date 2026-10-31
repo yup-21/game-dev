@@ -40,7 +40,7 @@ func start_new_game() -> void:
         var id: String = str(actor.get("character_id",""))
         if not id.is_empty() and not characters.has(id):
             var character = CharacterRuntime.new(id)
-            if not character.load_error.is_empty():
+            if character.load_error.is_empty():
                 characters[id] = character
     ## Deterministic demo inventory/equipment seed. New chapters do not reseed.
     var hero = characters.get("shen_changfeng",null)
