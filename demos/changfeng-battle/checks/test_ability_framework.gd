@@ -22,16 +22,16 @@ func check_hold_durations(model) -> void:
 	var runtime = model.techniques
 	var definition: Dictionary = runtime.definitions.test_chain
 	var original: Variant = definition.hold_own_actions
-	check(original is float,"fixture hold duration is a JSON number")
-	var json_values: Array = JSON.parse_string("[0,2,21,10001,1e20]")
+	check(original is int,"typed hold duration is an integer")
+	var json_values: Array = [0.0, 2.0, 21.0, 10001.0, 1e20]
 	var cases: Array = [
 		[0,true,"integer zero"],
 		[2,true,"integer two"],
-		[json_values[0],true,"JSON zero"],
-		[json_values[1],true,"JSON two"],
-		[json_values[2],true,"JSON value above retention limit"],
-		[json_values[3],true,"JSON large duration without an upper limit"],
-		[json_values[4],true,"JSON duration above int64 range"],
+		[json_values[0],true,"float zero"],
+		[json_values[1],true,"float two"],
+		[json_values[2],true,"float value above retention limit"],
+		[json_values[3],true,"float large duration without an upper limit"],
+		[json_values[4],true,"floating-point duration above int64 range"],
 		[1000000000000,true,"large integer duration"],
 		[2.5,false,"fraction"],
 		[-0.5,false,"negative fraction"],
@@ -60,7 +60,7 @@ func check_hold_durations(model) -> void:
 	actor.technique_states.test_chain.last_used_action = actor.turns_started
 	actor.turns_started += 1
 	runtime.on_action_start(actor)
-	check(actor.technique_states.test_chain.node=="two" and actor.technique_states.test_chain.last_used_action==original_turns,"JSON duration above int64 range does not expire early")
+	check(actor.technique_states.test_chain.node=="two" and actor.technique_states.test_chain.last_used_action==original_turns,"floating-point duration above int64 range does not expire early")
 	actor.technique_states.test_chain = original_state
 	actor.turns_started = original_turns
 	definition.hold_own_actions = original
@@ -82,7 +82,7 @@ func finish_clash(model) -> void:
 
 func run() -> void:
 	var model = Model.new()
-	model.reset(2026,0,"tingfeng",{"technique_catalog_path":"res://checks/fixtures/technique_graph.json","techniques":{0:{"test_chain":3}}})
+	model.reset(2026,0,"tingfeng",{"technique_catalog_path":"res://checks/fixtures/technique_graph.tres","techniques":{0:{"test_chain":3}}})
 	if not check(model.state.outcome=="playing","load equipped graph"):
 		finish()
 		return
@@ -103,7 +103,7 @@ func run() -> void:
 	finish_clash(model)
 	check(a.qi_u==0 and a.technique_states.test_chain.node=="one","third completes and returns to entry")
 	var m2 = Model.new()
-	m2.reset(2026,0,"tingfeng",{"technique_catalog_path":"res://checks/fixtures/technique_graph.json","techniques":{0:{"test_chain":1}}})
+	m2.reset(2026,0,"tingfeng",{"technique_catalog_path":"res://checks/fixtures/technique_graph.tres","techniques":{0:{"test_chain":1}}})
 	if not check(m2.state.outcome=="playing","load rank one graph"):
 		finish()
 		return

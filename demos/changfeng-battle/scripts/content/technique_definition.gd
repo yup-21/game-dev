@@ -34,5 +34,5 @@ func to_record() -> Dictionary:
     }
     if not display_name.is_empty(): result["name"] = display_name
     if auto_equip: result["auto_equip"] = true
-    if hold_own_actions != 2: result["hold_own_actions"] = hold_own_actions
+    result["hold_own_actions"] = hold_own_actions
     return result

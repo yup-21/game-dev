@@ -15,6 +15,9 @@ extends Resource
 @export var cost_qi: int = 0
 @export_enum("self", "enemy_actor", "reachable_cell", "pending_root_attack",
     "opponent_unresolved_response_link") var target_kind: String = "self"
+@export_range(0, 128, 1) var target_max_distance: int = 0
+@export var attack_route: String = ""
+@export_range(0, 128, 1) var attack_range: int = 0
 @export var effects: Array[Resource] = []
 @export var when: Resource
 
@@ -33,6 +36,9 @@ func to_record() -> Dictionary:
         "timing": timing, "cost": {"qi": cost_qi},
         "target": {"kind": target_kind}, "effects": converted
     }
+    if target_max_distance > 0: result["target"]["max_distance"] = target_max_distance
+    if not attack_route.is_empty():
+        result["attack_profile"] = {"route":attack_route, "range":attack_range}
     if not stage.is_empty(): result["stage"] = stage
     if not display_name.is_empty(): result["name"] = display_name
     if not available: result["available"] = false
