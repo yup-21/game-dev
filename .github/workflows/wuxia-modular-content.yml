@@ -63,6 +63,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r25_native_inventory.gd
       - name: R25 native production document parity
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r25_native_documents.gd
+      - name: R26 transactional story recruitment and native encounter
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r26_story_recruitment.gd
       - name: R24 complete content-only vertical slice
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_content_closure.gd
       - name: R11 extensible catalogs and combo counts

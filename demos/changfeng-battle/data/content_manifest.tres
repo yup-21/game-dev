@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=61 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=64 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -69,6 +69,10 @@
 [ext_resource type="Resource" path="res://data/native/documents/rain_escort_prologue.tres" id="59_r25"]
 [ext_resource type="Resource" path="res://data/native/documents/river_watch.tres" id="60_r25"]
 
+[ext_resource type="Resource" path="res://data/native/stories/r26_recruitment_trial.tres" id="61_r26"]
+[ext_resource type="Resource" path="res://data/native/chapters/r26_recruitment_trial.tres" id="62_r26"]
+[ext_resource type="Resource" path="res://data/native/encounters/r26_recruitment_trial_battle.tres" id="63_r26"]
+
 [resource]
 script = ExtResource("1_manifest")
 schools = Array[Resource]([ExtResource("16_r24")])
@@ -77,10 +81,10 @@ skills = Array[Resource]([ExtResource("3_probe"), ExtResource("4_follow"), ExtRe
 techniques = Array[Resource]([ExtResource("5_guard"), ExtResource("20_r24")])
 effect_handlers = Array[Resource]([ExtResource("6_echo")])
 
-stories = Array[Resource]([ExtResource("7_story"), ExtResource("26_r24")])
-chapters = Array[Resource]([ExtResource("8_chapter"), ExtResource("27_r24")])
+stories = Array[Resource]([ExtResource("7_story"), ExtResource("26_r24"), ExtResource("61_r26")])
+chapters = Array[Resource]([ExtResource("8_chapter"), ExtResource("27_r24"), ExtResource("62_r26")])
 quests = Array[Resource]([ExtResource("9_quest"), ExtResource("28_r24")])
-encounters = Array[Resource]([ExtResource("10_encounter"), ExtResource("29_r24")])
+encounters = Array[Resource]([ExtResource("10_encounter"), ExtResource("29_r24"), ExtResource("63_r26")])
 assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene"), ExtResource("31_r24"), ExtResource("32_r24"), ExtResource("33_r24"), ExtResource("34_r24")])
 maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24")])
 buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])

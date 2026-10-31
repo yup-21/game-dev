@@ -41,7 +41,7 @@ func start_new_game(entry_chapter_id: String = "") -> void:
     var chapter: Dictionary = chapter_definition()
     var factory = CharacterFactory.new()
     for actor in director.encounter(str(chapter.get("encounter_id",""))).get("combatants",[]):
-        if int(actor.get("team_id",-1)) != 0:
+        if int(actor.get("team_id",-1)) != 0 or bool(actor.get("recruit_at_story",false)):
             continue
         var id: String = str(actor.get("character_id",""))
         if not id.is_empty() and not characters.has(id):

@@ -61,6 +61,9 @@ func _register_entry(entry: Variant) -> bool:
 		actor.id=int(actor.id)
 		actor.team_id=int(actor.team_id)
 		actor.cell=[int(cell[0]),int(cell[1])]
+		if actor.has("recruit_at_story") and (actor.get("recruit_at_story") != true or int(actor.team_id) != 0 or not actor.has("character_id")):
+			load_error="Invalid story recruitment actor"
+			return false
 		if actor.has("character_id"):
 			var definition: Dictionary=characters.get_profile(str(actor.character_id))
 			if definition.is_empty() or str(actor.get("name",""))!=str(definition.name):
