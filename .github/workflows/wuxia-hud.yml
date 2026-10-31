@@ -57,6 +57,7 @@ on:
       - 'demos/changfeng-battle/scripts/battle_state.gd'
       - 'demos/changfeng-battle/checks/test_actor_facing.gd'
       - 'demos/changfeng-battle/scripts/character_registry.gd'
+      - 'demos/changfeng-battle/checks/test_character_dynamic_identity.gd'
       - 'demos/changfeng-battle/checks/test_multi_school_switch.gd'
       - 'demos/changfeng-battle/scripts/character_card_ui.gd'
       - 'demos/changfeng-battle/scripts/hd2d_art_catalog.gd'
@@ -195,6 +196,8 @@ jobs:
           godot --headless --path demos/changfeng-battle --script res://checks/test_tingfeng.gd
           godot --headless --path demos/changfeng-battle --script res://checks/test_ability_framework.gd
           godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
+      - name: Prove dynamic actor IDs and unbound character definitions
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_character_dynamic_identity.gd
       - name: Validate character registry, profile bindings and live role dossier
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_character_registry.gd
       - name: Verify multiple learned schools, switching, card-zone integrity and UI

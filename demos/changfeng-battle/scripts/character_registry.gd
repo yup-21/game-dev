@@ -8,7 +8,7 @@ var by_actor: Dictionary = {}
 var by_name: Dictionary = {}
 var load_error: String = ""
 
-func _init(index_path: String = BASE + "index.json") -> void:
+func _init(index_path: String = BASE + "index.json", definition_root: String = BASE) -> void:
     if not FileAccess.file_exists(index_path):
         load_error = "Character index missing: " + index_path
         return
@@ -24,7 +24,7 @@ func _init(index_path: String = BASE + "index.json") -> void:
         if not entry is String or entry.contains("/") or entry.contains("..") or not entry.ends_with(".json"):
             load_error = "Unsafe character file path"
             return
-        var path: String = BASE + entry
+        var path: String = definition_root + entry
         if not FileAccess.file_exists(path):
             load_error = "Missing character definition: " + entry
             return
@@ -56,16 +56,14 @@ func _valid(d: Variant, schools) -> bool:
     var actor_id: int = int(d.battle_actor_id)
     if actor_id < -1 or actor_id > 1023:
         return false
-    if actor_id >= 0 and schools.get_school(str(d.school_id)).is_empty():
-        return false
-    if actor_id < 0 and not str(d.school_id).is_empty():
+    if not str(d.school_id).is_empty() and schools.get_school(str(d.school_id)).is_empty():
         return false
     var learned: Variant = d.get("learned_schools",[])
     if not learned is Array:
         return false
-    if actor_id >= 0 and (learned.is_empty() or not learned.has(str(d.school_id))):
+    if not str(d.school_id).is_empty() and (learned.is_empty() or not learned.has(str(d.school_id))):
         return false
-    if actor_id < 0 and not learned.is_empty():
+    if str(d.school_id).is_empty() and not learned.is_empty():
         return false
     var seen: Dictionary = {}
     for school_id in learned:
@@ -114,7 +112,7 @@ func battle_options(roster: Array, character_ids: Dictionary) -> Dictionary:
     for actor_id in character_ids:
         var id: int = int(actor_id)
         var profile: Dictionary = get_profile(str(character_ids[actor_id]))
-        if profile.is_empty() or int(profile.battle_actor_id) != id or str(profile.school_id).is_empty():
+        if profile.is_empty() or str(profile.school_id).is_empty():
             return {}
         output.character_ids[id] = str(profile.id)
         output.schools[id] = str(profile.school_id)

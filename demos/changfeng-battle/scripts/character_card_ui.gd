@@ -147,7 +147,7 @@ func open_actor(battle_model, id: int) -> bool:
     bio_label.text = str(definition.biography) + "\n\n性情 · " + str(definition.personality)
     portrait.texture = Art.portrait_for_character(str(definition.id))
     var frame := AtlasTexture.new()
-    var sheet: Texture2D = Art.sheet_for_actor(id,actor.team_id!=0)
+    var sheet: Texture2D = Art.sheet_for_character(str(definition.id),actor.team_id!=0)
     frame.atlas = sheet
     frame.region = Rect2(0,0,sheet.get_width()/6.0,sheet.get_height()/4.0)
     preview.texture = frame

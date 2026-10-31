@@ -30,9 +30,11 @@ func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
     var id := int(actor.id)
     if actor_nodes.has(id):
         return
-    var sprite: Sprite2D = illustrated_map.add_actor(actor,
-        ArtCatalog.sheet_for_actor(id, int(actor.get("team_id", 0)) != 0))
-    sprite.set_meta("faces_left_unflipped", ArtCatalog.sheet_faces_left(id))
+    var character_id: String = str(actor.get("character_id",""))
+    var enemy: bool = int(actor.get("team_id",0)) != 0
+    var sheet: Texture2D = ArtCatalog.sheet_for_character(character_id,enemy) if not character_id.is_empty() else ArtCatalog.sheet_for_actor(id,enemy)
+    var sprite: Sprite2D = illustrated_map.add_actor(actor,sheet)
+    sprite.set_meta("faces_left_unflipped", ArtCatalog.sheet_faces_left_for_character(character_id) if not character_id.is_empty() else ArtCatalog.sheet_faces_left(id))
     actor_nodes[id] = illustrated_map.actors[id]
     visual_cells[id] = Vector2i(actor.cell)
     animation_driver.register_actor(id, sprite,

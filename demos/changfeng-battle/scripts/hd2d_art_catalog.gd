@@ -37,10 +37,17 @@ const SCENES := {
 static var _registry = Registry.new()
 static var _sheets: Dictionary = {}
 
+## Resolve new assets from character data; preserve known preloads for exports.
+static func _asset_texture(path: String, known: Dictionary) -> Texture2D:
+    if known.has(path): return known[path] as Texture2D
+    if not path.begins_with("res://assets/") or ".." in path: return null
+    if not ResourceLoader.exists(path, "Texture2D"): return null
+    return load(path) as Texture2D
+
 static func portrait_for_character(character_id: String) -> Texture2D:
     var profile: Dictionary = _registry.get_profile(character_id)
     var path: String = str(profile.get("art",{}).get("portrait",""))
-    return PORTRAITS_BY_PATH.get(path,null) as Texture2D
+    return _asset_texture(path,PORTRAITS_BY_PATH)
 
 static func story_pose_for_character(character_id: String) -> Texture2D:
     var definition: Dictionary = _registry.get_profile(character_id)
@@ -102,19 +109,23 @@ static func _clear_edge_matte(frame: Image) -> void:
 
 static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
     var profile: Dictionary = _registry.for_actor(actor_id)
+    return sheet_for_character(str(profile.get("id","")),enemy)
+
+static func sheet_for_character(character_id: String, enemy: bool = false) -> Texture2D:
+    var profile: Dictionary = _registry.get_profile(character_id)
     var path: String = str(profile.get("art",{}).get("sprite_sheet",""))
-    if not SHEETS_BY_PATH.has(path):
+    if _asset_texture(path,SHEETS_BY_PATH) == null:
         return IllustratedFallback.make_sheet(enemy)
     if _sheets.has(path):
         return _sheets[path]
     var uses_concept_cells: bool = path.ends_with(".jpg")
-    var source_texture: Texture2D = SHEETS_BY_PATH[path] as Texture2D
+    var source_texture: Texture2D = _asset_texture(path,SHEETS_BY_PATH)
     var source: Image = source_texture.get_image() if source_texture != null else null
     if source == null or source.is_empty():
-        push_warning("Invalid 6x4 artwork for actor %d" % actor_id)
+        push_warning("Invalid 6x4 artwork for character %s" % character_id)
         return IllustratedFallback.make_sheet(enemy)
     if not uses_concept_cells and source.get_size() != Vector2i(FRAME_SIZE * COLS, FRAME_SIZE * ROWS):
-        push_warning("Invalid 6x4 artwork for actor %d" % actor_id)
+        push_warning("Invalid 6x4 artwork for character %s" % character_id)
         return IllustratedFallback.make_sheet(enemy)
     source.convert(Image.FORMAT_RGBA8)
     var atlas := Image.create(FRAME_SIZE * COLS, FRAME_SIZE * ROWS, false, Image.FORMAT_RGBA8)
@@ -138,26 +149,38 @@ static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
     _sheets[path] = texture
     return texture
 
-static func avatar(actor_id: int, enemy: bool = false) -> Texture2D:
-    var definition: Dictionary = _registry.for_actor(actor_id)
-    var painting := portrait_for_character(str(definition.get("id","")))
+static func avatar_for_character(character_id: String, enemy: bool = false) -> Texture2D:
+    var painting := portrait_for_character(character_id)
     if painting != null: return painting
     var atlas := AtlasTexture.new()
-    var sheet := sheet_for_actor(actor_id,enemy)
+    var sheet := sheet_for_character(character_id,enemy)
     atlas.atlas = sheet
     atlas.region = Rect2(Vector2.ZERO,Vector2(sheet.get_width()/6.0,sheet.get_height()/4.0))
     return atlas
+
+static func avatar(actor_id: int, enemy: bool = false) -> Texture2D:
+    var profile: Dictionary = _registry.for_actor(actor_id)
+    return avatar_for_character(str(profile.get("id","")),enemy)
 
 ## Most supplied 6x4 pose sheets are drawn looking screen-left (hair and
 ## leading foot trail to the right). Generated fallback sheets face screen-right.
 ## Keep sprite orientation as an ART attribute, independent from battle rules.
 ## An actor profile may override this with art.faces_left when new sheets vary.
-static func sheet_faces_left(actor_id: int) -> bool:
-    var profile: Dictionary = _registry.for_actor(actor_id)
+static func sheet_faces_left_for_character(character_id: String) -> bool:
+    var profile: Dictionary = _registry.get_profile(character_id)
     var art: Dictionary = profile.get("art", {})
     var path: String = str(art.get("sprite_sheet", ""))
     return bool(art.get("faces_left", SHEETS_BY_PATH.has(path)))
 
+static func sheet_faces_left(actor_id: int) -> bool:
+    var profile: Dictionary = _registry.for_actor(actor_id)
+    return sheet_faces_left_for_character(str(profile.get("id","")))
+
+static func uses_supplied_sheet_for_character(character_id: String) -> bool:
+    var profile: Dictionary = _registry.get_profile(character_id)
+    var path: String = str(profile.get("art",{}).get("sprite_sheet",""))
+    return _asset_texture(path,SHEETS_BY_PATH) != null
+
 static func uses_supplied_sheet(actor_id: int) -> bool:
     var profile: Dictionary = _registry.for_actor(actor_id)
-    return SHEETS_BY_PATH.has(str(profile.get("art",{}).get("sprite_sheet","")))
+    return uses_supplied_sheet_for_character(str(profile.get("id","")))

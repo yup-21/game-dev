@@ -194,7 +194,7 @@ func build(host: Node2D, story_encounter: bool, snapshot: Dictionary) -> Diction
         avatar_slot.custom_minimum_size = Vector2(58, 65)
         actor_row.add_child(avatar_slot)
         var avatar := TextureRect.new()
-        avatar.texture = ArtCatalog.avatar(actor_id, enemy)
+        avatar.texture = ArtCatalog.avatar_for_character(str(actor.get("character_id","")), enemy) if not str(actor.get("character_id","")).is_empty() else ArtCatalog.avatar(actor_id, enemy)
         avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
         avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
         avatar.mouse_filter = Control.MOUSE_FILTER_STOP

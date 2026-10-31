@@ -147,3 +147,11 @@ HUD 的 2D CanvasLayer 创建、布局、头像/控制绑定和完整饰件节�
 - `ComboResolver` 执行连携定义中的 `max_activations_per_action`，默认值为 1；既有连携仍只触发一次。
 - `checks/test_catalog_extensibility.gd` 动态新增第 11 门流派、两种核心式、一套连携和 2 次触发上限，不修改正式游戏资源。
 - 不改变 CTB、GRID/FREE、卡牌数量或旧关卡与演出行为。下一阶段解除角色身份与战斗 actor ID 的绑定。
+
+## R12 — 角色身份与战斗实例解耦（2026-10-31）
+
+- `CharacterRegistry.battle_options()` 按 `character_id` 注入默认属性和武学，不再要求 `battle_actor_id` 与本场实例 ID 相同；旧数字映射保留给兼容展示接口。未绑定实例编号的角色 (`battle_actor_id: -1`) 只要提供有效武学和已学目录也可出战；无武学的纯剧情角色仍不可直接参加战斗。
+- `ScenarioDirector` 保留角色 ID、姓名一致性校验，允许任意合法战斗实例编号。
+- `HD2DArtCatalog` 新增 `sheet_for_character`、`avatar_for_character`、`sheet_faces_left_for_character`，战场和 HUD 优先使用 snapshot 的 `character_id`，角色详情同样按身份解析；旧 actor-ID 入口继续兼容。
+- 为新增立绘/动作图提供安全的 `res://assets/` 资源路径解析，已有静态 preload 的导出行为保持；打包时新增动态引用资源仍需确保被导出。
+- 新增 `checks/test_character_dynamic_identity.gd` 验证动态 ID 的完整 BattleModel 路径和自定义新角色定义目录。
