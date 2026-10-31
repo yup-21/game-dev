@@ -78,6 +78,8 @@ on:
       - 'demos/changfeng-battle/scripts/card_system.gd'
       - 'demos/changfeng-battle/scripts/combat_resolver.gd'
       - 'demos/changfeng-battle/scripts/school_catalog.gd'
+      - 'demos/changfeng-battle/scripts/combo_resolver.gd'
+      - 'demos/changfeng-battle/checks/test_catalog_extensibility.gd'
       - 'demos/changfeng-battle/data/tingfeng_cards.json'
       - 'demos/changfeng-battle/data/techniques.json'
       - 'demos/changfeng-battle/scripts/technique_runtime.gd'
@@ -182,6 +184,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_bridge_auto_battle.gd
       - name: Validate generated martial cards and actor-specific schools
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_derived_wuxue_decks.gd
+      - name: Verify catalog extensions and repeatable combo limits
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_catalog_extensibility.gd
       - name: Check original multi-school V3 mechanics
         run: |
           godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_catalog.gd

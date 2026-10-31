@@ -140,3 +140,10 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_demo_f
 ### R8 HUD 收口补充
 
 HUD 的 2D CanvasLayer 创建、布局、头像/控制绑定和完整饰件节点树已由 `BattleHUDView.build()` 负责，`HD2DBattle._build_ui()` 只获取返回的兼容句柄。节点名称和事件回调与之前保持一致；真正的战斗决策仍走 Controller/Dispatcher，HUD 不修改模型。
+
+## R11 — 定义驱动武学扩展（2026-10-31）
+
+- `SchoolCatalog` 不再将已有 10 门流派、20 张招式、7 个连携和 3 种状态作为数量上限；仍严格验证字段、引用、费用、牌组和连携效果。
+- `ComboResolver` 执行连携定义中的 `max_activations_per_action`，默认值为 1；既有连携仍只触发一次。
+- `checks/test_catalog_extensibility.gd` 动态新增第 11 门流派、两种核心式、一套连携和 2 次触发上限，不修改正式游戏资源。
+- 不改变 CTB、GRID/FREE、卡牌数量或旧关卡与演出行为。下一阶段解除角色身份与战斗 actor ID 的绑定。

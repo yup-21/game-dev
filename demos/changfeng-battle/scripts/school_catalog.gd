@@ -76,7 +76,8 @@ func _load(raw: Dictionary, base: Dictionary, legacy_path: String) -> bool:
 	if raw.schema_version != "3.0-multi-usage-schools" or not _text(raw.source) or not _text(raw.design): return _fail("武学版本或元数据不合法")
 	for key in ["statuses","schools","cards","combos"]:
 		if not raw[key] is Array: return _fail("目录字段必须为数组: " + key)
-	if raw.statuses.size() != 3 or raw.schools.size() != 10 or raw.cards.size() != 20 or raw.combos.size() != 7: return _fail("武学目录数量不完整")
+	# Validate definitions, not the number of authored schools/forms/statuses/combos.
+	if raw.schools.is_empty() or raw.cards.is_empty(): return _fail("武学目录至少需要一个流派及招式定义")
 	if not base.get("cards") is Array or not base.get("statuses") is Array: return _fail("听风基础定义不完整")
 	for item in base.statuses:
 		if not item is Dictionary or not _text(item.get("id")) or _all_status_ids.has(item.id): return _fail("基础状态ID不合法或重复")
