@@ -5,16 +5,26 @@ extends RefCounted
 const Manifest = preload("res://scripts/content/content_manifest.gd")
 const Definition = preload("res://scripts/content/content_definition.gd")
 const DEFAULT_MANIFEST = "res://data/content_manifest.tres"
+# Production manifests are immutable for the lifetime of one running game.
+# Returning deep copies keeps battle-owned catalogs independent.
+static var _default_cache_ready: bool = false
+static var _default_cache: Dictionary = {}
+
 
 var definitions: Dictionary = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}}
 var load_error: String = ""
 
 func _init(path: String = DEFAULT_MANIFEST) -> void:
+    if path == DEFAULT_MANIFEST and _default_cache_ready:
+        definitions = _default_cache.duplicate(true)
+        return
     if not ResourceLoader.exists(path):
         load_error = "Native content manifest missing: " + path
         return
     var manifest: Resource = ResourceLoader.load(path)
-    import_manifest(manifest)
+    if import_manifest(manifest) and path == DEFAULT_MANIFEST:
+        _default_cache = definitions.duplicate(true)
+        _default_cache_ready = true
 
 func import_manifest(manifest: Resource) -> bool:
     var staged: Dictionary = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}}

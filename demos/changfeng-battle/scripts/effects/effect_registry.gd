@@ -3,10 +3,17 @@ extends RefCounted
 const Native = preload("res://scripts/content/content_registry.gd")
 const Basic = preload("res://scripts/effects/basic_effect_handler.gd")
 const BUILTINS = ["gain_qi", "heal_hp", "add_shield", "apply_status", "consume_status"]
+# Stateless handlers may be reused across battle instances. The registry map
+# is copied, so one battle cannot mutate another battle's dispatch table.
+static var _default_handlers_ready: bool = false
+static var _default_handlers: Dictionary = {}
 var handlers: Dictionary = {}
 var load_error: String = ""
 
 func _init(manifest_path: String = "res://data/content_manifest.tres") -> void:
+    if manifest_path == Native.DEFAULT_MANIFEST and _default_handlers_ready:
+        handlers = _default_handlers.duplicate()
+        return
     var basic = Basic.new()
     for effect_type in BUILTINS:
         handlers[effect_type] = basic
@@ -30,6 +37,9 @@ func _init(manifest_path: String = "res://data/content_manifest.tres") -> void:
             load_error = "Effect handler lacks contract: " + kind
             return
         handlers[kind] = instance
+    if manifest_path == Native.DEFAULT_MANIFEST:
+        _default_handlers = handlers.duplicate()
+        _default_handlers_ready = true
 
 func supports(effect_type: String) -> bool:
     return handlers.has(effect_type)
