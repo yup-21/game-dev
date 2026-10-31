@@ -58,7 +58,7 @@ func _run() -> void:
     var events: Array = outcome.get("events",[])
     var use_count: int = 0
     for event in events:
-        if str(event.get("kind","")) == "ITEM_USED": use_count += 1
+        if str(event.get("type","")) == "ITEM_USED": use_count += 1
     check(use_count == 1,"semantic item event published exactly once")
     check(not model.submit(request).success
         and model.inventory_snapshot(71).stacks.healing_powder == 1,"replay cannot consume twice")
