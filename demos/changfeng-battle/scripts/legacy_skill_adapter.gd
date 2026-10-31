@@ -1,11 +1,12 @@
 extends RefCounted
 ## Migrates saved definition/usage references only. UIDs and live battle state are never read.
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
+const Native = preload("res://scripts/content/content_registry.gd")
 
 static func resolve_legacy(legacy_id: String, old_usage: String = "main") -> Dictionary:
 	var catalog = SchoolCatalog.new()
 	if not catalog.load_error.is_empty(): return {}
-	var data = JSON.parse_string(FileAccess.get_file_as_string("res://data/legacy_id_map.json"))
+	var data = Native.new().document("r25_legacy_id_map")
 	if not data is Dictionary: return {}
 	var entry: Dictionary = data.get("mapping",{}).get(legacy_id,{})
 	if entry.is_empty(): return {}

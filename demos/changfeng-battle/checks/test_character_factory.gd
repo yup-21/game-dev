@@ -32,7 +32,7 @@ func _run() -> void:
 
     var factory = Factory.new(registry)
     var hero = factory.create_runtime("shen_changfeng")
-    check(hero != null and factory.load_error.is_empty(), "factory creates the persistent hero")
+    check(hero != null and factory.load_error.is_empty(), "factory creates the persistent hero: " + factory.load_error)
     if hero != null:
         var snapshot: Dictionary = hero.inventory.snapshot()
         var uid: String = str(hero.inventory.equipped.get("weapon", ""))
