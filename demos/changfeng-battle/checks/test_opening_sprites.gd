@@ -65,16 +65,20 @@ func _run() -> void:
         "player and NPC keep precise world feet anchors")
     var tex = hero.body.texture
     hero.set_motion(Vector2.RIGHT,0.15)
-    _check(hero.walking and hero.body.frame_coords.y==1
+    _check(hero.animation_player is AnimationPlayer
+        and hero.animation_player.current_animation == "move"
+        and hero.walking and hero.body.frame_coords.y==1
         and hero.body.flip_h and hero.body.texture==tex,
         "eastward walking mirrors the west-authored pose sheet")
     hero.set_motion(Vector2.LEFT,0.14)
     _check(not hero.body.flip_h,"westward walking uses the native unflipped pose")
     elder.set_motion(Vector2.RIGHT,1.2)
-    _check(not elder.walking and elder.body.frame_coords==Vector2i.ZERO,
+    _check(elder.animation_player == null and not elder.walking
+        and elder.body.frame_coords==Vector2i.ZERO,
         "wounded elder remains a deliberate static pose")
     hero.set_motion(Vector2.ZERO,0.10)
-    _check(not hero.walking and hero.body.frame_coords==Vector2i.ZERO,
+    _check(not hero.walking and hero.animation_player.current_animation == "idle"
+        and hero.body.frame_coords==Vector2i.ZERO,
         "idle restores stance and never invents new frames")
     opening.player_pos=Vector2(1040,580)
     opening.call("_sync_story_sprites",Vector2.ZERO,0.0)

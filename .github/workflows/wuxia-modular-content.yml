@@ -27,6 +27,7 @@ on:
       - 'demos/changfeng-battle/checks/test_r29_native_cleanup.gd'
       - 'demos/changfeng-battle/checks/test_r32_native_action_timeline.gd'
       - 'demos/changfeng-battle/checks/test_r39_content_cleanup.gd'
+      - 'demos/changfeng-battle/checks/test_r40_native_entry_closure.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -83,6 +84,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r32_native_action_timeline.gd
       - name: R39 no opaque documents and full native catalog smoke
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r39_content_cleanup.gd
+      - name: R40 native entry and retired API closure
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r40_native_entry_closure.gd
       - name: R24 complete content-only vertical slice
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_content_closure.gd
       - name: R11 extensible catalogs and combo counts

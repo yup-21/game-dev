@@ -3,12 +3,9 @@ extends RefCounted
 ## Version 1 uses the authored MapBake mask as an obstacle source; actors
 ## have continuous feet positions, while detours use baked-cell waypoints.
 const MapBake = preload("res://scripts/map_bake.gd")
-## Keep the visibility-graph API introduced by PR #57 available to callers.
-const WaypointCompatibility = preload("res://scripts/battle_spatial_waypoint.gd")
 const EPSILON := 0.001
 var bake
 var actor_positions: Dictionary = {}
-var waypoint_compat
 ## Disabled in regular play. Enable only for headless diagnostics; counters
 ## themselves add overhead and must not be used for timing comparisons.
 var diagnostics_enabled: bool = false
@@ -29,17 +26,8 @@ func reset_diagnostics() -> void:
 func diagnostic_snapshot() -> Dictionary:
     return diagnostics.duplicate()
 
-## Compatibility with the public clearance property exposed by PR #57.
-var clearance: float:
-    get:
-        return float(waypoint_compat.clearance) if waypoint_compat != null else 10.0
-    set(value):
-        if waypoint_compat != null:
-            waypoint_compat.clearance = maxf(0.0, value)
-
-func _init(map_path: String = MapBake.DEFAULT_PATH, actor_clearance: float = 10.0) -> void:
+func _init(map_path: String = MapBake.DEFAULT_PATH) -> void:
     bake = MapBake.new(map_path)
-    waypoint_compat = WaypointCompatibility.new(map_path, actor_clearance)
     reset_diagnostics()
 
 func set_actors(positions: Dictionary) -> void:
@@ -90,12 +78,9 @@ func is_valid_position(point: Vector2, radius: float = 0.0, ignore_id: int = -1)
             return false
     return true
 
-func clear_segment(start: Vector2, finish: Vector2, radius_or_occupied: Variant = 0.0, ignore_id: int = -1) -> bool:
+func clear_segment(start: Vector2, finish: Vector2, radius: float = 0.0, ignore_id: int = -1) -> bool:
     if diagnostics_enabled:
         diagnostics["segment_queries"] = int(diagnostics.segment_queries) + 1
-    if radius_or_occupied is Array:
-        return waypoint_compat.clear_segment(start, finish, radius_or_occupied, ignore_id)
-    var radius: float = float(radius_or_occupied)
     if bake.polygon_mode and bake.segment_blocked(start,finish,radius): return false
     var vector: Vector2 = finish - start
     var length: float = vector.length()
@@ -420,20 +405,3 @@ func find_attack_approach(source: Vector2, target: Vector2, min_range: float,
     if not best.is_empty():
         best.erase("order")
     return best
-
-## PR #57 API compatibility: use its exact visibility-graph implementation,
-## without changing the continuous battle authority introduced by PR #62.
-func valid_position(point: Vector2, occupied: Array = [], exclude_id: int = -1) -> bool:
-    return waypoint_compat.valid_position(point, occupied, exclude_id)
-
-func shortest_path(start: Vector2, goal: Vector2, occupied: Array = [], exclude_id: int = -1) -> PackedVector2Array:
-    return waypoint_compat.shortest_path(start, goal, occupied, exclude_id)
-
-func within_budget(path: PackedVector2Array, budget: float) -> Vector2:
-    return waypoint_compat.within_budget(path, budget)
-
-func attack_position(start: Vector2, target: Vector2, minimum_range: float,
-        maximum_range: float, move_budget: float, occupied: Array = [],
-        exclude_id: int = -1) -> Dictionary:
-    return waypoint_compat.attack_position(start, target, minimum_range,
-        maximum_range, move_budget, occupied, exclude_id)
