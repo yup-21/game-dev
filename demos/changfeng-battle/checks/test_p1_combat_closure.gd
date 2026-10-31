@@ -4,6 +4,7 @@ extends SceneTree
 const Model = preload("res://scripts/battle_model.gd")
 const AI = preload("res://scripts/enemy_ai.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
+const VFX = preload("res://scripts/battle_vfx_2d.gd")
 const UNIT: int = 10000
 var checks: int = 0
 var failures: int = 0
@@ -211,5 +212,26 @@ func _run() -> void:
     _check(bars.has(0) and int(bars[0].posture.value)==7
         and int(bars[0].posture.max_value)==10,
         "HUD reads posture snapshot without writing battle authority")
+    # Presentation consumes semantic events, never updates CombatantState.
+    var vfx_host: Node2D=Node2D.new()
+    root.add_child(vfx_host)
+    var standin: Node2D=Node2D.new()
+    standin.position=Vector2(50,75)
+    vfx_host.add_child(standin)
+    var effects=VFX.new(vfx_host)
+    var posture_before: int=live.state.get_actor(0).posture
+    effects.handle_events([
+        {"type":"POSTURE_BROKEN","actor_id":0},
+        {"type":"CHAIN_LINK_CANCELED","actor_id":0}
+    ],{0:standin})
+    _check(effects.bursts.size()==2 and
+        str(effects.bursts[0].node.name)=="WuxiaVFX2D_shatter" and
+        str(effects.bursts[1].node.name)=="WuxiaVFX2D_guard",
+        "posture break and reaction cancel each emit an independent VFX cue")
+    effects.update(0.8)
+    _check(effects.bursts.is_empty() and
+        live.state.get_actor(0).posture==posture_before,
+        "transient VFX expires without mutating battle state")
+
     print("P1_CLOSEOUT_PASS checks=%d failures=%d" % [checks,failures])
     quit(1 if failures else 0)

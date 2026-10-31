@@ -126,6 +126,8 @@
     "DAMAGE": "hit",
     "HP_DAMAGED": "hit",
     "SCORCH_TICK": "hit",
-    "ATTACK_INTERRUPTED": "guard"
+    "ATTACK_INTERRUPTED": "guard",
+    "POSTURE_BROKEN": "hit",
+    "CHAIN_LINK_CANCELED": "guard"
   }
 }

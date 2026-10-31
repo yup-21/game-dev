@@ -82,6 +82,16 @@ func handle_events(events: Array, actor_nodes: Dictionary) -> void:
                 if actor_nodes.has(target):
                     _spawn_canvas(actor_nodes[target].position, "evade",
                         Color(0.70, 0.90, 1.0, 0.28), 0.33, 0.42)
+            "POSTURE_BROKEN":
+                # The event actor is the staggered target, not the attacker.
+                if actor_nodes.has(source):
+                    _spawn_canvas(actor_nodes[source].position, "shatter",
+                        Color(1.0, 0.75, 0.26, 0.92), 0.58, 1.45)
+            "CHAIN_LINK_CANCELED":
+                # Cosmetic counter signal; the resolver has already committed it.
+                if actor_nodes.has(source):
+                    _spawn_canvas(actor_nodes[source].position, "guard",
+                        Color(0.65, 0.86, 1.0, 0.70), 0.40, 0.85)
 
 func update(delta: float) -> void:
     for i in range(bursts.size() - 1, -1, -1):
