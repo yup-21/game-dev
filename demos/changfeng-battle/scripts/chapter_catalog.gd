@@ -11,10 +11,11 @@ var chapter_order: Array = []
 var load_error: String = ""
 
 func _init(index_path: String = ROOT + "index.json", definition_root: String = ROOT) -> void:
-    if not FileAccess.file_exists(index_path):
+    if (index_path != ROOT + "index.json" or definition_root != ROOT) and not FileAccess.file_exists(index_path):
         load_error = "Chapter index missing: " + index_path
         return
-    var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path))
+    var is_production: bool = index_path == ROOT + "index.json" and definition_root == ROOT
+    var index: Variant = {"schema_version":1,"chapters":["rain_escort_prologue.json","river_watch.json"]} if is_production else JSON.parse_string(FileAccess.get_file_as_string(index_path))
     if not index is Dictionary or index.get("schema_version") != 1 or not index.get("chapters") is Array or index.chapters.is_empty():
         load_error = "Invalid chapter index"
         return
@@ -28,10 +29,10 @@ func _init(index_path: String = ROOT + "index.json", definition_root: String = R
             load_error = "Unsafe chapter file: " + str(entry)
             return
         var path: String = definition_root + entry
-        if not FileAccess.file_exists(path):
+        if not is_production and not FileAccess.file_exists(path):
             load_error = "Chapter file missing: " + path
             return
-        var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+        var data: Variant = Native.new().document("r25_" + entry.trim_suffix(".json")) if is_production else JSON.parse_string(FileAccess.get_file_as_string(path))
         if not _valid(data,director,characters) or chapters.has(str(data.get("id",""))):
             load_error = "Invalid or duplicate chapter: " + str(entry)
             return

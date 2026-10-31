@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=50 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=61 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -57,6 +57,18 @@
 [ext_resource type="Resource" path="res://data/native/affixes/quickstep.tres" id="48_r25"]
 [ext_resource type="Resource" path="res://data/native/affixes/iron_guard.tres" id="49_r25"]
 
+[ext_resource type="Resource" path="res://data/native/documents/school_forms.tres" id="50_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/tingfeng_cards.tres" id="51_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/legacy_id_map.tres" id="52_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/techniques.tres" id="53_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/demo_scenario.tres" id="54_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/action_timelines.tres" id="55_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/rainy_bridge.tres" id="56_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/opening_story.tres" id="57_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/river_watch_story.tres" id="58_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/rain_escort_prologue.tres" id="59_r25"]
+[ext_resource type="Resource" path="res://data/native/documents/river_watch.tres" id="60_r25"]
+
 [resource]
 script = ExtResource("1_manifest")
 schools = Array[Resource]([ExtResource("16_r24")])
@@ -74,3 +86,4 @@ maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24")])
 buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])
 items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResource("42_r25"), ExtResource("43_r25"), ExtResource("44_r25"), ExtResource("45_r25")])
 affixes = Array[Resource]([ExtResource("47_r25"), ExtResource("48_r25"), ExtResource("49_r25")])
+documents = Array[Resource]([ExtResource("50_r25"), ExtResource("51_r25"), ExtResource("52_r25"), ExtResource("53_r25"), ExtResource("54_r25"), ExtResource("55_r25"), ExtResource("56_r25"), ExtResource("57_r25"), ExtResource("58_r25"), ExtResource("59_r25"), ExtResource("60_r25")])

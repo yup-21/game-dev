@@ -23,7 +23,11 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 	if not effect_handlers.load_error.is_empty():
 		load_error=effect_handlers.load_error
 		return
-	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var data: Variant
+	if path == "res://data/tingfeng_cards.json":
+		data = NativeContent.new().document("r25_tingfeng_cards")
+	else:
+		data = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not data is Dictionary:
 		load_error="无法读取听风卡牌配置"
 		return

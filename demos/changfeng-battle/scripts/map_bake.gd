@@ -4,6 +4,7 @@ extends RefCounted
 ## cell centres, hit rectangles and actor feet use the SAME coordinates.
 const DEFAULT_PATH := "res://data/maps/rainy_bridge.json"
 const BLOCKED := ["water","rock","bamboo"]
+const Native = preload("res://scripts/content/content_registry.gd")
 var id: String = ""
 var image_path: String = ""
 var source_size: Vector2i = Vector2i.ZERO
@@ -25,10 +26,10 @@ func _init(path: String = DEFAULT_PATH) -> void:
     if path.ends_with(".tres"):
         _load_native(path)
         return
-    if path.is_empty() or not FileAccess.file_exists(path):
+    if path.is_empty() or (path != DEFAULT_PATH and not FileAccess.file_exists(path)):
         error = "Missing baked map: " + path
         return
-    var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+    var data: Variant = Native.new().document("r25_rainy_bridge") if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
     if not data is Dictionary or int(data.get("schema_version",0))!=1:
         error = "Invalid baked map schema: " + path
         return

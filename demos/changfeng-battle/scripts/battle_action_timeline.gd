@@ -3,15 +3,16 @@ extends RefCounted
 ## Presentation metadata NEVER grants invulnerability, damage, or legal actions.
 const DEFAULT_PATH := "res://data/action_timelines.json"
 const REQUIRED := ["idle","move","attack","guard","hit","evade","skill","combo","defeat"]
+const Native = preload("res://scripts/content/content_registry.gd")
 var profiles: Dictionary = {}
 var event_animations: Dictionary = {}
 var load_error: String = ""
 
 func _init(path: String = DEFAULT_PATH) -> void:
-    if not FileAccess.file_exists(path):
+    if path != DEFAULT_PATH and not FileAccess.file_exists(path):
         load_error = "Action timeline catalog missing"
         return
-    var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+    var parsed: Variant = Native.new().document("r25_action_timelines") if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
     if not parsed is Dictionary or parsed.get("schema_version") != 1 or not parsed.get("profiles") is Dictionary or not parsed.get("events") is Dictionary:
         load_error = "Invalid action timeline schema"
         return

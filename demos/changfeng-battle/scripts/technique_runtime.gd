@@ -6,10 +6,10 @@ var definitions: Dictionary = {}
 var load_error: String = ""
 
 func _init(path: String = DEFAULT_PATH) -> void:
-	if not FileAccess.file_exists(path):
+	if path != DEFAULT_PATH and not FileAccess.file_exists(path):
 		load_error = "Technique catalog missing: " + path
 		return
-	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var data = NativeContent.new().document("r25_techniques") if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not data is Dictionary or data.get("version") != 1 or not data.get("techniques") is Array:
 		load_error = "Invalid technique catalog"
 		return
