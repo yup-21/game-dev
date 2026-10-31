@@ -82,6 +82,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_r8_components.gd
       - name: Validate data-driven R10 action timing and non-authoritative cues
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_action_timeline.gd
+      - name: R30 native AnimationPlayer atlas and presentation isolation
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_r30_native_animation.gd
       - name: Validate P1 authoritative posture break and guard recovery
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_posture_authority.gd
       - name: Verify P1 cancels, posture-conditional combos and six-unit GUI projection

@@ -1,13 +1,9 @@
 extends RefCounted
-## Event-driven Sprite2D playback. Owns only animation cursors, never battle state.
+## Event-driven AnimationPlayer playback. Owns only presentation cursors, never battle state.
 ## 6x4 atlas: idle, walk, attack, special (guard/hit/dodge/skill).
 const Facing = preload("res://scripts/actor_facing.gd")
 const ActionTimeline = preload("res://scripts/battle_action_timeline.gd")
-const FRAME_RATE := 9.0
-const FRAMES_PER_ROW := 6
-const STATE_ROW := {"idle": 0, "move": 1, "attack": 2, "guard": 3,
-    "hit": 3, "evade": 3, "skill": 3, "combo": 3, "defeat": 3}
-const SINGLE_FRAMES := {"guard": 0, "hit": 1, "evade": 2, "skill": 4, "combo": 4, "defeat": 1}
+const NativeClips = preload("res://scripts/battle_native_sprite_clips.gd")
 const DURATIONS := {"idle": 1.0, "move": 0.55, "attack": 0.62,
     "guard": 0.38, "hit": 0.46, "evade": 0.38, "skill": 0.55, "combo": 0.78, "defeat": 1.0}
 var tracks: Dictionary = {}
@@ -23,13 +19,13 @@ func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector
     var initial: Vector2i = Facing.from_delta(initial_facing)
     var horizontal: Vector2i = initial if initial in [Facing.EAST, Facing.WEST] else Facing.EAST
     var artwork_left: bool = bool(sprite.get_meta("faces_left_unflipped", false))
-    tracks[id] = {"sprite": sprite, "state": "idle", "elapsed": 0.0,
+    sprite.hframes = 6
+    sprite.vframes = 4
+    var player: AnimationPlayer = NativeClips.attach(sprite, action_timeline)
+    tracks[id] = {"sprite": sprite, "player": player, "state": "idle", "elapsed": 0.0,
         "duration": 1.0, "loop": true, "facing": initial,
         "horizontal": horizontal, "artwork_left": artwork_left,
         "base_scale": sprite.scale}
-    sprite.hframes = 6
-    sprite.vframes = 4
-    sprite.frame = 0
     sprite.flip_h = (horizontal == Facing.EAST) if artwork_left else (horizontal == Facing.WEST)
 
 func set_facing(id: int, facing: Vector2i) -> void:
@@ -51,7 +47,7 @@ func facing_for(id: int) -> Vector2i:
     return Vector2i(tracks[id].facing) if tracks.has(id) else Facing.EAST
 
 func play(id: int, state: String) -> void:
-    if not tracks.has(id) or not STATE_ROW.has(state):
+    if not tracks.has(id) or not NativeClips.STATE_ROW.has(state):
         return
     var track: Dictionary = tracks[id]
     track.state = state
@@ -59,6 +55,11 @@ func play(id: int, state: String) -> void:
     track.duration = action_timeline.duration_for(state, float(DURATIONS.get(state, 0.40)))
     track.loop = state == "idle" or state == "move"
     tracks[id] = track
+    var player: AnimationPlayer = track.player
+    if is_instance_valid(player):
+        player.stop()
+        player.play(state)
+        player.advance(0.0)
 
 func events(emitted: Array) -> void:
     # Preserve the semantic event order; an attack, response and hit should
@@ -137,47 +138,20 @@ func update(delta: float, moving: Dictionary = {}) -> void:
     for id in tracks.keys():
         var track: Dictionary = tracks[id]
         var state: String = str(track.state)
-        track.elapsed = float(track.elapsed) + (0.0 if stage_transitioned else delta)
+        var dt: float = 0.0 if stage_transitioned else maxf(0.0, delta)
+        track.elapsed = float(track.elapsed) + dt
         if state != "idle" and state != "move" and float(track.elapsed) >= float(track.duration):
-            state = "idle"
-            track.state = state
-            track.elapsed = 0.0
+            tracks[id] = track
+            play(int(id), "idle")
+            continue
         if state == "move" and not bool(moving.get(id, false)):
-            state = "idle"
-            track.state = state
-            track.elapsed = 0.0
-        var index: int = 0
-        if SINGLE_FRAMES.has(state):
-            index = int(SINGLE_FRAMES[state])
-            if state in ["evade", "skill", "combo"]:
-                index += mini(1, int(float(track.elapsed) / maxf(0.01, float(track.duration)) * 2.0))
-        else:
-            index = int(float(track.elapsed) * FRAME_RATE) % FRAMES_PER_ROW
-        var sprite: Sprite2D = track.sprite
-        if sprite != null:
-            sprite.frame = int(STATE_ROW.get(state, 0)) * FRAMES_PER_ROW + index
-            # Pose accents stay presentation-only and never touch BattleModel.
-            var phase: float = clampf(float(track.elapsed) / maxf(0.01, float(track.duration)), 0.0, 1.0)
-            var thrust: float = sin(phase * PI)
-            var target_scale := Vector2.ONE
-            var tilt := 0.0
-            match state:
-                "move":
-                    target_scale.x = 1.0 + sin(float(track.elapsed) * 18.0) * 0.035
-                    tilt = sin(float(track.elapsed) * 12.0) * 0.045
-                "attack", "combo", "skill":
-                    target_scale = Vector2(1.0 + thrust * 0.14, 1.0 - thrust * 0.09)
-                    tilt = -thrust * (0.18 if state == "combo" else 0.11)
-                "guard":
-                    target_scale = Vector2(1.0 + thrust * 0.08, 1.0 - thrust * 0.13)
-                "hit":
-                    target_scale = Vector2(1.0 - thrust * 0.10, 1.0 + thrust * 0.07)
-                    tilt = thrust * 0.15
-                "evade":
-                    tilt = thrust * 0.14
-            sprite.scale = sprite.scale.lerp(Vector2(track.base_scale) * target_scale, minf(1.0, delta * 18.0))
-            sprite.rotation = lerpf(sprite.rotation, tilt, minf(1.0, delta * 17.0))
+            tracks[id] = track
+            play(int(id), "idle")
+            continue
         tracks[id] = track
+        var player: AnimationPlayer = track.player
+        if is_instance_valid(player):
+            player.advance(dt)
 
 func reset() -> void:
     timeline.clear()
