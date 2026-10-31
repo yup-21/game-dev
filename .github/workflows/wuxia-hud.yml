@@ -84,6 +84,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_action_timeline.gd
       - name: Validate P1 authoritative posture break and guard recovery
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_posture_authority.gd
+      - name: Verify P1 cancels, posture-conditional combos and six-unit GUI projection
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_p1_combat_closure.gd
       - name: Validate legacy startup suite against canonical Sprite2D
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_startup.gd
       - name: Validate runtime art provenance and image atlas dimensions

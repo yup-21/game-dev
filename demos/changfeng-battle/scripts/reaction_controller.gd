@@ -40,6 +40,26 @@ func add(actor_id: int,uid: String,definition_id: String,u: Dictionary,choice: D
 	if state.clash.stack.size()>=4: resolver.resolve_clash()
 	else: update_window()
 
+## A cancel may only affect an opposing unresolved response link. The
+## root attack is not a stack member. Querying this never writes state.
+func can_cancel_link(actor_id: int, link_id: int) -> bool:
+	if state.mode!="CLASH" or state.clash.is_empty(): return false
+	if actor_id not in [int(state.attack.attacker_id),int(state.attack.defender_id)]: return false
+	for link in state.clash.get("stack",[]):
+		if int(link.id)==link_id:
+			return int(link.actor_id)!=actor_id and not bool(link.canceled) and not bool(link.resolved)
+	return false
+
+## Called only while resolving the validated LIFO stack. External attempts
+## to cancel a link before paying for an accepted response do nothing.
+func cancel_link(actor_id: int, link_id: int) -> bool:
+	if not state.resolving_clash or not can_cancel_link(actor_id,link_id): return false
+	for link in state.clash.stack:
+		if int(link.id)==link_id:
+			link.canceled=true
+			return true
+	return false
+
 func pass_response(actor_id: int) -> void:
 	state.clash.consecutive_passes+=1
 	resolver.emit("PRIORITY_PASSED",{"actor_id":actor_id,"text":"%s 不追加应变" % state.get_actor(actor_id).name})

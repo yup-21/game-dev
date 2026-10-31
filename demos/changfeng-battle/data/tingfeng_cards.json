@@ -148,6 +148,17 @@
         }
       ]
     }
+,
+    {
+      "id": "heavy_pressure",
+      "name": "断岳·摧势",
+      "mode": "on_qualified_hit",
+      "attack_card_id": "tf_sunder",
+      "attack_usage_id": "heavy",
+      "target_posture_at_least": 8,
+      "max_activations_per_action": 1,
+      "effects": [{"type": "modify_pending_damage", "flat_delta": 1}]
+    }
   ],
   "cards": [
     {

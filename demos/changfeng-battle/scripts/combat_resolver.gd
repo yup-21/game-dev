@@ -434,11 +434,10 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				for cell in [lock]+state.neighbors(lock):
 					if state.passable(cell) and not state.attack.affected_cells.has(cell): state.attack.affected_cells.append(cell)
 			"cancel_chain_link":
-				for link in state.clash.get("stack",[]):
-					if int(link.id)==int(choice.get("link_id",-1)) and int(link.actor_id)!=source and not link.canceled and not link.resolved:
-						link.canceled=true
-						emit("CHAIN_LINK_CANCELED",{"actor_id":source,"link_id":link.id,"text":"截势取消 L%d" % link.id})
-						break
+				var link_id: int=int(choice.get("link_id",-1))
+				if reactions.cancel_link(source,link_id):
+					emit("CHAIN_LINK_CANCELED",{"actor_id":source,"link_id":link_id,
+						"text":"截势取消 L%d" % link_id})
 			"contest_intercept":
 				if state.attack.is_empty(): continue
 				var defender=state.get_actor(source)
