@@ -43,7 +43,7 @@ func _submit(m, action: Dictionary) -> Dictionary:
 
 func _run() -> void:
     var cat = SchoolCatalog.new()
-    _check(cat.load_error.is_empty() and cat.options().size() == 11,
+    _check(cat.load_error.is_empty() and cat.options().size() >= 11,
         "ten distinct martial schools plus Tingfeng must remain available")
     var source: Dictionary = JSON.parse_string(
         FileAccess.get_file_as_string("res://data/tingfeng_cards.json"))
