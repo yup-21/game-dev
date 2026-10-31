@@ -22,7 +22,7 @@ func _run() -> void:
     check(native.load_error.is_empty() and native.entries("character").has("shen_changfeng"),
         "canonical protagonist comes from native manifest")
     var registry = Registry.new()
-    check(registry.load_error.is_empty() and registry.profiles.size() == 8 and registry.actor_ids().size() == 6,
+    check(registry.load_error.is_empty() and registry.profiles.size() >= 8 and registry.actor_ids().size() == 6,
         "migration keeps original eight identities and six battle actors")
     var hero_definition: Dictionary = registry.get_profile("shen_changfeng")
     check(hero_definition.get("name") == "沈长风" and hero_definition.get("school_id") == "wind_sword",

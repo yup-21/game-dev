@@ -118,13 +118,20 @@ func current_dialogue() -> Dictionary:
 
 func _open_node(id: String) -> void:
 	if not nodes.has(id):
-		phase = "complete"
+		phase = "explore" if bool(data.get("return_to_explore",false)) else "complete"
 		dialogue_id = ""
 		return
 	dialogue_id = id
 	pending_events.append_array(nodes[id].get("events",[]).duplicate(true))
 	if str(nodes[id].get("event", "")) == "obtain_fragment":
 		obtained_fragment = true
+
+func complete_if_ready(flags: Dictionary) -> bool:
+	if phase != "explore" or not bool(data.get("return_to_explore",false)): return false
+	var requirements: Array = data.get("completion_requirements",[])
+	if requirements.is_empty() or not Events.meets(requirements,flags): return false
+	phase = "complete"
+	return true
 
 func advance_dialogue(flags: Dictionary = {}) -> bool:
 	if phase != "dialogue": return false

@@ -21,6 +21,7 @@ func to_record() -> Dictionary:
         var record: Dictionary = entry.to_record()
         if record.is_empty(): return {}
         cards.append(record)
+    if display_name.is_empty() or identity.is_empty() or core.size() != 2 or core[0] == core[1] or cards.is_empty(): return {}
     return {"schema_version":schema_version,"id":content_id,
         "name":display_name,"identity":identity,
         "core_forms":core,"deck":{"cards":cards}}

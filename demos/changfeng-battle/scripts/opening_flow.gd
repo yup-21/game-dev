@@ -230,6 +230,7 @@ func _sync_story_events() -> void:
 		message_left=4.0
 		push_error(message)
 	if story.obtained_fragment: session.record_story_event("obtain_fragment")
+	story.complete_if_ready(session.flags)
 
 func _change_scene(path: String) -> void:
 	var err: int = get_tree().change_scene_to_file(path)

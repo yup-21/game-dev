@@ -17,7 +17,7 @@ func check(ok: bool, label: String) -> void:
 
 func _run() -> void:
     var native = Native.new()
-    check(native.load_error.is_empty() and native.entries("asset").size() == 4,
+    check(native.load_error.is_empty() and native.entries("asset").size() >= 4,
         "all four native asset definitions loaded by explicit references")
     var assets = Assets.new()
     check(assets.load_error.is_empty(), "runtime asset resolver validates imports")

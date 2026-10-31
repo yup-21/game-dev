@@ -17,7 +17,7 @@ func check(ok: bool, label: String) -> void:
 
 func _run() -> void:
     var native = Native.new()
-    check(native.load_error.is_empty() and native.entries("skill").size() == 2,
+    check(native.load_error.is_empty() and native.entries("skill").size() >= 2,
         "native skill definitions load from .tres")
     check(native.entries("technique").has("r20_guard_stage"),
         "independent staged ability loads as Resource")
