@@ -57,8 +57,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_assets.gd
       - name: R23 native polygon maps and free-space navigation
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_maps.gd
-      - name: R24 native school, reactive buff and NPC infrastructure
-        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_foundations.gd
+      - name: R24 complete content-only vertical slice
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_content_closure.gd
       - name: R11 extensible catalogs and combo counts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_catalog_extensibility.gd
       - name: R12 character identity decoupling
