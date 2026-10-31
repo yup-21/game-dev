@@ -11,3 +11,5 @@
 R32：动作时间轴已迁入强类型 `WuxiaActionTimelineDefinition`，生产中不再读取旧 `r25_action_timelines`；余六份复杂数据容器仍在迁移清单中。详见 [R32 时间轴迁移](R32_TYPED_ACTION_TIMELINE.md)。
 
 R39：剩余六份通用内容文档已迁入对应类型化 Resource，生产 Manifest 不再注册 `document`，`WuxiaDataDocument` 与原目录均已移除；旧技能 ID 仅通过 `WuxiaLegacyMappingDefinition` 为显式导入提供适配。历史 JSON 为测试用值对照，不承担生产加载。
+
+R40：快捷/剧情入口已经统一使用原生 Encounter 和 CharacterFactory，历史 JSON 不随发布包导出；旧 waypoint 并行实现及无引用的重复场景常量已删除。显式传入自定义 JSON 的校验分支只服务工程内的坏数据/历史数值测试，不是默认启动路径，也没有被发布包调用。原生旧 ID 导入器仍可用于主动转换历史配置；不作为当前武学加载的依赖。

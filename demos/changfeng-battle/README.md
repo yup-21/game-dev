@@ -2,6 +2,16 @@
 
 > **唯一对玩家开放的战斗场景：`battle_hd2d.tscn`。** 启动 Godot 时进入 `opening.tscn`；主菜单仅提供「初入江湖 · 新游戏」和「进入战斗 · HD-2D」两条游戏路径。序章「迎战追兵」、战斗结算后的「重新挑战」也复用这个场景，不再分流到旧版 2D Demo。
 
+## R40 最终入口统一
+
+`opening.tscn` 主菜单的「进入战斗 · HD-2D」现在通过 `GameSession.start_quick_battle()` 启动正式登记的 `r40_quick_duel.tres`，而非直接手工拼装旧双人规则。玩家与追镖首领的初始位置来自 `WuxiaEncounterDefinition`，主角药品/气丸/装备来自 `WuxiaCharacterDefinition`，队伍快照由 `CharacterFactory` 和 `ScenarioDirector` 生成；剧情遭遇和快捷战斗最终都进入唯一 `battle_hd2d.tscn` 和 `BattleModel`。
+
+正式遭遇引用 `map_resource` 或已在 `ContentRegistry` 注册的 `map_id`；运行时仅使用实际的 `.tres` 路径。FREE 路线与自动接近统一由 `BattleSpatialService` 的当前连续空间算法实现，旧 `battle_spatial_waypoint.gd` 已删除。剧情探索角色与战斗角色均使用 `AnimationPlayer` 操控原生 6×4 动作图集，缺少动画图集的受伤老镖头仍使用专门的静态原画。
+
+历史 `data/*.json` 作为回归和非法输入测试基准留在源仓库，但 **Windows/Linux 发布包明确排除所有 JSON**。导出 CI 在仓库外加载 PCK 后检查旧 JSON 缺席、正式原生目录及遭遇与美术完好，确认游戏运行不依赖测试数据。
+
+详见 [R40 最终收口审计](docs/R40_FINAL_CLOSURE.md) 及 [原生内容制作指南](../../docs/changfeng-native-authoring.md)。
+
 ## 唯一战斗入口与美术接入
 
 **正式战斗现已使用原生 2D 场景**：`battle_hd2d.tscn` 为 `Node2D + Camera2D`；`illustrated_battle_map.gd` 持有完整插画、共享脚点与 `Sprite2D` 演员；`battle_vfx_2d.gd` 只负责战斗特效。旧的 3D 地形构造与未被引用的旧特效/场景脚本已经清理；正式战斗的特效由 `battle_vfx_2d.gd` 唯一承载。规则仍统一由 `BattleModel` 管理，支持 1v1 / 序章 3v3、CTB、武学卡牌、连携和 CLASH。
@@ -168,7 +178,7 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 
 自动 Pass 不是跳过结算：一次 Pass 交给对方，两次连续 Pass 后仍由 `ReactionController` 逆序结算交锋。纯 `PRIORITY_PASSED` 自动跳过不再等待空动画，若 Pass 触发伤害/死亡等结算事件，保留真实攻击命中/受击动画票据。已有 CTB、LIFO、内息、武学时机与 AI 决策保持不变。
 
-主菜单直达 `battle_hd2d.tscn` 目前仍是 **1v1** 的独立测试战斗；序章追兵进入同一场景，使用 **3v3** 六人队伍，包含两名玩家操控角色及一名友方 AI。当前修改只处理交锋响应的输入体验，未更改人数配置或剧情遭遇。
+主菜单快捷入口使用原生 `r40_quick_duel` **1v1** 遭遇；序章追兵进入同一场景，使用原生 `escort_ambush` **3v3** 六人队伍，包含两名玩家操控角色及一名友方 AI。当前修改只处理交锋响应的输入体验，未更改人数配置或剧情遭遇。
 
 
 ## 武学派生与人物流派（2026-10-30）

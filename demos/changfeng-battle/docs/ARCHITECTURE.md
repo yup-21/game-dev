@@ -3,7 +3,7 @@
 > 单一正式入口：`opening.tscn` → `battle_hd2d.tscn`；基础版本 `main@8d1486b4`，重构工作在 `refactor/battle-architecture-consolidation`（Draft PR #67）。
 > 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
-> **R39 现状（2026-11-01）**：正式内容统一从 `data/content_manifest.tres` 加载，包括十套武学、听风卡牌、技法、遭遇、GRID/FREE 地图、动作时间轴和导入用旧 ID 映射。原七份 `WuxiaDataDocument` 已迁移并删除，运行时不再使用旧 JSON。下文 R11–R15 的 JSON 索引图是历史阶段记录，**不是当前生产配置流程**。新内容制作请参阅 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
+> **R40 现状（2026-11-01）**：正式内容统一从 `data/content_manifest.tres` 加载，包括十套武学、听风卡牌、技法、遭遇、GRID/FREE 地图、动作时间轴和导入用旧 ID 映射。原七份 `WuxiaDataDocument` 已迁移并删除，运行时不再使用旧 JSON。快捷入口同样通过原生 Encounter/CharacterFactory 与统一 SceneRouter，所有剧情/快捷遭遇地图均解析到原生 `.tres`。旧 PR57 独立寻路类已删除，剧中角色动画改用 AnimationPlayer，发布包排除历史 JSON。下文 R11–R15 的 JSON 索引图是历史阶段记录，**不是当前生产配置流程**。新内容制作请参阅 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
 
 ## 运行结构
 
@@ -37,7 +37,7 @@ flowchart TD
 - `GRID`：保留 15×10 正交格、原移动预算与 Manhattan 基本攻击距离。
 - `FREE`：连续 `Vector2`、圆形碰撞、真实路径长度、自动接近攻击与自由身法落点。
 - `BattleSpatialFacade` 统一回答 `can_land / safe_landing / find_path / path_cost / can_attack / find_attack_approach / forced_move_preview`。当前 `CombatRules` 的基础攻击、FREE 攻击用法与自动接近走 facade；`BattleModel.preview_free_path` 也使用它。部分旧校验仍直接调用 `BattleSpatialService`，属于后续收敛点。
-- FREE 底层仍是 `MapBake` 的障碍 mask 与 `AStar2D` 动态可见性图和路径平滑，**不是** `NavigationPolygon` 独立导航网格。重构不修改寻路算法。
+- FREE 底层采用 `MapBake` 的障碍 mask 与单一 `AStar2D` 动态可见性图和路径平滑，**不是** `NavigationPolygon` 独立导航网格；PR57 的第二份 waypoint 算法实现和转发 API 已在 R40 删除。
 - `forced_move_preview` 仅返回几何建议；真实强制位移仍需经 CombatResolver 授权。GRID/FREE 切换失败不能产生资源与 revision 的副作用。
 
 ## 保留入口、资产与已知限制
