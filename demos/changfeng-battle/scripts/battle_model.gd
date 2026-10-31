@@ -3,6 +3,7 @@ extends RefCounted
 const State = preload("res://scripts/battle_state.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
 const Spatial = preload("res://scripts/battle_spatial_service.gd")
+const Geometry = preload("res://scripts/battle_spatial_facade.gd")
 const Cards = preload("res://scripts/card_system.gd")
 const Attributes = preload("res://scripts/attribute_system.gd")
 const Statuses = preload("res://scripts/status_system.gd")
@@ -18,6 +19,8 @@ const Resolver = preload("res://scripts/combat_resolver.gd")
 const Techniques = preload("res://scripts/technique_runtime.gd")
 const Conditions = preload("res://scripts/condition_evaluator.gd")
 const Abilities = preload("res://scripts/ability_system.gd")
+const ItemCatalog = preload("res://scripts/item_catalog.gd")
+const Inventory = preload("res://scripts/inventory_runtime.gd")
 const COLS: int=15
 const ROWS: int=10
 var state
@@ -39,11 +42,14 @@ var abilities
 var _request_serial: int=0
 static var _battle_serial: int=0
 var _busy: bool=false
+## A single-entry route preview cache; invalidated on reset or revision change.
+var _free_preview_cache: Dictionary = {}
 
 func _init() -> void:
 	reset()
 
 func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",options: Dictionary = {}) -> void:
+	_free_preview_cache.clear()
 	var revision: int=0 if state==null else state.revision+1
 	var ticket: int=0 if state==null else state.animation_ticket+1
 	state=State.new(seed)
@@ -95,7 +101,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	cards=Cards.new(state,"res://data/tingfeng_cards.json",schools if schools is Dictionary else {},options.get("learned_schools",{}) if options.get("learned_schools",{}) is Dictionary else {})
 	if not schools is Dictionary: cards.load_error="schools必须是角色到流派ID的对象"
 	if not options.get("learned_schools",{}) is Dictionary: cards.load_error="learned_schools必须是角色到已学流派列表的对象"
-	statuses=Statuses.new(state,cards)
+	statuses=Statuses.new(state,cards,attributes)
 	visibility=Visibility.new(state,cards,statuses)
 	hooks=Hooks.new()
 	costs=Costs.new(state,hooks)
@@ -141,6 +147,28 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		state.phase="FINISHED"
 		audit.emit("RULE_ERROR",{"text":cards.load_error})
 		return
+	# The battle owns its inventory copies. Invalid item data fails before any
+	# opening draw or action can consume resources.
+	var raw_inventories: Variant = options.get("inventories",{})
+	var item_catalog = ItemCatalog.new()
+	if not raw_inventories is Dictionary or not item_catalog.load_error.is_empty():
+		state.outcome="defeat"
+		state.mode="FINISHED"
+		state.phase="FINISHED"
+		audit.emit("RULE_ERROR",{"text":"Invalid inventory options or item catalog: "+item_catalog.load_error})
+		_busy=false
+		return
+	for combatant in state.actors:
+		var owned = Inventory.new(item_catalog)
+		var initial: Variant = raw_inventories.get(combatant.id,{})
+		if not initial is Dictionary or (not initial.is_empty() and not owned.restore(initial)):
+			state.outcome="defeat"
+			state.mode="FINISHED"
+			state.phase="FINISHED"
+			audit.emit("RULE_ERROR",{"text":"Invalid inventory for actor %d" % combatant.id})
+			_busy=false
+			return
+		state.inventories[combatant.id]=owned
 	for actor in state.actors:
 		# Identity and starting character build are injected once by the
 		# CharacterRegistry; CombatantState remains the mutable authority.
@@ -148,6 +176,15 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		if options.get("character_names",{}).has(actor.id):
 			actor.name=str(options.character_names[actor.id])
 		attributes.configure(actor,options.get("attributes",{}).get(actor.id,{}),options.get("passives",{}).get(actor.id,{}))
+		var starting_sources: Variant = options.get("modifier_sources",{}).get(actor.id,{})
+		if starting_sources is Dictionary and not starting_sources.is_empty():
+			actor.modifier_sources = starting_sources.duplicate(true)
+			attributes.recalculate(actor)
+			actor.hp_u = actor.max_hp_u
+		var equipment: Variant = options.get("equipment",{}).get(actor.id,{})
+		if equipment is Dictionary:
+			actor.equipment = equipment.duplicate(true)
+		actor.equipment_affixes = state.inventories[actor.id].equipment_affixes()
 		var learned=options.get("techniques",{}).get(actor.id,{})
 		# Profiled actors have explicitly learned techniques; old unprofiled
 		# test fixtures retain the original automatic tutorial stance.
@@ -249,13 +286,21 @@ func snapshot(observer_id: int = 0) -> Dictionary:
 		clash={"priority_actor_id":state.clash.priority_actor_id,"consecutive_passes":state.clash.consecutive_passes,"counts":state.clash.counts.duplicate(true),"stack":[]}
 		for link in state.clash.stack:
 			clash.stack.append({"id":link.id,"link_id":link.id,"actor_id":link.actor_id,"definition_id":link.definition_id,"usage_id":link.usage_id,"name":link.name,"canceled":link.canceled,"resolved":link.resolved})
-	return {"profile":"tingfeng","mode":state.mode,"phase":state.phase,"global_tick":state.global_tick,"action_no":state.action_no,
+	var own_inventory = state.inventories.get(observer_id,null)
+	return {"inventory":{} if own_inventory==null else own_inventory.snapshot(),
+		"consumables":[] if own_inventory==null else own_inventory.available_consumables(),
+		"profile":"tingfeng","mode":state.mode,"phase":state.phase,"global_tick":state.global_tick,"action_no":state.action_no,
 		"school_catalog":school_options(),
 		"active_id":state.active_id,"reaction":state.reaction_window,"responder_id":rules.responder_id(),
 		"battle_id":state.battle_id,"revision":state.revision,"request_version":state.revision,"event_seq":state.event_seq,
 		"animation_pending":state.animation_pending,"ticket":state.animation_ticket,"seed":state.seed,"round_no":state.round_no,
 		"outcome":state.outcome,"spatial_mode":state.spatial_mode,"winner_id":state.winner_id,"winning_team":state.winning_team,"terrain":state.terrain.duplicate(true),"actors":actors,"hand":hand,
 		"attack":state.attack.duplicate(true),"clash":clash,"logs":state.logs.duplicate(true),"phase_history":state.phase_history.duplicate(true)}
+
+## Read-only copy for transferring battle consumptions back to overworld runtime.
+func inventory_snapshot(actor_id: int) -> Dictionary:
+	var inventory = state.inventories.get(actor_id,null)
+	return {} if inventory == null else inventory.snapshot()
 
 func school_options() -> Array:
 	return cards.catalog.options() if cards!=null and cards.catalog!=null else []
@@ -334,13 +379,10 @@ func _spatial_ai_candidates(actor_id: int) -> Array:
 		int(float(available_qi)/10000.0))
 	if remaining<=0: return result
 	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
-	var positions: Dictionary={}
-	for combatant in state.actors:
-		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
-	state.spatial.set_actors(positions)
+	var geometry=Geometry.new(state)
 	for target in opponents:
-		var goal: Dictionary=state.spatial.find_attack_approach(actor.position,target.position,
-			0.0,unit,100000.0,8.0,8.0,actor.id,target.id,true)
+		var goal: Dictionary=geometry.find_attack_approach(actor,target,
+			0.0,unit,100000.0,true)
 		if goal.is_empty() or not goal.has("path"): continue
 		var route: PackedVector2Array=state.spatial.trim_path(PackedVector2Array(goal.path),float(remaining)*unit)
 		if route.size()<2: continue
@@ -381,13 +423,16 @@ func preview_free_path(actor_id: int, target_position: Vector2) -> PackedVector2
 	var actor=state.get_actor(actor_id)
 	if actor==null or actor.hp_u<=0:
 		return PackedVector2Array()
-	var positions: Dictionary={}
-	for combatant in state.actors:
-		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
-	state.spatial.set_actors(positions)
-	var landing: Vector2=state.spatial.safe_landing(actor.position,target_position,8.0,actor.id)
+	var key: Array=[state.battle_id,state.revision,actor_id,
+		roundf(target_position.x*4.0)*0.25,roundf(target_position.y*4.0)*0.25]
+	if _free_preview_cache.get("key",[])==key:
+		return PackedVector2Array(_free_preview_cache.path)
+	var geometry=Geometry.new(state)
+	var landing: Vector2=geometry.safe_landing(actor,target_position)
 	landing=Vector2(roundf(landing.x*4.0)*0.25,roundf(landing.y*4.0)*0.25)
-	return state.spatial.find_path(actor.position,landing,8.0,actor.id)
+	var result: PackedVector2Array=PackedVector2Array(geometry.find_path(actor,landing))
+	_free_preview_cache={"key":key,"path":result}
+	return result
 
 func distance(a: Vector2i,b: Vector2i) -> int:
 	return rules.distance(a,b)

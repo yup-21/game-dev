@@ -1,4 +1,6 @@
 extends RefCounted
+## DEPRECATED: historical compatibility/fixture module, not the player-facing battle.
+## Retain until all res:// consumers and legacy tests are migrated.
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 ## Original procedural wuxia diorama decorations. Visual only: no collisions or rules.
 ## Intentionally positioned outside the 15x10 tactical grid.

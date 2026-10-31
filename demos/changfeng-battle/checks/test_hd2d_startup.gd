@@ -28,15 +28,13 @@ func _run() -> void:
         quit(1)
         return
 
-    # Runtime-created nodes have generated names unless named explicitly.
-    # Validate the actual rendering camera instead of assuming its child name.
-    var camera: Camera3D = scene.get("camera") as Camera3D
-    var rig: Node = scene.get_node_or_null("CameraRig")
-    if camera == null or rig == null or camera.get_parent() != rig:
-        push_error("HD2D_STARTUP: battle camera missing from CameraRig")
+    # The formal scene must be 2D with a real Camera2D.
+    var camera: Camera2D = scene.get("camera") as Camera2D
+    if camera == null or camera.get_parent() != scene:
+        push_error("HD2D_STARTUP: battle Camera2D missing")
         quit(1)
         return
-    if scene.get_viewport().get_camera_3d() != camera:
+    if scene.get_viewport().get_camera_2d() != camera:
         push_error("HD2D_STARTUP: battle camera is not active in its viewport")
         quit(1)
         return
@@ -51,15 +49,15 @@ func _run() -> void:
         quit(1)
         return
 
-    if scene.get_node_or_null("Actor_0/Nameplate") == null:
+    if scene.get("illustrated_map").actors[0].get_node_or_null("RoleName") == null:
         push_error("HD2D_STARTUP: character nameplate missing")
         quit(1)
         return
 
-    var hero: Sprite3D = _actor_sprite(scene, 0)
-    var foe: Sprite3D = _actor_sprite(scene, 1)
+    var hero: Sprite2D = _actor_sprite(scene, 0)
+    var foe: Sprite2D = _actor_sprite(scene, 1)
     if hero == null or foe == null:
-        push_error("HD2D_STARTUP: actor Sprite3D missing")
+        push_error("HD2D_STARTUP: actor Sprite2D missing")
         quit(1)
         return
     if hero.hframes != 6 or hero.vframes != 4 or foe.hframes != 6 or foe.vframes != 4:
@@ -126,9 +124,8 @@ func _run() -> void:
     print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 supplied_sprites=6x4_256x256")
     quit(0)
 
-func _actor_sprite(scene: Node, actor_id: int) -> Sprite3D:
-    var actor: Node = scene.get_node_or_null("Actor_%d" % actor_id)
-    if actor == null:
+func _actor_sprite(scene: Node, actor_id: int) -> Sprite2D:
+    var painted = scene.get("illustrated_map")
+    if painted == null or not painted.actors.has(actor_id):
         return null
-    var sprites: Array[Node] = actor.find_children("*", "Sprite3D", false, false)
-    return sprites[0] as Sprite3D if sprites.size() == 1 else null
+    return painted.actors[actor_id].get_node_or_null("ActionSprite") as Sprite2D

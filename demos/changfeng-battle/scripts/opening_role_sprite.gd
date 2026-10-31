@@ -29,12 +29,18 @@ func configure(id: String) -> bool:
     is_sheet = not str(role.art.sprite_sheet).is_empty()
     var texture: Texture2D
     if is_sheet:
-        # The same 6x4 actor asset and animation indexing as in battle.
-        texture = Art.sheet_for_actor(int(role.battle_actor_id),false)
-        if not Art.uses_supplied_sheet(int(role.battle_actor_id)):
-            load_error = "Missing actor sprite sheet: " + character_id
-            push_error(load_error)
-            return false
+        # Story-only NPCs have no battle actor ID. Load their authored sheet
+        # by stable resource path; battle actors retain the verified atlas path.
+        if int(role.battle_actor_id) < 0:
+            var path: String = str(role.art.sprite_sheet)
+            if ResourceLoader.exists(path):
+                texture = load(path) as Texture2D
+        else:
+            texture = Art.sheet_for_actor(int(role.battle_actor_id),false)
+            if not Art.uses_supplied_sheet(int(role.battle_actor_id)):
+                load_error = "Missing actor sprite sheet: " + character_id
+                push_error(load_error)
+                return false
     else:
         # A genuine artist-authored transparent SVG character, NOT the old
         # runtime SVG generator or the rectangular dialogue portrait.
@@ -49,7 +55,7 @@ func configure(id: String) -> bool:
     body.texture = texture
     body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
     if is_sheet:
-        body.set_meta("faces_left_unflipped", Art.sheet_faces_left(int(role.battle_actor_id)))
+        body.set_meta("faces_left_unflipped", true if int(role.battle_actor_id) < 0 else Art.sheet_faces_left(int(role.battle_actor_id)))
         body.flip_h = bool(body.get_meta("faces_left_unflipped")) # Initial look east
     body.centered = true
     if is_sheet:

@@ -32,7 +32,7 @@ func _run() -> void:
     if packed == null:
         quit(1)
         return
-    var view: Node3D = packed.instantiate() as Node3D
+    var view: Node2D = packed.instantiate() as Node2D
     root.add_child(view)
     await process_frame
     var model = view.get("model")

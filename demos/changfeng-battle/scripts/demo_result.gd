@@ -26,10 +26,12 @@ func _action(id: String) -> void:
 	if session==null: return
 	match id:
 		"retry":
-			if session.retry_encounter(): call_deferred("_go", ACTIVE_BATTLE_SCENE)
+			if session.retry_encounter(): call_deferred("_go", session.scene_for("battle"))
 		"menu":
 			session.return_to_menu()
-			call_deferred("_go","res://opening.tscn")
+			call_deferred("_go",session.scene_for("menu"))
+		"continue":
+			if session.advance_chapter(): call_deferred("_go", session.scene_for("story"))
 		"finish":
 			session.finish_demo()
 			queue_redraw()
@@ -62,17 +64,27 @@ func _draw() -> void:
 	var outcome: String=str(session.battle_outcome)
 	var success: bool=outcome=="victory"
 	var result_title: String="江湖暂安 · 一战得脱" if success else ("两败俱伤 · 血路未定" if outcome=="draw" else "追兵得势 · 退守破庙")
-	var heading: String="序章 · 雨夜残镖"
+	var chapter: Dictionary=session.chapter_definition()
+	var heading: String=str(chapter.get("scene",{}).get("title","序章 · 雨夜残镖"))
 	draw_string(font,Vector2(270,183),heading,HORIZONTAL_ALIGNMENT_LEFT,-1,46,INK)
 	draw_string(font,Vector2(270,310),result_title,HORIZONTAL_ALIGNMENT_LEFT,-1,40,JADE if success else Color("a95d4c"))
-	draw_string(font,Vector2(270,392),"获得线索：《太虚引气残篇》" if session.items.has("taixu_fragment") else "尚无残篇线索",HORIZONTAL_ALIGNMENT_LEFT,-1,24,INK)
+	draw_string(font,Vector2(270,392),"剧情线索：《太虚引气残篇》" if session.items.has("taixu_fragment") else "尚无残篇线索",HORIZONTAL_ALIGNMENT_LEFT,-1,24,INK)
+	var hero=session.character("shen_changfeng")
+	if hero!=null:
+		var powders: int=int(hero.inventory.stacks.get("healing_powder",0))
+		var pills: int=int(hero.inventory.stacks.get("breath_pill",0))
+		var gear: String="已装备" if hero.inventory.equipped.has("weapon") else "未装备"
+		draw_string(font,Vector2(270,553),"随身药囊：金疮药 %d  /  回气丹 %d  /  长剑 %s" % [powders,pills,gear],HORIZONTAL_ALIGNMENT_LEFT,-1,22,INK)
 	var decision: String="你曾试着救治镖头。" if bool(session.flags.get("helped_escort",false)) else "你曾追问劫镖真相。"
 	draw_string(font,Vector2(270,446),decision,HORIZONTAL_ALIGNMENT_LEFT,-1,23,INK)
-	draw_string(font,Vector2(270,505),"这只是江湖第一幕的开端。更深的阴谋，仍藏在雨幕之后。",HORIZONTAL_ALIGNMENT_LEFT,-1,22,INK)
+	draw_string(font,Vector2(270,505),"断桥前路仍有余波，队伍与物品状态会沿章节延续。",HORIZONTAL_ALIGNMENT_LEFT,-1,22,INK)
 	if session.phase=="complete":
-		draw_string(font,Vector2(270,589),"序章试玩完成",HORIZONTAL_ALIGNMENT_LEFT,-1,30,GOLD)
+		draw_string(font,Vector2(270,589),"两幕试玩完成",HORIZONTAL_ALIGNMENT_LEFT,-1,30,GOLD)
 		_button(Rect2(270,678,380,66),"返回主菜单","new")
 	else:
-		_button(Rect2(270,650,380,66),"结束序章","finish")
+		if session.can_advance_chapter():
+			_button(Rect2(270,650,380,66),"进入下一幕","continue")
+		else:
+			_button(Rect2(270,650,380,66),"结束试玩","finish")
 		_button(Rect2(688,650,360,66),"重新挑战","retry")
 		_button(Rect2(1082,650,300,66),"主菜单","menu")

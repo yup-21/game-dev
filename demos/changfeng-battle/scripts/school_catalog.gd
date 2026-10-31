@@ -1,5 +1,6 @@
 extends RefCounted
 ## Definition data only: this catalog never constructs card instances or touches battle state.
+const StatusCatalog = preload("res://scripts/status_catalog.gd")
 const DEFAULT_SCHOOL = {"id":"tingfeng","name":"听风五式","identity":"观势藏锋、变招交锋"}
 const CHILD_EFFECTS = ["effects","on_success","on_contested","on_failure","on_hit"]
 const TARGETS = ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]
@@ -76,7 +77,13 @@ func _load(raw: Dictionary, base: Dictionary, legacy_path: String) -> bool:
 	if raw.schema_version != "3.0-multi-usage-schools" or not _text(raw.source) or not _text(raw.design): return _fail("武学版本或元数据不合法")
 	for key in ["statuses","schools","cards","combos"]:
 		if not raw[key] is Array: return _fail("目录字段必须为数组: " + key)
-	if raw.statuses.size() != 3 or raw.schools.size() != 10 or raw.cards.size() != 20 or raw.combos.size() != 7: return _fail("武学目录数量不完整")
+	# Validate definitions, not the number of authored schools/forms/statuses/combos.
+	if raw.schools.is_empty() or raw.cards.is_empty(): return _fail("武学目录至少需要一个流派及招式定义")
+	# Independent buffs may be referenced by new martial-card effects.
+	var buff_catalog = StatusCatalog.new()
+	if not buff_catalog.load_error.is_empty(): return _fail(buff_catalog.load_error)
+	for buff_id in buff_catalog.definitions:
+		_all_status_ids[buff_id] = true
 	if not base.get("cards") is Array or not base.get("statuses") is Array: return _fail("听风基础定义不完整")
 	for item in base.statuses:
 		if not item is Dictionary or not _text(item.get("id")) or _all_status_ids.has(item.id): return _fail("基础状态ID不合法或重复")

@@ -1,4 +1,5 @@
 extends RefCounted
+const Geometry = preload("res://scripts/battle_spatial_facade.gd")
 ## Pure action enumeration and complete precommit validation.
 var state
 var cards
@@ -91,6 +92,11 @@ func raw_actions(actor_id: int) -> Array:
 				if state.is_hostile(actor_id,target.id) and target.hp_u>0 and _basic_attack_in_range(actor,target):
 					options.append({"kind":"BASIC_ATTACK","actor_id":actor_id,"target_id":target.id})
 		if not actor.basic_guard_used and actor.qi_u>=10000: options.append({"kind":"BASIC_GUARD","actor_id":actor_id})
+		if not actor.item_used:
+			var inventory = state.inventories.get(actor_id,null)
+			if inventory != null:
+				for item in inventory.available_consumables():
+					options.append({"kind":"USE_ITEM","actor_id":actor_id,"item_id":str(item.item_id)})
 		if not actor.pitch_used:
 			for uid in actor.hand: options.append({"kind":"PITCH_CARD","actor_id":actor_id,"card_uid":uid,"card_id":uid})
 	else:
@@ -119,7 +125,7 @@ func validate(req: Dictionary) -> Dictionary:
 	# Check types before comparisons: Variant Array == String is a runtime error in Godot.
 	var fields: Dictionary={"kind":TYPE_STRING,"actor_id":TYPE_INT,"battle_id":TYPE_STRING,
 		"expected_revision":TYPE_INT,"request_version":TYPE_INT,"request_id":TYPE_STRING,"action_id":TYPE_STRING,
-		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"attack_kind":TYPE_STRING,"spatial_mode":TYPE_STRING,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING}
+		"card_id":TYPE_STRING,"card_uid":TYPE_STRING,"usage_id":TYPE_STRING,"target_cell":TYPE_VECTOR2I,"target_position":TYPE_VECTOR2,"attack_kind":TYPE_STRING,"spatial_mode":TYPE_STRING,"target_id":TYPE_INT,"link_id":TYPE_INT,"technique_id":TYPE_STRING,"node_id":TYPE_STRING,"school_id":TYPE_STRING,"item_id":TYPE_STRING}
 	for key in fields:
 		if req.has(key) and typeof(req[key])!=int(fields[key]): return failure("MALFORMED_REQUEST","请求字段类型错误："+str(key))
 	if not req.has("kind") or not req.has("actor_id"): return failure("MALFORMED_REQUEST","缺少行动或操作者")
@@ -149,7 +155,7 @@ func validate(req: Dictionary) -> Dictionary:
 	var canonical: Dictionary={}
 	for o in raw_actions(int(req.actor_id)):
 		var matches: bool=true
-		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id","school_id","spatial_mode"]:
+		for key in ["kind","card_uid","usage_id","technique_id","node_id","target_id","target_cell","link_id","school_id","spatial_mode","item_id"]:
 			if normalized.get(key)!=o.get(key): matches=false
 		if matches:
 			canonical=o
@@ -187,28 +193,14 @@ func _validate_free_move(req: Dictionary) -> Dictionary:
 	var actor=state.get_actor(int(req.actor_id))
 	if actor==null or actor.hp_u<=0:
 		return failure("INVALID_ACTOR","角色不存在或已失去行动能力")
-	var goal: Vector2=req.target_position
-	if not is_finite(goal.x) or not is_finite(goal.y) or absf(goal.x)>100000.0 or absf(goal.y)>100000.0:
-		return failure("INVALID_POSITION","移动目标坐标无效")
-	# A fixed quarter-unit grid is subpixel precision, not a gameplay tile.
-	# Quantization keeps logical positions stable across save/replay boundaries.
-	goal=Vector2(roundf(goal.x*4.0)*0.25,roundf(goal.y*4.0)*0.25)
-	var destination_cell: Vector2i=state.spatial.bake.cell_at_screen(goal,true)
-	if destination_cell==Vector2i(-1,-1):
-		return failure("INVALID_POSITION","落脚点不可通行或与旧战棋单位冲突")
-	var positions: Dictionary={}
-	for other in state.actors:
-		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
-	state.spatial.set_actors(positions)
-	goal=state.spatial.safe_landing(actor.position,goal,8.0,actor.id)
-	goal=Vector2(roundf(goal.x*4.0)*0.25,roundf(goal.y*4.0)*0.25)
-	destination_cell=state.spatial.bake.cell_at_screen(goal,true)
-	if destination_cell==Vector2i(-1,-1):
-		return failure("INVALID_POSITION","没有可用的角色落脚位置")
-	var path: PackedVector2Array=state.spatial.find_path(actor.position,goal,8.0,actor.id)
-	if path.size()<2:
-		return failure("UNREACHABLE_POSITION","落脚点无法通过当前地形到达")
-	var distance: float=state.spatial.path_length(path)
+	var landing: Dictionary=Geometry.new(state).plan_free_landing(actor,req.target_position)
+	if not bool(landing.get("success",false)):
+		var error: String=str(landing.get("error_code","INVALID_POSITION"))
+		return failure(error,"自由移动落点无效或无可达路径")
+	var goal: Vector2=Vector2(landing.position)
+	var destination_cell: Vector2i=Vector2i(landing.cell)
+	var path: PackedVector2Array=PackedVector2Array(landing.path)
+	var distance: float=float(landing.distance)
 	if distance<0.25:
 		return failure("NO_MOVEMENT","角色已经位于此落点")
 	var unit_distance: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
@@ -318,34 +310,19 @@ func _validate_move_and_attack(req: Dictionary) -> Dictionary:
 		return failure("INVALID_TARGET","武学攻击距离定义无效")
 	var min_range: float=float(min_distance-1)*world_unit
 	var max_range: float=float(max_distance)*world_unit
-	var positions: Dictionary={}
-	for other in state.actors:
-		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
-	state.spatial.set_actors(positions)
-	var approach: Dictionary=state.spatial.find_attack_approach(actor.position,target.position,
-		min_range,max_range,available_distance,8.0,8.0,actor.id,target.id,line_required)
+	var approach: Dictionary=Geometry.new(state).find_attack_approach(actor,target,
+		min_range,max_range,available_distance,line_required)
 	if approach.is_empty():
 		return failure("NO_ATTACK_POSITION","本回合移动距离内没有可用的攻击站位")
-	var final_position: Vector2=Vector2(approach.position)
-	var path: PackedVector2Array=PackedVector2Array(approach.path)
-	var travelled: float=float(approach.cost)
-	# Same quantized coordinates as MOVE_FREE; replan after rounding to keep
-	# committed world state and path endpoint identical.
-	if travelled > 0.0001:
-		final_position=Vector2(roundf(final_position.x*4.0)*0.25,roundf(final_position.y*4.0)*0.25)
-		if not state.spatial.is_valid_position(final_position,8.0,actor.id):
-			return failure("INVALID_POSITION","接近攻击落点发生冲突")
-		path=state.spatial.find_path(actor.position,final_position,8.0,actor.id)
-		if path.size()<2:
-			return failure("UNREACHABLE_POSITION","接近路线已经失效")
-		travelled=state.spatial.path_length(path)
-	var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(final_position,true)
-	if dest_cell==Vector2i(-1,-1):
-		return failure("INVALID_POSITION","目标附近没有可站立的位置")
-	if not state.spatial.attack_in_range(final_position,target.position,min_range,max_range,8.0,8.0):
-		return failure("INVALID_RANGE","接近后仍不满足武学有效距离")
-	if line_required and not state.spatial.attack_line_clear(final_position,target.position,[actor.id,target.id]):
-		return failure("LINE_BLOCKED","攻击路径被地形或其他角色阻挡")
+	var checked_approach: Dictionary=Geometry.new(state).check_attack_approach(
+		actor,target,approach,min_range,max_range,line_required)
+	if not bool(checked_approach.get("success",false)):
+		var approach_error: String=str(checked_approach.get("error_code","NO_ATTACK_POSITION"))
+		return failure(approach_error,"自动接近站位不合法或攻击路径被阻挡")
+	var final_position: Vector2=Vector2(checked_approach.position)
+	var dest_cell: Vector2i=Vector2i(checked_approach.cell)
+	var path: PackedVector2Array=PackedVector2Array(checked_approach.path)
+	var travelled: float=float(checked_approach.distance)
 	var move_units: int=0 if travelled<=0.0001 else ceili((travelled-0.0001)/world_unit)
 	if move_units>remaining:
 		return failure("MOVE_BUDGET_EXCEEDED","本回合移动距离不足以接近目标")
@@ -376,31 +353,16 @@ func _can_reanchor_to_grid() -> bool:
 	return true
 
 func _basic_attack_in_range(actor,target) -> bool:
-	if state.spatial_mode!="FREE" or state.spatial==null:
-		return distance(actor.cell,target.cell)==1
-	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
-	var spatial=state.spatial
-	var positions: Dictionary={}
-	for combatant in state.actors:
-		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
-	spatial.set_actors(positions)
-	return spatial.attack_in_range(actor.position,target.position,0.0,unit,8.0,8.0) and spatial.attack_line_clear(actor.position,target.position,[actor.id,target.id])
+	return Geometry.new(state).can_attack(actor,target,0.0,1.0,true)
 
-## Geometry used by directly played cards and abilities in FREE mode.
-## `MOVE_AND_ATTACK` uses the same range convention for approach plans.
+## Target geometry for FREE cards and abilities; costs remain here.
 func free_target_legal(actor,target,usage: Dictionary) -> bool:
 	if state.spatial_mode!="FREE" or state.spatial==null: return false
 	if not state.is_hostile(actor.id,target.id) or target.hp_u<=0: return false
 	var maximum: int=int(usage.get("attack_profile",{}).get("range",usage.get("target",{}).get("max_distance",1)))
 	var minimum: int=int(usage.get("target",{}).get("min_distance",1))
 	if minimum<1 or maximum<minimum: return false
-	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
-	var spatial=state.spatial
-	var positions: Dictionary={}
-	for combatant in state.actors:
-		positions[combatant.id]={"position":combatant.position,"radius":8.0,"alive":combatant.hp_u>0}
-	spatial.set_actors(positions)
-	return spatial.attack_in_range(actor.position,target.position,float(minimum-1)*unit,float(maximum)*unit,8.0,8.0) and spatial.attack_line_clear(actor.position,target.position,[actor.id,target.id])
+	return Geometry.new(state).can_attack(actor,target,float(minimum-1),float(maximum),true)
 
 ## Changing rules never consumes movement, card uses, CTB or Qi. It is still
 ## an authoritative revisioned command, blocked during attacks and animations.
@@ -456,23 +418,14 @@ func _validate_free_card_move(req: Dictionary) -> Dictionary:
 			allowed_steps=mini(allowed_steps,int(effect.get("max_distance",0)))
 	if not has_move or allowed_steps<1:
 		return failure("ILLEGAL_ACTION","该卡牌不是可自由移动的武学步法")
-	var point: Vector2=req.target_position
-	if not is_finite(point.x) or not is_finite(point.y) or absf(point.x)>100000.0 or absf(point.y)>100000.0:
-		return failure("INVALID_POSITION","武学步法目标坐标无效")
-	point=Vector2(roundf(point.x*4.0)*0.25,roundf(point.y*4.0)*0.25)
-	var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(point,true)
-	if dest_cell==Vector2i(-1,-1): return failure("INVALID_POSITION","步法落点不可通行")
-	var positions: Dictionary={}
-	for other in state.actors:
-		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
-	state.spatial.set_actors(positions)
-	point=state.spatial.safe_landing(actor.position,point,8.0,actor.id)
-	point=Vector2(roundf(point.x*4.0)*0.25,roundf(point.y*4.0)*0.25)
-	dest_cell=state.spatial.bake.cell_at_screen(point,true)
-	if dest_cell==Vector2i(-1,-1): return failure("INVALID_POSITION","步法没有可用落脚位置")
-	var path: PackedVector2Array=state.spatial.find_path(actor.position,point,8.0,actor.id)
-	if path.size()<2: return failure("UNREACHABLE_POSITION","步法目标不可达")
-	var distance: float=state.spatial.path_length(path)
+	var landing: Dictionary=Geometry.new(state).plan_free_landing(actor,req.target_position)
+	if not bool(landing.get("success",false)):
+		var error: String=str(landing.get("error_code","INVALID_POSITION"))
+		return failure(error,"武学步法落点无效或不可达")
+	var point: Vector2=Vector2(landing.position)
+	var dest_cell: Vector2i=Vector2i(landing.cell)
+	var path: PackedVector2Array=PackedVector2Array(landing.path)
+	var distance: float=float(landing.distance)
 	var maximum: float=float(allowed_steps)*maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
 	if distance<0.25 or distance>maximum+0.001:
 		return failure("MOVE_BUDGET_EXCEEDED","超出该武学步法的实际移动距离")

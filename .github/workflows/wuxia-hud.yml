@@ -3,61 +3,16 @@ name: Original Wuxia HUD regression
 on:
   pull_request:
     paths:
-      - 'demos/changfeng-battle/assets/ui/**'
-      - 'demos/changfeng-battle/scripts/hd2d_card_ui.gd'
-      - 'demos/changfeng-battle/scripts/opening_flow.gd'
-      - 'demos/changfeng-battle/scripts/opening_role_sprite.gd'
-      - 'demos/changfeng-battle/assets/characters/concepts/escort_elder_injured.svg'
-      - 'demos/changfeng-battle/checks/test_opening_sprites.gd'
-      - 'demos/changfeng-battle/scripts/demo_result.gd'
-      - 'demos/changfeng-battle/checks/test_single_battle_entry.gd'
-      - 'demos/changfeng-battle/checks/opening_visual_check.gd'
-      - 'demos/changfeng-battle/scripts/hd2d_ui_theme.gd'
-      - 'demos/changfeng-battle/scripts/hd2d_battle.gd'
-      - 'demos/changfeng-battle/scripts/illustrated_battle_map.gd'
-      - 'demos/changfeng-battle/scripts/map_bake.gd'
-      - 'demos/changfeng-battle/data/maps/**'
-      - 'demos/changfeng-battle/checks/test_baked_bridge_grid.gd'
-      - 'demos/changfeng-battle/assets/scenes/**'
-      - 'demos/changfeng-battle/checks/test_illustrated_maps.gd'
-      - 'demos/changfeng-battle/scripts/actor_facing.gd'
-      - 'demos/changfeng-battle/scripts/hd2d_animation.gd'
-      - 'demos/changfeng-battle/scripts/battle_spatial_service.gd'
-      - 'demos/changfeng-battle/checks/test_free_crowd_navigation.gd'
-      - 'demos/changfeng-battle/checks/test_story_background_content.gd'
-      - 'demos/changfeng-battle/scripts/battle_state.gd'
-      - 'demos/changfeng-battle/checks/test_actor_facing.gd'
-      - 'demos/changfeng-battle/scripts/character_registry.gd'
-      - 'demos/changfeng-battle/checks/test_multi_school_switch.gd'
-      - 'demos/changfeng-battle/scripts/character_card_ui.gd'
-      - 'demos/changfeng-battle/scripts/hd2d_art_catalog.gd'
-      - 'demos/changfeng-battle/scripts/scenario_director.gd'
-      - 'demos/changfeng-battle/scripts/combatant_state.gd'
-      - 'demos/changfeng-battle/data/characters/**'
-      - 'demos/changfeng-battle/checks/test_character_registry.gd'
-      - 'demos/changfeng-battle/scripts/hd2d_ctb_rail.gd'
-      - 'demos/changfeng-battle/scripts/hd2d_response_policy.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_auto_pass.gd'
-      - 'demos/changfeng-battle/checks/test_bridge_auto_battle.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_wuxia_ui.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_ui_assets.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_unified_hud.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_ctb_rail.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_ornament_hud.gd'
-      - 'demos/changfeng-battle/checks/test_hd2d_hand_visibility.gd'
-      - 'demos/changfeng-battle/scripts/hd2d_card_art.gd'
-      - 'demos/changfeng-battle/scripts/card_system.gd'
-      - 'demos/changfeng-battle/scripts/combat_resolver.gd'
-      - 'demos/changfeng-battle/scripts/school_catalog.gd'
-      - 'demos/changfeng-battle/data/tingfeng_cards.json'
-      - 'demos/changfeng-battle/data/techniques.json'
-      - 'demos/changfeng-battle/scripts/technique_runtime.gd'
-      - 'demos/changfeng-battle/scripts/ability_system.gd'
-      - 'demos/changfeng-battle/scripts/battle_model.gd'
-      - 'demos/changfeng-battle/data/school_forms.json'
-      - 'demos/changfeng-battle/data/demo_scenario.json'
-      - 'demos/changfeng-battle/checks/test_derived_wuxue_decks.gd'
+      - 'demos/changfeng-battle/**/*.gd'
+      - 'demos/changfeng-battle/**/*.tscn'
+      - 'demos/changfeng-battle/**/*.tres'
+      - 'demos/changfeng-battle/**/*.gdshader'
+      - 'demos/changfeng-battle/**/*.json'
+      - 'demos/changfeng-battle/assets/**'
+      - 'demos/changfeng-battle/project.godot'
+      - 'demos/changfeng-battle/run-demo.*'
       - '.github/workflows/wuxia-hud.yml'
+
   workflow_dispatch:
 
 permissions:
@@ -75,6 +30,8 @@ jobs:
           use-dotnet: false
       - name: Import PNG and SVG art
         run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Smoke-test authoritative attribute and modifier scripts
+        run: timeout --signal=TERM 30s godot --headless --path demos/changfeng-battle --script res://checks/test_modifier_bootstrap.gd
       - name: Validate first-act Sprite2D characters, real assets, movement and elder dialogue
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_opening_sprites.gd
       - name: Assert only the illustrated battle is player-facing
@@ -89,12 +46,26 @@ jobs:
         run: timeout --signal=TERM 40s godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_battle_space.gd
       - name: Validate both spatial APIs after restoring reverted PR62
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_spatial_api_coexistence.gd
+      - name: Validate unified GRID and FREE spatial geometry facade
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_facade.gd
+      - name: Validate unified R9 free landing, LOS, forced movement and cache
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_r9.gd
+      - name: Measure FREE path baseline and verify profiling counters
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_benchmark.gd
+      - name: Verify pathfinding on open, obstacle and six-actor topology fixtures
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_spatial_topology_profiles.gd
+      - name: Verify FREE movement range and over-budget route hiding
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_continuous_move_preview_range.gd
       - name: Validate committed free movement and rollback
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_move_command.gd
       - name: Validate atomic auto approach and martial card attacks
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_move_and_attack.gd
       - name: Check live Sprite2D automatic approach UI commands
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_move_and_attack_ui.gd
+      - name: Guard refactored command adapter and versioned submissions
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_command_dispatcher.gd
+      - name: Validate extracted input intent and guarded view submission
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_input_controller.gd
       - name: Validate two authoritative spatial modes and live transitions
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_dual_spatial_mode.gd
       - name: Exercise in-battle M toggle and mode preference persistence
@@ -105,6 +76,20 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_free_space_ai.gd
       - name: Validate 2D painted terrain and story character registration
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_illustrated_maps.gd
+      - name: Guard true Node2D scene and shake compensated input
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_pure_2d.gd
+      - name: Validate R8 world, HUD and presentation components
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_r8_components.gd
+      - name: Validate data-driven R10 action timing and non-authoritative cues
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_action_timeline.gd
+      - name: Validate P1 authoritative posture break and guard recovery
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_posture_authority.gd
+      - name: Verify P1 cancels, posture-conditional combos and six-unit GUI projection
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_p1_combat_closure.gd
+      - name: Validate legacy startup suite against canonical Sprite2D
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_startup.gd
+      - name: Validate runtime art provenance and image atlas dimensions
+        run: timeout --signal=TERM 45s godot --headless --path demos/changfeng-battle --script res://checks/test_asset_contracts.gd
       - name: Check original character art in painted battle
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_art_integration.gd
       - name: Check original UI atlas and model-backed HUD
@@ -115,18 +100,32 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_unified_hud.gd
       - name: Check drawn attacks remain visible outside attack range
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_hand_visibility.gd
+      - name: Verify detached physical hand and its disabled card fallbacks
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_hand_view.gd
       - name: Check the right-side authoritative charge track
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_ctb_rail.gd
       - name: Check ornate fan tray, portraits and genuine CTB presentation
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_ornament_hud.gd
       - name: Check clickable hand and animation request lifecycle
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_interactions.gd
+      - name: Validate single-acknowledge presentation and skip lifecycle
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_presentation_coordinator.gd
+      - name: Check actual battle animation skip and duplicate-click rejection
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_presentation_skip_ui.gd
       - name: Verify automatic empty-response skips and authoritative clash resolution
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_auto_pass.gd
       - name: Play seeded six-character bridge battles through production AI
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_bridge_auto_battle.gd
       - name: Validate generated martial cards and actor-specific schools
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_derived_wuxue_decks.gd
+      - name: Verify martial, buff, equipment and character integration
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_modular_content_integration.gd
+      - name: Validate persistent inventory, equipment and character battle builds
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_inventory_equipment_runtime.gd
+      - name: Validate independent buff definitions and deterministic modifiers
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_status_modifiers.gd
+      - name: Verify catalog extensions and repeatable combo limits
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_catalog_extensibility.gd
       - name: Check original multi-school V3 mechanics
         run: |
           godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_catalog.gd
@@ -136,6 +135,8 @@ jobs:
           godot --headless --path demos/changfeng-battle --script res://checks/test_tingfeng.gd
           godot --headless --path demos/changfeng-battle --script res://checks/test_ability_framework.gd
           godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
+      - name: Prove dynamic actor IDs and unbound character definitions
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_character_dynamic_identity.gd
       - name: Validate character registry, profile bindings and live role dossier
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_character_registry.gd
       - name: Verify multiple learned schools, switching, card-zone integrity and UI
@@ -146,6 +147,10 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_story_background_content.gd
       - name: Check six-actor prologue encounter
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_story_encounter.gd
+      - name: Validate data-driven second chapter and conditional story events
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_chapter_pipeline.gd
+      - name: Verify two consecutive battle inventories and equipment carryover
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_two_encounter_state.gd
 
 
   visual-evidence:
@@ -169,11 +174,12 @@ jobs:
           test -s demos/changfeng-battle/captures/hd2d-validation/02-card-selection.png
           test -s demos/changfeng-battle/captures/hd2d-validation/03-character-dossier.png
           test -s demos/changfeng-battle/captures/hd2d-validation/04-baked-grid.png
-      - name: Capture real first-act story and injured elder
+          test -s demos/changfeng-battle/captures/hd2d-validation/05-prologue-3v3.png
+      - name: Capture true first-act and elder dialogue frames
         shell: bash
         run: |
           set -euo pipefail
-          timeout --signal=TERM 150s xvfb-run -a -s " -screen 0 1600x1000x24" godot --path demos/changfeng-battle -- --opening-visual-check
+          timeout --signal=TERM 150s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_opening_story_2d.gd
           test -s demos/changfeng-battle/captures/opening-explore.png
           test -s demos/changfeng-battle/captures/opening-dialogue.png
       - name: Upload screenshot evidence

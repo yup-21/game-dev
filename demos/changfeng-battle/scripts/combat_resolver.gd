@@ -3,6 +3,8 @@ extends RefCounted
 const UNIT: int=10000
 const MAX_EFFECTS: int=32
 const Facing = preload("res://scripts/actor_facing.gd")
+const Geometry = preload("res://scripts/battle_spatial_facade.gd")
+const Posture = preload("res://scripts/posture_system.gd")
 var state
 var cards
 var costs
@@ -15,6 +17,7 @@ var audit
 var turns
 var reactions
 var techniques
+var posture = Posture.new()
 
 func _init(s,c,cost_system,validator,registry,combo_system,status_system,visibility_system,event_log) -> void:
 	state=s
@@ -117,6 +120,17 @@ func apply(action: Dictionary,plan: Dictionary) -> void:
 					play_card(actor,strike)
 				"USE_ABILITY":
 					play_ability(actor,strike)
+		"USE_ITEM":
+			# The validated stock is spent exactly once in the authoritative resolver.
+			# Failed or replayed commands never reach this branch.
+			var inventory = state.inventories.get(actor.id,null)
+			var consumed: Dictionary = inventory.consume(str(action.item_id))
+			assert(bool(consumed.get("ok",false)))
+			actor.item_used=true
+			var definition: Dictionary = inventory.catalog.get_item(str(action.item_id))
+			emit("ITEM_USED",{"actor_id":actor.id,"item_id":str(action.item_id),
+				"name":str(definition.name),"text":"%s 使用 %s" % [actor.name,str(definition.name)]})
+			apply_effects(actor.id,consumed.effects)
 		"BASIC_ATTACK":
 			actor.basic_attack_used=true
 			declare_attack(actor.id,"","basic","basic",int(action.target_id),1,"thrust",0,[])
@@ -386,6 +400,25 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				if not path.is_empty() and path.size()<=int(effect.max_distance): move_actor(source,choice.target_cell,path)
 			"add_shield": add_shield(target_id,float(effect.amount),int(effect.get("expires_after_global_ticks",100)))
 			"gain_qi": gain_qi(target_id,float(effect.amount))
+			"deal_posture":
+				var strained = state.get_actor(target_id)
+				if strained==null or strained.hp_u<=0: continue
+				var impact: Dictionary = posture.impact(strained,int(effect.amount))
+				if int(impact.delta)<=0: continue
+				emit("POSTURE_DAMAGED",{"actor_id":target_id,"source_actor_id":source,
+					"amount":int(impact.delta),"posture":int(impact.current),"max_posture":int(impact.max_posture)})
+				if bool(impact.broken):
+					add_status(target_id,"opening")
+					emit("POSTURE_BROKEN",{"actor_id":target_id,"source_actor_id":source,
+					"max_posture":int(impact.max_posture),"text":"%s 架势崩解 · 露隙" % strained.name})
+			"recover_posture":
+				var resting = state.get_actor(target_id)
+				if resting==null or resting.hp_u<=0: continue
+				var restored: Dictionary = posture.recover(resting,int(effect.amount))
+				if int(restored.delta)>0:
+					emit("POSTURE_RECOVERED",{"actor_id":target_id,"source_actor_id":source,
+						"amount":int(restored.delta),"posture":int(restored.current),"max_posture":int(restored.max_posture)})
+			"heal_hp": heal_hp(target_id,float(effect.amount))
 			"modify_pending_damage":
 				if state.attack.is_empty(): continue
 				var delta: int=int(effect.get("flat_delta",0))
@@ -401,11 +434,10 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				for cell in [lock]+state.neighbors(lock):
 					if state.passable(cell) and not state.attack.affected_cells.has(cell): state.attack.affected_cells.append(cell)
 			"cancel_chain_link":
-				for link in state.clash.get("stack",[]):
-					if int(link.id)==int(choice.get("link_id",-1)) and int(link.actor_id)!=source and not link.canceled and not link.resolved:
-						link.canceled=true
-						emit("CHAIN_LINK_CANCELED",{"actor_id":source,"link_id":link.id,"text":"截势取消 L%d" % link.id})
-						break
+				var link_id: int=int(choice.get("link_id",-1))
+				if reactions.cancel_link(source,link_id):
+					emit("CHAIN_LINK_CANCELED",{"actor_id":source,"link_id":link_id,
+						"text":"截势取消 L%d" % link_id})
 			"contest_intercept":
 				if state.attack.is_empty(): continue
 				var defender=state.get_actor(source)
@@ -480,50 +512,20 @@ func move_actor(actor_id: int,dest: Vector2i,path: Array) -> void:
 	emit("MOVE",{"actor_id":actor_id,"from":previous,"to":dest,"path":path.duplicate(),"facing":actor.facing,"text":"%s 移步 (%d,%d)" % [actor.name,dest.x,dest.y]})
 	emit("MOVE_FINISHED",{"actor_id":actor_id,"from":previous,"to":dest})
 
+## R9: the same axis-constrained geometry is used by previews and commits.
 func force_move(source: int,target_id: int,effect: Dictionary) -> void:
-	var actor=state.get_actor(target_id)
-	if state.spatial_mode=="FREE" and state.spatial!=null:
-		_force_move_free(source,target_id,effect)
-		return
-	var delta: Vector2i=actor.cell-state.get_actor(source).cell
-	if abs(delta.x)>=abs(delta.y): delta=Vector2i(signi(delta.x),0)
-	else: delta=Vector2i(0,signi(delta.y))
-	if effect.direction=="towards_attacker": delta=-delta
-	var path: Array=[]
-	var dest: Vector2i=actor.cell
-	for _i in range(int(effect.max_distance)):
-		var next: Vector2i=dest+delta
-		if delta==Vector2i.ZERO or not state.passable(next) or state.occupied(next,target_id): break
-		path.append(next)
-		dest=next
-	if not path.is_empty(): move_actor(target_id,dest,path)
-
-## Continuous knockback is performed along the push axis, not by teleports
-## between legacy cells. Stop at the last legal position before collision.
-func _force_move_free(source: int,target_id: int,effect: Dictionary) -> void:
 	var actor=state.get_actor(target_id)
 	var attacker=state.get_actor(source)
 	if actor==null or attacker==null: return
-	var direction: Vector2=actor.position-attacker.position
-	if direction.length_squared()<0.0001: return
-	direction=direction.normalized()
-	if str(effect.get("direction",""))=="towards_attacker": direction=-direction
-	var positions: Dictionary={}
-	for other in state.actors:
-		positions[other.id]={"position":other.position,"radius":8.0,"alive":other.hp_u>0}
-	state.spatial.set_actors(positions)
-	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
-	var start: Vector2=actor.position
-	var end: Vector2=start
-	for i in range(1,maxi(0,int(effect.get("max_distance",0)))*24+1):
-		var candidate: Vector2=start+direction*(float(i)*unit/24.0)
-		if not state.spatial.is_valid_position(candidate,8.0,target_id): break
-		end=candidate
-	if end.distance_to(start)<0.25: return
-	end=Vector2(roundf(end.x*4.0)*0.25,roundf(end.y*4.0)*0.25)
-	var dest_cell: Vector2i=state.spatial.bake.cell_at_screen(end)
-	if dest_cell==Vector2i(-1,-1): return
-	move_actor_free(target_id,end,dest_cell,PackedVector2Array([start,end]))
+	var proposal: Dictionary=Geometry.new(state).forced_displacement(actor,attacker,
+		maxi(0,int(effect.get("max_distance",0))),
+		str(effect.get("direction",""))=="towards_attacker")
+	if proposal.is_empty(): return
+	if state.spatial_mode=="FREE" and state.spatial!=null:
+		move_actor_free(target_id,Vector2(proposal.position),
+			Vector2i(proposal.cell),PackedVector2Array(proposal.path))
+	else:
+		move_actor(target_id,Vector2i(proposal.cell),Array(proposal.path))
 
 func add_shield(actor_id: int,amount: float,duration: int) -> void:
 	var a=state.get_actor(actor_id)
@@ -531,6 +533,13 @@ func add_shield(actor_id: int,amount: float,duration: int) -> void:
 	a.shield_expiry=maxi(a.shield_expiry,state.global_tick+duration)
 	emit("SHIELD",{"actor_id":actor_id,"amount":amount,"text":"%s 护体 +%s" % [a.name,str(amount)]})
 	emit("SHIELD_ADDED",{"actor_id":actor_id,"amount":amount})
+
+func heal_hp(actor_id: int,amount: float) -> void:
+	var a=state.get_actor(actor_id)
+	if a==null or a.hp_u<=0: return
+	var before: int=a.hp_u
+	a.hp_u=mini(a.max_hp_u,a.hp_u+roundi(amount*UNIT))
+	emit("HP_HEALED",{"actor_id":actor_id,"amount":float(a.hp_u-before)/UNIT})
 
 func gain_qi(actor_id: int,amount: float) -> void:
 	var a=state.get_actor(actor_id)

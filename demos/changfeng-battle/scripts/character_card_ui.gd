@@ -3,6 +3,7 @@ signal switch_requested(actor_id: int, school_id: String)
 ## Interactive character dossier. CharacterRegistry owns identity and art;
 ## BattleModel's CombatantState is the sole authority for mutable values.
 const Registry = preload("res://scripts/character_registry.gd")
+const ItemCatalog = preload("res://scripts/item_catalog.gd")
 const Art = preload("res://scripts/hd2d_art_catalog.gd")
 const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
 var registry = Registry.new()
@@ -147,7 +148,7 @@ func open_actor(battle_model, id: int) -> bool:
     bio_label.text = str(definition.biography) + "\n\n性情 · " + str(definition.personality)
     portrait.texture = Art.portrait_for_character(str(definition.id))
     var frame := AtlasTexture.new()
-    var sheet: Texture2D = Art.sheet_for_actor(id,actor.team_id!=0)
+    var sheet: Texture2D = Art.sheet_for_character(str(definition.id),actor.team_id!=0)
     frame.atlas = sheet
     frame.region = Rect2(0,0,sheet.get_width()/6.0,sheet.get_height()/4.0)
     preview.texture = frame
@@ -191,6 +192,16 @@ func open_actor(battle_model, id: int) -> bool:
     status_label.text = ("状态："+" · ".join(effects) if not effects.is_empty() else "状态：无") + "\n"
     status_label.text += "护盾 %.0f    已学技能 %d    抽牌堆 %d\n" % [
         actor.shield,actor.technique_states.size(),actor.draw_pile.size()]
-    status_label.text += "装备栏与成长履历：尚未接入，暂无可显示数据。"
+    var catalog = ItemCatalog.new()
+    var gear_names: Array = []
+    for slot in actor.equipment:
+        var item: Dictionary = catalog.get_item(str(actor.equipment[slot]))
+        var label: String = str(slot) + " · " + str(item.get("name",actor.equipment[slot]))
+        var affix_record: Dictionary = actor.equipment_affixes.get(slot,{})
+        var names: Array = affix_record.get("affix_names",[])
+        if not names.is_empty():
+            label += "（" + "、".join(names) + "）"
+        gear_names.append(label)
+    status_label.text += ("装备：" + " / ".join(gear_names) if not gear_names.is_empty() else "装备：无")
     visible = true
     return true

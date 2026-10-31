@@ -1,0 +1,6 @@
+{
+  "schema_version": 1, "id": "padded_armor", "name": "夹棉护衣",
+  "description": "便于行走的轻护衣。", "kind": "equipment", "slot": "armor", "stack_limit": 1,
+  "affix_pool": ["iron_guard", "quickstep"], "max_affixes": 1,
+  "modifiers": [{ "stat": "CON", "op": "flat", "value": 1 }]
+}

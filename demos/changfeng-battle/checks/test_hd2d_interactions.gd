@@ -4,7 +4,7 @@ extends SceneTree
 ## Omit --headless and append -- --capture to also save rendered acceptance PNGs.
 const SCENE_PATH := "res://battle_hd2d.tscn"
 const CELL_SIZE := 1.5
-var scene: Node3D
+var scene: Node2D
 var failures := 0
 var checks := 0
 var observed_tickets: Dictionary = {}
@@ -163,7 +163,7 @@ func _run() -> void:
     if not check(packed != null, "HD2D PackedScene loads"):
         quit(1)
         return
-    scene = packed.instantiate() as Node3D
+    scene = packed.instantiate() as Node2D
     root.add_child(scene)
     await _frames(4)
     var initial := _shape(_view())

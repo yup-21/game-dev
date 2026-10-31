@@ -1,4 +1,6 @@
 extends Node2D
+## DEPRECATED: historical compatibility/fixture module, not the player-facing battle.
+## Retain until all res:// consumers and legacy tests are migrated.
 ## DEPRECATED (not player-facing): legacy 2D party battle retained for test coverage.
 ## Story encounters and retries now use res://battle_hd2d.tscn.
 ## Multi-combatant tactics view: all commands use BattleModel.request/submit.

@@ -1,4 +1,5 @@
 extends RefCounted
+const Events = preload("res://scripts/story_event_executor.gd")
 ## Opening cutscene and branching dialogue state independent of Node2D / combat UI.
 ## A later chapter can replace the JSON file without editing the presentation script.
 var phase: String = "menu" # menu / cinematic / explore / dialogue / complete
@@ -7,6 +8,7 @@ var nodes: Dictionary = {}
 var cinematic_index: int = 0
 var dialogue_id: String = ""
 var obtained_fragment: bool = false
+var pending_events: Array = []
 var load_error: String = ""
 
 func _init(path: String = "res://data/opening_story.json") -> void:
@@ -40,6 +42,9 @@ func _init(path: String = "res://data/opening_story.json") -> void:
 		if not entry.get("next", "") is String or not entry.get("choices", []) is Array:
 			load_error = "Invalid dialogue transition"
 			return
+		if not _valid_events(entry.get("events",[])):
+			load_error = "Invalid dialogue events"
+			return
 		if entry.has("choices") and entry.choices.size() > 3:
 			load_error = "Too many choices"
 			return
@@ -56,6 +61,9 @@ func _init(path: String = "res://data/opening_story.json") -> void:
 			if not choice is Dictionary or not choice.get("text") is String or not choice.get("next") is String or not nodes.has(str(choice.next)):
 				load_error = "Invalid dialogue choice destination"
 				return
+			if not _valid_events(choice.get("events",[])) or not _valid_requirements(choice.get("requires",[])):
+				load_error = "Invalid dialogue choice effects or conditions"
+				return
 	data = parsed.duplicate(true)
 
 func begin() -> void:
@@ -64,12 +72,14 @@ func begin() -> void:
 	cinematic_index = 0
 	dialogue_id = ""
 	obtained_fragment = false
+	pending_events.clear()
 
 func reset() -> void:
 	phase = "menu"
 	cinematic_index = 0
 	dialogue_id = ""
 	obtained_fragment = false
+	pending_events.clear()
 
 func current_beat() -> Dictionary:
 	if phase != "cinematic" or cinematic_index >= data.get("cinematic", []).size(): return {}
@@ -85,7 +95,7 @@ func skip_cinematic() -> void:
 
 func interact() -> bool:
 	if phase != "explore": return false
-	dialogue_id = str(data.get("entry_node", ""))
+	_open_node(str(data.get("entry_node", "")))
 	phase = "dialogue"
 	return true
 
@@ -99,19 +109,44 @@ func _open_node(id: String) -> void:
 		dialogue_id = ""
 		return
 	dialogue_id = id
+	pending_events.append_array(nodes[id].get("events",[]).duplicate(true))
 	if str(nodes[id].get("event", "")) == "obtain_fragment":
 		obtained_fragment = true
 
-func advance_dialogue() -> bool:
+func advance_dialogue(flags: Dictionary = {}) -> bool:
 	if phase != "dialogue": return false
-	var current: Dictionary = current_dialogue()
-	if not current.get("choices", []).is_empty(): return false
-	_open_node(str(current.get("next", "")))
+	if not available_choices(flags).is_empty(): return false
+	_open_node(str(current_dialogue().get("next", "")))
 	return true
 
-func choose(index: int) -> bool:
+func choose(index: int, flags: Dictionary = {}) -> bool:
 	if phase != "dialogue": return false
-	var choices: Array = current_dialogue().get("choices", [])
+	var choices: Array = available_choices(flags)
 	if index < 0 or index >= choices.size(): return false
+	pending_events.append_array(choices[index].get("events",[]).duplicate(true))
 	_open_node(str(choices[index].next))
+	return true
+
+func available_choices(flags: Dictionary = {}) -> Array:
+	var visible: Array = []
+	for choice in current_dialogue().get("choices",[]):
+		if Events.meets(choice.get("requires",[]),flags):
+			visible.append(choice.duplicate(true))
+	return visible
+
+func take_events() -> Array:
+	var delivered: Array = pending_events.duplicate(true)
+	pending_events.clear()
+	return delivered
+
+func _valid_events(entries: Variant) -> bool:
+	if not entries is Array: return false
+	for event in entries:
+		if not Events.valid_event(event): return false
+	return true
+
+func _valid_requirements(entries: Variant) -> bool:
+	if not entries is Array: return false
+	for condition in entries:
+		if not condition is Dictionary or not condition.get("flag") is String or not condition.get("equals") is bool: return false
 	return true

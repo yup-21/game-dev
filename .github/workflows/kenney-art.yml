@@ -48,20 +48,24 @@ jobs:
           version: '4.7.2'
           use-dotnet: false
       - name: Virtual display
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1
-      - name: Capture opening and combat
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1 fonts-noto-cjk
+      - name: Capture canonical 2D battle and opening
         shell: bash
         run: |
           set -euo pipefail
           godot --headless --path demos/changfeng-battle --editor --import --quit
-          xvfb-run -a godot --path demos/changfeng-battle -- --opening-visual-check
-          xvfb-run -a godot --path demos/changfeng-battle res://battle.tscn -- --ink-visual-check
-          test -s demos/changfeng-battle/captures/opening-title.png
-          test -s demos/changfeng-battle/captures/ink-action.png
+          timeout --signal=TERM 150s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_hd2d_unified_hud.gd
+          timeout --signal=TERM 150s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_opening_story_2d.gd
+          test -s demos/changfeng-battle/captures/hd2d-validation/01-board.png
+          test -s demos/changfeng-battle/captures/hd2d-validation/05-prologue-3v3.png
+          test -s demos/changfeng-battle/captures/opening-explore.png
+          test -s demos/changfeng-battle/captures/opening-dialogue.png
       - name: Upload screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: kenney-cc0-first-pass-screenshots
-          path: demos/changfeng-battle/captures/*.png
+          path: |
+            demos/changfeng-battle/captures/hd2d-validation/*.png
+            demos/changfeng-battle/captures/opening-*.png
           if-no-files-found: warn

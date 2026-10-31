@@ -45,7 +45,7 @@ func _init(path: String = "res://data/demo_scenario.json") -> void:
 			actor.cell=[int(cell[0]),int(cell[1])]
 			if actor.has("character_id"):
 				var definition: Dictionary=characters.get_profile(str(actor.character_id))
-				if definition.is_empty() or int(definition.battle_actor_id)!=int(actor.id) or str(actor.get("name",""))!=str(definition.name):
+				if definition.is_empty() or str(actor.get("name",""))!=str(definition.name):
 					load_error="Encounter refers to unknown or mismatched character"
 					return
 		encounters[entry.id]=normalized
@@ -59,7 +59,7 @@ func _valid_integer(value: Variant) -> bool:
 func encounter(id: String) -> Dictionary:
 	return encounters.get(id,{}).duplicate(true)
 
-func battle_options(id: String) -> Dictionary:
+func battle_options(id: String, builds: Dictionary = {}) -> Dictionary:
 	var definition: Dictionary=encounter(id)
 	if definition.is_empty(): return {}
 	var roster: Array=definition.combatants.duplicate(true)
@@ -68,7 +68,7 @@ func battle_options(id: String) -> Dictionary:
 		if actor.has("character_id"):
 			ids[int(actor.id)]=str(actor.character_id)
 	if not ids.is_empty():
-		var configured: Dictionary=characters.battle_options(roster,ids)
+		var configured: Dictionary=characters.battle_options(roster,ids,builds)
 		if definition.has("map_id"):
 			configured["map_definition_path"]="res://data/maps/"+str(definition.map_id)+".json"
 		return configured

@@ -148,6 +148,17 @@
         }
       ]
     }
+,
+    {
+      "id": "heavy_pressure",
+      "name": "断岳·摧势",
+      "mode": "on_qualified_hit",
+      "attack_card_id": "tf_sunder",
+      "attack_usage_id": "heavy",
+      "target_posture_at_least": 8,
+      "max_activations_per_action": 1,
+      "effects": [{"type": "modify_pending_damage", "flat_delta": 1}]
+    }
   ],
   "cards": [
     {
@@ -221,7 +232,10 @@
           "effects": [
             {
               "type": "deal_damage",
-              "amount": 5
+              "amount": 5,
+              "on_hit": [
+                {"type": "deal_posture", "target": "enemy", "amount": 4}
+              ]
             },
             {
               "type": "on_attack_miss",
@@ -362,7 +376,8 @@
               "type": "add_shield",
               "amount": 3,
               "expires_after_global_ticks": 100
-            }
+            },
+            {"type": "recover_posture", "target": "self", "amount": 3}
           ],
           "target": {
             "kind": "self"

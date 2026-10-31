@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "purpose": "Runtime asset provenance/technical QA; statuses are not proof of aesthetic approval or commercial rights.",
+  "assets": [
+    {
+      "id": "arena.rainy_bridge",
+      "kind": "scene",
+      "status": "runtime",
+      "path": "res://assets/scenes/battle/rainy_bridge_battle.webp",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "notes": ""
+    },
+    {
+      "id": "story.ruined_temple",
+      "kind": "scene",
+      "status": "runtime",
+      "path": "res://assets/scenes/story/ruined_temple_story.webp",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "notes": ""
+    },
+    {
+      "id": "portrait.shen_changfeng",
+      "kind": "portrait",
+      "status": "candidate",
+      "path": "res://assets/characters/concepts/shen_changfeng_portrait.png",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "notes": ""
+    },
+    {
+      "id": "portrait.escort_elder",
+      "kind": "portrait",
+      "status": "candidate",
+      "path": "res://assets/characters/concepts/escort_captain_portrait.png",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "notes": ""
+    },
+    {
+      "id": "portrait.gu_qingshuang",
+      "kind": "portrait",
+      "status": "candidate",
+      "path": "res://assets/characters/concepts/gu_qingshuang_portrait_v1.png",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "notes": ""
+    },
+    {
+      "id": "sheet.gu_qingshuang",
+      "kind": "pose_sheet",
+      "status": "candidate",
+      "path": "res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "grid": [
+        6,
+        4
+      ],
+      "notes": "Candidate poses; animation in-betweens and foot anchors require art QA."
+    },
+    {
+      "id": "sheet.green_wanderer",
+      "kind": "pose_sheet",
+      "status": "candidate",
+      "path": "res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "grid": [
+        6,
+        4
+      ],
+      "notes": "Candidate poses; animation in-betweens and foot anchors require art QA."
+    },
+    {
+      "id": "sheet.black_blade",
+      "kind": "pose_sheet",
+      "status": "candidate",
+      "path": "res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "grid": [
+        6,
+        4
+      ],
+      "notes": "Candidate poses; animation in-betweens and foot anchors require art QA."
+    },
+    {
+      "id": "sheet.night_assassin",
+      "kind": "pose_sheet",
+      "status": "candidate",
+      "path": "res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "grid": [
+        6,
+        4
+      ],
+      "notes": "Candidate poses; animation in-betweens and foot anchors require art QA."
+    },
+    {
+      "id": "sheet.shen_changfeng",
+      "kind": "pose_study",
+      "status": "preview",
+      "path": "res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "dimensions": [
+        2048,
+        1373
+      ],
+      "notes": "White-background study; temporary runtime matting, not final transparent animation."
+    },
+    {
+      "id": "sheet.pursuer_captain",
+      "kind": "pose_study",
+      "status": "preview",
+      "path": "res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "dimensions": [
+        2048,
+        1373
+      ],
+      "notes": "White-background study; temporary runtime matting, not final transparent animation."
+    },
+    {
+      "id": "cards.technique_atlas",
+      "kind": "ui_atlas",
+      "status": "runtime",
+      "path": "res://assets/ui/technique_art_atlas_v1.png",
+      "source": "user_provided_or_generated",
+      "rights": "owner_review_required",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "grid": [
+        4,
+        2
+      ],
+      "notes": ""
+    }
+  ]
+}

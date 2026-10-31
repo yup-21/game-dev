@@ -2,13 +2,15 @@ extends RefCounted
 ## Read-only identity catalog. Character IDs, biographies, art references and
 ## default attributes/learned arts live here; BattleModel owns mutable state.
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
+const Modifiers = preload("res://scripts/stat_modifier_system.gd")
+const Inventory = preload("res://scripts/inventory_runtime.gd")
 const BASE := "res://data/characters/"
 var profiles: Dictionary = {}
 var by_actor: Dictionary = {}
 var by_name: Dictionary = {}
 var load_error: String = ""
 
-func _init(index_path: String = BASE + "index.json") -> void:
+func _init(index_path: String = BASE + "index.json", definition_root: String = BASE) -> void:
     if not FileAccess.file_exists(index_path):
         load_error = "Character index missing: " + index_path
         return
@@ -24,7 +26,7 @@ func _init(index_path: String = BASE + "index.json") -> void:
         if not entry is String or entry.contains("/") or entry.contains("..") or not entry.ends_with(".json"):
             load_error = "Unsafe character file path"
             return
-        var path: String = BASE + entry
+        var path: String = definition_root + entry
         if not FileAccess.file_exists(path):
             load_error = "Missing character definition: " + entry
             return
@@ -56,16 +58,14 @@ func _valid(d: Variant, schools) -> bool:
     var actor_id: int = int(d.battle_actor_id)
     if actor_id < -1 or actor_id > 1023:
         return false
-    if actor_id >= 0 and schools.get_school(str(d.school_id)).is_empty():
-        return false
-    if actor_id < 0 and not str(d.school_id).is_empty():
+    if not str(d.school_id).is_empty() and schools.get_school(str(d.school_id)).is_empty():
         return false
     var learned: Variant = d.get("learned_schools",[])
     if not learned is Array:
         return false
-    if actor_id >= 0 and (learned.is_empty() or not learned.has(str(d.school_id))):
+    if not str(d.school_id).is_empty() and (learned.is_empty() or not learned.has(str(d.school_id))):
         return false
-    if actor_id < 0 and not learned.is_empty():
+    if str(d.school_id).is_empty() and not learned.is_empty():
         return false
     var seen: Dictionary = {}
     for school_id in learned:
@@ -104,26 +104,65 @@ func for_name(name: String) -> Dictionary:
 func actor_ids() -> Array:
     return by_actor.keys().duplicate()
 
-func battle_options(roster: Array, character_ids: Dictionary) -> Dictionary:
-    ## Materialize defaults for the encounter. Dynamic stats never return to
-    ## this catalog and all callers receive deep copies.
+func battle_options(roster: Array, character_ids: Dictionary, builds: Dictionary = {}) -> Dictionary:
+    ## Immutable profiles supply defaults; optional persistent CharacterRuntime
+    ## builds supply growth, learned schools, equipment and modifiers.
     var output: Dictionary = {"character_ids": {}, "schools": {}, "attributes": {},
-        "passives": {}, "techniques": {}, "character_names": {}, "learned_schools": {}}
+        "passives": {}, "techniques": {}, "character_names": {}, "learned_schools": {},
+        "modifier_sources": {}, "equipment": {}, "equipment_affixes": {}, "inventories": {}}
     if not roster.is_empty():
         output["combatants"] = []
+    var schools = SchoolCatalog.new()
+    if not schools.load_error.is_empty(): return {}
     for actor_id in character_ids:
         var id: int = int(actor_id)
         var profile: Dictionary = get_profile(str(character_ids[actor_id]))
-        if profile.is_empty() or int(profile.battle_actor_id) != id or str(profile.school_id).is_empty():
+        if profile.is_empty() or str(profile.school_id).is_empty():
             return {}
+        var build: Variant = builds.get(str(profile.id),{})
+        if not build is Dictionary: return {}
+        if not build.is_empty() and str(build.get("character_id","")) != str(profile.id): return {}
+        var selected: String = str(build.get("school_id",profile.school_id))
+        var learned: Variant = build.get("learned_schools",profile.learned_schools)
+        if not learned is Array or learned.is_empty() or not learned.has(selected): return {}
+        var seen: Dictionary = {}
+        for school_id in learned:
+            if not school_id is String or schools.get_school(str(school_id)).is_empty() or seen.has(school_id): return {}
+            seen[school_id] = true
+        var attrs: Variant = build.get("attributes",profile.attributes)
+        if not attrs is Dictionary: return {}
+        var normalized_attributes: Dictionary = {}
+        for stat in ["STR","AGI","CON","MND"]:
+            if not _whole(attrs.get(stat),1,100): return {}
+            normalized_attributes[stat] = int(attrs[stat])
+        var sources: Variant = build.get("modifier_sources",{})
+        if not sources is Dictionary: return {}
+        for source in sources:
+            if not source is String or not sources[source] is Array: return {}
+            for spec in sources[source]:
+                if not Modifiers.valid_spec(spec): return {}
+        var equipment: Variant = build.get("equipment",{})
+        if not equipment is Dictionary: return {}
+        # A battle owns a validated copy; the mutable overworld inventory is never shared.
+        if build.has("inventory"):
+            var checked_inventory = Inventory.new()
+            if not checked_inventory.restore(build.inventory): return {}
+            if checked_inventory.equipment_definitions() != equipment: return {}
+            if checked_inventory.modifier_sources() != sources:
+                # Sources may also contain permanent growth modifiers.
+                for key in checked_inventory.modifier_sources():
+                    if sources.get(key) != checked_inventory.modifier_sources()[key]: return {}
+            output.inventories[id] = checked_inventory.snapshot()
+            output.equipment_affixes[id] = checked_inventory.equipment_affixes()
         output.character_ids[id] = str(profile.id)
-        output.schools[id] = str(profile.school_id)
-        output.learned_schools[id] = profile.learned_schools.duplicate(true)
-        output.attributes[id] = profile.attributes.duplicate(true)
+        output.schools[id] = selected
+        output.learned_schools[id] = learned.duplicate(true)
+        output.attributes[id] = normalized_attributes
+        output.modifier_sources[id] = sources.duplicate(true)
+        output.equipment[id] = equipment.duplicate(true)
         output.passives[id] = profile.passives.duplicate(true)
         output.techniques[id] = {}
-        # JSON integral numbers parse as floats; TechniqueRuntime.configure
-        # deliberately requires actual int ranks for learned techniques.
+        # JSON numbers are floats; TechniqueRuntime requires integral ranks.
         for technique_id in profile.techniques:
             output.techniques[id][str(technique_id)] = int(profile.techniques[technique_id])
         output.character_names[id] = str(profile.name)

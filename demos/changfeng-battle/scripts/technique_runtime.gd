@@ -145,4 +145,9 @@ func validate_with(cards, conditions) -> bool:
 				if not cards.valid_effect(effect):
 					load_error="Invalid node effect: "+str(node_def.id)
 					return false
+				if str(effect.get("type",""))=="cancel_chain_link" and (
+					str(node_def.timing) not in ["ATTACK_REACTION","DEFENSE_REACTION"] or
+					str(node_def.target.kind)!="opponent_unresolved_response_link"):
+					load_error="Invalid cancel response window: "+str(node_def.id)
+					return false
 	return true

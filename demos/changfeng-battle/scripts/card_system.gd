@@ -1,7 +1,8 @@
 extends RefCounted
 ## Definitions are copied on access. Only UID instances reside in BattleState.
-const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add_shield","gain_qi","modify_pending_damage","modify_attack_area","cancel_chain_link","contest_intercept","interrupt_root_attack","apply_status","consume_status","force_move","draw_cards","discard_cards","grant_card"]
+const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add_shield","gain_qi","modify_pending_damage","modify_attack_area","cancel_chain_link","contest_intercept","interrupt_root_attack","apply_status","consume_status","force_move","draw_cards","discard_cards","grant_card","deal_posture","recover_posture"]
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
+const StatusCatalog = preload("res://scripts/status_catalog.gd")
 const DefinitionRegistry = preload("res://scripts/card_definition_registry.gd")
 var state
 var catalog
@@ -22,6 +23,15 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		return
 	for item in data.get("statuses",[]):
 		statuses[str(item.id)]=item.duplicate(true)
+	var buff_catalog = StatusCatalog.new()
+	if not buff_catalog.load_error.is_empty():
+		load_error = buff_catalog.load_error
+		return
+	for buff_id in buff_catalog.definitions:
+		if statuses.has(buff_id):
+			load_error = "Buff ID collides with base status: " + str(buff_id)
+			return
+		statuses[buff_id] = buff_catalog.get_buff(str(buff_id))
 	for item in data.get("cards",[]):
 		if not item is Dictionary or definitions.has(str(item.get("id",""))) or not valid_definition(item):
 			load_error="卡牌配置不合法"
@@ -63,7 +73,11 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		actor.school_id=selection
 		actor.school_name=str(school.name)
 	if not selected.is_empty():
-		for id in catalog.statuses: statuses[id]=catalog.statuses[id].duplicate(true)
+		for id in catalog.statuses:
+			if statuses.has(id):
+				load_error = "Duplicate status ID: " + str(id)
+				return
+			statuses[id]=catalog.statuses[id].duplicate(true)
 		for definition in catalog.forms.values():
 			if str(definition.school_id) not in selected: continue
 			if definitions.has(definition.id) or not valid_definition(definition):
@@ -77,7 +91,49 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 			for step in combo.get("sequence",[]):
 				if not definitions.has(str(step.card_id)): complete=false
 			if complete: combos.append(combo.duplicate(true))
-	if not registry.verify(definitions): load_error=registry.error
+	if not registry.verify(definitions):
+		load_error=registry.error
+		return
+	# Validate every loaded combo after selected schools are normalized.
+	var combo_ids: Dictionary={}
+	for combo in combos:
+		if not valid_combo(combo) or combo_ids.has(str(combo.id)):
+			load_error="Invalid or duplicate combo definition"
+			return
+		combo_ids[str(combo.id)]=true
+
+## Declarative combo gates are owned by the content registry, not the HUD.
+## Qualified-hit gates may depend on status, posture, or both.
+func valid_combo(combo: Variant) -> bool:
+	if not combo is Dictionary: return false
+	if not combo.get("id") is String or str(combo.id).is_empty(): return false
+	if not combo.get("name") is String or str(combo.name).is_empty(): return false
+	if not combo.get("effects") is Array or combo.effects.is_empty(): return false
+	if not whole(combo.get("max_activations_per_action",1),1) or int(combo.get("max_activations_per_action",1))>16: return false
+	for effect in combo.effects:
+		if not valid_effect(effect): return false
+	match str(combo.get("mode","")):
+		"ordered_previous_resolved_active_attack":
+			var chain: Variant=combo.get("sequence",[])
+			if not chain is Array or chain.size()!=2: return false
+			if combo.get("scope","same_actor_action")!="same_actor_action": return false
+			for step in chain:
+				if not step is Dictionary or not has_usage(str(step.get("card_id","")),str(step.get("usage_id",""))): return false
+		"on_qualified_hit":
+			if not has_usage(str(combo.get("attack_card_id","")),str(combo.get("attack_usage_id",""))): return false
+			var status_id: String=str(combo.get("target_has_status",""))
+			if not status_id.is_empty() and not statuses.has(status_id): return false
+			if combo.has("target_posture_at_least"):
+				if not whole(combo.target_posture_at_least,1) or int(combo.target_posture_at_least)>1000: return false
+			if status_id.is_empty() and not combo.has("target_posture_at_least"): return false
+		_: return false
+	return true
+
+func has_usage(card_id: String, usage_id: String) -> bool:
+	if not definitions.has(card_id): return false
+	for usage in definitions[card_id].get("usages",[]):
+		if str(usage.get("id",""))==usage_id: return true
+	return false
 
 func whole(value: Variant, minimum: int = 0) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and float(value)==float(int(value)) and int(value)>=minimum
@@ -88,8 +144,10 @@ func valid_effect(e: Variant, depth: int = 0) -> bool:
 	if kind in ["deal_damage","add_shield","gain_qi"]:
 		var n=e.get("amount",-1)
 		if not (n is int or n is float) or not is_finite(float(n)) or float(n)<0 or float(n)>10000: return false
+	if kind in ["deal_posture","recover_posture"] and (not whole(e.get("amount"),1) or int(e.amount)>100): return false
 	if kind in ["move","force_move"] and not whole(e.get("max_distance"),1): return false
 	if kind in ["apply_status","consume_status"] and not statuses.has(str(e.get("status_id",""))): return false
+	if kind=="cancel_chain_link" and str(e.get("target",""))!="chosen_opponent_unresolved_response_link": return false
 	if kind=="modify_pending_damage":
 		for key in ["flat_delta","reduction"]:
 			if e.has(key):
@@ -144,6 +202,9 @@ func valid_definition(d: Dictionary) -> bool:
 		if u.get("target",{}).get("kind","") not in ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]: return false
 		for effect in u.get("effects",[]):
 			if not valid_effect(effect): return false
+			if str(effect.get("type",""))=="cancel_chain_link" and (
+				str(u.timing) not in ["ATTACK_REACTION","DEFENSE_REACTION"] or
+				str(u.target.kind)!="opponent_unresolved_response_link"): return false
 	return not ids.is_empty()
 
 func build_deck(actor, _seed: int = 0, _deck_ids: Array = []) -> bool:

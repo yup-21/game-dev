@@ -30,3 +30,8 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_kenney
 ```
 
 该 PR 是**素材落地和初步替换**，并非已经完成的美术重制。素材在原始 16×16 像素和 128px UI 尺寸下可能需要进一步统一像素缩放、光照、人物动作、战场镜头和地图地形衔接；初始五式和连段玩法需在后续单独验收。
+
+
+## 非 Kenney 资源（许可不可混同）
+
+`assets/scenes/*` 的断桥与破庙完整插画，以及 `assets/concepts/2026-10-30/` 和 `assets/characters/concepts/` 的游戏人物稿，是用户提供或生成的项目美术内容，**不属于上述 Kenney CC0 授权范围**。本次重构未改变它们的来源声明或授权状态。请在商业发布前由素材所有者确认各图对发行、修改和再分发的授权。详细资产与引用清单见 [R7 资产审计](REFACTOR_ASSET_AUDIT.md)。

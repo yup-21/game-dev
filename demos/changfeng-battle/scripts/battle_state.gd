@@ -7,6 +7,8 @@ const MAX_CHAIN_DEPTH: int = 4
 const DIRECTIONS: Array = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 
 var actors: Array = []
+## Authoritative per-actor battle inventory copies; never owned by HUD.
+var inventories: Dictionary = {}
 var mode: String = "TIMELINE"
 var global_tick: int = 0
 var action_no: int = 0

@@ -31,7 +31,7 @@ func _run() -> void:
         push_error("HUD_CAPTURE: missing battle scene")
         quit(1)
         return
-    var battle: Node3D = packed.instantiate() as Node3D
+    var battle: Node2D = packed.instantiate() as Node2D
     root.add_child(battle)
     await process_frame
     # Only dismiss the title animation; no model actions are submitted.
@@ -86,7 +86,39 @@ func _run() -> void:
         quit(1)
         return
     painted.set_debug_grid(false)
-    print("HUD_CAPTURE_PASS board + card + dossier + 150-cell baked overlay")
     battle.queue_free()
+    await process_frame
+
+    # Reuse the actual prologue encounter rather than painting a mock 3v3.
+    var session = root.get_node_or_null("GameSession")
+    if session == null:
+        push_error("HUD_CAPTURE: GameSession autoload unavailable")
+        quit(1)
+        return
+    session.start_new_game()
+    session.record_story_event("obtain_fragment")
+    if not session.begin_encounter():
+        push_error("HUD_CAPTURE: cannot enter real six-actor prologue")
+        quit(1)
+        return
+    var encounter: Node2D = packed.instantiate() as Node2D
+    root.add_child(encounter)
+    await process_frame
+    var squad: Dictionary = encounter.get("snap")
+    if squad.get("actors", []).size() != 6:
+        push_error("HUD_CAPTURE: expected six actual combatants")
+        quit(1)
+        return
+    encounter.set("intro_remaining", 0.0)
+    var story_title: Label = encounter.get("intro_title") as Label
+    var story_subtitle: Label = encounter.get("intro_subtitle") as Label
+    story_title.visible = false
+    story_subtitle.visible = false
+    await process_frame
+    if not await _capture("05-prologue-3v3"):
+        quit(1)
+        return
+    print("HUD_CAPTURE_PASS board + card + dossier + grid + real 3v3")
+    encounter.queue_free()
     await process_frame
     quit(0)

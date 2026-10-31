@@ -1,0 +1,52 @@
+name: Modular Wuxia content contracts
+
+on:
+  pull_request:
+    paths:
+      - 'demos/changfeng-battle/scripts/**'
+      - 'demos/changfeng-battle/data/**'
+      - 'demos/changfeng-battle/checks/test_catalog_extensibility.gd'
+      - 'demos/changfeng-battle/checks/test_character_dynamic_identity.gd'
+      - 'demos/changfeng-battle/checks/test_status_modifiers.gd'
+      - 'demos/changfeng-battle/checks/test_modifier_bootstrap.gd'
+      - 'demos/changfeng-battle/checks/test_inventory_equipment_runtime.gd'
+      - 'demos/changfeng-battle/checks/test_modular_content_integration.gd'
+      - 'demos/changfeng-battle/checks/test_wuxue_v3.gd'
+      - 'demos/changfeng-battle/checks/test_battle_consumables.gd'
+      - 'demos/changfeng-battle/checks/test_equipment_affixes.gd'
+      - '.github/workflows/wuxia-modular-content.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  godot-modules:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: '4.7.2'
+          use-dotnet: false
+      - name: Import project art and scripts
+        run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Verify modifier script parses and initializes
+        run: timeout --signal=TERM 30s godot --headless --path demos/changfeng-battle --script res://checks/test_modifier_bootstrap.gd
+      - name: R11 extensible catalogs and combo counts
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_catalog_extensibility.gd
+      - name: R12 character identity decoupling
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_character_dynamic_identity.gd
+      - name: R13 buff lifecycle and stat modifiers
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_status_modifiers.gd
+      - name: Preserve legacy Tingfeng V3 state and timing behavior
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_wuxue_v3.gd
+      - name: R14 inventory and persistent character equipment
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_inventory_equipment_runtime.gd
+      - name: R15 cross-module content integration
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_modular_content_integration.gd
+      - name: R16 authoritative battle consumable commands
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_battle_consumables.gd
+      - name: R17 per-instance equipment affix contracts
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_equipment_affixes.gd
