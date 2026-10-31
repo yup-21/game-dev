@@ -40,7 +40,6 @@ func _run() -> void:
         ["school_forms","school_forms.json"],
         ["tingfeng_cards","tingfeng_cards.json"],
         ["legacy_id_map","legacy_id_map.json"],
-        ["rainy_bridge","maps/rainy_bridge.json"]
     ]
     for pair in pairs:
         var id: String = "r25_" + str(pair[0])
@@ -89,6 +88,11 @@ func _run() -> void:
             and _same(loaded.get("combatants", []), old_encounter.combatants),
             "native encounter matches original roster and map: " + str(old_encounter.id))
     check(native.document("r25_demo_scenario").is_empty(), "old encounter document removed")
+    var old_map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/maps/rainy_bridge.json"))
+    var typed_map: Dictionary = native.entries("map").get("rainy_bridge", {})
+    check(not typed_map.is_empty() and _same(typed_map, old_map),
+        "native grid map preserves art transform and each 15x10 tile")
+    check(native.document("r25_rainy_bridge").is_empty(), "opaque grid map document removed")
     var schools = Schools.new()
     var techniques = Techniques.new()
     var encounters = Scenarios.new()

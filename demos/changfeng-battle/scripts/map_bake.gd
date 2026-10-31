@@ -25,12 +25,19 @@ var error: String = ""
 
 func _init(path: String = DEFAULT_PATH) -> void:
     if path.ends_with(".tres"):
-        _load_native(path)
+        var grid_resource: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
+        if grid_resource is WuxiaGridMapDefinition:
+            _load_grid_record(grid_resource.to_record())
+        else:
+            _load_native(path)
         return
     if path.is_empty() or (path != DEFAULT_PATH and not FileAccess.file_exists(path)):
         error = "Missing baked map: " + path
         return
-    var data: Variant = Native.new().document("r25_rainy_bridge") if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
+    var data: Variant = Native.new().entries("map").get("rainy_bridge", {}) if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
+    _load_grid_record(data)
+
+func _load_grid_record(data: Variant) -> void:
     if not data is Dictionary or int(data.get("schema_version",0))!=1:
         error = "Invalid baked map schema: " + path
         return
