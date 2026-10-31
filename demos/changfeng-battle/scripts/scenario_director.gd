@@ -13,7 +13,7 @@ func _init(path: String = "res://data/demo_scenario.json") -> void:
 	if path != "res://data/demo_scenario.json" and not FileAccess.file_exists(path):
 		load_error="Encounter catalog missing: "+path
 		return
-	var parsed: Variant = Native.new().document("r25_demo_scenario") if path == "res://data/demo_scenario.json" else JSON.parse_string(FileAccess.get_file_as_string(path))
+	var parsed: Variant = {"schema_version":1,"encounters":[]} if path == "res://data/demo_scenario.json" else JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not parsed is Dictionary or parsed.get("schema_version")!=1 or not parsed.get("encounters") is Array:
 		load_error="Invalid encounter catalog"
 		return

@@ -40,7 +40,6 @@ func _run() -> void:
         ["school_forms","school_forms.json"],
         ["tingfeng_cards","tingfeng_cards.json"],
         ["legacy_id_map","legacy_id_map.json"],
-        ["demo_scenario","demo_scenario.json"],
         ["rainy_bridge","maps/rainy_bridge.json"]
     ]
     for pair in pairs:
@@ -81,6 +80,15 @@ func _run() -> void:
         and _same(typed_technique.get("trigger", {}), legacy_techniques.techniques[0].trigger),
         "typed technique preserves all original four stages and trigger")
     check(native.document("r25_techniques").is_empty(), "opaque technique document removed")
+    var old_encounters: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/demo_scenario.json"))
+    for old_encounter in old_encounters.encounters:
+        var loaded: Dictionary = native.entries("encounter").get(str(old_encounter.id), {})
+        check(not loaded.is_empty() and loaded.get("seed") == old_encounter.seed
+            and loaded.get("title") == old_encounter.title
+            and loaded.get("map_id") == old_encounter.map_id
+            and _same(loaded.get("combatants", []), old_encounter.combatants),
+            "native encounter matches original roster and map: " + str(old_encounter.id))
+    check(native.document("r25_demo_scenario").is_empty(), "old encounter document removed")
     var schools = Schools.new()
     var techniques = Techniques.new()
     var encounters = Scenarios.new()

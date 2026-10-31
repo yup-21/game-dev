@@ -2,6 +2,8 @@
 class_name WuxiaEncounterDefinition
 extends WuxiaContentDefinition
 @export var seed: int = 2026
+@export var title: String = ""
+@export var map_id: String = ""
 @export var combatants: Array[Resource] = []
 @export var map_resource: Resource
 
@@ -19,6 +21,10 @@ func to_record() -> Dictionary:
         actors.append(entry)
     var result: Dictionary = {"schema_version":schema_version,"id":content_id,
         "seed":seed,"schools":{},"combatants":actors}
+    if not title.is_empty(): result["title"] = title
+    if not map_id.is_empty():
+        if not map_id.is_valid_identifier() or map_resource != null: return {}
+        result["map_id"] = map_id
     if map_resource != null:
         if not map_resource.resource_path.begins_with("res://data/maps/"):
             return {}
