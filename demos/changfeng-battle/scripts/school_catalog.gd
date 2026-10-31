@@ -331,3 +331,12 @@ func _valid_combo(item: Variant) -> bool:
 	for effect in item.effects:
 		if not _valid_effect(effect) or effect.type != "modify_pending_damage": return false
 	return true
+
+## Gameplay combo reference validation; independent of historical ID conversion.
+func _usage_exists(card_id: Variant, usage_id: Variant) -> bool:
+	if not _text(card_id) or not _text(usage_id) or not forms.has(card_id):
+		return false
+	for usage in forms[card_id].usages:
+		if usage.id == usage_id:
+			return true
+	return false
