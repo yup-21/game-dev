@@ -1,7 +1,7 @@
 extends RefCounted
 ## Cross-ACTION technique progression; separate from cards and card UIDs.
 const NativeContent = preload("res://scripts/content/content_registry.gd")
-const DEFAULT_PATH = "res://data/techniques.json"
+const DEFAULT_PATH = NativeContent.DEFAULT_MANIFEST
 var definitions: Dictionary = {}
 var load_error: String = ""
 

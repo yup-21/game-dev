@@ -2,6 +2,8 @@ extends RefCounted
 ## Definition data only: this catalog never constructs card instances or touches battle state.
 const StatusCatalog = preload("res://scripts/status_catalog.gd")
 const NativeContent = preload("res://scripts/content/content_registry.gd")
+const DEFAULT_FORMS = "res://data/native/rule_catalogs/r36_school_forms.tres"
+const DEFAULT_TINGFENG = "res://data/native/rule_catalogs/r37_tingfeng_cards.tres"
 const DEFAULT_SCHOOL = {"id":"tingfeng","name":"听风五式","identity":"观势藏锋、变招交锋"}
 const CHILD_EFFECTS = ["effects","on_success","on_contested","on_failure","on_hit"]
 const TARGETS = ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]
@@ -17,12 +19,13 @@ var _all_status_ids: Dictionary = {}
 var _base_form_ids: Dictionary = {}
 var _generated_only_ids: Dictionary = {}
 
-func _init(path: String = "res://data/school_forms.json", base_path: String = "res://data/tingfeng_cards.json", legacy_path: String = "res://data/legacy_id_map.json") -> void:
+func _init(path: String = DEFAULT_FORMS, base_path: String = DEFAULT_TINGFENG,
+        legacy_path: String = "") -> void:
 	var raw: Dictionary = _read(path)
 	var base: Dictionary = _read(base_path)
 	if not load_error.is_empty(): return
 	var loaded: bool = _load(raw,base,legacy_path)
-	if loaded and path == "res://data/school_forms.json" and base_path == "res://data/tingfeng_cards.json" and legacy_path == "res://data/legacy_id_map.json":
+	if loaded and path in [DEFAULT_FORMS, "res://data/school_forms.json"] and base_path in [DEFAULT_TINGFENG, "res://data/tingfeng_cards.json"]:
 		loaded = _load_native_schools()
 	if not loaded:
 		schools.clear()
@@ -86,7 +89,9 @@ func _fail(message: String) -> bool:
 func _read(path: String) -> Dictionary:
 	var typed: Dictionary = {
 		"res://data/school_forms.json": "r36_school_forms",
+        DEFAULT_FORMS: "r36_school_forms",
 		"res://data/tingfeng_cards.json": "r37_tingfeng_cards",
+        DEFAULT_TINGFENG: "r37_tingfeng_cards",
 		"res://data/legacy_id_map.json": "r38_legacy_skill_ids"
 	}
 	if typed.has(path):
@@ -182,7 +187,7 @@ func _load(raw: Dictionary, base: Dictionary, legacy_path: String) -> bool:
 		if not _valid_combo(item) or combo_ids.has(item.id): return _fail("连携定义不合法或重复")
 		combo_ids[item.id] = true
 		combos.append(item.duplicate(true))
-	return _valid_legacy(_read(legacy_path))
+	return true if legacy_path.is_empty() else _valid_legacy(_read(legacy_path))
 
 func _valid_status(item: Variant) -> bool:
 	if not _keys(item,["id","name","public","stack_limit","expiry"],["id","name","public","stack_limit","expiry"]): return false
@@ -354,6 +359,10 @@ func _usage_exists(card_id: Variant, usage_id: Variant) -> bool:
 	for usage in forms[card_id].usages:
 		if usage.id == usage_id: return true
 	return false
+
+## Explicit import boundary only: normal gameplay must not require old IDs.
+func validate_legacy_mapping(data: Dictionary) -> bool:
+    return _valid_legacy(data)
 
 func _valid_legacy(data: Dictionary) -> bool:
 	if not load_error.is_empty(): return false

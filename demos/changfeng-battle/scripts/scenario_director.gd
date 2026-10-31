@@ -1,26 +1,27 @@
 extends RefCounted
 const CharacterRegistry = preload("res://scripts/character_registry.gd")
 const Native = preload("res://scripts/content/content_registry.gd")
+const DEFAULT_PATH := Native.DEFAULT_MANIFEST
 var characters = CharacterRegistry.new()
 ## Read-only encounter data. No new combat engine or duplicate AI is created here.
 var encounters: Dictionary = {}
 var load_error: String = ""
 
-func _init(path: String = "res://data/demo_scenario.json") -> void:
+func _init(path: String = DEFAULT_PATH) -> void:
 	if not characters.load_error.is_empty():
 		load_error=characters.load_error
 		return
-	if path != "res://data/demo_scenario.json" and not FileAccess.file_exists(path):
+	if path != DEFAULT_PATH and not FileAccess.file_exists(path):
 		load_error="Encounter catalog missing: "+path
 		return
-	var parsed: Variant = {"schema_version":1,"encounters":[]} if path == "res://data/demo_scenario.json" else JSON.parse_string(FileAccess.get_file_as_string(path))
+	var parsed: Variant = {"schema_version":1,"encounters":[]} if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not parsed is Dictionary or parsed.get("schema_version")!=1 or not parsed.get("encounters") is Array:
 		load_error="Invalid encounter catalog"
 		return
 	for entry in parsed.encounters:
 		if not _register_entry(entry): return
 	# Custom encounter fixtures remain independent of production native content.
-	if path != "res://data/demo_scenario.json": return
+	if path != DEFAULT_PATH: return
 	var native = Native.new()
 	if not native.load_error.is_empty():
 		load_error = native.load_error

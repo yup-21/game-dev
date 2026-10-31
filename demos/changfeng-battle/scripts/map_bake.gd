@@ -4,7 +4,6 @@ extends RefCounted
 ## cell centres, hit rectangles and actor feet use the SAME coordinates.
 const DEFAULT_PATH := "res://data/maps/rainy_bridge.tres"
 const BLOCKED := ["water","rock","bamboo"]
-const Native = preload("res://scripts/content/content_registry.gd")
 var id: String = ""
 var image_path: String = ""
 var source_size: Vector2i = Vector2i.ZERO

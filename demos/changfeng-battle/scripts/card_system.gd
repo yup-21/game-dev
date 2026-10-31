@@ -18,13 +18,13 @@ var effect_handlers = EffectHandlers.new()
 var instances: Dictionary:
 	get: return state.card_instances
 
-func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school_selection: Dictionary = {}, learned_selection: Dictionary = {}) -> void:
+func _init(battle_state, path: String = SchoolCatalog.DEFAULT_TINGFENG, school_selection: Dictionary = {}, learned_selection: Dictionary = {}) -> void:
 	state=battle_state
 	if not effect_handlers.load_error.is_empty():
 		load_error=effect_handlers.load_error
 		return
 	var data: Variant
-	if path == "res://data/tingfeng_cards.json":
+	if path in [SchoolCatalog.DEFAULT_TINGFENG, "res://data/tingfeng_cards.json"]:
 		data = NativeContent.new().entries("rule_catalog").get("r37_tingfeng_cards", {}).get("data", {})
 	else:
 		data = JSON.parse_string(FileAccess.get_file_as_string(path))
