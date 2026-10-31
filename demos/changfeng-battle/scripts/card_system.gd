@@ -45,19 +45,12 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		if not registry.register(definitions,item):
 			load_error=registry.error
 			return
-	# Native .tres cards enter the same validated definition index as legacy cards.
-	# A generated card need not appear in an initial deck.
+	# Resource definitions share the manifest, but each battle indexes only
+	# skills from schools its actors have learned (same rule as legacy forms).
 	var native = NativeContent.new()
 	if not native.load_error.is_empty():
 		load_error = native.load_error
 		return
-	for definition in native.entries("skill").values():
-		if definitions.has(str(definition.get("id", ""))) or not valid_definition(definition):
-			load_error = "Invalid or duplicate native skill: " + str(definition.get("id", ""))
-			return
-		if not registry.register(definitions, definition):
-			load_error = registry.error
-			return
 	deck=data.get("deck",{}).get("cards",[]).duplicate(true)
 	combos=data.get("combos",[]).duplicate(true)
 	for entry in deck:
@@ -114,6 +107,14 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 			for step in combo.get("sequence",[]):
 				if not definitions.has(str(step.card_id)): complete=false
 			if complete: combos.append(combo.duplicate(true))
+	for definition in native.entries("skill").values():
+		if str(definition.get("school_id", "")) not in selected: continue
+		if definitions.has(str(definition.get("id", ""))) or not valid_definition(definition):
+			load_error = "Invalid or duplicate native skill: " + str(definition.get("id", ""))
+			return
+		if not registry.register(definitions, definition):
+			load_error = registry.error
+			return
 	if not registry.verify(definitions):
 		load_error=registry.error
 		return
