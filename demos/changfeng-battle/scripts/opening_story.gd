@@ -116,7 +116,7 @@ func _open_node(id: String) -> void:
 func advance_dialogue(flags: Dictionary = {}) -> bool:
 	if phase != "dialogue": return false
 	if not available_choices(flags).is_empty(): return false
-	_open_node(str(current.get("next", "")))
+	_open_node(str(current_dialogue().get("next", "")))
 	return true
 
 func choose(index: int, flags: Dictionary = {}) -> bool:
