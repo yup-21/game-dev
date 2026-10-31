@@ -84,7 +84,6 @@ func reset() -> void:
 	phase = "menu"
 	cinematic_index = 0
 	dialogue_id = ""
-	obtained_fragment = false
 	pending_events.clear()
 
 func current_beat() -> Dictionary:
