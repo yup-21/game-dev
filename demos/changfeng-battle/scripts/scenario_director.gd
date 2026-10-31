@@ -104,36 +104,36 @@ func encounter(id: String) -> Dictionary:
 ## The only map lookup for both native and explicit fixture encounters.
 ## Never reconstruct a filename or permit unregistered production maps.
 func _resolved_map_path(definition: Dictionary) -> String:
-    var authored_path: String = str(definition.get("map_definition_path",""))
-    if not authored_path.is_empty():
-        return authored_path
-    var map_id: String = str(definition.get("map_id",""))
-    if map_id.is_empty():
-        return ""
-    var native = Native.new()
-    if not native.load_error.is_empty():
-        return ""
-    var map_resource: Resource = native.resource_for("map", map_id)
-    return map_resource.resource_path if map_resource != null else ""
+	var authored_path: String = str(definition.get("map_definition_path",""))
+	if not authored_path.is_empty():
+		return authored_path
+	var map_id: String = str(definition.get("map_id",""))
+	if map_id.is_empty():
+		return ""
+	var native = Native.new()
+	if not native.load_error.is_empty():
+		return ""
+	var map_resource: Resource = native.resource_for("map", map_id)
+	return map_resource.resource_path if map_resource != null else ""
 
 func battle_options(id: String, builds: Dictionary = {}) -> Dictionary:
-    var definition: Dictionary = encounter(id)
-    if definition.is_empty(): return {}
-    var roster: Array = definition.combatants.duplicate(true)
-    var ids: Dictionary = {}
-    for actor in roster:
-        if actor.has("character_id"):
-            ids[int(actor.id)] = str(actor.character_id)
-    var configured: Dictionary
-    if not ids.is_empty():
-        configured = characters.battle_options(roster, ids, builds)
-    else:
-        var schools: Dictionary = {}
-        for key in definition.get("schools", {}):
-            schools[int(key)] = str(definition.schools[key])
-        configured = {"combatants": roster, "schools": schools}
-    if configured.is_empty(): return {}
-    var map_path: String = _resolved_map_path(definition)
-    if not map_path.is_empty():
-        configured["map_definition_path"] = map_path
-    return configured
+	var definition: Dictionary = encounter(id)
+	if definition.is_empty(): return {}
+	var roster: Array = definition.combatants.duplicate(true)
+	var ids: Dictionary = {}
+	for actor in roster:
+		if actor.has("character_id"):
+			ids[int(actor.id)] = str(actor.character_id)
+	var configured: Dictionary
+	if not ids.is_empty():
+		configured = characters.battle_options(roster, ids, builds)
+	else:
+		var schools: Dictionary = {}
+		for key in definition.get("schools", {}):
+			schools[int(key)] = str(definition.schools[key])
+		configured = {"combatants": roster, "schools": schools}
+	if configured.is_empty(): return {}
+	var map_path: String = _resolved_map_path(definition)
+	if not map_path.is_empty():
+		configured["map_definition_path"] = map_path
+	return configured

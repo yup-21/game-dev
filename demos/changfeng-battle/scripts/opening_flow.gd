@@ -243,11 +243,11 @@ func _action(action: String) -> void:
 	match action:
 		"start": _enter_new_game()
 		"hd2d":
-            var quick_session = _session()
-            if quick_session != null and quick_session.start_quick_battle():
-                call_deferred("_change_scene", quick_session.scene_for("battle"))
-            else:
-                push_error("Native quick encounter unavailable")
+			var quick_session = _session()
+			if quick_session != null and quick_session.start_quick_battle():
+				call_deferred("_change_scene", quick_session.scene_for("battle"))
+			else:
+				push_error("Native quick encounter unavailable")
 		"story_battle":
 			var session=_session()
 			if session!=null and session.begin_encounter():

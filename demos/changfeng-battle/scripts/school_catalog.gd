@@ -20,7 +20,7 @@ var _base_form_ids: Dictionary = {}
 var _generated_only_ids: Dictionary = {}
 
 func _init(path: String = DEFAULT_FORMS, base_path: String = DEFAULT_TINGFENG,
-        legacy_path: String = "") -> void:
+		legacy_path: String = "") -> void:
 	var raw: Dictionary = _read(path)
 	var base: Dictionary = _read(base_path)
 	if not load_error.is_empty(): return
@@ -362,7 +362,7 @@ func _usage_exists(card_id: Variant, usage_id: Variant) -> bool:
 
 ## Explicit import boundary only: normal gameplay must not require old IDs.
 func validate_legacy_mapping(data: Dictionary) -> bool:
-    return _valid_legacy(data)
+	return _valid_legacy(data)
 
 func _valid_legacy(data: Dictionary) -> bool:
 	if not load_error.is_empty(): return false
