@@ -1,7 +1,8 @@
 extends SceneTree
-## Run against an exported PCK from outside the source checkout.
-## Dynamic JSON references need an explicit export include_filter.
-const REQUIRED_JSON := [
+## Exported .pck boots with native Resources and NO historical JSON.
+const Native = preload("res://scripts/content/content_registry.gd")
+const Director = preload("res://scripts/scenario_director.gd")
+const REQUIRED_FIXTURES := [
     "res://data/demo_scenario.json",
     "res://data/chapters/index.json",
     "res://data/chapters/rain_escort_prologue.json",
@@ -31,15 +32,29 @@ func _initialize() -> void:
 
 func _run() -> void:
     var failures: int = 0
-    for path in REQUIRED_JSON:
-        if not FileAccess.file_exists(path):
+    for path in REQUIRED_FIXTURES:
+        if FileAccess.file_exists(path):
             failures += 1
-            push_error("EXPORT_MISSING_JSON " + path)
-            continue
-        var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-        if parsed == null:
+            push_error("EXPORT_LEGACY_FIXTURE_LEAK " + path)
+    var registry = Native.new()
+    if not registry.load_error.is_empty():
+        failures += 1
+        push_error("EXPORT_NATIVE_MANIFEST_INVALID " + registry.load_error)
+    for kind in ["character","story","chapter","encounter","map",
+            "rule_catalog","technique","action_timeline"]:
+        if registry.entries(kind).is_empty():
             failures += 1
-            push_error("EXPORT_INVALID_JSON " + path)
+            push_error("EXPORT_NATIVE_CATALOG_MISSING " + kind)
+    var director = Director.new()
+    if not director.load_error.is_empty():
+        failures += 1
+        push_error("EXPORT_ENCOUNTERS_INVALID " + director.load_error)
+    else:
+        for encounter_id in ["r40_quick_duel","escort_ambush","river_watch_ambush"]:
+            var options: Dictionary = director.battle_options(encounter_id)
+            if options.is_empty() or not str(options.get("map_definition_path","")).ends_with(".tres"):
+                failures += 1
+                push_error("EXPORT_NATIVE_ENCOUNTER_UNRESOLVED " + encounter_id)
     for path in REQUIRED_SCENES:
         if not ResourceLoader.exists(path, "PackedScene"):
             failures += 1

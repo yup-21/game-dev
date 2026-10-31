@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaEncounterDefinition" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="WuxiaEncounterDefinition" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/encounter_definition.gd" id="1_encounter"]
 [ext_resource type="Script" path="res://scripts/content/encounter_combatant_definition.gd" id="2_actor"]

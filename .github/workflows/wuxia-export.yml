@@ -5,7 +5,6 @@ on:
     paths:
       - 'demos/changfeng-battle/**/*.gd'
       - 'demos/changfeng-battle/**/*.tscn'
-      - 'demos/changfeng-battle/**/*.json'
       - 'demos/changfeng-battle/**/*.tres'
       - 'demos/changfeng-battle/**/*.gdshader'
       - 'demos/changfeng-battle/addons/**'

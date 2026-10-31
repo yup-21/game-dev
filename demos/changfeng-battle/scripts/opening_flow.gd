@@ -5,8 +5,6 @@ const Story = preload("res://scripts/opening_story.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const RoleSprite = preload("res://scripts/opening_role_sprite.gd")
 const Fallback = preload("res://scripts/fallback_assets.gd")
-## Only player-facing combat scene. Legacy battle demos remain for regression tests.
-const ACTIVE_BATTLE_SCENE := "res://battle_hd2d.tscn"
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
 const JADE = Color("3a8178")
