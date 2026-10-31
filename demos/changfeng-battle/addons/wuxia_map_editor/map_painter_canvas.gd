@@ -2,9 +2,12 @@
 extends Control
 ## Small canvas drawing map-space vertices. No tile paint or JSON export.
 signal polygon_ready(vertices: PackedVector2Array, terrain_kind: String)
+signal marker_ready(position: Vector2, marker_kind: String)
 var map_resource: WuxiaMapDefinition
 var active: bool = false
 var terrain_kind: String = "blocked"
+var drawing_marker: bool = false
+var marker_kind: String = "spawn"
 var draft: PackedVector2Array = PackedVector2Array()
 
 func _init() -> void:
@@ -15,16 +18,25 @@ func edit_map(value: WuxiaMapDefinition) -> void:
     map_resource = value
     draft.clear()
     active = false
+    drawing_marker = false
     queue_redraw()
 
 func begin_polygon(kind: String) -> void:
     terrain_kind = kind
+    drawing_marker = false
+    draft.clear()
+    active = true
+    queue_redraw()
+
+func begin_marker(kind: String) -> void:
+    marker_kind = kind
+    drawing_marker = true
     draft.clear()
     active = true
     queue_redraw()
 
 func finish_polygon() -> bool:
-    if not active or draft.size() < 3: return false
+    if not active or drawing_marker or draft.size() < 3: return false
     polygon_ready.emit(draft.duplicate(),terrain_kind)
     draft.clear()
     active = false
@@ -34,6 +46,7 @@ func finish_polygon() -> bool:
 func cancel_polygon() -> void:
     draft.clear()
     active = false
+    drawing_marker = false
     queue_redraw()
 
 func _image_rect() -> Rect2:
@@ -73,6 +86,13 @@ func _draw() -> void:
     for obstacle in map_resource.obstacles:
         if obstacle is WuxiaMapPolygonDefinition:
             _draw_path(obstacle.vertices,rect,Color(1.0,0.53,0.30),true)
+    for anchor in map_resource.markers:
+        if anchor is WuxiaMapMarkerDefinition:
+            var p: Vector2 = _screen_point(anchor.position,rect)
+            var tint: Color = Color(0.32,0.95,1.0) if anchor.marker_kind == "spawn" else Color(1.0,0.85,0.3)
+            draw_circle(p,5.0,tint)
+            draw_arc(p,7.0,0.0,TAU,20,tint,1.5)
+            draw_string(get_theme_default_font(),p+Vector2(10,-8),anchor.marker_id,HORIZONTAL_ALIGNMENT_LEFT,-1,12,tint)
     if not draft.is_empty():
         _draw_path(draft,rect,Color(1.0,0.97,0.50),false)
 
@@ -92,7 +112,12 @@ func _gui_input(event: InputEvent) -> void:
         float(map_resource.viewport_size.x)/rect.size.x,
         float(map_resource.viewport_size.y)/rect.size.y)
     if not map_resource.area_bounds.has_point(point): return
-    if event.double_click and draft.size() >= 3:
+    if drawing_marker:
+        marker_ready.emit(point,marker_kind)
+        active = false
+        drawing_marker = false
+        queue_redraw()
+    elif event.double_click and draft.size() >= 3:
         finish_polygon()
     else:
         draft.append(point)

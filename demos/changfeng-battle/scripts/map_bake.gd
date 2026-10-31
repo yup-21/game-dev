@@ -19,6 +19,7 @@ var terrain: Dictionary = {}
 var tiles: Dictionary = {}
 var polygon_mode: bool = false
 var polygons: Array = []
+var markers: Dictionary = {}
 var area_bounds: Rect2 = Rect2()
 var error: String = ""
 
@@ -170,6 +171,21 @@ func _load_native(path: String) -> void:
                 return
             vertices.append(point)
         polygons.append({"kind":str(obstacle.get("kind","blocked")),"points":vertices})
+    for marker in spec.get("markers",[]):
+        if not marker is Dictionary or not marker.get("position") is Array or \
+                not _valid_pair(marker.position) or \
+                str(marker.get("kind","")) not in ["spawn","story_trigger","vfx_anchor"]:
+            error = "Invalid authored map marker"
+            return
+        var point: Vector2 = _vec(marker.position)
+        if not area_bounds.has_point(point) or markers.has(str(marker.get("id",""))):
+            error = "Duplicate or out-of-bounds map marker"
+            return
+        for obstacle in polygons:
+            if Geometry2D.is_point_in_polygon(point,obstacle.points):
+                error = "Map marker placed inside a blocked polygon"
+                return
+        markers[str(marker.id)] = marker.duplicate(true)
     polygon_mode = true
     width = 15
     height = 10
@@ -223,3 +239,17 @@ func segment_blocked(start: Vector2, finish: Vector2, radius: float = 0.0) -> bo
                     finish.distance_to(Geometry2D.get_closest_point_to_segment(finish,a,b)) <= radius):
                 return true
     return false
+
+## Shared authoring coordinates for encounters, story triggers and effect spawns.
+func marker_position(marker_id: String) -> Vector2:
+    var record: Dictionary = markers.get(marker_id,{})
+    var pair: Variant = record.get("position",[])
+    return _vec(pair) if _valid_pair(pair) else Vector2.INF
+
+func markers_of_kind(kind: String) -> Array:
+    var result: Array = []
+    for marker_id in markers:
+        if str(markers[marker_id].get("kind","")) == kind:
+            result.append(str(marker_id))
+    result.sort()
+    return result

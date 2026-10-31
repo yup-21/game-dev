@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=64 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=72 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -73,6 +73,15 @@
 [ext_resource type="Resource" path="res://data/native/chapters/r26_recruitment_trial.tres" id="62_r26"]
 [ext_resource type="Resource" path="res://data/native/encounters/r26_recruitment_trial_battle.tres" id="63_r26"]
 
+[ext_resource type="Resource" path="res://data/native/assets/r27_gu_portrait.tres" id="64_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_gu_sheet.tres" id="65_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_green_sheet.tres" id="66_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_black_sheet.tres" id="67_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_night_sheet.tres" id="68_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_elder_portrait.tres" id="69_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_elder_still.tres" id="70_r27"]
+[ext_resource type="Resource" path="res://data/native/assets/r27_messenger_sheet.tres" id="71_r27"]
+
 [resource]
 script = ExtResource("1_manifest")
 schools = Array[Resource]([ExtResource("16_r24")])
@@ -85,7 +94,7 @@ stories = Array[Resource]([ExtResource("7_story"), ExtResource("26_r24"), ExtRes
 chapters = Array[Resource]([ExtResource("8_chapter"), ExtResource("27_r24"), ExtResource("62_r26")])
 quests = Array[Resource]([ExtResource("9_quest"), ExtResource("28_r24")])
 encounters = Array[Resource]([ExtResource("10_encounter"), ExtResource("29_r24"), ExtResource("63_r26")])
-assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene"), ExtResource("31_r24"), ExtResource("32_r24"), ExtResource("33_r24"), ExtResource("34_r24")])
+assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene"), ExtResource("31_r24"), ExtResource("32_r24"), ExtResource("33_r24"), ExtResource("34_r24"), ExtResource("64_r27"), ExtResource("65_r27"), ExtResource("66_r27"), ExtResource("67_r27"), ExtResource("68_r27"), ExtResource("69_r27"), ExtResource("70_r27"), ExtResource("71_r27")])
 maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24")])
 buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])
 items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResource("42_r25"), ExtResource("43_r25"), ExtResource("44_r25"), ExtResource("45_r25")])

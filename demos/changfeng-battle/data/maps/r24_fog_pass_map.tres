@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
 [ext_resource type="Script" path="res://scripts/content/map_polygon_definition.gd" id="2_poly"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
 [ext_resource type="Texture2D" path="res://assets/scenes/battle/rainy_bridge_battle.webp" id="3_bg"]
 
 [sub_resource type="Resource" id="Fog_wall"]
@@ -14,6 +15,24 @@ script = ExtResource("2_poly")
 terrain_kind = "bamboo"
 vertices = PackedVector2Array(1060, 220, 1240, 230, 1280, 400, 1080, 390)
 
+[sub_resource type="Resource" id="Spawn_hero"]
+script = ExtResource("4_marker")
+marker_id = "r27_hero_start"
+marker_kind = "spawn"
+position = Vector2(650, 450)
+
+[sub_resource type="Resource" id="Spawn_enemy"]
+script = ExtResource("4_marker")
+marker_id = "r27_enemy_start"
+marker_kind = "spawn"
+position = Vector2(950, 450)
+
+[sub_resource type="Resource" id="Anchor_vfx"]
+script = ExtResource("4_marker")
+marker_id = "r27_gate_vfx"
+marker_kind = "vfx_anchor"
+position = Vector2(1000, 600)
+
 [resource]
 script = ExtResource("1_map")
 content_id = "r24_fog_pass_map"
@@ -21,3 +40,4 @@ background = ExtResource("3_bg")
 viewport_size = Vector2i(1600, 1000)
 area_bounds = Rect2(100, 100, 1400, 800)
 obstacles = Array[Resource]([SubResource("Fog_wall"), SubResource("Bamboo")])
+markers = Array[Resource]([SubResource("Spawn_hero"), SubResource("Spawn_enemy"), SubResource("Anchor_vfx")])
