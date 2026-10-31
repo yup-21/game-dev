@@ -3,6 +3,7 @@ signal switch_requested(actor_id: int, school_id: String)
 ## Interactive character dossier. CharacterRegistry owns identity and art;
 ## BattleModel's CombatantState is the sole authority for mutable values.
 const Registry = preload("res://scripts/character_registry.gd")
+const ItemCatalog = preload("res://scripts/item_catalog.gd")
 const Art = preload("res://scripts/hd2d_art_catalog.gd")
 const UITheme = preload("res://scripts/hd2d_ui_theme.gd")
 var registry = Registry.new()
@@ -191,6 +192,11 @@ func open_actor(battle_model, id: int) -> bool:
     status_label.text = ("状态："+" · ".join(effects) if not effects.is_empty() else "状态：无") + "\n"
     status_label.text += "护盾 %.0f    已学技能 %d    抽牌堆 %d\n" % [
         actor.shield,actor.technique_states.size(),actor.draw_pile.size()]
-    status_label.text += "装备栏与成长履历：尚未接入，暂无可显示数据。"
+    var catalog = ItemCatalog.new()
+    var gear_names: Array = []
+    for slot in actor.equipment:
+        var item: Dictionary = catalog.get_item(str(actor.equipment[slot]))
+        gear_names.append(str(slot) + " · " + str(item.get("name",actor.equipment[slot])))
+    status_label.text += ("装备：" + " / ".join(gear_names) if not gear_names.is_empty() else "装备：无")
     visible = true
     return true

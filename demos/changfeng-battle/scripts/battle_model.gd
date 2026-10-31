@@ -152,6 +152,14 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 		if options.get("character_names",{}).has(actor.id):
 			actor.name=str(options.character_names[actor.id])
 		attributes.configure(actor,options.get("attributes",{}).get(actor.id,{}),options.get("passives",{}).get(actor.id,{}))
+		var starting_sources: Variant = options.get("modifier_sources",{}).get(actor.id,{})
+		if starting_sources is Dictionary and not starting_sources.is_empty():
+			actor.modifier_sources = starting_sources.duplicate(true)
+			attributes.recalculate(actor)
+			actor.hp_u = actor.max_hp_u
+		var equipment: Variant = options.get("equipment",{}).get(actor.id,{})
+		if equipment is Dictionary:
+			actor.equipment = equipment.duplicate(true)
 		var learned=options.get("techniques",{}).get(actor.id,{})
 		# Profiled actors have explicitly learned techniques; old unprofiled
 		# test fixtures retain the original automatic tutorial stance.

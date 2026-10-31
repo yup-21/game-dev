@@ -80,6 +80,11 @@ on:
       - 'demos/changfeng-battle/scripts/combat_resolver.gd'
       - 'demos/changfeng-battle/scripts/school_catalog.gd'
       - 'demos/changfeng-battle/scripts/status_catalog.gd'
+      - 'demos/changfeng-battle/scripts/item_catalog.gd'
+      - 'demos/changfeng-battle/scripts/inventory_runtime.gd'
+      - 'demos/changfeng-battle/scripts/character_runtime.gd'
+      - 'demos/changfeng-battle/data/items/**'
+      - 'demos/changfeng-battle/checks/test_inventory_equipment_runtime.gd'
       - 'demos/changfeng-battle/scripts/stat_modifier_system.gd'
       - 'demos/changfeng-battle/scripts/attribute_system.gd'
       - 'demos/changfeng-battle/scripts/status_system.gd'
@@ -191,6 +196,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_bridge_auto_battle.gd
       - name: Validate generated martial cards and actor-specific schools
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_derived_wuxue_decks.gd
+      - name: Validate persistent inventory, equipment and character battle builds
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_inventory_equipment_runtime.gd
       - name: Validate independent buff definitions and deterministic modifiers
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_status_modifiers.gd
       - name: Verify catalog extensions and repeatable combo limits

@@ -163,3 +163,11 @@ HUD 的 2D CanvasLayer 创建、布局、头像/控制绑定和完整饰件节�
 - 独立 `data/buffs/index.json` 与每个 Buff 自己的定义文件，由 `StatusCatalog` 校验；支持限时与永久状态及可配置叠层上限。旧状态、卡牌效果及交锋分支仍照旧运行。
 - `StatusSystem` 应用、重叠、移除、到期时更新同名修正源；`CardSystem` 统一注册独立 Buff，武学目录允许引用它们。
 - `checks/test_status_modifiers.gd` 覆盖增益重叠、卸载恢复、装备/成长修正、限时到期和无效定义拒绝。
+
+## R14 — 物品定义、装备实例与角色成长运行态（2026-10-31）
+
+- `ItemCatalog` 从 `data/items/index.json` 加载独立装备/消耗品定义，复用 `StatModifierSystem.valid_spec` 校验装备属性，避免在结算器写死每件装备。
+- `InventoryRuntime` 将装备按稳定 UID 存为实例、消耗品按物品 ID 叠放；提供装备栏、背包增减和严格的快照恢复。消耗品当前只返回声明式 effects，**不会直接修改 BattleState**；真正的战斗使用必须经过后续版本化战斗指令。
+- `CharacterRuntime` 独立持久化角色属性、已学武学、已装备武学、成长来源和物品栏；`battle_build()` 输出战斗开局可消费的属性与修正源。
+- `CharacterRegistry.battle_options()` 接受可选 persistent build；`BattleModel.reset()` 仅在开局注入装备修正和属性，维持唯一战斗权威。角色详情 UI 可以展示真实装备名称，旧角色卡继续正常渲染。
+- `checks/test_inventory_equipment_runtime.gd` 进行物品实例 UID、叠放、装备属性注入、快照 JSON 往返和非法物品拒绝测试。
