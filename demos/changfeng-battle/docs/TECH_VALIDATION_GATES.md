@@ -8,11 +8,11 @@
 
 | 里程碑 | 可复现实证 | 当前状态 |
 | --- | --- | --- |
-| P0 规则与 CI 基线 | 完整 regression、三种地图拓扑、1v1/3v3 人工交互和帧分析 | **自动化扩展中；手动待验收** |
+| P0 规则与 CI 基线 | 完整 regression、三种地图拓扑、1v1/3v3 人工交互和帧分析 | **自动化回归通过；GUI 手动待验收** |
 | P1 战斗策略与动作机制 | 派生连击、交锋响应窗口、架势/取消的权威规则原型 | **待决策/待实施**；R10 时间窗目前仅表现 |
-| P2 美术生产管线 | 一名主角 + 一名敌人的连续动画、导入检查及实机截图 | **只有概念图/候选姿势和运行时适配** |
-| P3 内容扩展闭环 | 武学/Buff/角色/装备/消耗品经正式战斗进出，回归通过 | **部分已接入**；R16–R17 需跟踪 CI |
-| P4 可交付构建 | Windows 导出产物、资源打包检查、导出包 Smoke Test | **尚无正式 Export CI** |
+| P2 美术生产管线 | 一名主角 + 一名敌人的连续动画、导入检查及实机截图 | **资产清单、导入合同与 CI 已落地；连续角色动画待验收** |
+| P3 内容扩展闭环 | 武学/Buff/角色/装备/消耗品经正式战斗进出，回归通过 | **部分已接入**；R16–R17 回归通过，正式试玩仍待验收 |
+| P4 可交付构建 | Windows 导出产物、资源打包检查、导出包 Smoke Test | **Windows/Linux Export CI 与 PCK Smoke Test 已通过** |
 
 ## P0 固定自动回归
 
@@ -62,3 +62,10 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_bridge
 3. **内容优先完成真实接线**：现有 Effect 类型内靠 JSON 扩展；新机制补独立校验、模型效果和回归。
 4. **原始资产不删除**：concept/candidate/approved/runtime 分级，保留 provenance、hash、脚点、动作及导入元数据。
 5. **按里程碑产出证据**：每阶段至少一个独立提交、可执行测试、PASS/FAIL 记录与未完成项。PR #67 在人工验收前保持 Draft。
+
+## 2026-10-31 自动化验证快照
+
+- P0 真实地图拓扑 + 全量 Godot 回归：[Wuxia HUD CI #41163405903](https://github.com/yup-21/game-dev/actions/runs/41163405903) PASS；[Modular content CI #41163405869](https://github.com/yup-21/game-dev/actions/runs/41163405869) PASS。
+- P2 素材清单和导入校验：[Wuxia HUD CI #41163635308](https://github.com/yup-21/game-dev/actions/runs/41163635308) PASS；[Modular content CI #41163635317](https://github.com/yup-21/game-dev/actions/runs/41163635317) PASS。
+- P4 发行导出：[Portable export CI #41163811832](https://github.com/yup-21/game-dev/actions/runs/41163811832) PASS；Windows/Linux 二进制、PCK 关键资源核对、Linux headless 启动均通过。完整玩家试玩、性能 P95/P99 和 Windows GUI 启动仍待人工验收。
+- **这些结论只适用于上述 CI 对应 commit；新代码需要重新运行工作流。**
