@@ -16,6 +16,7 @@ on:
       - 'demos/changfeng-battle/checks/test_equipment_affixes.gd'
       - 'demos/changfeng-battle/checks/test_native_content_resources.gd'
       - 'demos/changfeng-battle/checks/test_character_factory.gd'
+      - 'demos/changfeng-battle/checks/test_native_effects.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -40,6 +41,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_content_resources.gd
       - name: R19 native character factory and starting loadout
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_character_factory.gd
+      - name: R20 native skills and effect handlers
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_effects.gd
       - name: R11 extensible catalogs and combo counts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_catalog_extensibility.gd
       - name: R12 character identity decoupling

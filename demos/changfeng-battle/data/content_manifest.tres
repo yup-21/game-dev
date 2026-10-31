@@ -1,8 +1,15 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
+[ext_resource type="Resource" path="res://data/native/skills/r20_probe.tres" id="3_probe"]
+[ext_resource type="Resource" path="res://data/native/skills/r20_follow.tres" id="4_follow"]
+[ext_resource type="Resource" path="res://data/native/techniques/r20_guard_stage.tres" id="5_guard"]
+[ext_resource type="Resource" path="res://data/native/effect_handlers/r20_qi_by_status.tres" id="6_echo"]
 
 [resource]
 script = ExtResource("1_manifest")
 characters = Array[Resource]([ExtResource("2_hero")])
+skills = Array[Resource]([ExtResource("3_probe"), ExtResource("4_follow")])
+techniques = Array[Resource]([ExtResource("5_guard")])
+effect_handlers = Array[Resource]([ExtResource("6_echo")])

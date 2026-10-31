@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://scripts/content/skill_usage_definition.gd" id="2_usage"]
+[ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+
+[sub_resource type="Resource" id="Resource_status"]
+script = ExtResource("3_effect")
+effect_type = "apply_status"
+target = "self"
+parameters = {"status_id": "iron_body", "stacks": 1}
+
+[sub_resource type="Resource" id="Resource_echo"]
+script = ExtResource("3_effect")
+effect_type = "r20_qi_by_status"
+target = "self"
+amount = 1.0
+parameters = {"status_id": "iron_body"}
+
+[sub_resource type="Resource" id="Resource_derived"]
+script = ExtResource("3_effect")
+effect_type = "grant_card"
+target = "self"
+parameters = {"card_id": "r20_follow", "count": 1, "destination": "hand"}
+
+[sub_resource type="Resource" id="Resource_usage"]
+script = ExtResource("2_usage")
+usage_id = "probe"
+display_name = "试锋"
+timing = "ACTION"
+target_kind = "self"
+effects = Array[Resource]([SubResource("Resource_status"), SubResource("Resource_echo"), SubResource("Resource_derived")])
+
+[resource]
+script = ExtResource("1_skill")
+content_id = "r20_probe"
+display_name = "试锋·引势"
+school_id = "wind_sword"
+generated_only = true
+usages = Array[Resource]([SubResource("Resource_usage")])

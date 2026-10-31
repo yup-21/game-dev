@@ -1,0 +1,29 @@
+@tool
+class_name WuxiaTechniqueNodeDefinition
+extends Resource
+## Stage ability lives outside the card deck and advances its own state.
+
+@export var node_id: String = ""
+@export var stage: String = ""
+@export var next_node: String = ""
+@export_enum("ACTION", "ATTACK_REACTION", "DEFENSE_REACTION") var timing: String = "ACTION"
+@export var cost_qi: int = 0
+@export_enum("self", "enemy_actor", "reachable_cell", "pending_root_attack",
+    "opponent_unresolved_response_link") var target_kind: String = "self"
+@export var effects: Array[Resource] = []
+
+func to_record() -> Dictionary:
+    var converted: Array = []
+    for effect in effects:
+        if not effect is WuxiaEffectDefinition:
+            return {}
+        var record: Dictionary = effect.to_record()
+        if record.is_empty():
+            return {}
+        converted.append(record)
+    return {
+        "id": node_id, "stage": stage if not stage.is_empty() else node_id,
+        "next": next_node if not next_node.is_empty() else node_id,
+        "timing": timing, "cost": {"qi": cost_qi},
+        "target": {"kind": target_kind}, "effects": converted
+    }

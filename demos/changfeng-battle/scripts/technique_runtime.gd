@@ -1,9 +1,11 @@
 extends RefCounted
 ## Cross-ACTION technique progression; separate from cards and card UIDs.
+const NativeContent = preload("res://scripts/content/content_registry.gd")
+const DEFAULT_PATH = "res://data/techniques.json"
 var definitions: Dictionary = {}
 var load_error: String = ""
 
-func _init(path: String = "res://data/techniques.json") -> void:
+func _init(path: String = DEFAULT_PATH) -> void:
 	if not FileAccess.file_exists(path):
 		load_error = "Technique catalog missing: " + path
 		return
@@ -34,6 +36,45 @@ func _init(path: String = "res://data/techniques.json") -> void:
 				if str(n.get("stage",n.id)) == str(trigger.ready_stage): valid_stage=true
 			if not valid_stage: load_error = "Unknown ready stage"; return
 		definitions[d.id] = d.duplicate(true)
+
+	# Custom legacy fixtures stay self-contained; production also loads .tres.
+	if path != DEFAULT_PATH:
+		return
+	var native = NativeContent.new()
+	if not native.load_error.is_empty():
+		load_error = native.load_error
+		return
+	for definition in native.entries("technique").values():
+		if not _register_native(definition):
+			return
+
+func _register_native(d: Variant) -> bool:
+	if not d is Dictionary or not d.get("id") is String or str(d.id).is_empty() or definitions.has(str(d.id)):
+		load_error = "Invalid or duplicate native technique ID"
+		return false
+	if not d.get("nodes") is Array or d.nodes.is_empty() or d.nodes.size() > 32:
+		load_error = "Invalid native stage nodes"
+		return false
+	var ids: Dictionary = {}
+	for n in d.nodes:
+		if not n is Dictionary or not n.get("id") is String or str(n.id).is_empty() or ids.has(str(n.id)):
+			load_error = "Invalid native stage node ID"
+			return false
+		if n.get("timing", "") not in ["ACTION", "ATTACK_REACTION", "DEFENSE_REACTION"] or \
+				not n.get("effects") is Array or n.effects.is_empty() or \
+				not n.get("cost") is Dictionary or not n.get("target") is Dictionary:
+			load_error = "Invalid native stage action"
+			return false
+		ids[str(n.id)] = true
+	if not ids.has(str(d.get("entry", ""))):
+		load_error = "Missing native entry stage"
+		return false
+	for n in d.nodes:
+		if not ids.has(str(n.get("next", d.entry))):
+			load_error = "Invalid native stage transition"
+			return false
+	definitions[str(d.id)] = d.duplicate(true)
+	return true
 
 func configure(actor, learned: Dictionary) -> bool:
 	for id in learned:

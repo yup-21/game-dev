@@ -4,6 +4,8 @@ const EFFECT_TYPES = ["deal_damage","on_attack_hit","on_attack_miss","move","add
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const StatusCatalog = preload("res://scripts/status_catalog.gd")
 const DefinitionRegistry = preload("res://scripts/card_definition_registry.gd")
+const NativeContent = preload("res://scripts/content/content_registry.gd")
+const EffectHandlers = preload("res://scripts/effects/effect_registry.gd")
 var state
 var catalog
 var definitions: Dictionary = {}
@@ -12,11 +14,15 @@ var combos: Array = []
 var deck: Array = []
 var load_error: String = ""
 var registry = DefinitionRegistry.new()
+var effect_handlers = EffectHandlers.new()
 var instances: Dictionary:
 	get: return state.card_instances
 
 func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school_selection: Dictionary = {}, learned_selection: Dictionary = {}) -> void:
 	state=battle_state
+	if not effect_handlers.load_error.is_empty():
+		load_error=effect_handlers.load_error
+		return
 	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not data is Dictionary:
 		load_error="无法读取听风卡牌配置"
@@ -39,6 +45,19 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		if not registry.register(definitions,item):
 			load_error=registry.error
 			return
+	# Native .tres cards enter the same validated definition index as legacy cards.
+	# A generated card need not appear in an initial deck.
+	var native = NativeContent.new()
+	if not native.load_error.is_empty():
+		load_error = native.load_error
+		return
+	for definition in native.entries("skill").values():
+		if definitions.has(str(definition.get("id", ""))) or not valid_definition(definition):
+			load_error = "Invalid or duplicate native skill: " + str(definition.get("id", ""))
+			return
+		if not registry.register(definitions, definition):
+			load_error = registry.error
+			return
 	deck=data.get("deck",{}).get("cards",[]).duplicate(true)
 	combos=data.get("combos",[]).duplicate(true)
 	for entry in deck:
@@ -48,6 +67,10 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 	if not catalog.load_error.is_empty():
 		load_error=catalog.load_error
 		return
+	for definition in native.entries("skill").values():
+		if catalog.get_school(str(definition.get("school_id", ""))).is_empty():
+			load_error = "Unknown native skill school: " + str(definition.get("id", ""))
+			return
 	var selected: Array=[]
 	for actor in state.actors:
 		var selection=school_selection.get(actor.id,"tingfeng")
@@ -139,8 +162,11 @@ func whole(value: Variant, minimum: int = 0) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and float(value)==float(int(value)) and int(value)>=minimum
 
 func valid_effect(e: Variant, depth: int = 0) -> bool:
-	if depth>6 or not e is Dictionary or e.get("type","") not in EFFECT_TYPES: return false
-	var kind: String=e.type
+	if depth>6 or not e is Dictionary: return false
+	var kind: String=str(e.get("type",""))
+	if kind not in EFFECT_TYPES:
+		if e.has("status_id") and not statuses.has(str(e.status_id)): return false
+		return effect_handlers.supports(kind) and effect_handlers.valid_custom(e)
 	if kind in ["deal_damage","add_shield","gain_qi"]:
 		var n=e.get("amount",-1)
 		if not (n is int or n is float) or not is_finite(float(n)) or float(n)<0 or float(n)>10000: return false

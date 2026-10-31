@@ -6,7 +6,7 @@ const Manifest = preload("res://scripts/content/content_manifest.gd")
 const Definition = preload("res://scripts/content/content_definition.gd")
 const DEFAULT_MANIFEST = "res://data/content_manifest.tres"
 
-var definitions: Dictionary = {"character": {}, "buff": {}, "item": {}}
+var definitions: Dictionary = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}}
 var load_error: String = ""
 
 func _init(path: String = DEFAULT_MANIFEST) -> void:
@@ -17,12 +17,12 @@ func _init(path: String = DEFAULT_MANIFEST) -> void:
     import_manifest(manifest)
 
 func import_manifest(manifest: Resource) -> bool:
-    var staged: Dictionary = {"character": {}, "buff": {}, "item": {}}
+    var staged: Dictionary = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}}
     load_error = ""
     if not manifest is Manifest:
         return _fail("Native content manifest has wrong resource type")
     var ids: Dictionary = {}
-    for kind in ["character", "buff", "item"]:
+    for kind in ["character", "buff", "item", "skill", "technique", "effect_handler"]:
         var property_name: String = kind + "s"
         var records: Array = manifest.get(property_name)
         for i in range(records.size()):
@@ -42,7 +42,7 @@ func import_manifest(manifest: Resource) -> bool:
 
 func _fail(message: String) -> bool:
     load_error = message
-    definitions = {"character": {}, "buff": {}, "item": {}}
+    definitions = {"character": {}, "buff": {}, "item": {}, "skill": {}, "technique": {}, "effect_handler": {}}
     return false
 
 func _valid_id(id: String) -> bool:
