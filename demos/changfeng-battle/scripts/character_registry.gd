@@ -5,6 +5,7 @@ const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 const Inventory = preload("res://scripts/inventory_runtime.gd")
 const NativeContent = preload("res://scripts/content/content_registry.gd")
+const Loadout = preload("res://scripts/content/character_loadout.gd")
 const BASE := "res://data/characters/"
 var profiles: Dictionary = {}
 var by_actor: Dictionary = {}
@@ -12,7 +13,7 @@ var by_name: Dictionary = {}
 var load_error: String = ""
 
 func _init(index_path: String = BASE + "index.json", definition_root: String = BASE,
-        native_manifest_path: String = "res://data/content_manifest.tres") -> void:
+        native_manifest_path: String = "") -> void:
     if not FileAccess.file_exists(index_path):
         load_error = "Character index missing: " + index_path
         return
@@ -47,6 +48,12 @@ func _init(index_path: String = BASE + "index.json", definition_root: String = B
 
     # New character cards are authored as Godot .tres Resources. Legacy JSON
     # definitions remain readable while existing demo content is migrated.
+    # Custom legacy indexes are self-contained fixtures. Only the canonical
+    # index receives the production manifest implicitly.
+    if native_manifest_path.is_empty():
+        if index_path != BASE + "index.json" or definition_root != BASE:
+            return
+        native_manifest_path = NativeContent.DEFAULT_MANIFEST
     var native = NativeContent.new(native_manifest_path)
     if not native.load_error.is_empty():
         load_error = native.load_error
@@ -110,6 +117,24 @@ func _valid(d: Variant, schools) -> bool:
             return false
     for technique in d.techniques:
         if not _whole(d.techniques[technique],1,10):
+            return false
+    var presentation: Variant = d.get("presentation", {})
+    if not presentation is Dictionary:
+        return false
+    for key in presentation:
+        if key != "battle_scene":
+            return false
+    var scene_path: Variant = presentation.get("battle_scene", "")
+    if not scene_path is String:
+        return false
+    if not str(scene_path).is_empty():
+        if not str(scene_path).begins_with("res://scenes/") or ".." in scene_path or not ResourceLoader.exists(scene_path, "PackedScene"):
+            return false
+    if d.has("starting_loadout"):
+        # Treat a character card as invalid before it enters the catalog if its
+        # initial inventory cannot be assembled with real item/affix rules.
+        var candidate = Inventory.new()
+        if not candidate.catalog.load_error.is_empty() or not Loadout.apply(d.starting_loadout, candidate):
             return false
     return true
 

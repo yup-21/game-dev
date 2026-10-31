@@ -20,6 +20,8 @@ extends WuxiaContentDefinition
 @export var attributes: Dictionary = {"STR": 10, "AGI": 10, "CON": 10, "MND": 10}
 @export var passives: Dictionary = {"insight": 0, "conceal": 0}
 @export var techniques: Dictionary = {}
+@export_group("Starting Loadout")
+@export var starting_items: Array[Resource] = []
 
 @export_group("Presentation")
 @export var portrait: Texture2D
@@ -33,8 +35,8 @@ func content_kind() -> String:
 
 func to_record() -> Dictionary:
     # Adapt to existing CharacterRegistry consumers without leaking mutable Resources.
-    # battle_scene is a presentation dependency, not a battle-rule property.
-    return {
+    # Presentation resources and starting equipment are authored, never runtime state.
+    var record: Dictionary = {
         "schema_version": schema_version,
         "id": content_id,
         "battle_actor_id": battle_actor_id,
@@ -58,3 +60,11 @@ func to_record() -> Dictionary:
             "sheet_quality": sheet_quality
         }
     }
+    if not starting_items.is_empty():
+        var loadout: Array = []
+        for entry in starting_items:
+            loadout.append(entry.to_record() if entry is WuxiaStartingItemDefinition else {})
+        record["starting_loadout"] = loadout
+    if battle_scene != null:
+        record["presentation"] = {"battle_scene": battle_scene.resource_path}
+    return record

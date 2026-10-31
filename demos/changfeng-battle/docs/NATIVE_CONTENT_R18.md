@@ -13,7 +13,7 @@
 
 每一份 `.tres` 是只读定义，不存 HP、武学进阶等级、Buff 计时或装备 UID 的可变实例。运行时通过现有 Catalog 获取**深拷贝 Dictionary**，继续交给 CharacterRuntime、InventoryRuntime 和 BattleModel 等已验证模块。接入层为过渡 Adapter，最终将逐步直接消费带类型的 Resource。
 
-`res://data/content_manifest.tres` 是正式入口。为了保持历史回归的角色/物品数量和剧情流程，当前正式入口暂不添加新内容；`res://data/native_examples.tres` 提供三张可运行的样例卡，测试可在不改旧数据索引的情况下加载它们。
+`res://data/content_manifest.tres` 是正式入口。R19 已将沈长风角色卡迁入正式 Manifest，并从旧角色 JSON 索引中移除同名条目；`res://data/native_examples.tres` 仍提供原生资源扩展示例，用于验证新增角色、Buff 和物品的独立加载。
 
 ## 在 Godot Inspector 中制作新内容
 
@@ -38,4 +38,4 @@
 - 导出包中的原生资源通过 Manifest 引用可被 Godot 跟踪；继续保留旧 JSON 动态加载时，仍须遵循旧版导出包含规则。
 - 如果 Godot 校验失败，保留在功能分支并修复，严禁用跳过检查替代正确实现。
 
-**下一步**：R19 把 `CharacterFactory` 和 `CharacterRuntime` 直接接到角色 Resource，再迁移现有角色卡；R20 将武学/技能效果拆成可组合 Resource + Handler；后续才处理剧情、地图及素材编辑工具。旧数据删除须在替代资源与全套回归均通过后单独进行。
+**R19 进度**：已通过 `CharacterFactory` 从角色 Resource 生成 `CharacterRuntime`，并迁入沈长风的角色卡及初始装备；R20 将武学/技能效果拆成可组合 Resource + Handler；后续才处理剧情、地图及素材编辑工具。旧数据删除须在替代资源与全套回归均通过后单独进行。

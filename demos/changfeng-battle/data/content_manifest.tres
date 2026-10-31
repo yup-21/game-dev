@@ -1,6 +1,8 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
+[ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
 
 [resource]
 script = ExtResource("1_manifest")
+characters = Array[Resource]([ExtResource("2_hero")])

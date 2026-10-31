@@ -1,9 +1,10 @@
 extends Node
 ## The in-memory source of truth across chapters, battle snapshots and rewards.
-## A new chapter is registered in JSON; combat authority remains in BattleModel.
+## Combat authority remains in BattleModel; initial party loadouts come from character cards.
 const ScenarioDirector = preload("res://scripts/scenario_director.gd")
 const ChapterCatalog = preload("res://scripts/chapter_catalog.gd")
 const CharacterRuntime = preload("res://scripts/character_runtime.gd")
+const CharacterFactory = preload("res://scripts/character_factory.gd")
 const InventoryRuntime = preload("res://scripts/inventory_runtime.gd")
 const StoryEvents = preload("res://scripts/story_event_executor.gd")
 const SceneRouter = preload("res://scripts/chapter_scene_router.gd")
@@ -34,23 +35,15 @@ func start_new_game() -> void:
     battle_outcome = ""
     winning_team = -1
     var chapter: Dictionary = chapter_definition()
+    var factory = CharacterFactory.new()
     for actor in director.encounter(str(chapter.get("encounter_id",""))).get("combatants",[]):
         if int(actor.get("team_id",-1)) != 0:
             continue
         var id: String = str(actor.get("character_id",""))
         if not id.is_empty() and not characters.has(id):
-            var character = CharacterRuntime.new(id)
-            if character.load_error.is_empty():
+            var character = factory.create_runtime(id)
+            if character != null:
                 characters[id] = character
-    ## Deterministic demo inventory/equipment seed. New chapters do not reseed.
-    var hero = characters.get("shen_changfeng",null)
-    if hero != null:
-        hero.inventory.add("healing_powder",2)
-        hero.inventory.add("breath_pill",1)
-        if hero.inventory.add("river_sword"):
-            var uid: String = str(hero.inventory.last_added_uids[0])
-            hero.inventory.set_affixes(uid,["keen_edge"])
-            hero.inventory.equip(uid)
 
 func chapter_definition() -> Dictionary:
     return chapters.get_chapter(chapter_id)

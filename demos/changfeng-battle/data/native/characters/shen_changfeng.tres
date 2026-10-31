@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_character"]
+[ext_resource type="Script" path="res://scripts/content/starting_item_definition.gd" id="2_starting"]
+[ext_resource type="Texture2D" path="res://assets/characters/concepts/shen_changfeng_portrait.png" id="3_portrait"]
+[ext_resource type="Texture2D" path="res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg" id="4_sheet"]
+
+[sub_resource type="Resource" id="Resource_healing"]
+script = ExtResource("2_starting")
+item_id = "healing_powder"
+count = 2
+
+[sub_resource type="Resource" id="Resource_breath"]
+script = ExtResource("2_starting")
+item_id = "breath_pill"
+count = 1
+
+[sub_resource type="Resource" id="Resource_sword"]
+script = ExtResource("2_starting")
+item_id = "river_sword"
+count = 1
+equip = true
+affixes = Array[String](["keen_edge"])
+
+[resource]
+script = ExtResource("1_character")
+content_id = "shen_changfeng"
+display_name = "沈长风"
+title = "旧武馆遗剑"
+role = "游侠 · 剑客"
+faction = "江湖散人"
+team_hint = "ally"
+weapon = "长剑"
+personality = "重诺、谨慎，遇不平事仍愿拔剑。"
+biography = "昔日武馆已付之一炬。雨夜遇见负伤镖头后，沈长风接过一卷无名残篇，也踏入追兵与江湖旧案的漩涡。"
+battle_actor_id = 0
+school_id = "wind_sword"
+learned_schools = Array[String](["wind_sword", "tingfeng", "step"])
+attributes = {"STR": 12, "AGI": 12, "CON": 10, "MND": 10}
+passives = {"insight": 1, "conceal": 0}
+techniques = {"tf_change_stage": 1}
+starting_items = Array[Resource]([SubResource("Resource_healing"), SubResource("Resource_breath"), SubResource("Resource_sword")])
+portrait = ExtResource("3_portrait")
+sprite_sheet = ExtResource("4_sheet")
+portrait_quality = "integrated"
+sheet_quality = "concept_preview"
