@@ -223,5 +223,6 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_i
 全部重构提交持续进入 `refactor/battle-architecture-consolidation`，对应 [Draft PR #67](https://github.com/yup-21/game-dev/pull/67)。独立运行 `checks/verify.ps1 -Stage Refactor`（或见 [重构路线图](docs/REFACTOR_ROADMAP.md) 的 Godot 命令）。`main` 在合并前不会因该分支修改。
 
 - [当前真实架构与接口边界](docs/ARCHITECTURE.md)
+- [如何扩展 Buff、武学、角色、装备和物品](docs/MODULAR_CONTENT_GUIDE.md)
 - [遗留场景与测试保护](docs/LEGACY_COMPAT.md)
 - [素材来源、引用与遗留审计](docs/REFACTOR_ASSET_AUDIT.md)

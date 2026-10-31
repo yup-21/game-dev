@@ -85,6 +85,8 @@ on:
       - 'demos/changfeng-battle/scripts/character_runtime.gd'
       - 'demos/changfeng-battle/data/items/**'
       - 'demos/changfeng-battle/checks/test_inventory_equipment_runtime.gd'
+      - 'demos/changfeng-battle/checks/test_modular_content_integration.gd'
+      - 'demos/changfeng-battle/checks/test_modifier_bootstrap.gd'
       - 'demos/changfeng-battle/scripts/stat_modifier_system.gd'
       - 'demos/changfeng-battle/scripts/attribute_system.gd'
       - 'demos/changfeng-battle/scripts/status_system.gd'
@@ -118,6 +120,8 @@ jobs:
           use-dotnet: false
       - name: Import PNG and SVG art
         run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Smoke-test authoritative attribute and modifier scripts
+        run: timeout --signal=TERM 30s godot --headless --path demos/changfeng-battle --script res://checks/test_modifier_bootstrap.gd
       - name: Validate first-act Sprite2D characters, real assets, movement and elder dialogue
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_opening_sprites.gd
       - name: Assert only the illustrated battle is player-facing
@@ -196,6 +200,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_bridge_auto_battle.gd
       - name: Validate generated martial cards and actor-specific schools
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_derived_wuxue_decks.gd
+      - name: Verify martial, buff, equipment and character integration
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_modular_content_integration.gd
       - name: Validate persistent inventory, equipment and character battle builds
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_inventory_equipment_runtime.gd
       - name: Validate independent buff definitions and deterministic modifiers

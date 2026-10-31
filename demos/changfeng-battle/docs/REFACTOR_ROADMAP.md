@@ -171,3 +171,10 @@ HUD 的 2D CanvasLayer 创建、布局、头像/控制绑定和完整饰件节�
 - `CharacterRuntime` 独立持久化角色属性、已学武学、已装备武学、成长来源和物品栏；`battle_build()` 输出战斗开局可消费的属性与修正源。
 - `CharacterRegistry.battle_options()` 接受可选 persistent build；`BattleModel.reset()` 仅在开局注入装备修正和属性，维持唯一战斗权威。角色详情 UI 可以展示真实装备名称，旧角色卡继续正常渲染。
 - `checks/test_inventory_equipment_runtime.gd` 进行物品实例 UID、叠放、装备属性注入、快照 JSON 往返和非法物品拒绝测试。
+
+## R15 — 扩展内容集成与回归契约（2026-10-31）
+
+- 增加独立 `Modular Wuxia content contracts` 工作流，与原 HUD/地图回归分开运行，单个脚本按时限结束；全量工作流前置 `test_modifier_bootstrap.gd`，避免底层脚本解析失败时 UI 测试空转。
+- `checks/test_modular_content_integration.gd` 验证新招式能通过独立 Buff ID 校验、装备与状态对同一属性的叠加及卸载、角色运行态和 snapshot 的关联。
+- 添加 `docs/MODULAR_CONTENT_GUIDE.md`，明确 JSON 索引、Modifier 定义、角色装备入场、持久化与导出约束。
+- **范围界限**：R11–R15 交付的是可扩展内容层和回归护栏；物品在战斗中的消费/目标选择尚须版本化 `USE_ITEM` 指令，完整战斗中途存档、复杂随机词条和美术导出清单不在本阶段中伪称已完成。
