@@ -30,7 +30,7 @@ func same(a: Variant, b: Variant) -> bool:
 func _run() -> void:
     var native = Native.new()
     check(native.load_error.is_empty(), "native manifest imports")
-    check(native.document("r25_action_timelines").is_empty(),
+    check(not ResourceLoader.exists("res://data/native/documents/action_timelines.tres"),
         "opaque action timeline document removed from production")
     var entry: Dictionary = native.entries("action_timeline").get(
         "r32_default_action_timeline", {})
