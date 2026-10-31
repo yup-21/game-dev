@@ -37,8 +37,6 @@ func _run() -> void:
     var native = Native.new()
     check(native.load_error.is_empty(), "manifest: " + native.load_error)
     var pairs: Array = [
-        ["school_forms","school_forms.json"],
-        ["tingfeng_cards","tingfeng_cards.json"],
         ["legacy_id_map","legacy_id_map.json"],
     ]
     for pair in pairs:
@@ -48,6 +46,18 @@ func _run() -> void:
         var replacement: Dictionary = native.document(id)
         check(original is Dictionary and not replacement.is_empty()
             and _same(original,replacement), "native document parity " + id)
+
+    for entry in [["r36_school_forms", "school_forms.json"],
+            ["r37_tingfeng_cards", "tingfeng_cards.json"]]:
+        var old_rules: Variant = JSON.parse_string(FileAccess.get_file_as_string(
+            "res://data/" + str(entry[1])))
+        var typed_rules: Dictionary = native.entries("rule_catalog").get(str(entry[0]),{}).get("data",{})
+        check(old_rules is Dictionary and not typed_rules.is_empty()
+            and _same(old_rules, typed_rules),
+            "typed martial rulebook complete field parity: " + str(entry[0]))
+    check(native.document("r25_school_forms").is_empty()
+        and native.document("r25_tingfeng_cards").is_empty(),
+        "opaque martial and Tingfeng card documents removed")
 
     # The two playable chapters no longer use opaque WuxiaDataDocument blobs.
     for name in ["rain_escort_prologue","river_watch"]:

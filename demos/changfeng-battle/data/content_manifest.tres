@@ -57,8 +57,8 @@
 [ext_resource type="Resource" path="res://data/native/affixes/quickstep.tres" id="48_r25"]
 [ext_resource type="Resource" path="res://data/native/affixes/iron_guard.tres" id="49_r25"]
 
-[ext_resource type="Resource" path="res://data/native/documents/school_forms.tres" id="50_r25"]
-[ext_resource type="Resource" path="res://data/native/documents/tingfeng_cards.tres" id="51_r25"]
+[ext_resource type="Resource" path="res://data/native/rule_catalogs/r36_school_forms.tres" id="50_r36"]
+[ext_resource type="Resource" path="res://data/native/rule_catalogs/r37_tingfeng_cards.tres" id="51_r37"]
 [ext_resource type="Resource" path="res://data/native/documents/legacy_id_map.tres" id="52_r25"]
 [ext_resource type="Resource" path="res://data/native/techniques/tf_change_stage.tres" id="53_r33"]
 [ext_resource type="Resource" path="res://data/native/encounters/escort_ambush.tres" id="54_r34"]
@@ -106,5 +106,6 @@ maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24"), ExtResourc
 buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])
 items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResource("42_r25"), ExtResource("43_r25"), ExtResource("44_r25"), ExtResource("45_r25")])
 affixes = Array[Resource]([ExtResource("47_r25"), ExtResource("48_r25"), ExtResource("49_r25")])
-documents = Array[Resource]([ExtResource("50_r25"), ExtResource("51_r25"), ExtResource("52_r25")])
+documents = Array[Resource]([ExtResource("52_r25")])
 action_timelines = Array[Resource]([ExtResource("55_r32")])
+rule_catalogs = Array[Resource]([ExtResource("50_r36"), ExtResource("51_r37")])

@@ -25,7 +25,7 @@ func _init(battle_state, path: String = "res://data/tingfeng_cards.json", school
 		return
 	var data: Variant
 	if path == "res://data/tingfeng_cards.json":
-		data = NativeContent.new().document("r25_tingfeng_cards")
+		data = NativeContent.new().entries("rule_catalog").get("r37_tingfeng_cards", {}).get("data", {})
 	else:
 		data = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not data is Dictionary:

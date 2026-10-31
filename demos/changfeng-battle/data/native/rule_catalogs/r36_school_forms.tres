@@ -1,0 +1,2162 @@
+[gd_resource type="Resource" script_class="WuxiaRuleCatalogDefinition" load_steps=362 format=3]
+
+
+
+[ext_resource type="Script" path="res://scripts/content/rule_catalog_definition.gd" id="1"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_school_definition.gd" id="2"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_card_definition.gd" id="3"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_usage_definition.gd" id="4"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_cost_definition.gd" id="5"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_target_definition.gd" id="6"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_attack_profile_definition.gd" id="7"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_effect_definition.gd" id="8"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_status_definition.gd" id="9"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_combo_definition.gd" id="10"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_combo_step_definition.gd" id="11"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_deck_definition.gd" id="12"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_deck_entry_definition.gd" id="13"]
+
+[ext_resource type="Script" path="res://scripts/content/rule_passive_definition.gd" id="14"]
+
+
+
+[sub_resource type="Resource" id="R0001"]
+script = ExtResource("9")
+status_id = "focus"
+display_name = "凝势"
+public = true
+stack_limit = 2
+expiry_kind = "global_ticks_after_apply"
+expiry_duration = 250
+
+[sub_resource type="Resource" id="R0002"]
+script = ExtResource("9")
+status_id = "qi_seal"
+display_name = "封气"
+public = true
+stack_limit = 1
+expiry_kind = "global_ticks_after_apply"
+expiry_duration = 150
+
+[sub_resource type="Resource" id="R0003"]
+script = ExtResource("9")
+status_id = "scorch"
+display_name = "灼痕"
+public = true
+stack_limit = 2
+expiry_kind = "global_ticks_after_apply"
+expiry_duration = 350
+
+[sub_resource type="Resource" id="R0004"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0005"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0006"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0007"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0008"]
+script = ExtResource("4")
+usage_id = "probe"
+display_name = "折柳·探锋"
+timing = "ACTION"
+cost = SubResource("R0004")
+target = SubResource("R0005")
+attack_profile = SubResource("R0006")
+effects = Array[Resource]([SubResource("R0007")])
+
+[sub_resource type="Resource" id="R0009"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0010"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0011"]
+script = ExtResource("7")
+route = "sweep"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0012"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0013"]
+script = ExtResource("4")
+usage_id = "follow"
+display_name = "折柳·追风"
+timing = "ACTION"
+cost = SubResource("R0009")
+target = SubResource("R0010")
+attack_profile = SubResource("R0011")
+effects = Array[Resource]([SubResource("R0012")])
+
+[sub_resource type="Resource" id="R0014"]
+script = ExtResource("3")
+card_id = "wind_flow"
+display_name = "折柳剑式"
+school_id = "wind_sword"
+tags = Array[String](["sword", "light"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0008"), SubResource("R0013")])
+
+[sub_resource type="Resource" id="R0015"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0016"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0017"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0018"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":3}
+
+[sub_resource type="Resource" id="R0019"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"opening","stacks":1,"target":"attack_target"}
+
+[sub_resource type="Resource" id="R0020"]
+script = ExtResource("8")
+effect_type = "on_attack_hit"
+effects = Array[Resource]([SubResource("R0019")])
+
+[sub_resource type="Resource" id="R0021"]
+script = ExtResource("4")
+usage_id = "expose"
+display_name = "青岚·寻隙"
+timing = "ACTION"
+cost = SubResource("R0015")
+target = SubResource("R0016")
+attack_profile = SubResource("R0017")
+effects = Array[Resource]([SubResource("R0018"), SubResource("R0020")])
+
+[sub_resource type="Resource" id="R0022"]
+script = ExtResource("5")
+qi = 4
+
+[sub_resource type="Resource" id="R0023"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 2
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0024"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0025"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":6}
+
+[sub_resource type="Resource" id="R0026"]
+script = ExtResource("4")
+usage_id = "finisher"
+display_name = "青岚·破晓"
+timing = "ACTION"
+cost = SubResource("R0022")
+target = SubResource("R0023")
+attack_profile = SubResource("R0024")
+effects = Array[Resource]([SubResource("R0025")])
+
+[sub_resource type="Resource" id="R0027"]
+script = ExtResource("3")
+card_id = "wind_final"
+display_name = "青岚剑式"
+school_id = "wind_sword"
+tags = Array[String](["sword", "finisher"])
+threat_level = "HIGH"
+usages = Array[Resource]([SubResource("R0021"), SubResource("R0026")])
+
+[sub_resource type="Resource" id="R0028"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0029"]
+script = ExtResource("6")
+kind = "self"
+
+[sub_resource type="Resource" id="R0030"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"focus","stacks":2,"target":"self"}
+
+[sub_resource type="Resource" id="R0031"]
+script = ExtResource("4")
+usage_id = "charge"
+display_name = "沉锋·蓄岳"
+timing = "ACTION"
+cost = SubResource("R0028")
+target = SubResource("R0029")
+has_once_per_action = true
+once_per_action = true
+effects = Array[Resource]([SubResource("R0030")])
+
+[sub_resource type="Resource" id="R0032"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0033"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0034"]
+script = ExtResource("7")
+route = "crushing"
+break_bonus = 1
+
+[sub_resource type="Resource" id="R0035"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":4}
+
+[sub_resource type="Resource" id="R0036"]
+script = ExtResource("4")
+usage_id = "cleave"
+display_name = "沉锋·横岭"
+timing = "ACTION"
+cost = SubResource("R0032")
+target = SubResource("R0033")
+attack_profile = SubResource("R0034")
+effects = Array[Resource]([SubResource("R0035")])
+
+[sub_resource type="Resource" id="R0037"]
+script = ExtResource("3")
+card_id = "saber_charge"
+display_name = "沉锋刀式"
+school_id = "saber"
+tags = Array[String](["blade", "heavy"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0031"), SubResource("R0036")])
+
+[sub_resource type="Resource" id="R0038"]
+script = ExtResource("5")
+qi = 3
+
+[sub_resource type="Resource" id="R0039"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0040"]
+script = ExtResource("7")
+route = "crushing"
+break_bonus = 2
+
+[sub_resource type="Resource" id="R0041"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":5}
+
+[sub_resource type="Resource" id="R0042"]
+script = ExtResource("8")
+effect_type = "force_move"
+parameters = {"target":"attack_target","direction":"away","distance":1}
+
+[sub_resource type="Resource" id="R0043"]
+script = ExtResource("8")
+effect_type = "on_attack_hit"
+effects = Array[Resource]([SubResource("R0042")])
+
+[sub_resource type="Resource" id="R0044"]
+script = ExtResource("4")
+usage_id = "reap"
+display_name = "裂岳·断河"
+timing = "ACTION"
+cost = SubResource("R0038")
+target = SubResource("R0039")
+attack_profile = SubResource("R0040")
+effects = Array[Resource]([SubResource("R0041"), SubResource("R0043")])
+
+[sub_resource type="Resource" id="R0045"]
+script = ExtResource("5")
+qi = 4
+
+[sub_resource type="Resource" id="R0046"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0047"]
+script = ExtResource("7")
+route = "crushing"
+break_bonus = 2
+
+[sub_resource type="Resource" id="R0048"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":7}
+
+[sub_resource type="Resource" id="R0049"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"opening","stacks":1,"target":"self"}
+
+[sub_resource type="Resource" id="R0050"]
+script = ExtResource("8")
+effect_type = "on_attack_miss"
+effects = Array[Resource]([SubResource("R0049")])
+
+[sub_resource type="Resource" id="R0051"]
+script = ExtResource("4")
+usage_id = "finisher"
+display_name = "裂岳·开天"
+timing = "ACTION"
+cost = SubResource("R0045")
+target = SubResource("R0046")
+attack_profile = SubResource("R0047")
+effects = Array[Resource]([SubResource("R0048"), SubResource("R0050")])
+
+[sub_resource type="Resource" id="R0052"]
+script = ExtResource("3")
+card_id = "saber_river"
+display_name = "裂岳刀式"
+school_id = "saber"
+tags = Array[String](["blade", "heavy"])
+threat_level = "HIGH"
+usages = Array[Resource]([SubResource("R0044"), SubResource("R0051")])
+
+[sub_resource type="Resource" id="R0053"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0054"]
+script = ExtResource("6")
+kind = "self"
+
+[sub_resource type="Resource" id="R0055"]
+script = ExtResource("8")
+effect_type = "add_shield"
+parameters = {"amount":3,"expires_after_global_ticks":150}
+
+[sub_resource type="Resource" id="R0056"]
+script = ExtResource("4")
+usage_id = "guard"
+display_name = "沧澜·潮生"
+timing = "ACTION"
+cost = SubResource("R0053")
+target = SubResource("R0054")
+effects = Array[Resource]([SubResource("R0055")])
+
+[sub_resource type="Resource" id="R0057"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0058"]
+script = ExtResource("6")
+kind = "pending_root_attack"
+
+[sub_resource type="Resource" id="R0059"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":-3}
+
+[sub_resource type="Resource" id="R0060"]
+script = ExtResource("4")
+usage_id = "yield"
+display_name = "沧澜·逆水"
+timing = "DEFENSE_REACTION"
+cost = SubResource("R0057")
+target = SubResource("R0058")
+effects = Array[Resource]([SubResource("R0059")])
+
+[sub_resource type="Resource" id="R0061"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0062"]
+script = ExtResource("6")
+kind = "pending_root_attack"
+
+[sub_resource type="Resource" id="R0063"]
+script = ExtResource("8")
+effect_type = "interrupt_root_attack"
+
+[sub_resource type="Resource" id="R0064"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"opening","stacks":1,"target":"attack_source"}
+
+[sub_resource type="Resource" id="R0065"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":-1}
+
+[sub_resource type="Resource" id="R0066"]
+script = ExtResource("8")
+effect_type = "contest_intercept"
+on_success = Array[Resource]([SubResource("R0063"), SubResource("R0064")])
+on_contested = Array[Resource]([SubResource("R0065")])
+preserve_empty_on_failure = true
+parameters = {"parry_bonus":1,"route_bonus":{"thrust":2,"sweep":0,"crushing":-1},"success_margin":2,"failure_margin":-2}
+
+[sub_resource type="Resource" id="R0067"]
+script = ExtResource("4")
+usage_id = "intercept"
+display_name = "沧澜·海门"
+timing = "DEFENSE_REACTION"
+cost = SubResource("R0061")
+target = SubResource("R0062")
+effects = Array[Resource]([SubResource("R0066")])
+
+[sub_resource type="Resource" id="R0068"]
+script = ExtResource("3")
+card_id = "tide_guard"
+display_name = "沧澜掌式"
+school_id = "tide"
+tags = Array[String](["palm", "guard"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0056"), SubResource("R0060"), SubResource("R0067")])
+
+[sub_resource type="Resource" id="R0069"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0070"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0071"]
+script = ExtResource("7")
+route = "sweep"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0072"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":3}
+
+[sub_resource type="Resource" id="R0073"]
+script = ExtResource("8")
+effect_type = "damage_if_shield"
+parameters = {"bonus":1}
+
+[sub_resource type="Resource" id="R0074"]
+script = ExtResource("4")
+usage_id = "return"
+display_name = "回潮·翻掌"
+timing = "ACTION"
+cost = SubResource("R0069")
+target = SubResource("R0070")
+attack_profile = SubResource("R0071")
+effects = Array[Resource]([SubResource("R0072"), SubResource("R0073")])
+
+[sub_resource type="Resource" id="R0075"]
+script = ExtResource("5")
+qi = 3
+
+[sub_resource type="Resource" id="R0076"]
+script = ExtResource("6")
+kind = "pending_root_attack"
+
+[sub_resource type="Resource" id="R0077"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":-5}
+
+[sub_resource type="Resource" id="R0078"]
+script = ExtResource("4")
+usage_id = "shelter"
+display_name = "回潮·守海"
+timing = "DEFENSE_REACTION"
+cost = SubResource("R0075")
+target = SubResource("R0076")
+effects = Array[Resource]([SubResource("R0077")])
+
+[sub_resource type="Resource" id="R0079"]
+script = ExtResource("3")
+card_id = "tide_return"
+display_name = "回潮掌式"
+school_id = "tide"
+tags = Array[String](["palm", "counter"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0074"), SubResource("R0078")])
+
+[sub_resource type="Resource" id="R0080"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0081"]
+script = ExtResource("6")
+kind = "reachable_cell"
+has_max_distance = true
+max_distance = 2
+
+[sub_resource type="Resource" id="R0082"]
+script = ExtResource("8")
+effect_type = "move"
+parameters = {"max_distance":2}
+
+[sub_resource type="Resource" id="R0083"]
+script = ExtResource("4")
+usage_id = "step"
+display_name = "踏雪·游影"
+timing = "ACTION"
+cost = SubResource("R0080")
+target = SubResource("R0081")
+effects = Array[Resource]([SubResource("R0082")])
+
+[sub_resource type="Resource" id="R0084"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0085"]
+script = ExtResource("6")
+kind = "reachable_cell"
+has_max_distance = true
+max_distance = 1
+
+[sub_resource type="Resource" id="R0086"]
+script = ExtResource("8")
+effect_type = "move"
+parameters = {"max_distance":1}
+
+[sub_resource type="Resource" id="R0087"]
+script = ExtResource("4")
+usage_id = "evasion"
+display_name = "踏雪·避锋"
+timing = "DEFENSE_REACTION"
+cost = SubResource("R0084")
+target = SubResource("R0085")
+effects = Array[Resource]([SubResource("R0086")])
+
+[sub_resource type="Resource" id="R0088"]
+script = ExtResource("3")
+card_id = "step_shadow"
+display_name = "踏雪步式"
+school_id = "step"
+tags = Array[String](["lightness", "movement"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0083"), SubResource("R0087")])
+
+[sub_resource type="Resource" id="R0089"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0090"]
+script = ExtResource("6")
+kind = "reachable_cell"
+has_max_distance = true
+max_distance = 1
+
+[sub_resource type="Resource" id="R0091"]
+script = ExtResource("8")
+effect_type = "move"
+parameters = {"max_distance":1}
+
+[sub_resource type="Resource" id="R0092"]
+script = ExtResource("8")
+effect_type = "add_shield"
+parameters = {"amount":2,"expires_after_global_ticks":150}
+
+[sub_resource type="Resource" id="R0093"]
+script = ExtResource("4")
+usage_id = "guard_step"
+display_name = "雁回·折身"
+timing = "ACTION"
+cost = SubResource("R0089")
+target = SubResource("R0090")
+effects = Array[Resource]([SubResource("R0091"), SubResource("R0092")])
+
+[sub_resource type="Resource" id="R0094"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0095"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0096"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0097"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":3}
+
+[sub_resource type="Resource" id="R0098"]
+script = ExtResource("4")
+usage_id = "strike"
+display_name = "雁回·掠锋"
+timing = "ACTION"
+cost = SubResource("R0094")
+target = SubResource("R0095")
+attack_profile = SubResource("R0096")
+effects = Array[Resource]([SubResource("R0097")])
+
+[sub_resource type="Resource" id="R0099"]
+script = ExtResource("3")
+card_id = "step_swallow"
+display_name = "雁回步式"
+school_id = "step"
+tags = Array[String](["lightness", "attack"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0093"), SubResource("R0098")])
+
+[sub_resource type="Resource" id="R0100"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0101"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0102"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0103"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0104"]
+script = ExtResource("4")
+usage_id = "tap"
+display_name = "青灯·照穴"
+timing = "ACTION"
+cost = SubResource("R0100")
+target = SubResource("R0101")
+attack_profile = SubResource("R0102")
+effects = Array[Resource]([SubResource("R0103")])
+
+[sub_resource type="Resource" id="R0105"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0106"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0107"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0108"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0109"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"qi_seal","stacks":1,"target":"attack_target"}
+
+[sub_resource type="Resource" id="R0110"]
+script = ExtResource("8")
+effect_type = "on_attack_hit"
+effects = Array[Resource]([SubResource("R0109")])
+
+[sub_resource type="Resource" id="R0111"]
+script = ExtResource("4")
+usage_id = "seal"
+display_name = "青灯·截息"
+timing = "ACTION"
+cost = SubResource("R0105")
+target = SubResource("R0106")
+attack_profile = SubResource("R0107")
+effects = Array[Resource]([SubResource("R0108"), SubResource("R0110")])
+
+[sub_resource type="Resource" id="R0112"]
+script = ExtResource("3")
+card_id = "finger_seal"
+display_name = "青灯指式"
+school_id = "finger"
+tags = Array[String](["finger", "seal"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0104"), SubResource("R0111")])
+
+[sub_resource type="Resource" id="R0113"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0114"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0115"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0116"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":3}
+
+[sub_resource type="Resource" id="R0117"]
+script = ExtResource("8")
+effect_type = "damage_if_status"
+parameters = {"status_id":"opening","damage_per_stack":2,"consume_on_hit":true}
+
+[sub_resource type="Resource" id="R0118"]
+script = ExtResource("4")
+usage_id = "opening"
+display_name = "叩关·破隙"
+timing = "ACTION"
+cost = SubResource("R0113")
+target = SubResource("R0114")
+attack_profile = SubResource("R0115")
+effects = Array[Resource]([SubResource("R0116"), SubResource("R0117")])
+
+[sub_resource type="Resource" id="R0119"]
+script = ExtResource("5")
+qi = 3
+
+[sub_resource type="Resource" id="R0120"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0121"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0122"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":5}
+
+[sub_resource type="Resource" id="R0123"]
+script = ExtResource("8")
+effect_type = "damage_if_status"
+parameters = {"status_id":"qi_seal","damage_per_stack":2,"consume_on_hit":true}
+
+[sub_resource type="Resource" id="R0124"]
+script = ExtResource("4")
+usage_id = "finish"
+display_name = "叩关·闭气"
+timing = "ACTION"
+cost = SubResource("R0119")
+target = SubResource("R0120")
+attack_profile = SubResource("R0121")
+effects = Array[Resource]([SubResource("R0122"), SubResource("R0123")])
+
+[sub_resource type="Resource" id="R0125"]
+script = ExtResource("3")
+card_id = "finger_finish"
+display_name = "叩关指式"
+school_id = "finger"
+tags = Array[String](["finger", "finisher"])
+threat_level = "HIGH"
+usages = Array[Resource]([SubResource("R0118"), SubResource("R0124")])
+
+[sub_resource type="Resource" id="R0126"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0127"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0128"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0129"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":1}
+
+[sub_resource type="Resource" id="R0130"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"scorch","stacks":1,"target":"attack_target"}
+
+[sub_resource type="Resource" id="R0131"]
+script = ExtResource("8")
+effect_type = "on_attack_hit"
+effects = Array[Resource]([SubResource("R0130")])
+
+[sub_resource type="Resource" id="R0132"]
+script = ExtResource("4")
+usage_id = "spark"
+display_name = "离火·叩炉"
+timing = "ACTION"
+cost = SubResource("R0126")
+target = SubResource("R0127")
+attack_profile = SubResource("R0128")
+effects = Array[Resource]([SubResource("R0129"), SubResource("R0131")])
+
+[sub_resource type="Resource" id="R0133"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0134"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0135"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0136"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":3}
+
+[sub_resource type="Resource" id="R0137"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"scorch","stacks":1,"target":"attack_target"}
+
+[sub_resource type="Resource" id="R0138"]
+script = ExtResource("8")
+effect_type = "on_attack_hit"
+effects = Array[Resource]([SubResource("R0137")])
+
+[sub_resource type="Resource" id="R0139"]
+script = ExtResource("4")
+usage_id = "blaze"
+display_name = "离火·烬环"
+timing = "ACTION"
+cost = SubResource("R0133")
+target = SubResource("R0134")
+attack_profile = SubResource("R0135")
+effects = Array[Resource]([SubResource("R0136"), SubResource("R0138")])
+
+[sub_resource type="Resource" id="R0140"]
+script = ExtResource("3")
+card_id = "ember_fire"
+display_name = "离火掌式"
+school_id = "ember"
+tags = Array[String](["palm", "fire"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0132"), SubResource("R0139")])
+
+[sub_resource type="Resource" id="R0141"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0142"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0143"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0144"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0145"]
+script = ExtResource("4")
+usage_id = "fan"
+display_name = "焚脉·扇焰"
+timing = "ACTION"
+cost = SubResource("R0141")
+target = SubResource("R0142")
+attack_profile = SubResource("R0143")
+effects = Array[Resource]([SubResource("R0144")])
+
+[sub_resource type="Resource" id="R0146"]
+script = ExtResource("5")
+qi = 4
+
+[sub_resource type="Resource" id="R0147"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0148"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0149"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":5}
+
+[sub_resource type="Resource" id="R0150"]
+script = ExtResource("8")
+effect_type = "damage_if_status"
+parameters = {"status_id":"scorch","damage_per_stack":2,"consume_on_hit":true}
+
+[sub_resource type="Resource" id="R0151"]
+script = ExtResource("4")
+usage_id = "detonate"
+display_name = "焚脉·归炉"
+timing = "ACTION"
+cost = SubResource("R0146")
+target = SubResource("R0147")
+attack_profile = SubResource("R0148")
+effects = Array[Resource]([SubResource("R0149"), SubResource("R0150")])
+
+[sub_resource type="Resource" id="R0152"]
+script = ExtResource("3")
+card_id = "ember_burst"
+display_name = "焚脉掌式"
+school_id = "ember"
+tags = Array[String](["palm", "fire", "finisher"])
+threat_level = "HIGH"
+usages = Array[Resource]([SubResource("R0145"), SubResource("R0151")])
+
+[sub_resource type="Resource" id="R0153"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0154"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 2
+has_max_distance = true
+max_distance = 2
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0155"]
+script = ExtResource("7")
+route = "sweep"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0156"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0157"]
+script = ExtResource("4")
+usage_id = "probe"
+display_name = "游丝·探月"
+timing = "ACTION"
+cost = SubResource("R0153")
+target = SubResource("R0154")
+attack_profile = SubResource("R0155")
+effects = Array[Resource]([SubResource("R0156")])
+
+[sub_resource type="Resource" id="R0158"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0159"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 2
+has_max_distance = true
+max_distance = 3
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0160"]
+script = ExtResource("7")
+route = "sweep"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0161"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0162"]
+script = ExtResource("8")
+effect_type = "force_move"
+parameters = {"target":"attack_target","direction":"toward","distance":1}
+
+[sub_resource type="Resource" id="R0163"]
+script = ExtResource("8")
+effect_type = "on_attack_hit"
+effects = Array[Resource]([SubResource("R0162")])
+
+[sub_resource type="Resource" id="R0164"]
+script = ExtResource("4")
+usage_id = "pull"
+display_name = "游丝·回钩"
+timing = "ACTION"
+cost = SubResource("R0158")
+target = SubResource("R0159")
+attack_profile = SubResource("R0160")
+effects = Array[Resource]([SubResource("R0161"), SubResource("R0163")])
+
+[sub_resource type="Resource" id="R0165"]
+script = ExtResource("3")
+card_id = "whip_coil"
+display_name = "游丝鞭式"
+school_id = "whip"
+tags = Array[String](["whip", "control"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0157"), SubResource("R0164")])
+
+[sub_resource type="Resource" id="R0166"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0167"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 2
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0168"]
+script = ExtResource("7")
+route = "sweep"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0169"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":3}
+
+[sub_resource type="Resource" id="R0170"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"opening","stacks":1,"target":"attack_target"}
+
+[sub_resource type="Resource" id="R0171"]
+script = ExtResource("8")
+effect_type = "on_attack_hit"
+effects = Array[Resource]([SubResource("R0170")])
+
+[sub_resource type="Resource" id="R0172"]
+script = ExtResource("4")
+usage_id = "expose"
+display_name = "断线·扫云"
+timing = "ACTION"
+cost = SubResource("R0166")
+target = SubResource("R0167")
+attack_profile = SubResource("R0168")
+effects = Array[Resource]([SubResource("R0169"), SubResource("R0171")])
+
+[sub_resource type="Resource" id="R0173"]
+script = ExtResource("5")
+qi = 3
+
+[sub_resource type="Resource" id="R0174"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 2
+has_max_distance = true
+max_distance = 3
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0175"]
+script = ExtResource("7")
+route = "sweep"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0176"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":5}
+
+[sub_resource type="Resource" id="R0177"]
+script = ExtResource("4")
+usage_id = "finisher"
+display_name = "断线·归锋"
+timing = "ACTION"
+cost = SubResource("R0173")
+target = SubResource("R0174")
+attack_profile = SubResource("R0175")
+effects = Array[Resource]([SubResource("R0176")])
+
+[sub_resource type="Resource" id="R0178"]
+script = ExtResource("3")
+card_id = "whip_cut"
+display_name = "断线鞭式"
+school_id = "whip"
+tags = Array[String](["whip", "finisher"])
+threat_level = "HIGH"
+usages = Array[Resource]([SubResource("R0172"), SubResource("R0177")])
+
+[sub_resource type="Resource" id="R0179"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0180"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 2
+has_max_distance = true
+max_distance = 4
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0181"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0182"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0183"]
+script = ExtResource("4")
+usage_id = "shoot"
+display_name = "听雨·细针"
+timing = "ACTION"
+cost = SubResource("R0179")
+target = SubResource("R0180")
+attack_profile = SubResource("R0181")
+effects = Array[Resource]([SubResource("R0182")])
+
+[sub_resource type="Resource" id="R0184"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0185"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 2
+has_max_distance = true
+max_distance = 4
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0186"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0187"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":3}
+
+[sub_resource type="Resource" id="R0188"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"opening","stacks":1,"target":"attack_target"}
+
+[sub_resource type="Resource" id="R0189"]
+script = ExtResource("8")
+effect_type = "on_attack_hit"
+effects = Array[Resource]([SubResource("R0188")])
+
+[sub_resource type="Resource" id="R0190"]
+script = ExtResource("4")
+usage_id = "expose"
+display_name = "听雨·索魂"
+timing = "ACTION"
+cost = SubResource("R0184")
+target = SubResource("R0185")
+attack_profile = SubResource("R0186")
+effects = Array[Resource]([SubResource("R0187"), SubResource("R0189")])
+
+[sub_resource type="Resource" id="R0191"]
+script = ExtResource("3")
+card_id = "needle_rain"
+display_name = "听雨针式"
+school_id = "needle"
+tags = Array[String](["needle", "ranged"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0183"), SubResource("R0190")])
+
+[sub_resource type="Resource" id="R0192"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0193"]
+script = ExtResource("6")
+kind = "self"
+
+[sub_resource type="Resource" id="R0194"]
+script = ExtResource("8")
+effect_type = "add_shield"
+parameters = {"amount":1,"expires_after_global_ticks":100}
+
+[sub_resource type="Resource" id="R0195"]
+script = ExtResource("8")
+effect_type = "draw_cards"
+parameters = {"count":1}
+
+[sub_resource type="Resource" id="R0196"]
+script = ExtResource("4")
+usage_id = "draw"
+display_name = "敛袖·藏锋"
+timing = "ACTION"
+cost = SubResource("R0192")
+target = SubResource("R0193")
+has_once_per_action = true
+once_per_action = true
+effects = Array[Resource]([SubResource("R0194"), SubResource("R0195")])
+
+[sub_resource type="Resource" id="R0197"]
+script = ExtResource("5")
+qi = 4
+
+[sub_resource type="Resource" id="R0198"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 2
+has_max_distance = true
+max_distance = 4
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0199"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0200"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":6}
+
+[sub_resource type="Resource" id="R0201"]
+script = ExtResource("4")
+usage_id = "finisher"
+display_name = "敛袖·千丝"
+timing = "ACTION"
+cost = SubResource("R0197")
+target = SubResource("R0198")
+attack_profile = SubResource("R0199")
+effects = Array[Resource]([SubResource("R0200")])
+
+[sub_resource type="Resource" id="R0202"]
+script = ExtResource("3")
+card_id = "needle_hidden"
+display_name = "敛袖针式"
+school_id = "needle"
+tags = Array[String](["needle", "finisher"])
+threat_level = "HIGH"
+usages = Array[Resource]([SubResource("R0196"), SubResource("R0201")])
+
+[sub_resource type="Resource" id="R0203"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0204"]
+script = ExtResource("6")
+kind = "self"
+
+[sub_resource type="Resource" id="R0205"]
+script = ExtResource("8")
+effect_type = "gain_qi"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0206"]
+script = ExtResource("4")
+usage_id = "breathe"
+display_name = "引气·纳元"
+timing = "ACTION"
+cost = SubResource("R0203")
+target = SubResource("R0204")
+has_once_per_action = true
+once_per_action = true
+effects = Array[Resource]([SubResource("R0205")])
+
+[sub_resource type="Resource" id="R0207"]
+script = ExtResource("5")
+qi = 2
+
+[sub_resource type="Resource" id="R0208"]
+script = ExtResource("6")
+kind = "self"
+
+[sub_resource type="Resource" id="R0209"]
+script = ExtResource("8")
+effect_type = "gain_qi"
+parameters = {"amount":1}
+
+[sub_resource type="Resource" id="R0210"]
+script = ExtResource("8")
+effect_type = "draw_cards"
+parameters = {"count":2}
+
+[sub_resource type="Resource" id="R0211"]
+script = ExtResource("4")
+usage_id = "cycle"
+display_name = "引气·转息"
+timing = "ACTION"
+cost = SubResource("R0207")
+target = SubResource("R0208")
+has_once_per_action = true
+once_per_action = true
+effects = Array[Resource]([SubResource("R0209"), SubResource("R0210")])
+
+[sub_resource type="Resource" id="R0212"]
+script = ExtResource("3")
+card_id = "taixu_breath"
+display_name = "引气心法"
+school_id = "taixu"
+tags = Array[String](["internal", "qi"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0206"), SubResource("R0211")])
+
+[sub_resource type="Resource" id="R0213"]
+script = ExtResource("5")
+qi = 1
+
+[sub_resource type="Resource" id="R0214"]
+script = ExtResource("6")
+kind = "self"
+
+[sub_resource type="Resource" id="R0215"]
+script = ExtResource("8")
+effect_type = "add_shield"
+parameters = {"amount":2,"expires_after_global_ticks":150}
+
+[sub_resource type="Resource" id="R0216"]
+script = ExtResource("4")
+usage_id = "guard"
+display_name = "太虚·守元"
+timing = "ACTION"
+cost = SubResource("R0213")
+target = SubResource("R0214")
+effects = Array[Resource]([SubResource("R0215")])
+
+[sub_resource type="Resource" id="R0217"]
+script = ExtResource("5")
+qi = 3
+
+[sub_resource type="Resource" id="R0218"]
+script = ExtResource("6")
+kind = "self"
+
+[sub_resource type="Resource" id="R0219"]
+script = ExtResource("8")
+effect_type = "gain_qi"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0220"]
+script = ExtResource("8")
+effect_type = "add_shield"
+parameters = {"amount":2,"expires_after_global_ticks":150}
+
+[sub_resource type="Resource" id="R0221"]
+script = ExtResource("8")
+effect_type = "apply_status"
+parameters = {"status_id":"focus","stacks":1,"target":"self"}
+
+[sub_resource type="Resource" id="R0222"]
+script = ExtResource("4")
+usage_id = "focus"
+display_name = "太虚·归一"
+timing = "ACTION"
+cost = SubResource("R0217")
+target = SubResource("R0218")
+has_once_per_action = true
+once_per_action = true
+effects = Array[Resource]([SubResource("R0219"), SubResource("R0220"), SubResource("R0221")])
+
+[sub_resource type="Resource" id="R0223"]
+script = ExtResource("3")
+card_id = "taixu_guard"
+display_name = "太虚护元"
+school_id = "taixu"
+tags = Array[String](["internal", "guard"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0216"), SubResource("R0222")])
+
+[sub_resource type="Resource" id="R0224"]
+script = ExtResource("5")
+qi = 0
+has_hp = true
+hp = 2
+
+[sub_resource type="Resource" id="R0225"]
+script = ExtResource("6")
+kind = "self"
+
+[sub_resource type="Resource" id="R0226"]
+script = ExtResource("8")
+effect_type = "gain_qi"
+parameters = {"amount":2}
+
+[sub_resource type="Resource" id="R0227"]
+script = ExtResource("4")
+usage_id = "convert"
+display_name = "逆血·提气"
+timing = "ACTION"
+cost = SubResource("R0224")
+target = SubResource("R0225")
+has_once_per_action = true
+once_per_action = true
+effects = Array[Resource]([SubResource("R0226")])
+
+[sub_resource type="Resource" id="R0228"]
+script = ExtResource("5")
+qi = 1
+has_hp = true
+hp = 1
+
+[sub_resource type="Resource" id="R0229"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0230"]
+script = ExtResource("7")
+route = "thrust"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0231"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":3}
+
+[sub_resource type="Resource" id="R0232"]
+script = ExtResource("4")
+usage_id = "strike"
+display_name = "逆血·伤门"
+timing = "ACTION"
+cost = SubResource("R0228")
+target = SubResource("R0229")
+attack_profile = SubResource("R0230")
+effects = Array[Resource]([SubResource("R0231")])
+
+[sub_resource type="Resource" id="R0233"]
+script = ExtResource("3")
+card_id = "blood_burn"
+display_name = "逆血功式"
+school_id = "blood"
+tags = Array[String](["forbidden", "blood"])
+threat_level = "NORMAL"
+usages = Array[Resource]([SubResource("R0227"), SubResource("R0232")])
+
+[sub_resource type="Resource" id="R0234"]
+script = ExtResource("5")
+qi = 1
+has_hp = true
+hp = 1
+
+[sub_resource type="Resource" id="R0235"]
+script = ExtResource("6")
+kind = "pending_root_attack"
+
+[sub_resource type="Resource" id="R0236"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":2}
+
+[sub_resource type="Resource" id="R0237"]
+script = ExtResource("4")
+usage_id = "empower"
+display_name = "七伤·痛转为锋"
+timing = "ATTACK_REACTION"
+cost = SubResource("R0234")
+target = SubResource("R0235")
+effects = Array[Resource]([SubResource("R0236")])
+
+[sub_resource type="Resource" id="R0238"]
+script = ExtResource("5")
+qi = 3
+has_hp = true
+hp = 3
+
+[sub_resource type="Resource" id="R0239"]
+script = ExtResource("6")
+kind = "enemy_actor"
+has_min_distance = true
+min_distance = 1
+has_max_distance = true
+max_distance = 1
+has_line_of_sight = true
+line_of_sight = true
+
+[sub_resource type="Resource" id="R0240"]
+script = ExtResource("7")
+route = "crushing"
+break_bonus = 0
+
+[sub_resource type="Resource" id="R0241"]
+script = ExtResource("8")
+effect_type = "deal_damage"
+parameters = {"amount":6}
+
+[sub_resource type="Resource" id="R0242"]
+script = ExtResource("8")
+effect_type = "damage_if_low_hp"
+parameters = {"threshold_percent":50,"bonus":2}
+
+[sub_resource type="Resource" id="R0243"]
+script = ExtResource("4")
+usage_id = "finisher"
+display_name = "七伤·焚脉"
+timing = "ACTION"
+cost = SubResource("R0238")
+target = SubResource("R0239")
+attack_profile = SubResource("R0240")
+effects = Array[Resource]([SubResource("R0241"), SubResource("R0242")])
+
+[sub_resource type="Resource" id="R0244"]
+script = ExtResource("3")
+card_id = "blood_finish"
+display_name = "七伤绝式"
+school_id = "blood"
+tags = Array[String](["forbidden", "finisher"])
+threat_level = "HIGH"
+usages = Array[Resource]([SubResource("R0237"), SubResource("R0243")])
+
+[sub_resource type="Resource" id="R0245"]
+script = ExtResource("11")
+card_id = "wind_flow"
+usage_id = "probe"
+
+[sub_resource type="Resource" id="R0246"]
+script = ExtResource("11")
+card_id = "wind_flow"
+usage_id = "follow"
+
+[sub_resource type="Resource" id="R0247"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":1}
+
+[sub_resource type="Resource" id="R0248"]
+script = ExtResource("10")
+combo_id = "wind_combo"
+display_name = "风回柳转"
+mode = "ordered_previous_resolved_active_attack"
+sequence = Array[Resource]([SubResource("R0245"), SubResource("R0246")])
+scope = "same_actor_action"
+has_max_activations = true
+max_activations_per_action = 1
+effects = Array[Resource]([SubResource("R0247")])
+
+[sub_resource type="Resource" id="R0249"]
+script = ExtResource("11")
+card_id = "saber_charge"
+usage_id = "cleave"
+
+[sub_resource type="Resource" id="R0250"]
+script = ExtResource("11")
+card_id = "saber_river"
+usage_id = "reap"
+
+[sub_resource type="Resource" id="R0251"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":1}
+
+[sub_resource type="Resource" id="R0252"]
+script = ExtResource("10")
+combo_id = "saber_combo"
+display_name = "沉锋断岳"
+mode = "ordered_previous_resolved_active_attack"
+sequence = Array[Resource]([SubResource("R0249"), SubResource("R0250")])
+scope = "same_actor_action"
+has_max_activations = true
+max_activations_per_action = 1
+effects = Array[Resource]([SubResource("R0251")])
+
+[sub_resource type="Resource" id="R0253"]
+script = ExtResource("11")
+card_id = "finger_seal"
+usage_id = "seal"
+
+[sub_resource type="Resource" id="R0254"]
+script = ExtResource("11")
+card_id = "finger_finish"
+usage_id = "finish"
+
+[sub_resource type="Resource" id="R0255"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":1}
+
+[sub_resource type="Resource" id="R0256"]
+script = ExtResource("10")
+combo_id = "finger_combo"
+display_name = "青灯叩关"
+mode = "ordered_previous_resolved_active_attack"
+sequence = Array[Resource]([SubResource("R0253"), SubResource("R0254")])
+scope = "same_actor_action"
+has_max_activations = true
+max_activations_per_action = 1
+effects = Array[Resource]([SubResource("R0255")])
+
+[sub_resource type="Resource" id="R0257"]
+script = ExtResource("11")
+card_id = "ember_fire"
+usage_id = "blaze"
+
+[sub_resource type="Resource" id="R0258"]
+script = ExtResource("11")
+card_id = "ember_burst"
+usage_id = "detonate"
+
+[sub_resource type="Resource" id="R0259"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":1}
+
+[sub_resource type="Resource" id="R0260"]
+script = ExtResource("10")
+combo_id = "ember_combo"
+display_name = "炉火归元"
+mode = "ordered_previous_resolved_active_attack"
+sequence = Array[Resource]([SubResource("R0257"), SubResource("R0258")])
+scope = "same_actor_action"
+has_max_activations = true
+max_activations_per_action = 1
+effects = Array[Resource]([SubResource("R0259")])
+
+[sub_resource type="Resource" id="R0261"]
+script = ExtResource("11")
+card_id = "whip_coil"
+usage_id = "pull"
+
+[sub_resource type="Resource" id="R0262"]
+script = ExtResource("11")
+card_id = "whip_cut"
+usage_id = "finisher"
+
+[sub_resource type="Resource" id="R0263"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":1}
+
+[sub_resource type="Resource" id="R0264"]
+script = ExtResource("10")
+combo_id = "whip_combo"
+display_name = "牵丝断线"
+mode = "ordered_previous_resolved_active_attack"
+sequence = Array[Resource]([SubResource("R0261"), SubResource("R0262")])
+scope = "same_actor_action"
+has_max_activations = true
+max_activations_per_action = 1
+effects = Array[Resource]([SubResource("R0263")])
+
+[sub_resource type="Resource" id="R0265"]
+script = ExtResource("11")
+card_id = "needle_rain"
+usage_id = "shoot"
+
+[sub_resource type="Resource" id="R0266"]
+script = ExtResource("11")
+card_id = "needle_hidden"
+usage_id = "finisher"
+
+[sub_resource type="Resource" id="R0267"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":1}
+
+[sub_resource type="Resource" id="R0268"]
+script = ExtResource("10")
+combo_id = "needle_combo"
+display_name = "雨尽千丝"
+mode = "ordered_previous_resolved_active_attack"
+sequence = Array[Resource]([SubResource("R0265"), SubResource("R0266")])
+scope = "same_actor_action"
+has_max_activations = true
+max_activations_per_action = 1
+effects = Array[Resource]([SubResource("R0267")])
+
+[sub_resource type="Resource" id="R0269"]
+script = ExtResource("11")
+card_id = "blood_burn"
+usage_id = "strike"
+
+[sub_resource type="Resource" id="R0270"]
+script = ExtResource("11")
+card_id = "blood_finish"
+usage_id = "finisher"
+
+[sub_resource type="Resource" id="R0271"]
+script = ExtResource("8")
+effect_type = "modify_pending_damage"
+parameters = {"flat_delta":1}
+
+[sub_resource type="Resource" id="R0272"]
+script = ExtResource("10")
+combo_id = "blood_combo"
+display_name = "伤门焚脉"
+mode = "ordered_previous_resolved_active_attack"
+sequence = Array[Resource]([SubResource("R0269"), SubResource("R0270")])
+scope = "same_actor_action"
+has_max_activations = true
+max_activations_per_action = 1
+effects = Array[Resource]([SubResource("R0271")])
+
+[sub_resource type="Resource" id="R0273"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0274"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0275"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0276"]
+script = ExtResource("13")
+card_id = "wind_flow"
+count = 3
+
+[sub_resource type="Resource" id="R0277"]
+script = ExtResource("13")
+card_id = "wind_final"
+count = 3
+
+[sub_resource type="Resource" id="R0278"]
+script = ExtResource("2")
+school_id = "wind_sword"
+display_name = "苍风折柳剑"
+identity = "低耗连斩、乘势追击"
+core_forms = Array[String](["wind_flow", "wind_final"])
+deck = Array[Resource]([SubResource("R0273"), SubResource("R0274"), SubResource("R0275"), SubResource("R0276"), SubResource("R0277")])
+
+[sub_resource type="Resource" id="R0279"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0280"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0281"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0282"]
+script = ExtResource("13")
+card_id = "saber_charge"
+count = 3
+
+[sub_resource type="Resource" id="R0283"]
+script = ExtResource("13")
+card_id = "saber_river"
+count = 3
+
+[sub_resource type="Resource" id="R0284"]
+script = ExtResource("2")
+school_id = "saber"
+display_name = "裂岳沉锋刀"
+identity = "蓄劲重击、击退压迫"
+core_forms = Array[String](["saber_charge", "saber_river"])
+deck = Array[Resource]([SubResource("R0279"), SubResource("R0280"), SubResource("R0281"), SubResource("R0282"), SubResource("R0283")])
+
+[sub_resource type="Resource" id="R0285"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0286"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0287"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0288"]
+script = ExtResource("13")
+card_id = "tide_guard"
+count = 3
+
+[sub_resource type="Resource" id="R0289"]
+script = ExtResource("13")
+card_id = "tide_return"
+count = 3
+
+[sub_resource type="Resource" id="R0290"]
+script = ExtResource("2")
+school_id = "tide"
+display_name = "沧澜回潮掌"
+identity = "化劲防守、借力反击"
+core_forms = Array[String](["tide_guard", "tide_return"])
+deck = Array[Resource]([SubResource("R0285"), SubResource("R0286"), SubResource("R0287"), SubResource("R0288"), SubResource("R0289")])
+
+[sub_resource type="Resource" id="R0291"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0292"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0293"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0294"]
+script = ExtResource("13")
+card_id = "step_shadow"
+count = 3
+
+[sub_resource type="Resource" id="R0295"]
+script = ExtResource("13")
+card_id = "step_swallow"
+count = 3
+
+[sub_resource type="Resource" id="R0296"]
+script = ExtResource("2")
+school_id = "step"
+display_name = "踏雪惊鸿步"
+identity = "走位闪避、近身追击"
+core_forms = Array[String](["step_shadow", "step_swallow"])
+deck = Array[Resource]([SubResource("R0291"), SubResource("R0292"), SubResource("R0293"), SubResource("R0294"), SubResource("R0295")])
+
+[sub_resource type="Resource" id="R0297"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0298"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0299"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0300"]
+script = ExtResource("13")
+card_id = "finger_seal"
+count = 3
+
+[sub_resource type="Resource" id="R0301"]
+script = ExtResource("13")
+card_id = "finger_finish"
+count = 3
+
+[sub_resource type="Resource" id="R0302"]
+script = ExtResource("2")
+school_id = "finger"
+display_name = "青灯封脉指"
+identity = "点穴封气、破绽惩罚"
+core_forms = Array[String](["finger_seal", "finger_finish"])
+deck = Array[Resource]([SubResource("R0297"), SubResource("R0298"), SubResource("R0299"), SubResource("R0300"), SubResource("R0301")])
+
+[sub_resource type="Resource" id="R0303"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0304"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0305"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0306"]
+script = ExtResource("13")
+card_id = "ember_fire"
+count = 3
+
+[sub_resource type="Resource" id="R0307"]
+script = ExtResource("13")
+card_id = "ember_burst"
+count = 3
+
+[sub_resource type="Resource" id="R0308"]
+script = ExtResource("2")
+school_id = "ember"
+display_name = "赤炉离火掌"
+identity = "灼痕积累、引燃爆发"
+core_forms = Array[String](["ember_fire", "ember_burst"])
+deck = Array[Resource]([SubResource("R0303"), SubResource("R0304"), SubResource("R0305"), SubResource("R0306"), SubResource("R0307")])
+
+[sub_resource type="Resource" id="R0309"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0310"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0311"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0312"]
+script = ExtResource("13")
+card_id = "whip_coil"
+count = 3
+
+[sub_resource type="Resource" id="R0313"]
+script = ExtResource("13")
+card_id = "whip_cut"
+count = 3
+
+[sub_resource type="Resource" id="R0314"]
+script = ExtResource("2")
+school_id = "whip"
+display_name = "缠云游丝鞭"
+identity = "中距牵引、战棋控位"
+core_forms = Array[String](["whip_coil", "whip_cut"])
+deck = Array[Resource]([SubResource("R0309"), SubResource("R0310"), SubResource("R0311"), SubResource("R0312"), SubResource("R0313")])
+
+[sub_resource type="Resource" id="R0315"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0316"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0317"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0318"]
+script = ExtResource("13")
+card_id = "needle_rain"
+count = 3
+
+[sub_resource type="Resource" id="R0319"]
+script = ExtResource("13")
+card_id = "needle_hidden"
+count = 3
+
+[sub_resource type="Resource" id="R0320"]
+script = ExtResource("2")
+school_id = "needle"
+display_name = "听雨千机针"
+identity = "远程压制、抽牌守势"
+core_forms = Array[String](["needle_rain", "needle_hidden"])
+deck = Array[Resource]([SubResource("R0315"), SubResource("R0316"), SubResource("R0317"), SubResource("R0318"), SubResource("R0319")])
+
+[sub_resource type="Resource" id="R0321"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0322"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0323"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0324"]
+script = ExtResource("13")
+card_id = "taixu_breath"
+count = 3
+
+[sub_resource type="Resource" id="R0325"]
+script = ExtResource("13")
+card_id = "taixu_guard"
+count = 3
+
+[sub_resource type="Resource" id="R0326"]
+script = ExtResource("2")
+school_id = "taixu"
+display_name = "太虚引气篇"
+identity = "运功回气、护元蓄势"
+core_forms = Array[String](["taixu_breath", "taixu_guard"])
+deck = Array[Resource]([SubResource("R0321"), SubResource("R0322"), SubResource("R0323"), SubResource("R0324"), SubResource("R0325")])
+
+[sub_resource type="Resource" id="R0327"]
+script = ExtResource("13")
+card_id = "tf_probe"
+count = 2
+
+[sub_resource type="Resource" id="R0328"]
+script = ExtResource("13")
+card_id = "tf_step"
+count = 2
+
+[sub_resource type="Resource" id="R0329"]
+script = ExtResource("13")
+card_id = "tf_guard"
+count = 2
+
+[sub_resource type="Resource" id="R0330"]
+script = ExtResource("13")
+card_id = "blood_burn"
+count = 3
+
+[sub_resource type="Resource" id="R0331"]
+script = ExtResource("13")
+card_id = "blood_finish"
+count = 3
+
+[sub_resource type="Resource" id="R0332"]
+script = ExtResource("2")
+school_id = "blood"
+display_name = "七伤逆血诀"
+identity = "燃血换气、破釜爆发"
+core_forms = Array[String](["blood_burn", "blood_finish"])
+deck = Array[Resource]([SubResource("R0327"), SubResource("R0328"), SubResource("R0329"), SubResource("R0330"), SubResource("R0331")])
+
+[resource]
+script = ExtResource("1")
+content_id = "r36_school_forms"
+catalog_type = "schools"
+original_schema = "3.0-multi-usage-schools"
+statuses = Array[Resource]([SubResource("R0001"), SubResource("R0002"), SubResource("R0003")])
+cards = Array[Resource]([SubResource("R0014"), SubResource("R0027"), SubResource("R0037"), SubResource("R0052"), SubResource("R0068"), SubResource("R0079"), SubResource("R0088"), SubResource("R0099"), SubResource("R0112"), SubResource("R0125"), SubResource("R0140"), SubResource("R0152"), SubResource("R0165"), SubResource("R0178"), SubResource("R0191"), SubResource("R0202"), SubResource("R0212"), SubResource("R0223"), SubResource("R0233"), SubResource("R0244")])
+combos = Array[Resource]([SubResource("R0248"), SubResource("R0252"), SubResource("R0256"), SubResource("R0260"), SubResource("R0264"), SubResource("R0268"), SubResource("R0272")])
+source = "长风浮生录_十套武学_设计数据_v1.json"
+design = "每门武学两张核心式卡，其他功能通过 usage 变招，玩家与 AI 同规则，搭配通用走位/化劲/截势卡"
+schools = Array[Resource]([SubResource("R0278"), SubResource("R0284"), SubResource("R0290"), SubResource("R0296"), SubResource("R0302"), SubResource("R0308"), SubResource("R0314"), SubResource("R0320"), SubResource("R0326"), SubResource("R0332")])
+
