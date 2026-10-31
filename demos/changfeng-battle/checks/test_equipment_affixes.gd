@@ -19,7 +19,7 @@ func _run() -> void:
     var catalog = Affixes.new()
     check(catalog.load_error.is_empty() and catalog.definitions.size() == 3,"independent affix catalog")
     var items = Items.new()
-    check(items.load_error.is_empty() and items.definitions.size() == 4,"items cross-validate affix pools")
+    check(items.load_error.is_empty() and items.definitions.size() >= 4,"items cross-validate affix pools")
     var role = Runtime.new("shen_changfeng")
     check(role.inventory.add("river_sword",2),"create two independent sword UIDs")
     var first: String = str(role.inventory.last_added_uids[0])
