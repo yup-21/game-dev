@@ -13,12 +13,12 @@ func check(condition: bool, label: String) -> void:
 func _initialize() -> void:
 	var c = Catalog.new()
 	check(c.load_error.is_empty(),"load_error=" + c.load_error)
-	check(c.schools.size() == 10 and c.forms.size() == 20 and c.statuses.size() == 3 and c.combos.size() == 7,"catalog counts")
+	check(c.schools.size() >= 10 and c.forms.size() == 20 and c.statuses.size() == 3 and c.combos.size() == 7,"catalog counts")
 	if not c.load_error.is_empty():
 		quit(1)
 		return
 	var options: Array = c.options()
-	check(options.size() == 11 and options[0].id == "tingfeng","eleven options")
+	check(options.size() == c.schools.size() + 1 and options[0].id == "tingfeng","eleven options")
 	options[1].name = "mutated"
 	check(c.options()[1].name != "mutated","options copied")
 	var usages: int = 0

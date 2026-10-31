@@ -42,8 +42,30 @@ func _visible_choices() -> Array:
 	var session = _session()
 	return story.available_choices(session.flags if session != null else {})
 
+func _npcs() -> Array:
+	var authored: Variant = chapter_scene.get("npcs",[])
+	if authored is Array and not authored.is_empty(): return authored
+	return [{"character_id":npc_character_id,"position":[npc_position.x,npc_position.y],
+		"talk_label":_scene_text("talk_label","与受伤镖头交谈"),"trigger_id":""}]
+
+func _npc_point(entry: Dictionary) -> Vector2:
+	var coordinates: Array = entry.get("position",[npc_position.x,npc_position.y])
+	return Vector2(float(coordinates[0]),float(coordinates[1]))
+
+func _nearest_npc() -> Dictionary:
+	var nearest: Dictionary = {}
+	var distance: float = INF
+	for entry in _npcs():
+		if not entry is Dictionary: continue
+		var candidate: float = player_pos.distance_to(_npc_point(entry))
+		if candidate < distance:
+			distance = candidate
+			nearest = entry
+	return nearest
+
 func _npc_distance() -> float:
-	return player_pos.distance_to(npc_position)
+	var nearest: Dictionary = _nearest_npc()
+	return player_pos.distance_to(_npc_point(nearest)) if not nearest.is_empty() else INF
 
 var temple_backdrop: Texture2D
 var temple_uses_fallback := false
@@ -57,6 +79,7 @@ var player_pos: Vector2 = Vector2(350, 705)
 var characters_layer: Node2D
 var player_sprite: Node2D
 var escort_sprite: Node2D
+var npc_sprites: Array[Node2D] = []
 var mouse_pos: Vector2 = Vector2(-100, -100)
 var buttons: Array = []
 var message: String = ""
@@ -83,10 +106,16 @@ func _ready() -> void:
 	if not player_sprite.configure("shen_changfeng"):
 		push_error("Cannot load Shen Changfeng story sprite")
 	characters_layer.add_child(player_sprite)
-	escort_sprite = RoleSprite.new()
-	if not escort_sprite.configure(npc_character_id):
-		push_error("Cannot load dedicated escort NPC portrait")
-	characters_layer.add_child(escort_sprite)
+	npc_sprites.clear()
+	for entry in _npcs():
+		var npc_sprite: Node2D = RoleSprite.new()
+		if not npc_sprite.configure(str(entry.get("character_id",""))):
+			push_warning("Cannot load story NPC sprite: " + str(entry.get("character_id","")))
+			npc_sprite.free()
+			continue
+		characters_layer.add_child(npc_sprite)
+		npc_sprites.append(npc_sprite)
+	escort_sprite = npc_sprites[0] if not npc_sprites.is_empty() else null
 	_sync_story_sprites(Vector2.ZERO,0.0)
 	print("CHANGFENG_OPENING_READY chapter=", story.data.id)
 	if "--opening-visual-check" in OS.get_cmdline_user_args():
@@ -126,19 +155,24 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _sync_story_sprites(motion: Vector2, delta: float) -> void:
-	if player_sprite == null or escort_sprite == null:
+	if player_sprite == null or characters_layer == null:
 		return
 	# Story cinematics and dialogue draw their authored static portraits
 	# separately. Do not let in-world sprites paint over dialogue controls.
 	var exploring: bool = story.phase == "explore"
 	characters_layer.visible = exploring
 	player_sprite.position = player_pos
-	escort_sprite.position = npc_position + Vector2(0,10)
 	player_sprite.set_motion(motion,delta)
-	escort_sprite.set_motion(Vector2.ZERO,delta)
 	# Tile feet anchor sorting, not fixed painter's layers.
 	player_sprite.z_index = int(player_pos.y/100.0)
-	escort_sprite.z_index = int((npc_position.y+10.0)/100.0)
+	var index: int = 0
+	for entry in _npcs():
+		if index >= npc_sprites.size(): break
+		var position: Vector2 = _npc_point(entry) + Vector2(0,10)
+		npc_sprites[index].position = position
+		npc_sprites[index].set_motion(Vector2.ZERO,delta)
+		npc_sprites[index].z_index = int(position.y / 100.0)
+		index += 1
 
 func _session():
 	return get_node_or_null("/root/GameSession")
@@ -159,8 +193,10 @@ func _advance_cinematic() -> void:
 	story.next_beat()
 	cinematic_elapsed = 0.0
 
-func _start_dialogue() -> void:
-	if story.interact():
+func _start_dialogue(trigger_id: String = "") -> void:
+	var nearest: Dictionary = _nearest_npc()
+	var selected: String = trigger_id if not trigger_id.is_empty() else str(nearest.get("trigger_id",""))
+	if story.interact_at(selected):
 		_sync_story_events()
 		visible_characters = 0.0
 
@@ -240,7 +276,7 @@ func _input(event: InputEvent) -> void:
 				if event.keycode in [KEY_E, KEY_ENTER, KEY_SPACE]:
 					if _npc_distance() < 175.0: _action("talk")
 					else:
-						message = "靠近受伤的镖头，再按 E 交谈。"
+						message = "请先靠近人物，再按 E 交谈。"
 						message_left = 2.3
 			"dialogue":
 				if event.keycode in [KEY_E,KEY_ENTER,KEY_SPACE]:
@@ -259,7 +295,10 @@ func _input(event: InputEvent) -> void:
 		match story.phase:
 			"cinematic": _action("continue")
 			"explore":
-				if event.position.distance_to(npc_position) < 90.0 and _npc_distance() < 175.0: _action("talk")
+				for entry in _npcs():
+					if event.position.distance_to(_npc_point(entry)) < 90.0 and player_pos.distance_to(_npc_point(entry)) < 175.0:
+						_start_dialogue(str(entry.get("trigger_id","")))
+						break
 			"dialogue": _dialogue_next()
 
 func _text(pos: Vector2, value: String, size: int = 19, color: Color = INK, calligraphy: bool = false) -> void:
@@ -567,12 +606,14 @@ func _draw_explore() -> void:
 	draw_rect(Rect2(0,0,1600,106),Color(0.05,0.10,0.12,0.77))
 	_text(Vector2(62,67),_scene_text("title","第一幕 · 雨夜残镖"),36,PAPER,true)
 	_text(Vector2(1090,65),_scene_text("place","荒道破庙 / 暮秋 · 三更"),17,GOLD)
-	var near: bool=_npc_distance()<175.0
-	if near:
-		draw_arc(npc_position+Vector2(0,-14),75,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
-		_button(Rect2(850,363,440,54),"E  "+_scene_text("talk_label","与受伤镖头交谈"),"talk",true)
+	var nearest: Dictionary = _nearest_npc()
+	var near: bool = _npc_distance() < 175.0
+	if near and not nearest.is_empty():
+		draw_arc(_npc_point(nearest)+Vector2(0,-14),75,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
+		_button(Rect2(850,363,440,54),"E  "+str(nearest.get("talk_label","交谈")),"talk",true)
 	else:
-		_text(Vector2(836,363),_scene_text("talk_label","老镖头  ·  似乎还有气息"),18,Color("e1d2ac"))
+		for entry in _npcs():
+			_text(_npc_point(entry)+Vector2(-85,-110),str(entry.get("talk_label","交谈")),16,Color("e1d2ac"))
 	_panel(Rect2(76,837,1448,125),Color(0.13,0.22,0.20,0.91),Color(GOLD,0.75))
 	_text(Vector2(112,881),_scene_text("prompt","沿官道走近镖车，查探伤者。"),23,PAPER,true)
 	_text(Vector2(114,920),"WASD / 方向键移动   ·   靠近后按 E 交谈",15,Color("d5c8aa"))

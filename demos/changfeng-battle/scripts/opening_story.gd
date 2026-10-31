@@ -102,8 +102,13 @@ func skip_cinematic() -> void:
 	if phase == "cinematic": phase = "explore"
 
 func interact() -> bool:
+	return interact_at("")
+
+func interact_at(trigger_id: String = "") -> bool:
 	if phase != "explore": return false
-	_open_node(str(data.get("entry_node", "")))
+	var node_id: String = trigger_id if not trigger_id.is_empty() else str(data.get("entry_node",""))
+	if not nodes.has(node_id): return false
+	_open_node(node_id)
 	phase = "dialogue"
 	return true
 

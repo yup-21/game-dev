@@ -1,6 +1,7 @@
 extends RefCounted
 ## Definition data only: this catalog never constructs card instances or touches battle state.
 const StatusCatalog = preload("res://scripts/status_catalog.gd")
+const NativeContent = preload("res://scripts/content/content_registry.gd")
 const DEFAULT_SCHOOL = {"id":"tingfeng","name":"听风五式","identity":"观势藏锋、变招交锋"}
 const CHILD_EFFECTS = ["effects","on_success","on_contested","on_failure","on_hit"]
 const TARGETS = ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]
@@ -20,11 +21,46 @@ func _init(path: String = "res://data/school_forms.json", base_path: String = "r
 	var raw: Dictionary = _read(path)
 	var base: Dictionary = _read(base_path)
 	if not load_error.is_empty(): return
-	if not _load(raw,base,legacy_path):
+	var loaded: bool = _load(raw,base,legacy_path)
+	if loaded and path == "res://data/school_forms.json" and base_path == "res://data/tingfeng_cards.json" and legacy_path == "res://data/legacy_id_map.json":
+		loaded = _load_native_schools()
+	if not loaded:
 		schools.clear()
 		forms.clear()
 		statuses.clear()
 		combos.clear()
+
+func _load_native_schools() -> bool:
+	var native = NativeContent.new()
+	if not native.load_error.is_empty(): return _fail(native.load_error)
+	var skills: Dictionary = native.entries("skill")
+	for item in native.entries("school").values():
+		var id: String = str(item.get("id",""))
+		if id.is_empty() or id == "tingfeng" or not get_school(id).is_empty():
+			return _fail("Native school ID collision: " + id)
+		if not _text(item.get("name")) or not _text(item.get("identity")):
+			return _fail("Native school metadata invalid: " + id)
+		var core: Variant = item.get("core_forms")
+		var deck: Variant = item.get("deck",{}).get("cards",[])
+		if not core is Array or core.size() != 2 or core[0] == core[1] or not deck is Array:
+			return _fail("Native school requires two core forms and a deck: " + id)
+		for form_id in core:
+			var definition: Dictionary = skills.get(str(form_id),{})
+			if definition.is_empty() or str(definition.get("school_id","")) != id or bool(definition.get("generated_only",true)):
+				return _fail("Native school core form missing or generated: " + str(form_id))
+		var seen: Dictionary = {}
+		var total: int = 0
+		for entry in deck:
+			if not entry is Dictionary: return _fail("Native deck entry invalid: " + id)
+			var card_id: String = str(entry.get("card_id",""))
+			if card_id not in core or seen.has(card_id) or not _number(entry.get("count"),1,12):
+				return _fail("Native deck contains duplicates or non-core cards: " + id)
+			seen[card_id] = true
+			total += int(entry.count)
+		if total != 12 or not seen.has_all(core):
+			return _fail("Native school deck must contain 12 core cards: " + id)
+		schools.append(item.duplicate(true))
+	return true
 
 func options() -> Array:
 	var result: Array = [DEFAULT_SCHOOL.duplicate(true)]
