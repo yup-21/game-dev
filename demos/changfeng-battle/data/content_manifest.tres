@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=15 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -18,6 +18,8 @@
 [ext_resource type="Resource" path="res://data/native/assets/r22_vfx_probe.tres" id="13_vfx"]
 [ext_resource type="Resource" path="res://data/native/assets/r22_temple_scene.tres" id="14_scene"]
 
+[ext_resource type="Resource" path="res://data/maps/r23_free_brush_map.tres" id="15_map"]
+
 [resource]
 script = ExtResource("1_manifest")
 characters = Array[Resource]([ExtResource("2_hero")])
@@ -30,3 +32,4 @@ chapters = Array[Resource]([ExtResource("8_chapter")])
 quests = Array[Resource]([ExtResource("9_quest")])
 encounters = Array[Resource]([ExtResource("10_encounter")])
 assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene")])
+maps = Array[Resource]([ExtResource("15_map")])

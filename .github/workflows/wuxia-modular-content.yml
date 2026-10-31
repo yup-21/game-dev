@@ -19,6 +19,9 @@ on:
       - 'demos/changfeng-battle/checks/test_native_effects.gd'
       - 'demos/changfeng-battle/checks/test_native_story_quests.gd'
       - 'demos/changfeng-battle/checks/test_native_assets.gd'
+      - 'demos/changfeng-battle/checks/test_native_maps.gd'
+      - 'demos/changfeng-battle/addons/**'
+      - 'demos/changfeng-battle/project.godot'
       - 'demos/changfeng-battle/checks/test_chapter_pipeline.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
@@ -52,6 +55,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_chapter_pipeline.gd
       - name: R22 native asset manifest, bindings and VFX overlay
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_assets.gd
+      - name: R23 native polygon maps and free-space navigation
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_maps.gd
       - name: R11 extensible catalogs and combo counts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_catalog_extensibility.gd
       - name: R12 character identity decoupling

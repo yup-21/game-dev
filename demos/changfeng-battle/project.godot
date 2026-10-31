@@ -23,3 +23,6 @@ textures/default_filters/use_nearest_mipmap_filter=false
 
 [audio]
 driver/enable_input=false
+
+[editor_plugins]
+enabled=PackedStringArray("res://addons/wuxia_map_editor/plugin.cfg")

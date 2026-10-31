@@ -54,27 +54,30 @@ func is_valid_position(point: Vector2, radius: float = 0.0, ignore_id: int = -1)
         return false
     if bake.error != "":
         return false
-    var base: Vector2i = bake.cell_at_screen(point,true)
-    if base==Vector2i(-1,-1): return false
-    # The footprint must remain INSIDE the calibrated battlefield bounds.
-    var bounds_min: Vector2=bake.cell_rect(Vector2i.ZERO).position
-    var bounds_max: Vector2=bake.cell_rect(Vector2i(bake.width-1,bake.height-1)).end
-    if point.x-radius < bounds_min.x-EPSILON or point.y-radius < bounds_min.y-EPSILON or point.x+radius > bounds_max.x+EPSILON or point.y+radius > bounds_max.y+EPSILON:
-        return false
-    # Only obstacles within one footprint radius can collide. Iterating all
-    # 150 baked cells for every A* sample makes AI approach search O(cells).
-    var nearby_x: int=maxi(1,ceili(radius/bake.step.x)+1)
-    var nearby_y: int=maxi(1,ceili(radius/bake.step.y)+1)
-    for y in range(base.y-nearby_y,base.y+nearby_y+1):
-        for x in range(base.x-nearby_x,base.x+nearby_x+1):
-            var cell:=Vector2i(x,y)
-            if not bake.tiles.has(cell) or bool(bake.tiles[cell].walkable):
-                continue
-            var rect: Rect2=bake.cell_rect(cell)
-            var nearest:=Vector2(clampf(point.x,rect.position.x,rect.end.x),
-                clampf(point.y,rect.position.y,rect.end.y))
-            if point.distance_to(nearest)<radius+EPSILON:
-                return false
+    if bake.polygon_mode:
+        if not bake.is_walkable_point(point,radius): return false
+    else:
+        var base: Vector2i = bake.cell_at_screen(point,true)
+        if base==Vector2i(-1,-1): return false
+        # The footprint must remain INSIDE the calibrated battlefield bounds.
+        var bounds_min: Vector2=bake.cell_rect(Vector2i.ZERO).position
+        var bounds_max: Vector2=bake.cell_rect(Vector2i(bake.width-1,bake.height-1)).end
+        if point.x-radius < bounds_min.x-EPSILON or point.y-radius < bounds_min.y-EPSILON or point.x+radius > bounds_max.x+EPSILON or point.y+radius > bounds_max.y+EPSILON:
+            return false
+        # Only obstacles within one footprint radius can collide. Iterating all
+        # 150 baked cells for every A* sample makes AI approach search O(cells).
+        var nearby_x: int=maxi(1,ceili(radius/bake.step.x)+1)
+        var nearby_y: int=maxi(1,ceili(radius/bake.step.y)+1)
+        for y in range(base.y-nearby_y,base.y+nearby_y+1):
+            for x in range(base.x-nearby_x,base.x+nearby_x+1):
+                var cell:=Vector2i(x,y)
+                if not bake.tiles.has(cell) or bool(bake.tiles[cell].walkable):
+                    continue
+                var rect: Rect2=bake.cell_rect(cell)
+                var nearest:=Vector2(clampf(point.x,rect.position.x,rect.end.x),
+                    clampf(point.y,rect.position.y,rect.end.y))
+                if point.distance_to(nearest)<radius+EPSILON:
+                    return false
     for id in actor_positions:
         if int(id) == ignore_id:
             continue
@@ -93,6 +96,7 @@ func clear_segment(start: Vector2, finish: Vector2, radius_or_occupied: Variant 
     if radius_or_occupied is Array:
         return waypoint_compat.clear_segment(start, finish, radius_or_occupied, ignore_id)
     var radius: float = float(radius_or_occupied)
+    if bake.polygon_mode and bake.segment_blocked(start,finish,radius): return false
     var vector: Vector2 = finish - start
     var length: float = vector.length()
     # Sampling the ground mask cannot reliably detect a thin actor collision.
@@ -140,7 +144,7 @@ func _find_path_impl(start: Vector2, finish: Vector2, radius: float = 0.0, ignor
     _ensure_cached_graph(radius, ignore_id)
     _cached_graph.add_point(0, start)
     _cached_graph.add_point(1, finish)
-    var max_edge: float = maxf(bake.step.x, bake.step.y) * 2.1
+    var max_edge: float = maxf(bake.step.x, bake.step.y) * (5.0 if bake.polygon_mode else 2.1)
     for index in range(_cached_points.size()):
         var point: Vector2 = _cached_points[index]
         if start.distance_to(point) <= max_edge and clear_segment(start, point, radius, ignore_id):
@@ -203,6 +207,19 @@ func _ensure_cached_graph(radius: float, ignore_id: int) -> void:
         var centre: Vector2 = bake.cell_center(cell)
         if is_valid_position(centre, radius, ignore_id):
             points.append(centre)
+    # Native polygons provide real vertex detours in addition to a compatibility
+    # waypoint lattice. FREE collision remains exact, never cell centre based.
+    if bake.polygon_mode:
+        for obstacle in bake.polygons:
+            var contour: PackedVector2Array = obstacle.points
+            var centre := Vector2.ZERO
+            for vertex in contour: centre += vertex
+            centre /= float(contour.size())
+            for vertex in contour:
+                var outward: Vector2 = (vertex - centre).normalized()
+                var candidate: Vector2 = vertex + outward * (radius + 5.0)
+                if is_valid_position(candidate,radius,ignore_id):
+                    points.append(candidate)
     # Candidate body-ring waypoints are tied to the authoritative actor layout.
     const SECTORS = 16
     for id in actor_positions:
