@@ -42,7 +42,6 @@ func _run() -> void:
         ["legacy_id_map","legacy_id_map.json"],
         ["techniques","techniques.json"],
         ["demo_scenario","demo_scenario.json"],
-        ["action_timelines","action_timelines.json"],
         ["rainy_bridge","maps/rainy_bridge.json"]
     ]
     for pair in pairs:
@@ -93,7 +92,9 @@ func _run() -> void:
         "default story consumes Resource")
     check(map.error.is_empty() and map.id == "rainy_bridge",
         "default grid map consumes Resource")
-    check(timeline.load_error.is_empty() and not timeline.profiles.is_empty(),
-        "default action timeline consumes Resource")
+    check(timeline.load_error.is_empty() and not timeline.profiles.is_empty()
+        and native.document("r25_action_timelines").is_empty()
+        and native.entries("action_timeline").has("r32_default_action_timeline"),
+        "default action timeline uses typed Resource, not the old document")
     print("R25_NATIVE_DOCUMENTS_PASS failures=",failures)
     quit(0 if failures == 0 else 1)

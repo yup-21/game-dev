@@ -62,7 +62,7 @@
 [ext_resource type="Resource" path="res://data/native/documents/legacy_id_map.tres" id="52_r25"]
 [ext_resource type="Resource" path="res://data/native/documents/techniques.tres" id="53_r25"]
 [ext_resource type="Resource" path="res://data/native/documents/demo_scenario.tres" id="54_r25"]
-[ext_resource type="Resource" path="res://data/native/documents/action_timelines.tres" id="55_r25"]
+[ext_resource type="Resource" path="res://data/native/action_timelines/r32_default.tres" id="55_r32"]
 [ext_resource type="Resource" path="res://data/native/documents/rainy_bridge.tres" id="56_r25"]
 
 [ext_resource type="Resource" path="res://data/native/stories/r26_recruitment_trial.tres" id="61_r26"]
@@ -105,4 +105,5 @@ maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24")])
 buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])
 items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResource("42_r25"), ExtResource("43_r25"), ExtResource("44_r25"), ExtResource("45_r25")])
 affixes = Array[Resource]([ExtResource("47_r25"), ExtResource("48_r25"), ExtResource("49_r25")])
-documents = Array[Resource]([ExtResource("50_r25"), ExtResource("51_r25"), ExtResource("52_r25"), ExtResource("53_r25"), ExtResource("54_r25"), ExtResource("55_r25"), ExtResource("56_r25")])
+documents = Array[Resource]([ExtResource("50_r25"), ExtResource("51_r25"), ExtResource("52_r25"), ExtResource("53_r25"), ExtResource("54_r25"), ExtResource("56_r25")])
+action_timelines = Array[Resource]([ExtResource("55_r32")])
