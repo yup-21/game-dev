@@ -174,6 +174,8 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             var layer_path := str(fields.get(layer, "")).strip_edges()
             if layer == "ground" and layer_path.is_empty():
                 return {"error": "场景必须提供独立 ground 图层"}
+            if layer == "ground" and layer_path.simplify_path() == source.simplify_path():
+                return {"error": "ground 不得复用 background 文件；需独立地面图层"}
             if layer_path.is_empty():
                 continue
             var check := _check_image(layer_path, layer in ["foreground", "weather"], expected)

@@ -1,6 +1,7 @@
 extends SceneTree
 ## P1 offline import contract. No file is copied or modified by this test.
 const Importer = preload("res://addons/wuxia_art_importer/art_import_service.gd")
+const Dock = preload("res://addons/wuxia_art_importer/art_import_dock.gd")
 
 func _initialize() -> void:
     var root: String = Importer.production_root()
@@ -22,6 +23,22 @@ func _initialize() -> void:
     if not Importer.destination(source).begins_with("res://assets/imported/in-use/"):
         _fail("Source destination has incorrect root")
         return
+    var atlas := Importer.plan("atlas", source, "res://data/native/characters/shen_changfeng.tres",
+        {"columns": 6, "rows": 4, "feet_offset": Vector2(0, -102), "faces_left": false})
+    if not str(atlas.get("error", "")).is_empty():
+        _fail("Valid atlas plan rejected: " + str(atlas.get("error", "")))
+        return
+    var ui_source := root.path_join("in-use/ui/original/card_probe.svg")
+    var ui := Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
+    if not str(ui.get("error", "")).is_empty():
+        _fail("Valid UI registration plan rejected: " + str(ui.get("error", "")))
+        return
+    var dock := Dock.new()
+    root.add_child(dock)
+    if dock.source_list.item_count < 39 or dock.kind.item_count != 5:
+        _fail("Editor dock failed to enumerate candidate sources")
+        return
+    dock.queue_free()
     var bad := Importer.plan("portrait", source, "res://data/maps/rainy_bridge.tres", {})
     if str(bad.get("error", "")).is_empty():
         _fail("Portrait import accepted map Resource")
