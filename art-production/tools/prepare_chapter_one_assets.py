@@ -123,6 +123,42 @@ def prepare_temple(master_path: Path) -> dict[str, Image.Image]:
     return layers
 
 
+
+def normalized_atlas(path: Path) -> Image.Image:
+    with Image.open(path) as source:
+        atlas = source.convert("RGBA")
+    if atlas.size != (1536, 1024):
+        raise ValueError(f"{path}: source must be 6x4 256x256 cells")
+    output = Image.new("RGBA", atlas.size, (0, 0, 0, 0))
+    for frame_index in range(24):
+        x, y = frame_index % 6 * 256, frame_index // 6 * 256
+        frame = atlas.crop((x, y, x+256, y+256))
+        opaque = frame.getchannel("A").point(lambda a: 255 if a >= 24 else 0)
+        bounds = opaque.getbbox()
+        if bounds is None:
+            raise ValueError(f"{path}: frame {frame_index} has no subject")
+        small = frame.resize((166, 166), Image.Resampling.LANCZOS)
+        foot = round(bounds[3] * 166 / 256)
+        output.alpha_composite(small, (x+45, y+227-foot))
+    return output
+
+
+def audit_normalized_atlas(atlas: Image.Image, label: str) -> None:
+    feet = []
+    for frame_index in range(24):
+        x, y = frame_index % 6 * 256, frame_index // 6 * 256
+        frame = atlas.crop((x, y, x+256, y+256))
+        bounds = frame.getchannel("A").point(
+            lambda a: 255 if a >= 24 else 0).getbbox()
+        if bounds is None:
+            raise ValueError(f"{label}: missing frame {frame_index}")
+        if min(bounds[0], bounds[1]) < 8 or max(bounds[2], bounds[3]) > 248:
+            raise ValueError(f"{label}: frame {frame_index} touches tile margin")
+        feet.append(bounds[3])
+    if max(feet) - min(feet) > 3:
+        raise ValueError(f"{label}: inconsistent bottom anchor {min(feet)}-{max(feet)}")
+    print(f"NORMALIZED_ATLAS_OK {label}: 24 cells, bounds-safe, foot range {min(feet)}-{max(feet)}")
+
 def verify_or_write(layers: dict[str, Image.Image], output: Path,
                     write: bool, replace: bool) -> None:
     for name, expected in layers.items():
@@ -158,6 +194,26 @@ def main() -> None:
     scene_dir = BATCH / "ruined_temple"
     layers = prepare_temple(scene_dir / "environment_ruined_temple_master_v01.png")
     verify_or_write(layers, scene_dir, args.write, args.replace)
+    for identity in CHARACTERS:
+        actor_dir = BATCH / identity
+        target = actor_dir / f"sprite_{identity}_atlas_normalized_v01.png"
+        expected = normalized_atlas(
+            actor_dir / f"sprite_{identity}_atlas_source_v01.png")
+        audit_normalized_atlas(expected, identity)
+        if target.exists():
+            with Image.open(target) as current:
+                same = (current.mode == "RGBA" and current.size == expected.size
+                        and current.tobytes() == expected.tobytes())
+            if same:
+                print(f"OK {target.relative_to(ROOT)}")
+                continue
+            if not args.write or not args.replace:
+                raise ValueError(f"{target}: differs; --write --replace required")
+        elif not args.write:
+            print(f"PENDING_ATLAS {target.relative_to(ROOT)}")
+            continue
+        expected.save(target, "PNG", optimize=True)
+        print(f"WROTE {target.relative_to(ROOT)}")
     if issues and args.strict:
         raise SystemExit("STRICT_ART_SOURCE_AUDIT_FAILED")
     print("CHAPTER_ONE_CANDIDATE_AUDIT_OK (not art approval)")

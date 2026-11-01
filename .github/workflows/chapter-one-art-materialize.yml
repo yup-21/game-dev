@@ -6,6 +6,7 @@ on:
       - art/chapter-one-candidates-20261101
     paths:
       - '.github/workflows/chapter-one-art-materialize.yml'
+      - 'art-production/tools/prepare_chapter_one_assets.py'
   workflow_dispatch:
 
 permissions:
@@ -27,9 +28,9 @@ jobs:
         run: python -m pip install --disable-pip-version-check 'Pillow>=11,<13'
       - name: Generate five exact scene output PNGs from the reviewed master
         run: python art-production/tools/prepare_chapter_one_assets.py --write
-      - name: Commit only the five newly materialized candidate PNGs
+      - name: Commit only nine regenerated review PNGs
         run: |
-          git add art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png
+          git add art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png art-production/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png art-production/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png art-production/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png art-production/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png
           if ! git diff --cached --quiet; then
             git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'art: materialize ruin-temple layered review PNGs'
             git push origin HEAD:art/chapter-one-candidates-20261101
