@@ -5,89 +5,76 @@ extends RefCounted
 const Fallback = preload("res://scripts/fallback_assets.gd")
 const Registry = preload("res://scripts/character_registry.gd")
 const Assets = preload("res://scripts/asset_registry.gd")
+const Native = preload("res://scripts/content/content_registry.gd")
 const FRAME_SIZE := 256
 const COLS := 6
 const ROWS := 4
-## Literal preloads make the supplied images dependencies of exported Godot builds.
-# Preload every used image for Godot exports, but resolve their *identity*
-# via CharacterRegistry instead of duplicating actor numeric IDs.
-const SHEETS_BY_PATH := {
-    "res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png": preload("res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png"),
-    "res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png": preload("res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png"),
-    "res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png": preload("res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png"),
-    "res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png": preload("res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png"),
-    "res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg": preload("res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg"),
-    "res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg": preload("res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg")
-}
-const PORTRAITS_BY_PATH := {
-    "res://assets/characters/concepts/shen_changfeng_portrait.png": preload("res://assets/characters/concepts/shen_changfeng_portrait.png"),
-    "res://assets/characters/concepts/escort_captain_portrait.png": preload("res://assets/characters/concepts/escort_captain_portrait.png"),
-    "res://assets/characters/concepts/gu_qingshuang_portrait_v1.png": preload("res://assets/characters/concepts/gu_qingshuang_portrait_v1.png")
-}
-## Static authored character art is kept separate from animated Sprite Sheets.
-## Preloading ensures Godot exports the real transparent SVG pose.
-const STORY_POSES_BY_PATH := {
-    "res://assets/characters/concepts/escort_elder_injured.svg":
-        preload("res://assets/characters/concepts/escort_elder_injured.svg")
-}
+## Legacy unprofiled images keep their original orientation, but their
+## textures are loaded only through the current native character cards.
+const LEFT_FACING_UNPROFILED_SHEETS := [
+    "res://assets/concepts/2026-10-30/characters/gu_qingshuang_24_pose.png",
+    "res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png",
+    "res://assets/concepts/2026-10-30/characters/black_blade_fighter_24_pose.png",
+    "res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png",
+    "res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg",
+    "res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg"
+]
 const SCENES := {
     "mountain": preload("res://assets/concepts/2026-10-30/scenes/mountain_herbal_workshop_day.jpg"),
-    "snow": preload("res://assets/concepts/2026-10-30/scenes/snowy_sword_sect_courtyard.jpg"),
-    "rainy_bridge": preload("res://assets/concepts/2026-10-30/scenes/rainy_broken_bridge_battle_v1.jpg")
+    "snow": preload("res://assets/concepts/2026-10-30/scenes/snowy_sword_sect_courtyard.jpg")
 }
+static var _native = Native.new()
 static var _registry = Registry.new()
 static var _asset_registry = Assets.new()
 static var _sheets: Dictionary = {}
 
-## Resolve new assets from character data; preserve known preloads for exports.
-static func _asset_texture(path: String, known: Dictionary) -> Texture2D:
-    if known.has(path): return known[path] as Texture2D
-    if not path.begins_with("res://assets/") or ".." in path: return null
-    if not ResourceLoader.exists(path, "Texture2D"): return null
-    return load(path) as Texture2D
+## Native character and map cards are the authoritative presentation sources.
+## The historical AssetRegistry must not override an imported character portrait
+## or a map's scene art, even if an older asset record still exists.
+static func _character_card(character_id: String) -> WuxiaCharacterDefinition:
+    return _native.resource_for("character", character_id) as WuxiaCharacterDefinition
 
-## Optional authored per-action atlas. Old 6x4 previews remain a safe fallback.
+
 static func animation_profile_for_character(character_id: String) -> WuxiaActorAnimationProfile:
-    var role: Dictionary = _registry.get_profile(character_id)
-    var path: String = str(role.get("art", {}).get("animation_profile", ""))
-    if not path.begins_with("res://data/") or ".." in path:
+    var card := _character_card(character_id)
+    if card == null or card.animation_profile == null:
         return null
-    if not ResourceLoader.exists(path):
-        return null
-    var resource = load(path) as WuxiaActorAnimationProfile
-    if resource != null and resource.valid_profile():
-        return resource
+    if card.animation_profile.valid_profile():
+        return card.animation_profile
     push_warning("Invalid actor animation profile for " + character_id)
     return null
 
+
 static func portrait_for_character(character_id: String) -> Texture2D:
-    var native: Texture2D = _asset_registry.texture_for_character(character_id,"portrait")
-    if native != null: return native
-    var profile: Dictionary = _registry.get_profile(character_id)
-    var path: String = str(profile.get("art",{}).get("portrait",""))
-    var authored: Texture2D = _asset_texture(path,PORTRAITS_BY_PATH)
-    return authored if authored != null else Fallback.PORTRAIT
+    var card := _character_card(character_id)
+    return card.portrait if card != null and card.portrait != null else Fallback.PORTRAIT
+
 
 static func story_pose_for_character(character_id: String) -> Texture2D:
-    var native: Texture2D = _asset_registry.texture_for_character(character_id,"static_pose")
-    if native != null: return native
-    var definition: Dictionary = _registry.get_profile(character_id)
-    var source: String = str(definition.get("art",{}).get("static_pose",""))
-    var authored: Texture2D = STORY_POSES_BY_PATH.get(source,null) as Texture2D
-    return authored if authored != null else Fallback.STORY_POSE
+    var card := _character_card(character_id)
+    return card.static_pose if card != null and card.static_pose != null else Fallback.STORY_POSE
+
 
 static func portrait(speaker: String) -> Texture2D:
     var profile: Dictionary = _registry.for_name(speaker)
-    return portrait_for_character(str(profile.get("id","")))
+    return portrait_for_character(str(profile.get("id", "")))
+
 
 static func scenery(name: String) -> Texture2D:
+    var map_card: Resource = _native.resource_for("map", name)
+    if map_card is WuxiaMapDefinition or map_card is WuxiaGridMapDefinition:
+        var layers := map_card.get("scene_art") as WuxiaSceneArtProfile
+        if layers != null:
+            return layers.background
+        return map_card.get("background") as Texture2D
+    # Standalone landscape assets without a map card still use AssetRegistry.
     var ids: Dictionary = {
-        "mountain":"r27_scenery_mountain",
-        "snow":"r27_scenery_snow",
-        "rainy_bridge":"r27_scenery_rainy_bridge"
+        "mountain": "r27_scenery_mountain",
+        "snow": "r27_scenery_snow"
     }
-    var native: Texture2D = _asset_registry.texture(str(ids.get(name,"")))
-    return native if native != null else SCENES.get(name,null) as Texture2D
+    var landscape: Texture2D = _asset_registry.texture(str(ids.get(name, "")))
+    return landscape if landscape != null else SCENES.get(name, null) as Texture2D
+
 
 static func _pale_matte(color: Color) -> bool:
     if color.a < 0.04:
@@ -140,15 +127,15 @@ static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
     return sheet_for_character(str(profile.get("id","")),enemy)
 
 static func sheet_for_character(character_id: String, enemy: bool = false) -> Texture2D:
-    var profile: Dictionary = _registry.get_profile(character_id)
-    var binding: Dictionary = _asset_registry.record_for_character(character_id,"pose_sheet")
-    var path: String = str(binding.get("path",profile.get("art",{}).get("sprite_sheet","")))
-    if _asset_texture(path,SHEETS_BY_PATH) == null:
+    var card := _character_card(character_id)
+    var source_texture: Texture2D = card.sprite_sheet if card != null else null
+    if source_texture == null:
         return Fallback.ACTOR_SHEET
-    if _sheets.has(path):
-        return _sheets[path]
+    var path: String = source_texture.resource_path
+    var cache_key: String = path if not path.is_empty() else character_id
+    if _sheets.has(cache_key):
+        return _sheets[cache_key]
     var uses_concept_cells: bool = path.ends_with(".jpg")
-    var source_texture: Texture2D = _asset_texture(path,SHEETS_BY_PATH)
     var source: Image = source_texture.get_image() if source_texture != null else null
     if source == null or source.is_empty():
         push_warning("Invalid 6x4 artwork for character %s" % character_id)
@@ -175,7 +162,7 @@ static func sheet_for_character(character_id: String, enemy: bool = false) -> Te
             _clear_edge_matte(frame)
             atlas.blit_rect(frame, Rect2i(Vector2i.ZERO, Vector2i(FRAME_SIZE, FRAME_SIZE)), origin)
     var texture := ImageTexture.create_from_image(atlas)
-    _sheets[path] = texture
+    _sheets[cache_key] = texture
     return texture
 
 static func avatar_for_character(character_id: String, enemy: bool = false) -> Texture2D:
@@ -196,23 +183,26 @@ static func avatar(actor_id: int, enemy: bool = false) -> Texture2D:
 ## Keep sprite orientation as an ART attribute, independent from battle rules.
 ## An actor profile may override this with art.faces_left when new sheets vary.
 static func sheet_faces_left_for_character(character_id: String) -> bool:
-    var profile: Dictionary = _registry.get_profile(character_id)
-    var art: Dictionary = profile.get("art", {})
-    var path: String = str(art.get("sprite_sheet", ""))
-    var binding: Dictionary = _asset_registry.record_for_character(character_id,"pose_sheet")
-    if not binding.is_empty(): return bool(binding.get("faces_left",true))
-    if not uses_supplied_sheet_for_character(character_id): return false
-    return bool(art.get("faces_left", SHEETS_BY_PATH.has(path)))
+    var animation := animation_profile_for_character(character_id)
+    if animation != null:
+        return animation.faces_left_unflipped
+    var card := _character_card(character_id)
+    if card == null or card.sprite_sheet == null:
+        return false
+    # Unprofiled original concept sheets face left; imported atlases use their
+    # AnimationProfile's explicit orientation above.
+    return LEFT_FACING_UNPROFILED_SHEETS.has(card.sprite_sheet.resource_path)
+
 
 static func sheet_faces_left(actor_id: int) -> bool:
     var profile: Dictionary = _registry.for_actor(actor_id)
-    return sheet_faces_left_for_character(str(profile.get("id","")))
+    return sheet_faces_left_for_character(str(profile.get("id", "")))
+
 
 static func uses_supplied_sheet_for_character(character_id: String) -> bool:
-    var profile: Dictionary = _registry.get_profile(character_id)
-    var binding: Dictionary = _asset_registry.record_for_character(character_id,"pose_sheet")
-    var path: String = str(binding.get("path",profile.get("art",{}).get("sprite_sheet","")))
-    return _asset_texture(path,SHEETS_BY_PATH) != null
+    var card := _character_card(character_id)
+    return card != null and card.sprite_sheet != null
+
 
 static func uses_supplied_sheet(actor_id: int) -> bool:
     var profile: Dictionary = _registry.for_actor(actor_id)

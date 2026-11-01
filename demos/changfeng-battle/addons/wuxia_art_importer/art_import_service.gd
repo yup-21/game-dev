@@ -195,8 +195,10 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             return {"error": "现有动作帧与新 Atlas 不兼容；请在 Inspector 先编辑 Profile 的 clips"}
         result["profile_path"] = "res://data/native/animations/" + str(owner.get("content_id")) + ".tres"
     if mode == "scene":
+        var old_background: Texture2D = owner.get("background") as Texture2D
         var old_scene: WuxiaSceneArtProfile = owner.get("scene_art") as WuxiaSceneArtProfile
-        result["current_binding"] = old_scene.resource_path if old_scene != null else ""
+        result["current_binding"] = old_background.resource_path if old_background != null else ""
+        result["current_scene_profile"] = old_scene.resource_path if old_scene != null else ""
         for layer in ["ground", "foreground", "weather"]:
             var layer_path := str(fields.get(layer, "")).strip_edges()
             if layer == "ground" and layer_path.is_empty():
@@ -336,7 +338,17 @@ static func save_bindings(plan_data: Dictionary) -> String:
         var art_error := _save(profile, str(plan_data["profile_path"]))
         if not art_error.is_empty():
             return art_error
+        # The map background is also read by story and bake consumers.
+        # Bind the same new texture here; never leave the pre-import painting
+        # behind the new layered profile. Layer canvases match viewport_size.
+        map.set("background", textures["primary"])
         map.set("scene_art", profile)
+        map.set("image_scale", 1.0)
+        if map is WuxiaGridMapDefinition:
+            map.set("source_size", map.get("viewport_size"))
+            map.set("rotation_degrees", 0.0)
+        else:
+            map.set("image_rotation_degrees", 0.0)
         var map_error := _save(map, target)
         if map_error.is_empty():
             map.emit_changed()

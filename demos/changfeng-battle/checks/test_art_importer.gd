@@ -46,6 +46,19 @@ func _initialize() -> void:
     if str(invalid_clip.get("error", "")).is_empty():
         _fail("Missing custom clip profile was accepted")
         return
+    var bridge_dir: String = production_dir.path_join("candidates/2026-11-01/rainy_bridge")
+    var bridge_plan: Dictionary = Importer.plan("scene",
+        bridge_dir.path_join("scene_rainy_bridge_background_v01.png"),
+        "res://data/maps/rainy_bridge.tres", {
+            "ground": bridge_dir.path_join("scene_rainy_bridge_ground_v01.png"),
+            "foreground": bridge_dir.path_join("scene_rainy_bridge_foreground_v01.png"),
+            "weather": bridge_dir.path_join("scene_rainy_bridge_weather_v01.png")
+        })
+    var bridge_card: WuxiaGridMapDefinition = load("res://data/maps/rainy_bridge.tres")
+    if not str(bridge_plan.get("error", "")).is_empty() or \
+            str(bridge_plan.get("current_binding", "")) != bridge_card.background.resource_path:
+        _fail("Scene import must preflight the map background binding: " + str(bridge_plan.get("error", "")))
+        return
     var ui_source: String = production_dir.path_join("in-use/ui/original/card_probe.svg")
     var ui: Dictionary = Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
     if not str(ui.get("error", "")).is_empty():

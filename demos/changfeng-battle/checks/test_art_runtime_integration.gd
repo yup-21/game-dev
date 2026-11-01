@@ -12,6 +12,19 @@ func _fail(message: String) -> void:
     quit(1)
 
 func _run() -> void:
+    # A stale AssetRegistry entry must never override the native character card.
+    var old_id := "r22_shen_portrait"
+    var old_record: Dictionary = Art._asset_registry.record(old_id)
+    if old_record.is_empty():
+        _fail("legacy portrait fixture missing")
+        return
+    Art._asset_registry.definitions[old_id]["path"] = "res://assets/characters/concepts/escort_captain_portrait.png"
+    var shen_card: WuxiaCharacterDefinition = load("res://data/native/characters/shen_changfeng.tres")
+    var canonical_wins: bool = Art.portrait_for_character("shen_changfeng") == shen_card.portrait
+    Art._asset_registry.definitions[old_id] = old_record
+    if not canonical_wins:
+        _fail("historical portrait registration overrode the native character card")
+        return
     for id in ["shen_changfeng", "pursuer_captain"]:
         var role: WuxiaCharacterDefinition = load("res://data/native/characters/%s.tres" % id)
         var profile: WuxiaActorAnimationProfile = Art.animation_profile_for_character(id)
@@ -42,6 +55,9 @@ func _run() -> void:
         return
     if not baked.error.is_empty() or baked.scene_art != map.scene_art:
         _fail("map projection did not load the four-layer art: " + baked.error)
+        return
+    if map.background != map.scene_art.background or Art.scenery("rainy_bridge") != map.scene_art.background:
+        _fail("story scene or map background still points to historical art")
         return
     if baked.image_scale != 1.0 or baked.image_rotation_degrees != 0.0 or baked.tiles.size() != 150:
         _fail("candidate canvas must be pixel-aligned without replacing gameplay terrain")
