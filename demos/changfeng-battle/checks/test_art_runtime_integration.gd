@@ -28,8 +28,19 @@ func _run() -> void:
             _fail("normalized 24-frame atlas is not bound: " + id)
             return
         if Art.portrait_for_character(id) != role.portrait:
-            _fail("native portrait registration still overrides the new character art: " + id)
+            _fail("native character portrait was not used: " + id)
             return
+        # Simulate an out-of-date AssetRegistry card left behind by a prior import.
+        var record: Dictionary = Art._asset_registry.record_for_character(id, "portrait")
+        if not record.is_empty():
+            var asset_id: String = str(record["id"])
+            var stale: Dictionary = record.duplicate(true)
+            stale["path"] = "res://assets/fallback/default_portrait.svg"
+            Art._asset_registry.definitions[asset_id] = stale
+            if Art.portrait_for_character(id) != role.portrait:
+                _fail("legacy asset card masked the imported portrait: " + id)
+                return
+            Art._asset_registry.definitions[asset_id] = record
         for action in WuxiaActorAnimationProfile.REQUIRED_ACTIONS:
             if profile.clip_for(action) == null:
                 _fail("missing runtime action %s for %s" % [action, id])
@@ -40,6 +51,18 @@ func _run() -> void:
     if map == null or map.scene_art == null or not map.scene_art.valid_for(map.viewport_size):
         _fail("four-layer bridge is not bound to native map")
         return
+    if map.background != map.scene_art.background or map.scene_art.story_preview == null:
+        _fail("native background or story preview still points at old artwork")
+        return
+    var old_scenery: Dictionary = Art._asset_registry.record("r27_scenery_rainy_bridge")
+    if not old_scenery.is_empty():
+        var stale_scenery: Dictionary = old_scenery.duplicate(true)
+        stale_scenery["path"] = "res://assets/fallback/default_scene.svg"
+        Art._asset_registry.definitions["r27_scenery_rainy_bridge"] = stale_scenery
+        if Art.scenery("rainy_bridge") != map.scene_art.story_preview:
+            _fail("legacy scene registration masked imported story artwork")
+            return
+        Art._asset_registry.definitions["r27_scenery_rainy_bridge"] = old_scenery
     if not baked.error.is_empty() or baked.scene_art != map.scene_art:
         _fail("map projection did not load the four-layer art: " + baked.error)
         return

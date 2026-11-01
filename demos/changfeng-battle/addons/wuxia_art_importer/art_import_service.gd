@@ -197,7 +197,7 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
     if mode == "scene":
         var old_scene: WuxiaSceneArtProfile = owner.get("scene_art") as WuxiaSceneArtProfile
         result["current_binding"] = old_scene.resource_path if old_scene != null else ""
-        for layer in ["ground", "foreground", "weather"]:
+        for layer in ["ground", "foreground", "weather", "story_preview"]:
             var layer_path := str(fields.get(layer, "")).strip_edges()
             if layer == "ground" and layer_path.is_empty():
                 return {"error": "场景必须提供独立 ground 图层"}
@@ -331,12 +331,24 @@ static func save_bindings(plan_data: Dictionary) -> String:
             profile.foreground = textures["foreground"]
         if textures.has("weather"):
             profile.weather = textures["weather"]
+        if textures.has("story_preview"):
+            profile.story_preview = textures["story_preview"]
         if not profile.valid_for(map.get("viewport_size")):
             return "场景层未通过 viewport 一致性检查"
         var art_error := _save(profile, str(plan_data["profile_path"]))
         if not art_error.is_empty():
             return art_error
         map.set("scene_art", profile)
+        # The map background is also serialized into MapBake and exported builds.
+        # Never leave an old single-image binding active after importing layers.
+        map.set("background", textures["primary"])
+        if map is WuxiaGridMapDefinition:
+            map.source_size = map.viewport_size
+            map.rotation_degrees = 0.0
+            map.image_scale = 1.0
+        elif map is WuxiaMapDefinition:
+            map.image_rotation_degrees = 0.0
+            map.image_scale = 1.0
         var map_error := _save(map, target)
         if map_error.is_empty():
             map.emit_changed()

@@ -103,7 +103,7 @@ func _ready() -> void:
     event_kind = LineEdit.new()
     event_kind.placeholder_text = "例如 SWORD_SLASH"
     event_row = _labeled("VFX 事件（可选）", event_kind)
-    for layer in ["ground", "foreground", "weather"]:
+    for layer in ["ground", "foreground", "weather", "story_preview"]:
         var edit := LineEdit.new()
         edit.placeholder_text = "选择 art-production 文件"
         var row := HBoxContainer.new()
@@ -373,6 +373,7 @@ func _fields() -> Dictionary:
         "ground": extras["ground"].text.strip_edges(),
         "foreground": extras["foreground"].text.strip_edges(),
         "weather": extras["weather"].text.strip_edges(),
+        "story_preview": extras["story_preview"].text.strip_edges(),
     }
 
 

@@ -61,6 +61,18 @@ func _initialize() -> void:
         _fail("Editor dock failed to enumerate candidate sources")
         return
     dock.queue_free()
+    var scene_dir: String = production_dir.path_join("candidates/2026-11-01/rainy_bridge")
+    var bridge: Dictionary = Importer.plan("scene",
+        scene_dir.path_join("scene_rainy_bridge_background_v01.png"),
+        "res://data/maps/rainy_bridge.tres", {
+            "ground": scene_dir.path_join("scene_rainy_bridge_ground_v01.png"),
+            "foreground": scene_dir.path_join("scene_rainy_bridge_foreground_v01.png"),
+            "weather": scene_dir.path_join("scene_rainy_bridge_weather_v01.png"),
+            "story_preview": scene_dir.path_join("scene_rainy_bridge_composite_preview_v01.png"),
+        })
+    if not str(bridge.get("error", "")).is_empty() or bridge["files"].size() != 5:
+        _fail("Layered scene preview was not included in the native import plan")
+        return
     var bad := Importer.plan("portrait", source, "res://data/maps/rainy_bridge.tres", {})
     if str(bad.get("error", "")).is_empty():
         _fail("Portrait import accepted map Resource")

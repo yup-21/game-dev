@@ -61,12 +61,14 @@ static func animation_profile_for_character(character_id: String) -> WuxiaActorA
     return null
 
 static func portrait_for_character(character_id: String) -> Texture2D:
-    var native: Texture2D = _asset_registry.texture_for_character(character_id,"portrait")
-    if native != null: return native
+    # CharacterDefinition is authoritative after editor import. Legacy asset cards
+    # may still point at old art and must never mask the new portrait.
     var profile: Dictionary = _registry.get_profile(character_id)
     var path: String = str(profile.get("art",{}).get("portrait",""))
     var authored: Texture2D = _asset_texture(path,PORTRAITS_BY_PATH)
-    return authored if authored != null else Fallback.PORTRAIT
+    if authored != null: return authored
+    var legacy: Texture2D = _asset_registry.texture_for_character(character_id,"portrait")
+    return legacy if legacy != null else Fallback.PORTRAIT
 
 static func story_pose_for_character(character_id: String) -> Texture2D:
     var native: Texture2D = _asset_registry.texture_for_character(character_id,"static_pose")
@@ -81,6 +83,16 @@ static func portrait(speaker: String) -> Texture2D:
     return portrait_for_character(str(profile.get("id","")))
 
 static func scenery(name: String) -> Texture2D:
+    # A newly imported layered map wins over historical story image registrations.
+    # Keep old registrations only for scenes with no imported native scene art.
+    if not name.is_empty() and name == name.get_file() and not name.contains(".."):
+        var map_path := "res://data/maps/" + name + ".tres"
+        if ResourceLoader.exists(map_path):
+            var map := ResourceLoader.load(map_path)
+            if map is WuxiaMapDefinition or map is WuxiaGridMapDefinition:
+                var art: WuxiaSceneArtProfile = map.get("scene_art") as WuxiaSceneArtProfile
+                if art != null and art.valid_for(map.get("viewport_size")):
+                    return art.story_preview if art.story_preview != null else art.background
     var ids: Dictionary = {
         "mountain":"r27_scenery_mountain",
         "snow":"r27_scenery_snow",
