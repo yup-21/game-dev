@@ -2,9 +2,11 @@
 
 当前项目保留**原创高精细国风手绘**的人物和场景方向；HD-2D 主要描述镜头、纵深与遮挡表达，不强制低像素风格。
 
-## 单一资产清单
+## 原生资产登记与离线审核
 
-`assets/production_manifest.json` 为运行时资产技术合同，给每个关键图像记录：
+正式游戏通过 `WuxiaAssetDefinition` 的原生 `.tres` 注册资源，并加入 `data/content_manifest.tres.assets`；`AssetRegistry` 直接读取 Godot 导入的 `Texture2D`、`PackedScene`、`AudioStream`。
+
+`assets/production_manifest.json` **仅用于历史美术来源和 QA 的离线审计**，不是运行时内容入口。审计文件为已有素材记录：
 
 - 稳定 `id`、`kind`、`path`、用途阶段 `status`；
 - 来源 `source` 与商业发布前需要核实的 `rights`；
@@ -27,12 +29,12 @@
 
 `checks/test_asset_contracts.gd` 在 Godot 资源导入后检查：
 
-1. 清单 JSON 版本、独立 ID 和安全 `res://assets/` 路径；
+1. 离线审核清单的版本、独立 ID 和安全 `res://assets/` 路径；
 2. 已导入 `Texture2D`、原始图像可解码；
 3. 声明的尺寸和图集切分比例；
 4. 每张正式登记资源有来源和使用权状态。
 
-候选素材的视觉 alpha、动作连贯性及版权审核不能自动断言合格，只生成 `ASSET_QA_PENDING`。检查新增资源时应先补元数据，再调整正式代码引用。原始参考与用户上传素材不得自动删除。
+候选素材的视觉 alpha、动作连贯性及版权审核不能自动断言合格，只生成 `ASSET_QA_PENDING`。新素材应优先登记 `WuxiaAssetDefinition`，必要时补充离线审核元数据；正式运行入口始终只读取原生 Resource。原始参考与用户上传素材不得自动删除。
 
 ```sh
 godot --headless --path demos/changfeng-battle --editor --import --quit
@@ -55,7 +57,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_asset_
 
 - 生成并人工验收独立 `SpriteFrames` 或等价动画资源、音效/VFX 事件资源；
 - 按数据索引自动生成可复用的角色 atlas 和 debug 预览；
-- 添加导出包实际加载检查，避免动态 `res://` 字符串引用在 PCK 中遗漏；
+- 继续维护已有导出包实际加载检查，避免动态 `res://` 字符串引用在 PCK 中遗漏；
 - 拍摄 1600×1000 与 1440×900 的 GUI 对照截图并检查遮挡与脚点。
 
-本阶段只建立**可重复、机器可校验的前半段管线**。导出验证属于 P4，手工美术及授权验收仍由制作方负责。
+本阶段只建立**可重复、机器可校验的前半段管线**。导出验证已经由 Windows/Linux CI 执行，手工美术及授权验收仍由制作方负责。

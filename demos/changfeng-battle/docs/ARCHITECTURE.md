@@ -1,6 +1,6 @@
 # 《长风浮生录》Demo 当前架构
 
-> 单一正式入口：`opening.tscn` → `battle_hd2d.tscn`；基础版本 `main@8d1486b4`，重构工作在 `refactor/battle-architecture-consolidation`（Draft PR #67）。
+> 当前正式入口：`opening.tscn` → `battle_hd2d.tscn`；R1–R41 已经经由 PR #67–#70 合入 `main`。
 > 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
 > **R41 当前状态（2026-11-01）**：所有正式内容只从 `data/content_manifest.tres` 加载，包含武学、角色、装备、技法、章节、遭遇、GRID/FREE 地图和动作时间轴。仓库中的历史 `data/**/*.json`、旧武学 ID 映射 Resource、解析器及旧格式对照测试均已移除。自定义内容也必须使用 `.tres` manifest 和强类型 Resource。R40 已统一快捷/剧情入口、动画与空间服务。下文有关 JSON 索引的 R11–R15 文字仅是历史设计记录，**不是可使用的当前接口**。参阅 [R41 审计](R41_NATIVE_ONLY_CLOSURE.md) 和 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
@@ -63,36 +63,29 @@ R9：SPACE 统一通过 `BattleSpatialFacade` 完成 FREE 落点、自动接近�
 R10（历史阶段）：引入 `BattleActionTimeline`，现使用 `data/native/action_timelines/r32_default.tres`，描述 startup/active/recovery、cancel/reaction/visual-invulnerable 窗口及 cue。**全部属于表现时序元数据**；目前仍由 BattleModel 先结算规则，再由 Presentation 消费语义事件。想实现真正的实时闪避/i-frame 必须扩展权威协议，不能直接让动画驱动修改状态。
 
 
-## R11–R15 内容扩展架构
+## 当前模块化内容架构
 
-重构遵守「**静态定义 → 独立运行时 → 战斗规则结算 → 只读视图**」的单向边界。新增武学、Buff、角色和物品只新增对应类型的 `.tres` 并注册到 `data/content_manifest.tres`，不应更改 `BattleModel` 的分支逻辑。
+`ContentRegistry` 加载 `res://data/content_manifest.tres` 中显式引用的 `WuxiaContentManifest`，再由各领域 Catalog 校验并生成运行态所需的数据副本。新增内容通过强类型 `.tres` 注册，不做全目录 JSON 扫描，也不在 `BattleModel`、`CombatResolver` 或 HUD 中增加按角色/门派名判断的特殊分支。
 
 ```mermaid
 flowchart TD
-    A["data/: 武学 / Buff / 角色 / 物品 JSON"] --> B["Catalog: School / Status / Character / Item"]
-    B --> C["CharacterRuntime + InventoryRuntime"]
-    B --> D["CardSystem / StatusSystem"]
-    C --> E["BattleModel: 唯一状态与命令入口"]
-    D --> E
-    E --> F["CombatResolver / AttributeSystem / StatModifierSystem"]
-    F --> G["snapshot / events / ticket"]
-    G --> H["BattleHUD / CharacterCard / Presentation"]
+    A[".tres: WuxiaContentManifest + typed definitions"] --> B["ContentRegistry"]
+    B --> C["School / Character / Status / Item / Chapter / Encounter Catalogs"]
+    C --> D["CharacterRuntime / InventoryRuntime / CardSystem / StoryRuntime"]
+    D --> E["BattleModel: CTB / GRID/FREE / CLASH / rules"]
+    E --> F["snapshot / events / ticket"]
+    F --> G["HUD / AnimationPlayer / 2D VFX"]
 ```
 
-| 扩展域 | 定义与运行时边界 | 对战斗的接入方式 |
+| 领域 | 内容类型 | 运行时所有者 |
 | --- | --- | --- |
-| 武学与卡牌（R11） | `SchoolCatalog` 读取武学索引及招式/连携定义；`ComboResolver` 按可配置触发次数计算 | `CardSystem` 接管招式牌、状态引用及武学规则，保持原出牌命令校验 |
-| 角色（R12） | `CharacterRegistry` 按稳定 `character_id` 查档，兼容独立 `battle_actor_id`；美术通过 `HD2DArtCatalog` 查找 | 创建战斗时构造 `battle_options`，HUD 不再假设角色 ID 必等于演员序号 |
-| Buff 与属性（R13） | `StatusCatalog` 独立声明 Buff；`StatModifierSystem` 对基础属性叠加来源确定的 flat/percent_bp 修正 | `StatusSystem` 负责层数、期限、来源同步，`AttributeSystem` 基于 `base_attributes` 重算，防止增益反复滚存 |
-| 物品与装备（R14） | `ItemCatalog` 管定义，`InventoryRuntime` 管唯一实例、可堆叠数量及装备槽，`CharacterRuntime` 管角色成长与持有状态 | 角色战斗构筑 `battle_build` 引入装备属性，战斗属性只由权威状态持有 |
-| 合同与回归（R15） | 模块化 Godot Actions 验证逐域测试及跨域使用场景 | 与原 HUD/剧情/战斗回归独立运行，避免新内容破坏老存量行为 |
+| 角色与初始装备 | `WuxiaCharacterDefinition`、`WuxiaStartingItemDefinition` | `CharacterRegistry` / `CharacterFactory` |
+| 武学与招式 | `WuxiaSchoolDefinition`、`WuxiaSkillDefinition`、`WuxiaTechniqueDefinition` | `SchoolCatalog` / `CardSystem` / `TechniqueRuntime` |
+| Buff / 词条 | `WuxiaBuffDefinition`、`WuxiaAffixDefinition` | `StatusSystem` / `StatModifierSystem` |
+| 装备 / 消耗品 | `WuxiaItemDefinition` | `InventoryRuntime` / `CombatResolver` |
+| 剧情、章节、遭遇 | `WuxiaStoryDefinition`、`WuxiaChapterDefinition`、`WuxiaEncounterDefinition` | `OpeningStory` / `ChapterCatalog` / `ScenarioDirector` |
+| GRID/FREE 地图 | `WuxiaGridMapDefinition`、`WuxiaMapDefinition` | `MapBake` / `BattleSpatialService` |
 
-### 对外扩展契约
+扩展约束：`character_id` 与每场 actor ID 分离；`Item UID` 与定义 ID 分离；基础属性、成长、装备和 Buff 来源均独立可追溯；所有战斗状态只由 `BattleModel` 提交。消耗品 `USE_ITEM` 已由权威命令验证和结算，不在视图中扣除物品。
 
-1. **索引驱动**：新增卡牌、武学、Buff、物品时先登记各自索引；目录扫描或全局硬编码枚举不是正式注册协议。添加角色时使用角色定义和稳定 ID。
-2. **身份分离**：`character_id` 是剧情/档案/美术身份，`battle_actor_id` 是单场对战索引，装备实例另有 UID；不能用数组位置互相替代。
-3. **属性来源可追溯**：角色基础值、成长、装备、Buff 各自携带来源；移除 Buff 或卸下装备后重新派生属性，不逆向猜测原始数值。
-4. **规则单一写入方**：`Catalog` 只给定义、`InventoryRuntime` 只做物品持有操作。消耗品目前仅产出效果意图，**尚未**将 `USE_ITEM` 命令接入 `BattleCommandDispatcher` 和 `CombatResolver`，不能声称实战中可直接饮药。
-5. **兼容性门槛**：任一新增内容既要通过模块契约测试，也要保证既有 CTB、连携、FREE/GRID、绘制及旧武学测试不回退。下一阶段若扩展装备随机词条或存档迁移，应另设 schema/version 合同。
-
-扩展步骤与 JSON 示例见 [模块化内容扩展指南](MODULAR_CONTENT_GUIDE.md)，详尽阶段完成情况见 [重构路线图](REFACTOR_ROADMAP.md)。
+**唯一制作说明**：[Godot 原生内容制作指南](../../../docs/changfeng-native-authoring.md)。历史 R11–R15 设计讨论留在 [重构路线图](REFACTOR_ROADMAP.md)，不再作为当前内容注册协议。

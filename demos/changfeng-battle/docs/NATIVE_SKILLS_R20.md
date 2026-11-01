@@ -1,5 +1,8 @@
 # R20 — 原生技能/阶段 Resource 与可注册效果执行器（首版）
 
+> **历史记录（R20）**：本页记载对应里程碑当时的状态，不是当前的内容制作或加载指南。R41 后旧游戏 JSON、ID 适配器和相关测试已经删除。正式制作以 [唯一原生 Resource 指南](../../../docs/changfeng-native-authoring.md) 为准。
+
+
 R20 在 R18–R19 的原生资源管线之上增加 `WuxiaSkillDefinition`、`WuxiaSkillUsageDefinition`、`WuxiaEffectDefinition`、`WuxiaTechniqueDefinition`、`WuxiaTechniqueNodeDefinition` 和 `WuxiaEffectHandlerDefinition`。未来新技能不需要编写 JSON；在 Godot Inspector 中组合 .tres 子资源、加入 `data/content_manifest.tres` 后即可完成注册和校验。
 
 ## 明确分层

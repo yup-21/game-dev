@@ -19,7 +19,7 @@
 - 正式场景：`opening.tscn` → `battle_hd2d.tscn` → `demo_result.tscn`。
 - 原有 `test_bridge_auto_battle.gd`：三个种子、六人 AI、权威模型完整对局；它只验证逻辑结算，不能证明 UI 不卡住。
 - `test_spatial_topology_profiles.gd`：对比开阔、两列障碍、六人占位三种静态拓扑；检查路径端点、实际线段碰撞、绕路费用和重复查询确定性。
-- `checks/fixtures/maps/*.json` 是**纯路径压力测试数据**，借用断桥资源完成 `MapBake` 校验。其画面和碰撞 mask 不匹配，**不允许作为正式玩家关卡**。
+- `checks/fixtures/maps/*.tres` 是**仅用于寻路压力测试的原生地图资源**，借用断桥素材完成 `MapBake` 校验。其画面和碰撞 mask 不匹配，**不允许作为正式玩家关卡**。
 - 三种拓扑基准输出 `SPATIAL_TOPOLOGY` 的 p50/p95/max 查询耗时。CI 虚拟机性能会波动，因此耗时只作为历史信息，不按绝对毫秒断言 PASS/FAIL。
 
 运行：
@@ -59,9 +59,9 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_bridge
 
 1. **冻结一次规则真值**：`BattleModel` 写状态，`CombatResolver` 生效，`BattlePresentationPlayer` 只播放 ticket；动画窗不得偷偷决定命中或伤害。
 2. **地图拓扑优先**：现有 FREE 为 `MapBake + AStar2D`，只有在多拓扑+GUI profiler 定量显示局限之后才考虑 `NavigationPolygon` 迁移。
-3. **内容优先完成真实接线**：现有 Effect 类型内靠 JSON 扩展；新机制补独立校验、模型效果和回归。
+3. **内容优先完成真实接线**：现有 Effect 通过强类型 Resource 定义并在领域层解析；只有新增底层机制时才补独立校验、模型效果和回归。
 4. **原始资产不删除**：concept/candidate/approved/runtime 分级，保留 provenance、hash、脚点、动作及导入元数据。
-5. **按里程碑产出证据**：每阶段至少一个独立提交、可执行测试、PASS/FAIL 记录与未完成项。PR #67 在人工验收前保持 Draft。
+5. **按里程碑产出证据**：每阶段至少一个独立提交、可执行测试、PASS/FAIL 记录与未完成项。R1–R41 已合入 main；人工体验和美术授权仍需独立记录。
 
 ## 2026-10-31 自动化验证快照
 
@@ -77,7 +77,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_bridge
 
 ## V2–V3 双章节生产链补充验收
 
-- 第二章通过独立章节 JSON、剧情 JSON、NPC 角色定义和第二遭遇注册，无新增专用剧情脚本。
+- 第二章通过原生章节、剧情 Story、NPC 角色和遭遇 Resource 注册，无新增专用剧情脚本。
 - `test_chapter_pipeline.gd` 验证条件分支、剧情事件事务、章节路由与非法奖励不污染角色状态。
 - `test_two_encounter_state.gd` 使用两场真实 `BattleModel` 快照，验证消耗品回写、首次通关奖励防重复、装备 UID 与词条保留、错误快照拒绝。
 - 导出检查加入章节索引、第二章内容及 NPC 定义。**自动化通过后仍须 Godot GUI 手动完成两章连续试玩、性能采样及资源审核，不能以 headless 测试代替。**

@@ -1,5 +1,8 @@
 # R21 — 原生剧情图、章节、任务与遭遇 Resource
 
+> **历史记录（R21）**：本页记载对应里程碑当时的状态，不是当前的内容制作或加载指南。R41 后旧游戏 JSON、ID 适配器和相关测试已经删除。正式制作以 [唯一原生 Resource 指南](../../../docs/changfeng-native-authoring.md) 为准。
+
+
 R21 继续 R18–R20 的显式 Manifest 方式，不创建新 JSON。旧 `data/chapters/*.json`、`opening_story.json` 和 `demo_scenario.json` 仍可读取，现有序章及第二幕入口保持不变。
 
 ## Inspector 制作链路

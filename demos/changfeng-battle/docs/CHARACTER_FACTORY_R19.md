@@ -1,5 +1,8 @@
 # R19 — CharacterFactory 与角色卡迁移
 
+> **历史记录（R19）**：本页记载对应里程碑当时的状态，不是当前的内容制作或加载指南。R41 后旧游戏 JSON、ID 适配器和相关测试已经删除。正式制作以 [唯一原生 Resource 指南](../../../docs/changfeng-native-authoring.md) 为准。
+
+
 R19 不新增 JSON 格式。沈长风的 **角色身份、初始属性、武学、立绘、行动贴图、初始背包、装备及词条** 已迁到 `data/native/characters/shen_changfeng.tres`。角色 ID `shen_changfeng`、战斗 actor ID、初始数值及对外快照格式保持不变。旧文件 `data/characters/shen_changfeng.json` 保留作历史迁移参考，但已从 `data/characters/index.json` 移除，运行时不再读取它。
 
 ## 编辑角色和进入游戏
