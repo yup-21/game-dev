@@ -132,6 +132,12 @@ static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
     return sheet_for_character(str(profile.get("id","")),enemy)
 
 static func sheet_for_character(character_id: String, enemy: bool = false) -> Texture2D:
+    # Valid native atlases are already alpha-cleaned and authored in the
+    # animation card. Never create an alternate ImageTexture/cached copy:
+    # battle and story sprites must consume the exact same native Resource.
+    var native_profile: WuxiaActorAnimationProfile = animation_profile_for_character(character_id)
+    if native_profile != null:
+        return native_profile.atlas
     var card := _character_card(character_id)
     var source_texture: Texture2D = card.sprite_sheet if card != null else null
     if source_texture == null:
