@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "batch": "2026-11-01/chapter_one_extension",
+  "project": "长风浮生录",
+  "scope": "rain_escort_prologue + escort_ambush",
+  "status": "concept / needs_technical_cleanup / owner_review_required",
+  "runtime_bindings_changed": false,
+  "source": "ChatGPT built-in image generation",
+  "model_version": "not exposed",
+  "seed": "not exposed",
+  "rights_review": "pending",
+  "prompt_record": "art-production/candidates/2026-11-01/CHAPTER_ONE_PROMPTS.md",
+  "artifacts": [
+    {
+      "path": "art-production/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "kind": "concept/fullbody_portrait",
+      "git_blob_sha1": "a8657880eea49c7d20c1a54a7612e17a4f78279a",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_source_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "concept/24_pose_unprocessed_atlas",
+      "git_blob_sha1": "bd99870dedfcac1c492a2abcffd35deec209aed5",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "kind": "concept/fullbody_portrait",
+      "git_blob_sha1": "3902be4e25793546af4c83ee1d7695393e92162c",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_source_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "concept/24_pose_unprocessed_atlas",
+      "git_blob_sha1": "633536c9c5e9a66429865bf51401c93bd39353b7",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "kind": "concept/fullbody_portrait",
+      "git_blob_sha1": "7b0d5321ac10e2d88a1bbabde78e817726dc2621",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_source_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "concept/24_pose_unprocessed_atlas",
+      "git_blob_sha1": "11685ba26d22516a92af6a93afaa841f6b7febdc",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "kind": "concept/fullbody_portrait",
+      "git_blob_sha1": "ce6a278583eb20bd7be0fb8ba4d02ef86099d2ca",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_source_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "concept/24_pose_unprocessed_atlas",
+      "git_blob_sha1": "4af9fa105a935f2dff42f3768098de0b911224f8",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "kind": "concept/fullbody_portrait",
+      "git_blob_sha1": "9e4a9a5803fc5c5742717f0e35c923bdbc869470",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "concept/story_injured_pose",
+      "git_blob_sha1": "8a92f9074fe0204854f5f303c0bae369cee093d1",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/ruined_temple/environment_ruined_temple_master_v01.png",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "kind": "concept/environment_master",
+      "git_blob_sha1": "d624b4192846da457626fccb932b0d39d9011e83",
+      "sha256": null,
+      "model": "Built-in image generation, exact model/seed not exposed"
+    }
+  ]
+}
