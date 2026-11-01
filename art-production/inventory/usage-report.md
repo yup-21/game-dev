@@ -9,8 +9,8 @@ registered_only 仅在资产登记卡中出现；test_only 不计入正式游戏
 
 | 使用状态 | 文件数 | 总字节数 |
 | --- | ---: | ---: |
-| in_use | 39 | 25174173 |
-| registered_only | 1 | 207 |
+| in_use | 47 | 35738157 |
+| registered_only | 2 | 3338270 |
 | test_only | 2 | 2288 |
 | template_only | 0 | 0 |
 | unreferenced | 29 | 18846195 |
@@ -39,6 +39,14 @@ SHA-256 重复内容组：0
 | `res://assets/fallback/default_portrait.svg` | `art-production/in-use/fallback/default_portrait.svg` | review_required |
 | `res://assets/fallback/default_scene.svg` | `art-production/in-use/fallback/default_scene.svg` | review_required |
 | `res://assets/fallback/default_story_pose.svg` | `art-production/in-use/fallback/default_story_pose.svg` | review_required |
+| `res://assets/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/pursuer_captain/sprite_pursuer_captain_atlas_normalized_v02.png` | `art-production/in-use/imported/candidates/2026-11-01/pursuer_captain/sprite_pursuer_captain_atlas_normalized_v02.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/shen_changfeng/portrait_shen_changfeng_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/shen_changfeng/portrait_shen_changfeng_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png` | `art-production/in-use/imported/candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png` | review_required |
 | `res://assets/scenes/battle/rainy_bridge_battle.webp` | `art-production/in-use/scenes/battle/rainy_bridge_battle.webp` | review_required |
 | `res://assets/scenes/story/ruined_temple_story.webp` | `art-production/in-use/scenes/story/ruined_temple_story.webp` | review_required |
 | `res://assets/ui/jade_seal.svg` | `art-production/in-use/ui/jade_seal.svg` | review_required |
@@ -64,6 +72,7 @@ SHA-256 重复内容组：0
 
 ## 仅登记 / 测试专用
 
+- registered_only: `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png`
 - registered_only: `res://assets/kenney/characters/tile_0082.png`
 - test_only: `res://assets/ui/jade_card_filagree.svg`
 - test_only: `res://assets/ui/jade_panel_frame.svg`

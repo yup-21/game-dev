@@ -1,8 +1,10 @@
-[gd_resource type="Resource" script_class="WuxiaGridMapDefinition" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="WuxiaGridMapDefinition" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/grid_map_definition.gd" id="1_grid"]
 [ext_resource type="Script" path="res://scripts/content/grid_terrain_key_definition.gd" id="2_key"]
-[ext_resource type="Texture2D" path="res://assets/scenes/battle/rainy_bridge_battle.webp" id="3_background"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png" id="3_background"]
+
+[ext_resource type="Resource" path="res://data/native/scene_art/rainy_bridge.tres" id="4_scene_art"]
 
 [sub_resource type="Resource" id="Key_0"]
 script = ExtResource("2_key")
@@ -33,14 +35,15 @@ terrain_kind = "bridge"
 script = ExtResource("1_grid")
 content_id = "rainy_bridge"
 background = ExtResource("3_background")
-source_size = Vector2i(1586, 992)
+scene_art = ExtResource("4_scene_art")
+source_size = Vector2i(1600, 1000)
 viewport_size = Vector2i(1600, 1000)
-rotation_degrees = -6
-image_scale = 1.14
+rotation_degrees = 0
+image_scale = 1.0
 columns = 15
 rows_count = 10
 first_center = Vector2(154, 48)
 cell_size = Vector2(90, 68)
 painted_rows = Array[String](["TTTTTTWWWWWWTTT", "RRRRRRWWWWWWRRR", "RRRRRRWWWWWWRRR", ".....RWWWWWW...", "R....BBBBBB....", "RRRRRWWWWWWRR..", "RRRRRWWWWWWRR..", "R...RWWWWWWRR..", "R...RWWWWWWRR..", "RR..RWWWWWWR..."])
 terrain_keys = Array[Resource]([SubResource("Key_0"), SubResource("Key_1"), SubResource("Key_2"), SubResource("Key_3"), SubResource("Key_4")])
-notes = "Manually baked from the provided painted bridge, after rotating the artwork -6 degrees. Bridge is a single horizontal playable lane at logical row 4, columns 5–10; foreground rapids have no ford. X increases to the right; Y increases down. Nonwalkable image features have explicit tile types."
+notes = "Pilot 2026-11-01 visual candidate; original 15x10 terrain and spawns are preserved pending painted-geometry review. Manually baked from the provided painted bridge, after rotating the artwork -6 degrees. Bridge is a single horizontal playable lane at logical row 4, columns 5–10; foreground rapids have no ford. X increases to the right; Y increases down. Nonwalkable image features have explicit tile types."

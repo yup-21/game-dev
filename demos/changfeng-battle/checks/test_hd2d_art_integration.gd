@@ -68,7 +68,10 @@ func _run() -> void:
         return
     for actor_id in [0, 1, 2, 3, 4, 5]:
         var sprite: Sprite2D = battle_map.actors[actor_id].get_node_or_null("ActionSprite") as Sprite2D
-        if sprite == null or sprite.texture != Catalog.sheet_for_actor(actor_id, actor_id > 3):
+        var character_id: String = "shen_changfeng" if actor_id == 0 else ("pursuer_captain" if actor_id == 1 else "")
+        var profile: WuxiaActorAnimationProfile = Catalog.animation_profile_for_character(character_id) if not character_id.is_empty() else null
+        var expected: Texture2D = profile.atlas if profile != null else Catalog.sheet_for_actor(actor_id, actor_id > 3)
+        if sprite == null or sprite.texture != expected:
             _fail("story actor %d is not displaying the supplied atlas" % actor_id)
             return
         if sprite.hframes != 6 or sprite.vframes != 4:

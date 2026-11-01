@@ -252,8 +252,7 @@
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [
-        "candidate",
-        "runtime"
+        "candidate"
       ],
       "rights": [
         "owner_review_required"
@@ -265,14 +264,6 @@
           "status": "candidate",
           "source": "user_provided_or_generated",
           "rights": "owner_review_required"
-        },
-        {
-          "record": "data/native/assets/r22_shen_portrait.tres",
-          "id": "r22_shen_portrait",
-          "status": "runtime",
-          "source": "user_provided_or_generated",
-          "rights": "owner_review_required",
-          "owner_character_id": "shen_changfeng"
         }
       ],
       "sha256": "26b712e2ec51c1928d7e9bc5ed95045f4b524ed3d5195b91ae55f8a7b1f7daa1",
@@ -281,13 +272,10 @@
       "references": {
         "runtime": [
           "data/native/characters/guest_swordsman.tres",
-          "data/native/characters/shen_changfeng.tres",
           "scenes/character_presentation_preview.tscn",
           "scripts/hd2d_art_catalog.gd"
         ],
-        "registrations": [
-          "data/native/assets/r22_shen_portrait.tres"
-        ],
+        "registrations": [],
         "tests": [],
         "templates": []
       }
@@ -341,7 +329,6 @@
       "size_bytes": 727489,
       "references": {
         "runtime": [
-          "data/native/characters/shen_changfeng.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
         "registrations": [],
@@ -379,7 +366,6 @@
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [
-        "candidate",
         "preview"
       ],
       "rights": [
@@ -392,14 +378,6 @@
           "status": "preview",
           "source": "user_provided_or_generated",
           "rights": "owner_review_required"
-        },
-        {
-          "record": "data/native/assets/r27_pursuer_study.tres",
-          "id": "r27_pursuer_study",
-          "status": "candidate",
-          "source": "project_bundled_concept_study",
-          "rights": "owner_review_required",
-          "owner_character_id": "pursuer_captain"
         }
       ],
       "sha256": "8cf964f868e0b7c9f80a91287bc655c794efc1a98395f040ef8595b4e1acc0ab",
@@ -407,12 +385,9 @@
       "size_bytes": 624395,
       "references": {
         "runtime": [
-          "data/native/characters/pursuer_captain.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
-        "registrations": [
-          "data/native/assets/r27_pursuer_study.tres"
-        ],
+        "registrations": [],
         "tests": [],
         "templates": []
       }
@@ -705,22 +680,11 @@
       "kind": "scene",
       "usage_state": "in_use",
       "review_state": "review_required",
-      "registered_statuses": [
-        "candidate"
-      ],
+      "registered_statuses": [],
       "rights": [
-        "owner_review_required"
+        "unknown"
       ],
-      "source_records": [
-        {
-          "record": "data/native/assets/r27_scenery_rainy_bridge.tres",
-          "id": "r27_scenery_rainy_bridge",
-          "status": "candidate",
-          "source": "project_bundled_concept",
-          "rights": "owner_review_required",
-          "owner_character_id": ""
-        }
-      ],
+      "source_records": [],
       "sha256": "7ece1edfdbb3181b87f8c6c3c4d325ea1ff3e44eeb1fad520e33e02aa5f1e9e7",
       "git_blob_sha1": "ca3ee72a10a048d1f72b4e2a209f4fc13b466693",
       "size_bytes": 125438,
@@ -728,9 +692,7 @@
         "runtime": [
           "scripts/hd2d_art_catalog.gd"
         ],
-        "registrations": [
-          "data/native/assets/r27_scenery_rainy_bridge.tres"
-        ],
+        "registrations": [],
         "tests": [],
         "templates": []
       }
@@ -913,6 +875,262 @@
       "references": {
         "runtime": [
           "scripts/fallback_assets.gd"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png",
+      "kind": "portrait",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_pursuer_study.tres",
+          "id": "r27_pursuer_study",
+          "status": "candidate",
+          "source": "art-production/candidates/2026-11-01",
+          "rights": "owner_review_required",
+          "owner_character_id": "pursuer_captain"
+        }
+      ],
+      "sha256": "acf6696f36f52ce4c6841815365b4e1eee8d0d1afb77351b0ae329f04dd23755",
+      "git_blob_sha1": "8e6c9ddba3f5e8e99feface968281ab3da07a6a3",
+      "size_bytes": 2656606,
+      "references": {
+        "runtime": [
+          "data/native/characters/pursuer_captain.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r27_pursuer_study.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/pursuer_captain/sprite_pursuer_captain_atlas_normalized_v02.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/pursuer_captain/sprite_pursuer_captain_atlas_normalized_v02.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/pursuer_captain/sprite_pursuer_captain_atlas_normalized_v02.png",
+      "kind": "animation",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "9668a32f85c469e6f22ac7f90217b37965faec16cee2e33d5f949a4f1da913fd",
+      "git_blob_sha1": "1b5685e0e13a4fddcd30cd51014f303e07cae0c0",
+      "size_bytes": 976214,
+      "references": {
+        "runtime": [
+          "data/native/animations/pursuer_captain.tres",
+          "data/native/characters/pursuer_captain.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "d51c65d5998c0e3fa9b74af75d2333dfa08e61274e14a973b4e834567245b0d7",
+      "git_blob_sha1": "eedba208aab3d4cd128039c7ae0c1ce8c1a686ad",
+      "size_bytes": 1854569,
+      "references": {
+        "runtime": [
+          "data/maps/rainy_bridge.tres",
+          "data/native/scene_art/rainy_bridge.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
+      "production_path": null,
+      "kind": "scene",
+      "usage_state": "registered_only",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_scenery_rainy_bridge.tres",
+          "id": "r27_scenery_rainy_bridge",
+          "status": "candidate",
+          "source": "art-production/candidates/2026-11-01",
+          "rights": "owner_review_required",
+          "owner_character_id": ""
+        }
+      ],
+      "sha256": "e3bcddbcb3ced96fe346a7f2e3ff1639440cc5f550602e0e29daac51c33daf76",
+      "git_blob_sha1": "cd73cec6f8a55fd3b05ff15cffdf29e27566b382",
+      "size_bytes": 3338063,
+      "references": {
+        "runtime": [],
+        "registrations": [
+          "data/native/assets/r27_scenery_rainy_bridge.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "f033ae107db4d87d5662ec478ddfe5caa51e69769fc78f27a96c976bb747d4e4",
+      "git_blob_sha1": "1c14791ba9b13c00acafeae8d05606d95b16de89",
+      "size_bytes": 1039321,
+      "references": {
+        "runtime": [
+          "data/native/scene_art/rainy_bridge.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "2a5f3bc9ad707afd247f334150cbddfa3c82c309aa28067bae428edee9526c80",
+      "git_blob_sha1": "c7e74969c259532b1f27a86e1c512d4189821236",
+      "size_bytes": 538776,
+      "references": {
+        "runtime": [
+          "data/native/scene_art/rainy_bridge.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "1b89061d4f5398e91dfe1cf953aacc5ecbed0153f8a9b4b2599c8965ff675741",
+      "git_blob_sha1": "47a2af82257cda9c9007526c026b9bd042100a20",
+      "size_bytes": 22443,
+      "references": {
+        "runtime": [
+          "data/native/scene_art/rainy_bridge.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/shen_changfeng/portrait_shen_changfeng_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/shen_changfeng/portrait_shen_changfeng_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/shen_changfeng/portrait_shen_changfeng_fullbody_v01.png",
+      "kind": "portrait",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r22_shen_portrait.tres",
+          "id": "r22_shen_portrait",
+          "status": "candidate",
+          "source": "art-production/candidates/2026-11-01",
+          "rights": "owner_review_required",
+          "owner_character_id": "shen_changfeng"
+        }
+      ],
+      "sha256": "6ca1988744ca1c590a072a2c3442b10a94a2f892cff127cf72b70263502677b6",
+      "git_blob_sha1": "44bf94bd57461d49377ad304ac75b27740b44b0d",
+      "size_bytes": 2566573,
+      "references": {
+        "runtime": [
+          "data/native/characters/shen_changfeng.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r22_shen_portrait.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png",
+      "kind": "animation",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "9298daa74d6d41fd95bd8a6773e4dcb9f0ec22c9d02933a1f58c7f687c051c39",
+      "git_blob_sha1": "f181900526f013de5382d192619bd6d4aa08553d",
+      "size_bytes": 909482,
+      "references": {
+        "runtime": [
+          "data/native/animations/shen_changfeng.tres",
+          "data/native/characters/shen_changfeng.tres"
         ],
         "registrations": [],
         "tests": [],
@@ -1366,7 +1584,6 @@
         "runtime": [
           "data/maps/r23_free_brush_map.tres",
           "data/maps/r24_fog_pass_map.tres",
-          "data/maps/rainy_bridge.tres",
           "data/native/chapters/river_watch.tres"
         ],
         "registrations": [],

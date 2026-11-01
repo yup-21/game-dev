@@ -23,6 +23,7 @@ on:
       - 'demos/changfeng-battle/checks/test_scene_art_profile.gd'
       - 'demos/changfeng-battle/checks/test_art_importer.gd'
       - 'demos/changfeng-battle/checks/test_art_pilot_candidates.gd'
+      - 'demos/changfeng-battle/checks/test_art_runtime_integration.gd'
       - 'demos/changfeng-battle/checks/test_art_workflow.gd'
       - 'demos/changfeng-battle/checks/test_art_workflow_roundtrip.gd'
       - 'demos/changfeng-battle/checks/test_character_factory.gd'
@@ -76,6 +77,8 @@ jobs:
           "${RUNNER_TEMP}/art-pilot-venv/bin/python" art-production/tools/prepare_pilot_assets.py
       - name: Preflight the two pilot actors and four real scene layers
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_art_pilot_candidates.gd
+      - name: Bind the two pilot actors and layered bridge in the live battle
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_art_runtime_integration.gd
       - name: P1 art production importer preflight
         run: timeout --signal=TERM 60s godot --headless --path demos/changfeng-battle --script res://checks/test_art_importer.gd
       - name: P2 art export, batch validation and rollback controls
