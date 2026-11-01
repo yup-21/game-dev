@@ -3,6 +3,7 @@ class_name WuxiaGridMapDefinition
 extends WuxiaContentDefinition
 ## Authored GRID terrain + calibrated background. FREE maps remain polygons.
 @export var background: Texture2D
+@export var scene_art: WuxiaSceneArtProfile
 @export var source_size: Vector2i = Vector2i.ZERO
 @export var viewport_size: Vector2i = Vector2i(1600, 1000)
 @export var rotation_degrees: float = 0.0

@@ -13,7 +13,11 @@
 - 按需编辑 `WuxiaStartingItemDefinition`，只引用正式 Manifest 已登记的物品。新角色默认 `battle_actor_id=-1`，遭遇时再指定 actor ID。
 - `portrait` / `sprite_sheet` 目前是中性 fallback，只用于检查接入，不代表已完成正式美术或版权审核。
 
+如有正式逐帧动作素材，复制本目录 `actor_animation_profile.tres`，在 Inspector 替换为原创 Atlas 并调整每个动作的绝对帧号、循环速度、脚点与朝向；再把该 `.tres` 挂到角色的 `animation_profile`。不要将本模板的 fallback 占位帧标为正式动画。该资源不需要写入 Content Manifest。
+
 把新角色加入 `data/content_manifest.tres.characters`。创建永久游戏会话角色的逻辑由现有 `CharacterFactory` 完成。
+
+场景分层：新地图可新建 `WuxiaSceneArtProfile`，配齐统一尺寸的 `background`、`ground`，按需加入 `foreground` 与 `weather`，在地图原生资源 `scene_art` 中引用。不得用贴图颜色反推出碰撞或改动地图脚点。
 
 ## 2. 复制一套武学
 

@@ -3,6 +3,7 @@ class_name WuxiaMapDefinition
 extends WuxiaContentDefinition
 ## No tile artwork or 15x10 authored mask. Collisions use native polygons.
 @export var background: Texture2D
+@export var scene_art: WuxiaSceneArtProfile
 @export var viewport_size: Vector2i = Vector2i(1600,1000)
 @export var area_bounds: Rect2 = Rect2(100,100,1400,800)
 @export var image_rotation_degrees: float = 0.0

@@ -46,6 +46,20 @@ static func _asset_texture(path: String, known: Dictionary) -> Texture2D:
     if not ResourceLoader.exists(path, "Texture2D"): return null
     return load(path) as Texture2D
 
+## Optional authored per-action atlas. Old 6x4 previews remain a safe fallback.
+static func animation_profile_for_character(character_id: String) -> WuxiaActorAnimationProfile:
+    var role: Dictionary = _registry.get_profile(character_id)
+    var path: String = str(role.get("art", {}).get("animation_profile", ""))
+    if not path.begins_with("res://data/") or ".." in path:
+        return null
+    if not ResourceLoader.exists(path):
+        return null
+    var resource = load(path) as WuxiaActorAnimationProfile
+    if resource != null and resource.valid_profile():
+        return resource
+    push_warning("Invalid actor animation profile for " + character_id)
+    return null
+
 static func portrait_for_character(character_id: String) -> Texture2D:
     var native: Texture2D = _asset_registry.texture_for_character(character_id,"portrait")
     if native != null: return native

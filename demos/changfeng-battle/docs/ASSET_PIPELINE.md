@@ -1,5 +1,7 @@
 # 游戏素材生产管线：基线与技术校验（P2）
 
+**统一制作总纲：** [《长风浮生录》美术与动画制作规范](../../../../docs/ART_PRODUCTION_STANDARD.md)。本页保留 P2 历史素材与审核流程，新增角色动作/场景分层均按总纲执行。
+
 当前项目保留**原创高精细国风手绘**的人物和场景方向；HD-2D 主要描述镜头、纵深与遮挡表达，不强制低像素风格。
 
 ## 原生资产登记与离线审核
@@ -40,6 +42,13 @@
 godot --headless --path demos/changfeng-battle --editor --import --quit
 godot --headless --path demos/changfeng-battle --script res://checks/test_asset_contracts.gd
 ```
+
+## 新版角色动作与场景资源接口
+
+- `WuxiaActorAnimationProfile` / `WuxiaActorAnimationClip`：角色卡的可选 `animation_profile`，支持各角色独立 Atlas 行列、真实动作帧、播放帧率、缩放、朝向与脚点；旧 6×4 图集继续兼容。
+- `WuxiaSceneArtProfile`：地图卡的可选 `scene_art`，按同一画布提供背景、地面、前景遮挡和天气，校验尺寸与地图 viewport 一致；碰撞几何仍由原地图 Resource 管理。
+- 未经过场景图层拆分及透明边缘人工校验的 `candidate` 不能直接接到上述正式接口。
+- 新契约检查：`checks/test_actor_animation_profile.gd` 与 `checks/test_scene_art_profile.gd`。
 
 ## 角色图集未来的交付合同
 

@@ -32,13 +32,23 @@ func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
         return
     var character_id: String = str(actor.get("character_id",""))
     var enemy: bool = int(actor.get("team_id",0)) != 0
-    var sheet: Texture2D = ArtCatalog.sheet_for_character(character_id,enemy) if not character_id.is_empty() else ArtCatalog.sheet_for_actor(id,enemy)
-    var sprite: Sprite2D = illustrated_map.add_actor(actor,sheet)
-    sprite.set_meta("faces_left_unflipped", ArtCatalog.sheet_faces_left_for_character(character_id) if not character_id.is_empty() else ArtCatalog.sheet_faces_left(id))
+    var profile: WuxiaActorAnimationProfile = ArtCatalog.animation_profile_for_character(character_id)
+    var sheet: Texture2D = profile.atlas if profile != null else (
+        ArtCatalog.sheet_for_character(character_id, enemy) if not character_id.is_empty()
+        else ArtCatalog.sheet_for_actor(id, enemy))
+    var sprite: Sprite2D = illustrated_map.add_actor(actor, sheet)
+    if profile != null:
+        sprite.hframes = profile.columns
+        sprite.vframes = profile.rows
+        sprite.offset = profile.feet_offset
+        sprite.scale = profile.actor_scale
+    sprite.set_meta("faces_left_unflipped", profile.faces_left_unflipped if profile != null
+        else (ArtCatalog.sheet_faces_left_for_character(character_id) if not character_id.is_empty()
+        else ArtCatalog.sheet_faces_left(id)))
     actor_nodes[id] = illustrated_map.actors[id]
     visual_cells[id] = Vector2i(actor.cell)
     animation_driver.register_actor(id, sprite,
-        Vector2i(actor.get("facing", Vector2i.RIGHT)))
+        Vector2i(actor.get("facing", Vector2i.RIGHT)), profile)
 
 func queue_motion_events(events: Array) -> void:
     for event in events:

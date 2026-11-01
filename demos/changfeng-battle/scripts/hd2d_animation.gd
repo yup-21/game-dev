@@ -1,6 +1,6 @@
 extends RefCounted
 ## Event-driven AnimationPlayer playback. Owns only presentation cursors, never battle state.
-## 6x4 atlas: idle, walk, attack, special (guard/hit/dodge/skill).
+## Authored action profiles are preferred; legacy 6x4 sheets remain compatible.
 const Facing = preload("res://scripts/actor_facing.gd")
 const ActionTimeline = preload("res://scripts/battle_action_timeline.gd")
 const NativeClips = preload("res://scripts/battle_native_sprite_clips.gd")
@@ -15,13 +15,14 @@ var stage_duration: float = 0.0
 var pending_cues: Array = []
 var action_timeline = ActionTimeline.new()
 
-func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector2i.RIGHT) -> void:
+func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector2i.RIGHT,
+        profile: WuxiaActorAnimationProfile = null) -> void:
     var initial: Vector2i = Facing.from_delta(initial_facing)
     var horizontal: Vector2i = initial if initial in [Facing.EAST, Facing.WEST] else Facing.EAST
     var artwork_left: bool = bool(sprite.get_meta("faces_left_unflipped", false))
-    sprite.hframes = 6
-    sprite.vframes = 4
-    var player: AnimationPlayer = NativeClips.attach(sprite, action_timeline)
+    sprite.hframes = profile.columns if profile != null else 6
+    sprite.vframes = profile.rows if profile != null else 4
+    var player: AnimationPlayer = NativeClips.attach(sprite, action_timeline, profile)
     tracks[id] = {"sprite": sprite, "player": player, "state": "idle", "elapsed": 0.0,
         "duration": 1.0, "loop": true, "facing": initial,
         "horizontal": horizontal, "artwork_left": artwork_left,
