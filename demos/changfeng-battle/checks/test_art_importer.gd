@@ -15,7 +15,7 @@ func _initialize() -> void:
     if sources.size() < 39:
         _fail("P0 in-use artwork is absent")
         return
-    var source := production_dir.path_join("in-use/fallback/default_actor_6x4.svg")
+    var source: String = production_dir.path_join("in-use/fallback/default_actor_6x4.svg")
     var image: Dictionary = Importer.inspect(source)
     if not str(image.get("error", "")).is_empty() or int(image["width"]) <= 0:
         _fail("SVG preview failed: " + str(image.get("error", "")))
@@ -23,13 +23,13 @@ func _initialize() -> void:
     if not Importer.destination(source).begins_with("res://assets/imported/in-use/"):
         _fail("Source destination has incorrect root")
         return
-    var atlas := Importer.plan("atlas", source, "res://data/native/characters/shen_changfeng.tres",
+    var atlas: Dictionary = Importer.plan("atlas", source, "res://data/native/characters/shen_changfeng.tres",
         {"columns": 6, "rows": 4, "feet_offset": Vector2(0, -102), "faces_left": false})
     if not str(atlas.get("error", "")).is_empty():
         _fail("Valid atlas plan rejected: " + str(atlas.get("error", "")))
         return
-    var ui_source := root.path_join("in-use/ui/original/card_probe.svg")
-    var ui := Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
+    var ui_source: String = production_dir.path_join("in-use/ui/original/card_probe.svg")
+    var ui: Dictionary = Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
     if not str(ui.get("error", "")).is_empty():
         _fail("Valid UI registration plan rejected: " + str(ui.get("error", "")))
         return
