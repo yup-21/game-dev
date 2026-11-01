@@ -58,7 +58,7 @@ invulnerable 时间窗继续只驱动动画，**不得用玩家本地帧时间�
   与三层取消优先权，同时执行六角色 FREE AI 决策回归和实际 HUD 节点
   架势进度检查。原有测试仍负责倒序应变、卡牌衍生和场景加载。
 - `POSTURE_BROKEN` 与 `CHAIN_LINK_CANCELED` 接入非权威的
-  `battle_vfx_2d.gd` 视觉提示和 `action_timelines.json` 的 hit/guard 表现；
+  `battle_vfx_2d.gd` 视觉提示和 `data/native/action_timelines/r32_default.tres` 的 hit/guard 表现；
   VFX 只消费语义事件，效果结束不修改 CombatantState。
 
 **这套规则没有“帧级无敌/取消判定”**：即使播放动画快速跳过，伤害、

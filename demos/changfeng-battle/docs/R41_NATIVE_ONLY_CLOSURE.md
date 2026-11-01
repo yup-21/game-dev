@@ -2,7 +2,7 @@
 
 ## 目标
 
-R40 已完成玩家入口、单一 BattleModel、GRID/FREE 以及表现层的迁移，R41 进一步消除**源码级**旧格式解析分支；不承诺旧未发布存档或 JSON 数据兼容。PR #68 是已合并 R40，R41 在 Draft PR #69 中审查，目标分支仍为 `refactor/battle-architecture-consolidation`，**不是 main**。
+R40 已完成玩家入口、单一 BattleModel、GRID/FREE 以及表现层的迁移，R41 进一步消除**源码级**旧格式解析分支；不承诺旧未发布存档或 JSON 数据兼容。PR #68、#69 分别完成 R40、R41；完整原生内容版本已通过 PR #70 合入 `main`。
 
 ## 正式运行时
 
@@ -23,7 +23,7 @@ R40 已完成玩家入口、单一 BattleModel、GRID/FREE 以及表现层的迁
 - `Modular Wuxia content contracts` 通过独立固定预期值和功能回归验证角色属性/流派、消耗品与 Buff 数值、章节顺序、遭遇队伍和动作窗口；无效 Manifest 的原子拒绝由原有 R18 测试负责。
 - `Original Wuxia HUD regression` 继续验证 UI、3v3 战斗、空间路径、动画与截图；`Portable Changfeng demo export` 在检出目录外用 PCK 运行核心资源加载检查。
 
-**合并门槛**：上述三个 GitHub Actions 工作流全部成功，随后必须在 Godot Editor 手工验证资源编辑/保存与玩法手感，并对 Windows/Linux 桌面导出和素材授权做人工验收。Draft PR #69 不自动合并。
+**当前验收状态**：三条 GitHub Actions 工作流已针对合并后的 `main` 提交通过；Godot Editor 实际操作、Windows/Linux 桌面试玩与素材权属仍需人工验证，不能用 CI 代替。
 
 ## 非目标
 

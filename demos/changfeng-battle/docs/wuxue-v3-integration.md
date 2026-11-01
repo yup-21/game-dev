@@ -62,7 +62,7 @@ V3原包未经过Godot实际运行验收；本机编译其main.gd确认存在 `E
 
 ## 4. 数据与代码接入
 
-原始 `school_forms.json` 和 `legacy_id_map.json` 原样保存在data目录，SHA256见 [数据校验记录](wuxue-v3-reference/source-hashes.txt)。`SchoolCatalog` 完整校验数量、引用、费用、时机、目标、效果与映射，再返回深拷贝。
+正式武学定义位于 `data/native/rule_catalogs/r36_school_forms.tres`、`data/native/rule_catalogs/r37_tingfeng_cards.tres`；`SchoolCatalog` 与 `CardSystem` 从注册的原生 Resource 校验引用、费用、时机、目标和效果，再返回深拷贝。旧 ID 映射已在 R41 删除；[历史数据校验记录](wuxue-v3-reference/source-hashes.txt) 仅供追溯迁移版本，不属于现行编辑流程。
 
 | 原包字段 | 当前内存规范化 |
 | --- | --- |
