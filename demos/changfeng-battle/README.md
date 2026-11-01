@@ -200,7 +200,7 @@ New-Item -ItemType Directory -Path captures -Force | Out-Null
 
 ## 统一角色卡模块
 
-七份独立角色档案位于 `data/characters/`；`scripts/character_registry.gd` 负责角色身份、背景、属性、流派、已学阶段技能和美术路径，并通过 `ScenarioDirector` 注入战斗。点击战斗左侧角色头像或按 **C** 打开 `CharacterCardUI`，浏览当前气血/内息/状态、四维/派生属性、武学、人物简介和立绘/动作预览；Esc、背景或收起按钮关闭。装备和成长暂未完成，界面不会展示虚假数值。无档案的旧规则测试保留原行为。
+角色档案使用 `data/native/characters/*.tres` 中的 `WuxiaCharacterDefinition`，并在 `data/content_manifest.tres.characters` 注册。`scripts/character_registry.gd` 读取身份、背景、属性、已学武学和美术引用，由现有 `ScenarioDirector` / `CharacterFactory` 组装战斗角色。点击战斗左侧角色头像或按 **C** 打开 `CharacterCardUI`，可查看气血、内息、状态、四维与派生属性、武学、人设和立绘/动作预览；按 Esc 或点击背景、收起按钮关闭。独立的规则测试仍可直接构造 `BattleModel` 的测试角色，不需要新增正式角色卡。
 
 
 ## 多套武学与战斗切换
