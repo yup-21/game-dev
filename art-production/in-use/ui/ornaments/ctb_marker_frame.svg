@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+<defs><linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5dca5"/><stop offset=".46" stop-color="#9a885e"/><stop offset="1" stop-color="#dfc38a"/></linearGradient></defs>
+<circle cx="18" cy="18" r="16.3" fill="none" stroke="#091e20" stroke-width="3"/>
+<circle cx="18" cy="18" r="15.5" fill="none" stroke="url(#rim)" stroke-width="1.5"/>
+<circle cx="18" cy="18" r="12.8" fill="none" stroke="#d3b783" stroke-opacity=".7" stroke-width=".7"/>
+<path d="M18 0l3.6 4-3.6 4-3.6-4zM18 28l3.6 4-3.6 4-3.6-4zM0 18l4-3.6 4 3.6-4 3.6zM28 18l4-3.6 4 3.6-4 3.6z" fill="#e3c88f"/>
+</svg>

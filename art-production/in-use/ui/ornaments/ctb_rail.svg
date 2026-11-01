@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="800" viewBox="0 0 108 800">
+<defs>
+<linearGradient id="shade" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#07181e" stop-opacity="0"/><stop offset=".4" stop-color="#091c22" stop-opacity=".58"/><stop offset=".6" stop-color="#091c22" stop-opacity=".58"/><stop offset="1" stop-color="#07181e" stop-opacity="0"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#edce92"/><stop offset=".45" stop-color="#a18a62"/><stop offset=".55" stop-color="#bd9d66"/><stop offset="1" stop-color="#ddc18d"/></linearGradient>
+</defs>
+<rect x="30" y="30" width="48" height="738" fill="url(#shade)"/>
+<path d="M54 45V751" fill="none" stroke="#061317" stroke-width="11" stroke-opacity=".7"/>
+<path d="M54 49V750" fill="none" stroke="url(#metal)" stroke-width="2.6"/>
+<path d="M48 51V749M60 51V749" fill="none" stroke="#a6c8ba" stroke-opacity=".25" stroke-width=".8"/>
+<g fill="none" stroke="#e6c68e" stroke-width="1.4"><path d="M54 25L68 41 54 57 40 41Z"/><path d="M54 740L68 756 54 772 40 756Z"/><path d="M46 41h16M46 756h16"/><path d="M35 61V739M73 61V739" opacity=".25" stroke-width=".7"/></g>
+<g fill="#dfc38e"><path d="M54 30l9 11-9 11-9-11zM54 746l9 10-9 11-9-11z" fill-opacity=".25"/><circle cx="54" cy="41" r="3"/><circle cx="54" cy="756" r="3"/></g>
+</svg>
