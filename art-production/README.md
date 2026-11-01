@@ -9,6 +9,9 @@
 | [templates/](templates/) | 每次资产制作都需填写的工作单 |
 | [candidates/](candidates/) | 后续生成的概念图和待审批图；按批次、类型存放 |
 | [reviews/](reviews/) | 人工验收、截图与批准记录 |
+| [inventory/](inventory/) | 当前素材使用清单、来源和哈希记录 |
+| [in-use/](in-use/) | 运行时直接引用素材的生产副本 |
+| [tools/](tools/) | 离线索引维护与 Godot 导入操作指南 |
 
 ## 核心约束
 
@@ -26,3 +29,9 @@
 ## 第一批生产试点
 
 沈长风（设定、立绘、九类动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。所有候选经过人工批准，才可以冻结 V2 规格。
+
+## 编辑器内导入
+
+Godot 4.7.2 的 **Art Production Importer** Dock 可浏览并预检制作区图像，
+然后复制到 `res://assets/imported/` 并创建/更新对应 `.tres`。
+操作、限制和恢复方法见 [Godot 导入指南](tools/GODOT_IMPORTER.md)。
