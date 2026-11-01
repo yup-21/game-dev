@@ -165,7 +165,7 @@ func run() -> void:
 	control.state.get_actor(1).cell=Vector2i(8,4)
 	control.state.active_id=0
 	var skill=Model.new()
-	skill.reset(2026,0,"tingfeng",{"combatants":roster(),"technique_catalog_path":"res://checks/fixtures/technique_graph.json","techniques":{0:{"test_chain":3}}})
+	skill.reset(2026,0,"tingfeng",{"combatants":roster(),"technique_catalog_path":"res://checks/fixtures/technique_graph.tres","techniques":{0:{"test_chain":3}}})
 	skill.state.get_actor(0).cell=Vector2i(7,4)
 	skill.state.get_actor(1).cell=Vector2i(8,4)
 	var stage_actions: Array=legal(skill,0,"USE_ABILITY")

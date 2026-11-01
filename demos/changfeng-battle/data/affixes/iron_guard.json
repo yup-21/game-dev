@@ -1,5 +1,0 @@
-{
-  "schema_version": 1, "id": "iron_guard", "name": "铁骨",
-  "allowed_slots": ["armor", "accessory"],
-  "modifiers": [{ "stat": "defense", "op": "percent_bp", "value": 1000 }]
-}

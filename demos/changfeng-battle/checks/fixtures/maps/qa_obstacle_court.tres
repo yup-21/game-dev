@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="WuxiaGridMapDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/grid_map_definition.gd" id="1_grid"]
+[ext_resource type="Script" path="res://scripts/content/grid_terrain_key_definition.gd" id="2_key"]
+[ext_resource type="Texture2D" path="res://assets/scenes/battle/rainy_bridge_battle.webp" id="3_background"]
+
+[sub_resource type="Resource" id="Key_0"]
+script = ExtResource("2_key")
+symbol = "R"
+terrain_kind = "rock"
+
+[sub_resource type="Resource" id="Key_1"]
+script = ExtResource("2_key")
+symbol = "."
+terrain_kind = "road"
+
+[resource]
+script = ExtResource("1_grid")
+content_id = "qa_obstacle_court"
+background = ExtResource("3_background")
+source_size = Vector2i(1586, 992)
+viewport_size = Vector2i(1600, 1000)
+rotation_degrees = -6
+image_scale = 1.14
+columns = 15
+rows_count = 10
+first_center = Vector2(154, 48)
+cell_size = Vector2(90, 68)
+painted_rows = Array[String](["...............","...............","......RR.......","......RR.......","......RR.......","...............","......RR.......","......RR.......","...............","..............."])
+terrain_keys = Array[Resource]([SubResource("Key_0"), SubResource("Key_1")])
+notes = "Logical pathfinding fixture only: a two-column impassable barrier with alternate routes; artwork is a placeholder."

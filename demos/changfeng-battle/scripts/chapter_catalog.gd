@@ -5,66 +5,36 @@ const ScenarioDirector = preload("res://scripts/scenario_director.gd")
 const CharacterRegistry = preload("res://scripts/character_registry.gd")
 const Events = preload("res://scripts/story_event_executor.gd")
 const Native = preload("res://scripts/content/content_registry.gd")
-const ROOT := "res://data/chapters/"
 var chapters: Dictionary = {}
 var chapter_order: Array = []
 var load_error: String = ""
 
-func _init(index_path: String = ROOT + "index.json", definition_root: String = ROOT) -> void:
-    var is_production: bool = index_path == ROOT + "index.json" and definition_root == ROOT
+func _init(manifest_path: String = Native.DEFAULT_MANIFEST) -> void:
     var director = ScenarioDirector.new()
     var characters = CharacterRegistry.new()
     if not director.load_error.is_empty() or not characters.load_error.is_empty():
         load_error = "Chapter prerequisites are invalid"
         return
-
-    if is_production:
-        # Production chapters are only the Inspector-authored native Resources.
-        var native = Native.new()
-        if not native.load_error.is_empty():
-            load_error = native.load_error
+    var native = Native.new(manifest_path)
+    if not native.load_error.is_empty():
+        load_error = native.load_error
+        return
+    for chapter in native.entries("chapter").values():
+        var chapter_id: String = str(chapter.get("id", ""))
+        if not _valid(chapter, director, characters) or chapters.has(chapter_id):
+            load_error = "Invalid or duplicate native chapter: " + chapter_id
             return
-        for chapter in native.entries("chapter").values():
-            var chapter_id: String = str(chapter.get("id",""))
-            if not _valid(chapter,director,characters) or chapters.has(chapter_id):
-                load_error = "Invalid or duplicate native chapter: " + chapter_id
-                return
-            chapters[chapter_id] = chapter.duplicate(true)
-            chapter_order.append(chapter_id)
-        # Entry sequence is content metadata, not a special-case JSON index.
-        chapter_order.sort_custom(func(a, b):
-            var left: int = int(chapters[a].get("order",100))
-            var right: int = int(chapters[b].get("order",100))
-            return str(a) < str(b) if left == right else left < right)
-    else:
-        # Explicit custom fixture roots remain useful for importer validation.
-        if not FileAccess.file_exists(index_path):
-            load_error = "Chapter index missing: " + index_path
-            return
-        var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path))
-        if not index is Dictionary or index.get("schema_version") != 1 or \
-                not index.get("chapters") is Array or index.chapters.is_empty():
-            load_error = "Invalid chapter index"
-            return
-        for entry in index.chapters:
-            if not entry is String or entry.contains("/") or entry.contains("..") or not entry.ends_with(".json"):
-                load_error = "Unsafe chapter file: " + str(entry)
-                return
-            var path: String = definition_root + entry
-            if not FileAccess.file_exists(path):
-                load_error = "Chapter file missing: " + path
-                return
-            var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-            if not _valid(data,director,characters) or chapters.has(str(data.get("id",""))):
-                load_error = "Invalid or duplicate chapter: " + str(entry)
-                return
-            chapters[str(data.id)] = data.duplicate(true)
-            chapter_order.append(str(data.id))
+        chapters[chapter_id] = chapter.duplicate(true)
+        chapter_order.append(chapter_id)
+    chapter_order.sort_custom(func(a, b):
+        var left: int = int(chapters[a].get("order", 100))
+        var right: int = int(chapters[b].get("order", 100))
+        return str(a) < str(b) if left == right else left < right)
     if chapter_order.is_empty():
         load_error = "No chapters registered"
         return
     for id in chapter_order:
-        var next_id: String = str(chapters[id].get("next_chapter_id",""))
+        var next_id: String = str(chapters[id].get("next_chapter_id", ""))
         if not next_id.is_empty() and (next_id == id or not chapters.has(next_id)):
             load_error = "Unknown or self-referencing next chapter: " + id
             return

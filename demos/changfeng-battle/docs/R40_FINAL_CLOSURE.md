@@ -1,5 +1,8 @@
 # R40 · 正式 Demo 入口收口与废弃实现清理
 
+> **历史审计记录**：以下“保留 JSON / LegacySkillAdapter”的描述记录的是 R40 当时状态。R41 已将这些兼容内容和源码删除，参阅 [R41 收口审计](R41_NATIVE_ONLY_CLOSURE.md)。PR #68 已合并到重构分支；R41 的新审查在 PR #69。
+
+
 ## 审计基线
 
 PR #68 的 `feature/r18-native-resource-content` 分支。正式启动 `project.godot` → `opening.tscn`；唯一战斗 `battle_hd2d.tscn`，唯一战斗规则权威 `BattleModel`。这不是并行新引擎，也没有恢复旧美术、旧 UI、3D 拼接地形或第二套卡牌结算。

@@ -3,7 +3,7 @@
 > 单一正式入口：`opening.tscn` → `battle_hd2d.tscn`；基础版本 `main@8d1486b4`，重构工作在 `refactor/battle-architecture-consolidation`（Draft PR #67）。
 > 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
-> **R40 现状（2026-11-01）**：正式内容统一从 `data/content_manifest.tres` 加载，包括十套武学、听风卡牌、技法、遭遇、GRID/FREE 地图、动作时间轴和导入用旧 ID 映射。原七份 `WuxiaDataDocument` 已迁移并删除，运行时不再使用旧 JSON。快捷入口同样通过原生 Encounter/CharacterFactory 与统一 SceneRouter，所有剧情/快捷遭遇地图均解析到原生 `.tres`。旧 PR57 独立寻路类已删除，剧中角色动画改用 AnimationPlayer，发布包排除历史 JSON。下文 R11–R15 的 JSON 索引图是历史阶段记录，**不是当前生产配置流程**。新内容制作请参阅 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
+> **R41 当前状态（2026-11-01）**：所有正式内容只从 `data/content_manifest.tres` 加载，包含武学、角色、装备、技法、章节、遭遇、GRID/FREE 地图和动作时间轴。仓库中的历史 `data/**/*.json`、旧武学 ID 映射 Resource、解析器及旧格式对照测试均已移除。自定义内容也必须使用 `.tres` manifest 和强类型 Resource。R40 已统一快捷/剧情入口、动画与空间服务。下文有关 JSON 索引的 R11–R15 文字仅是历史设计记录，**不是可使用的当前接口**。参阅 [R41 审计](R41_NATIVE_ONLY_CLOSURE.md) 和 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
 
 ## 运行结构
 
@@ -60,12 +60,12 @@ R8：`BattleWorld2D` 持有插画战场与视觉移动，`BattleHUDView` 持有�
 
 R9：SPACE 统一通过 `BattleSpatialFacade` 完成 FREE 落点、自动接近复核、强制轴向位移及 GRID 远程 LOS；AI 路径入口与同状态预览缓存也复用 facade。底层 FREE 为 `AStar2D` 可见性图。
 
-R10：新增 `BattleActionTimeline` 和 `data/action_timelines.json`，描述 startup/active/recovery、cancel/reaction/visual-invulnerable 窗口及 cue。**全部属于表现时序元数据**；目前仍由 BattleModel 先结算规则，再由 Presentation 消费语义事件。想实现真正的实时闪避/i-frame 必须扩展权威协议，不能直接让动画驱动修改状态。
+R10（历史阶段）：引入 `BattleActionTimeline`，现使用 `data/native/action_timelines/r32_default.tres`，描述 startup/active/recovery、cancel/reaction/visual-invulnerable 窗口及 cue。**全部属于表现时序元数据**；目前仍由 BattleModel 先结算规则，再由 Presentation 消费语义事件。想实现真正的实时闪避/i-frame 必须扩展权威协议，不能直接让动画驱动修改状态。
 
 
 ## R11–R15 内容扩展架构
 
-重构遵守「**静态定义 → 独立运行时 → 战斗规则结算 → 只读视图**」的单向边界。新增武学、Buff、角色和物品通常只增加 `data/` 内索引及定义文件，不应更改 `BattleModel` 的分支逻辑。
+重构遵守「**静态定义 → 独立运行时 → 战斗规则结算 → 只读视图**」的单向边界。新增武学、Buff、角色和物品只新增对应类型的 `.tres` 并注册到 `data/content_manifest.tres`，不应更改 `BattleModel` 的分支逻辑。
 
 ```mermaid
 flowchart TD

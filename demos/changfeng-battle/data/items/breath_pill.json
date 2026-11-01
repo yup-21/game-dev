@@ -1,5 +1,0 @@
-{
-  "schema_version": 1, "id": "breath_pill", "name": "回气丹",
-  "description": "恢复少量内息。", "kind": "consumable", "stack_limit": 20,
-  "effects": [{ "type": "gain_qi", "amount": 2 }]
-}

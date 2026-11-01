@@ -1,10 +1,9 @@
 extends SceneTree
-## Canonical content comes from .tres, while legacy JSON remains a read-only parity fixture.
-const Native = preload("res://scripts/content/content_registry.gd")
+## Check stable item and status behavior rather than comparing two views of one manifest.
 const Items = preload("res://scripts/item_catalog.gd")
 const Statuses = preload("res://scripts/status_catalog.gd")
 const Affixes = preload("res://scripts/equipment_affix_catalog.gd")
-var failures: int = 0
+var failures := 0
 
 func _initialize() -> void:
     call_deferred("_run")
@@ -12,54 +11,44 @@ func _initialize() -> void:
 func check(ok: bool, label: String) -> void:
     if not ok:
         failures += 1
-        printerr("R25 INVENTORY FAIL: " + label)
-
-func _same(a: Variant, b: Variant) -> bool:
-    if typeof(a) in [TYPE_INT, TYPE_FLOAT] and typeof(b) in [TYPE_INT, TYPE_FLOAT]:
-        return float(a) == float(b)
-    if a is Dictionary and b is Dictionary:
-        if a.size() != b.size(): return false
-        for key in a:
-            if not b.has(key) or not _same(a[key],b[key]): return false
-        return true
-    if a is Array and b is Array:
-        if a.size() != b.size(): return false
-        for i in range(a.size()):
-            if not _same(a[i],b[i]): return false
-        return true
-    return a == b
-
-func _check_legacy(kind: String, id: String, actual: Dictionary) -> void:
-    var path: String = "res://data/" + kind + "/" + id + ".json"
-    var source: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-    check(source is Dictionary, "legacy fixture parses " + path)
-    if not source is Dictionary: return
-    var shared: Dictionary = {}
-    for key in source:
-        shared[key] = actual.get(key)
-    check(_same(source,shared), "native Resource preserves gameplay fields " + id)
+        push_error("R25_INVENTORY: " + label)
 
 func _run() -> void:
-    var native = Native.new()
     var items = Items.new()
     var statuses = Statuses.new()
     var affixes = Affixes.new()
-    check(native.load_error.is_empty(), "manifest: " + native.load_error)
-    check(items.load_error.is_empty() and items.definitions.size() == 6,
-        "four legacy items plus two new items load natively: " + items.load_error)
-    check(statuses.load_error.is_empty() and statuses.definitions.size() == 3,
-        "legacy buff and new buffs load natively: " + statuses.load_error)
-    check(affixes.load_error.is_empty() and affixes.definitions.size() == 3,
-        "all original affixes load natively: " + affixes.load_error)
-    for id in ["river_sword","padded_armor","healing_powder","breath_pill"]:
-        check(native.entries("item").has(id), "native item registered " + id)
-        _check_legacy("items",id,items.get_item(id))
-    _check_legacy("buffs","iron_body",statuses.get_buff("iron_body"))
-    for id in ["keen_edge","quickstep","iron_guard"]:
-        check(native.entries("affix").has(id), "native affix registered " + id)
-        _check_legacy("affixes",id,affixes.get_affix(id))
-    check(items.get_item("river_sword").get("affix_pool",[]).has("keen_edge")
-        and affixes.get_affix("iron_guard").get("allowed_slots",[]).has("armor"),
-        "native affix references validate through ItemCatalog")
-    print("R25_NATIVE_INVENTORY_PASS failures=",failures)
-    quit(0 if failures == 0 else 1)
+    check(items.load_error.is_empty() and statuses.load_error.is_empty()
+        and affixes.load_error.is_empty(), "native item, buff and affix catalogs validate")
+    check(items.definitions.size() == 6 and statuses.definitions.size() == 3
+        and affixes.definitions.size() == 3, "authored content counts")
+
+    var sword: Dictionary = items.get_item("river_sword")
+    check(sword.get("kind") == "equipment" and sword.get("slot") == "weapon"
+        and sword.get("modifiers", []) == [{"stat":"attack", "op":"flat", "value":2}]
+        and sword.get("affix_pool", []) == ["keen_edge", "quickstep"]
+        and sword.get("max_affixes") == 1,
+        "river sword equipment and affix rules")
+    var medicine: Dictionary = items.get_item("healing_powder")
+    check(medicine.get("stack_limit") == 20
+        and medicine.get("effects", []) == [{"type":"heal_hp", "amount":5}],
+        "medicine restores five HP")
+    var pill: Dictionary = items.get_item("breath_pill")
+    check(pill.get("stack_limit") == 20
+        and pill.get("effects", []) == [{"type":"gain_qi", "amount":2}],
+        "breath pill restores two Qi")
+
+    var iron_body: Dictionary = statuses.get_buff("iron_body")
+    check(iron_body.get("stack_limit") == 2
+        and iron_body.get("expiry", {}) == {"kind":"global_ticks_after_apply", "duration":300}
+        and iron_body.get("modifiers", []) == [{"stat":"CON", "op":"flat", "value":2}],
+        "iron body stacking, duration and CON bonus")
+    var edge: Dictionary = affixes.get_affix("keen_edge")
+    check(edge.get("allowed_slots", []) == ["weapon"]
+        and edge.get("modifiers", []) == [{"stat":"attack", "op":"flat", "value":2}],
+        "keen edge weapon affix bonus")
+    var guard: Dictionary = affixes.get_affix("iron_guard")
+    check(guard.get("allowed_slots", []) == ["armor", "accessory"]
+        and guard.get("modifiers", []) == [{"stat":"defense", "op":"percent_bp", "value":1000}],
+        "iron guard defense affix bonus")
+    print("R25_NATIVE_INVENTORY_PASS failures=", failures)
+    quit(1 if failures else 0)

@@ -4,6 +4,7 @@ extends SceneTree
 const Model = preload("res://scripts/battle_model.gd")
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const Scenario = preload("res://scripts/scenario_director.gd")
+const Native = preload("res://scripts/content/content_registry.gd")
 const UNIT := 10000
 var checks := 0
 var failures := 0
@@ -45,8 +46,8 @@ func _run() -> void:
     var cat = SchoolCatalog.new()
     _check(cat.load_error.is_empty() and cat.options().size() >= 11,
         "ten distinct martial schools plus Tingfeng must remain available")
-    var source: Dictionary = JSON.parse_string(
-        FileAccess.get_file_as_string("res://data/tingfeng_cards.json"))
+    var source: Dictionary = Native.new().entries("rule_catalog").get(
+        "r37_tingfeng_cards", {}).get("data", {})
     var starters := 0
     for entry in source.deck.cards:
         starters += int(entry.count)

@@ -1,14 +1,14 @@
-# 长风战斗 Demo：Godot 原生内容制作流程（R18–R40）
+# 长风战斗 Demo：Godot 原生内容制作流程（R18–R41）
 
-本分支正式内容使用 `.tres`、`.tscn`、Godot 导入的贴图/音频；**新内容不需要也不应创建 JSON 文件**。旧 `data/*.json` 只用于回归对照与自定义旧格式测试，正式目录已经由 `data/content_manifest.tres` 统一引用。
+本分支正式内容使用 `.tres`、`.tscn`、Godot 导入的贴图/音频；**新内容不需要也不应创建 JSON 文件**。旧 `data/**/*.json`、导入映射及正式模块的 JSON 解析分支已在 R41 删除。内容目录由 `data/content_manifest.tres` 统一引用；新增内容必须使用强类型 Resource。
 
 ## 添加角色、门派、装备与状态
 
 1. 在 Godot Inspector 中新建对应 Resource：`WuxiaCharacterDefinition`、`WuxiaSchoolDefinition`、`WuxiaSkillDefinition`、`WuxiaTechniqueDefinition`、`WuxiaItemDefinition`、`WuxiaBuffDefinition` 或 `WuxiaAffixDefinition`。
 2. 保存到 `demos/changfeng-battle/data/native/` 下的领域目录，配置唯一 `content_id`；把新资源拖入 `data/content_manifest.tres` 中相应的数组。
 3. 门派卡牌的核心招式、派生招式、卡组、技法节点由 Resource 相互引用；入队角色的 `learned_schools` 与开局装备由角色资源定义。
-4. R40 起动作时间轴、技法、遭遇（含快捷战斗）、GRID 地图、十套武学与听风卡牌全部通过原生 Resource 注册；旧技能 ID 仅由显式导入器解释。原来的 `data/native/documents/` 通用数据容器已删除，`battle_spatial_waypoint.gd` 旧寻路实现也已移除。
-5. `data/*.json` 及 `assets/production_manifest.json` 为仓库内静态回归 fixture，**不会被 Windows/Linux 发布包导出**。导出工作流对打包后的内容执行“无历史 JSON + 所有核心原生 Resource 可访问”双向验证。
+4. 动作时间轴、技法、遭遇（含快捷战斗）、GRID 地图、十套武学与听风卡牌全部通过原生 Resource 注册。R41 已删除旧技能 ID 导入器、历史 JSON 和 `data/native/documents/` 通用容器；`battle_spatial_waypoint.gd` 旧寻路实现也已移除。
+5. **历史内容 JSON 已从源码删除**；`assets/production_manifest.json` 仅是离线美术来源/授权审计文件，**不会被 Windows/Linux 发布包导出**。导出工作流验证“无旧 JSON + 所有核心原生 Resource 可访问”。
 
 ## 剧情、招募与战斗衔接
 
@@ -28,7 +28,7 @@
 
 1. 贴图、场景和音效用 `WuxiaAssetDefinition` 注册 `resource`、`asset_kind`、所属角色/事件、帧数，以及 `source` 和 `rights`。角色图集为 **6 列 × 4 行**。加入 `content_manifest.tres.assets` 后可由 `AssetRegistry` 自动解析。
 2. 没有确认权属的原画保持 `status=candidate`、`rights=owner_review_required`；**禁止擅自标为 `approved`**。
-3. CI 应通过 Modular、HUD（含原 Kenney 美术验证、R32 时间轴与 R39 全内容测试）和 Export 三条工作流；R31 已删除重复 Kenney 截图工作流。
+3. CI 应通过 Modular、HUD（含 Kenney 美术验证、R32 时间轴与 R25 原生内容测试）和 Export 三条工作流；R31 已删除重复 Kenney 截图工作流。
 4. 合并前必须在 Godot Editor 手工检查：Inspector 资源编辑/保存；地图画笔交互与坐标；剧情 UI 对话及触发范围；角色 24 姿态、方向、遮挡与特效；Windows/Linux 导出实际打开与体验；所有第三方素材的授权与来源。自动测试不代表已完成这些主观或法律审查。
 
 ## 回归命令
@@ -44,6 +44,5 @@ godot --headless --script res://checks/test_r26_story_recruitment.gd
 godot --headless --script res://checks/test_r27_authoring_pipeline.gd
 godot --headless --script res://checks/test_r32_native_action_timeline.gd
 godot --headless --script res://checks/test_r24_content_closure.gd
-godot --headless --script res://checks/test_r39_content_cleanup.gd
 godot --headless --script res://checks/test_r40_native_entry_closure.gd
 ```

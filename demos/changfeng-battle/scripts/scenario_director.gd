@@ -7,27 +7,17 @@ var characters = CharacterRegistry.new()
 var encounters: Dictionary = {}
 var load_error: String = ""
 
-func _init(path: String = DEFAULT_PATH) -> void:
+func _init(manifest_path: String = DEFAULT_PATH) -> void:
 	if not characters.load_error.is_empty():
-		load_error=characters.load_error
+		load_error = characters.load_error
 		return
-	if path != DEFAULT_PATH and not FileAccess.file_exists(path):
-		load_error="Encounter catalog missing: "+path
-		return
-	var parsed: Variant = {"schema_version":1,"encounters":[]} if path == DEFAULT_PATH else JSON.parse_string(FileAccess.get_file_as_string(path))
-	if not parsed is Dictionary or parsed.get("schema_version")!=1 or not parsed.get("encounters") is Array:
-		load_error="Invalid encounter catalog"
-		return
-	for entry in parsed.encounters:
-		if not _register_entry(entry): return
-	# Custom encounter fixtures remain independent of production native content.
-	if path != DEFAULT_PATH: return
-	var native = Native.new()
+	var native = Native.new(manifest_path)
 	if not native.load_error.is_empty():
 		load_error = native.load_error
 		return
 	for entry in native.entries("encounter").values():
-		if not _register_entry(entry, native): return
+		if not _register_entry(entry, native):
+			return
 
 func _register_entry(entry: Variant, native = null) -> bool:
 	if not entry is Dictionary or not entry.get("id") is String or str(entry.id).is_empty() or encounters.has(entry.id):
@@ -101,7 +91,7 @@ func _valid_integer(value: Variant) -> bool:
 func encounter(id: String) -> Dictionary:
 	return encounters.get(id,{}).duplicate(true)
 
-## The only map lookup for both native and explicit fixture encounters.
+## The only map lookup for registered native encounters.
 ## Never reconstruct a filename or permit unregistered production maps.
 func _resolved_map_path(definition: Dictionary) -> String:
 	var authored_path: String = str(definition.get("map_definition_path",""))

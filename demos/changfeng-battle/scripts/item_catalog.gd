@@ -3,61 +3,25 @@ extends RefCounted
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 const Affixes = preload("res://scripts/equipment_affix_catalog.gd")
 const NativeContent = preload("res://scripts/content/content_registry.gd")
-const DEFAULT_INDEX = "res://data/items/index.json"
 const SLOTS = ["weapon","armor","accessory"]
 const CONSUMABLE_EFFECTS = ["heal_hp","gain_qi","add_shield"]
 var definitions: Dictionary = {}
 var affixes
 var load_error: String = ""
 
-func _init(index_path: String = DEFAULT_INDEX, affix_catalog = null,
-        native_manifest_path: String = "res://data/content_manifest.tres") -> void:
+func _init(manifest_path: String = NativeContent.DEFAULT_MANIFEST, affix_catalog = null) -> void:
     affixes = Affixes.new() if affix_catalog == null else affix_catalog
     if not affixes.load_error.is_empty():
         load_error = affixes.load_error
         return
-    if index_path == DEFAULT_INDEX and native_manifest_path == NativeContent.DEFAULT_MANIFEST:
-        var native = NativeContent.new(native_manifest_path)
-        if not native.load_error.is_empty():
-            load_error = native.load_error
-            return
-        for definition in native.entries("item").values():
-            if not _valid(definition) or definitions.has(str(definition.id)):
-                load_error = "Invalid or duplicate native item"
-                definitions.clear()
-                return
-            definitions[str(definition.id)] = definition.duplicate(true)
-        return
-    if not FileAccess.file_exists(index_path):
-        load_error = "Item index missing: " + index_path
-        return
-    var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path))
-    if not index is Dictionary or index.get("schema_version") != 1 or not index.get("items") is Array:
-        load_error = "Invalid item index"
-        return
-    var base: String = index_path.get_base_dir() + "/"
-    for filename in index.items:
-        if not filename is String or filename.contains("/") or filename.contains("..") or not filename.ends_with(".json"):
-            load_error = "Unsafe item file name"
-            return
-        var file_path: String = base + filename
-        if not FileAccess.file_exists(file_path):
-            load_error = "Missing item definition: " + filename
-            return
-        var definition: Variant = JSON.parse_string(FileAccess.get_file_as_string(file_path))
-        if not _valid(definition) or definitions.has(str(definition.id)):
-            load_error = "Invalid or duplicated item definition: " + filename
-            return
-        definitions[str(definition.id)] = definition.duplicate(true)
-
-
-    var native = NativeContent.new(native_manifest_path)
+    var native = NativeContent.new(manifest_path)
     if not native.load_error.is_empty():
         load_error = native.load_error
         return
     for definition in native.entries("item").values():
         if not _valid(definition) or definitions.has(str(definition.id)):
-            load_error = "Invalid or duplicate native item: " + str(definition.get("id", ""))
+            load_error = "Invalid or duplicate native item"
+            definitions.clear()
             return
         definitions[str(definition.id)] = definition.duplicate(true)
 

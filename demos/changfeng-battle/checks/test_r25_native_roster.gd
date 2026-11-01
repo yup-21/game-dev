@@ -1,9 +1,14 @@
 extends SceneTree
-## R25: canonical roster must load from native Resources, with exact old profile semantics.
-const Native = preload("res://scripts/content/content_registry.gd")
+## Stable, independent expectations for important authored character cards.
 const Registry = preload("res://scripts/character_registry.gd")
 const Factory = preload("res://scripts/character_factory.gd")
-var failures: int = 0
+const EXPECTED: Dictionary = {
+    "shen_changfeng": {"name":"沈长风", "actor":0, "school":"wind_sword", "STR":12, "AGI":12},
+    "gu_qingshuang": {"name":"顾清霜", "actor":2, "school":"tide", "STR":9, "AGI":12},
+    "pursuer_captain": {"name":"追镖首领", "actor":1, "school":"saber", "STR":13, "AGI":9},
+    "river_messenger": {"name":"河渡信使", "actor":-1, "school":"", "STR":8, "AGI":13}
+}
+var failures := 0
 
 func _initialize() -> void:
     call_deferred("_run")
@@ -11,43 +16,32 @@ func _initialize() -> void:
 func check(ok: bool, label: String) -> void:
     if not ok:
         failures += 1
-        printerr("R25 ROSTER FAIL: " + label)
+        push_error("R25_ROSTER: " + label)
 
 func _run() -> void:
-    var n = Native.new()
-    var r = Registry.new()
-    check(n.load_error.is_empty() and r.load_error.is_empty(),
-        "canonical native manifest and registry load")
-    var expected: Array[String] = ["gu_qingshuang","green_wanderer",
-        "pursuer_captain","black_blade","night_assassin","escort_elder","river_messenger"]
-    check(n.entries("character").size() >= 9,
-        "all eight original characters plus the R24 recruit are native")
-    for id in expected:
-        var source_path: String = "res://data/characters/" + id + ".json"
-        var source: Variant = JSON.parse_string(FileAccess.get_file_as_string(source_path))
-        var actual: Dictionary = r.get_profile(id)
-        check(n.entries("character").has(id) and not actual.is_empty(),
-            "native replacement exists for " + id)
-        if not source is Dictionary or actual.is_empty(): continue
-        for key in ["id","battle_actor_id","name","title","role","faction",
-                "team_hint","weapon","personality","biography","school_id",
-                "techniques","learned_schools","art"]:
-            check(source.get(key) == actual.get(key),
-                "field parity " + id + "." + key)
-        for stat in ["STR","AGI","CON","MND"]:
-            check(int(source.attributes[stat]) == int(actual.attributes[stat]),
-                "attribute parity " + id + "." + stat)
-        for passive in ["insight","conceal"]:
-            check(int(source.passives[passive]) == int(actual.passives[passive]),
-                "passive parity " + id + "." + passive)
-    check(r.for_actor(0).get("id") == "shen_changfeng" and
-        r.for_actor(5).get("id") == "night_assassin",
-        "actor 0..5 bindings preserved")
-    var factory = Factory.new()
-    check(factory.create_runtime("gu_qingshuang") != null and
-        factory.create_runtime("pursuer_captain") != null,
-        "migrated allies and enemies still construct through CharacterFactory")
-    check(r.get_profile("r24_lan_chen").get("id") == "r24_lan_chen",
-        "new native recruit remains registered")
-    print("R25_NATIVE_ROSTER_PASS failures=",failures)
-    quit(0 if failures == 0 else 1)
+    var registry = Registry.new()
+    check(registry.load_error.is_empty() and registry.profiles.size() >= 9
+        and registry.actor_ids().size() == 6, "native roster and six battle actors load")
+    for id in EXPECTED:
+        var wanted: Dictionary = EXPECTED[id]
+        var profile: Dictionary = registry.get_profile(str(id))
+        check(profile.get("name", "") == wanted.name
+            and profile.get("school_id", "") == wanted.school
+            and int(profile.get("battle_actor_id", -99)) == wanted.actor,
+            "fixed character identity and school: " + str(id))
+        var attributes: Dictionary = profile.get("attributes", {})
+        check(attributes.get("STR") == wanted.STR and attributes.get("AGI") == wanted.AGI,
+            "fixed starting attributes: " + str(id))
+        if wanted.actor >= 0:
+            check(registry.for_actor(wanted.actor).get("id", "") == id,
+                "battle slot resolves character: " + str(id))
+        else:
+            check(profile.get("learned_schools", []) == [],
+                "noncombatant has no learned combat school")
+    check(registry.get_profile("r24_lan_chen").get("id", "") == "r24_lan_chen",
+        "authored recruit remains available")
+    var factory = Factory.new(registry)
+    for id in ["shen_changfeng", "gu_qingshuang", "pursuer_captain", "r24_lan_chen"]:
+        check(factory.create_runtime(id) != null, "character instantiates: " + id)
+    print("R25_NATIVE_ROSTER_PASS failures=", failures)
+    quit(1 if failures else 0)

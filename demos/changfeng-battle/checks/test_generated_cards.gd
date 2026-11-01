@@ -1,5 +1,67 @@
 extends SceneTree
 const Model = preload("res://scripts/battle_model.gd")
+const CARD_FIXTURE: Dictionary = {
+  "cards": [
+    {
+      "id": "test_parent",
+      "name": "Entry",
+      "relations": {
+        "children": [
+          "test_token"
+        ],
+        "related": []
+      },
+      "usages": [
+        {
+          "id": "make",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 0
+          },
+          "target": {
+            "kind": "self"
+          },
+          "effects": [
+            {
+              "type": "grant_card",
+              "card_id": "test_token",
+              "destination": "hand",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "test_token",
+      "name": "Token",
+      "lifecycle": "exile_on_finish",
+      "relations": {
+        "parent": "test_parent",
+        "children": [],
+        "related": []
+      },
+      "usages": [
+        {
+          "id": "use",
+          "timing": "ACTION",
+          "cost": {
+            "qi": 0
+          },
+          "target": {
+            "kind": "self"
+          },
+          "effects": [
+            {
+              "type": "gain_qi",
+              "amount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 var failed: int=0
 
 func _initialize() -> void:
@@ -17,17 +79,17 @@ func finish() -> void:
 	quit(1 if failed>0 else 0)
 
 func check_retention_durations(model, base: Dictionary) -> void:
-	var json_values: Array = JSON.parse_string("[0,2,20,21,-1,2.5]")
+	var json_values: Array = [0.0, 2.0, 20.0, 21.0, -1.0, 2.5]
 	var cases: Array = [
 		[0,true,"integer zero"],
 		[2,true,"integer two"],
 		[20,true,"integer upper boundary"],
-		[json_values[0],true,"JSON zero"],
-		[json_values[1],true,"JSON two"],
-		[json_values[2],true,"JSON upper boundary"],
-		[json_values[3],false,"JSON above upper boundary"],
-		[json_values[4],false,"JSON negative integer"],
-		[json_values[5],false,"JSON fraction"],
+		[json_values[0],true,"float zero"],
+		[json_values[1],true,"float two"],
+		[json_values[2],true,"float upper boundary"],
+		[json_values[3],false,"float above upper boundary"],
+		[json_values[4],false,"float negative integer"],
+		[json_values[5],false,"float fraction"],
 		[21,false,"integer above upper boundary"],
 		[-1,false,"negative integer"],
 		[-0.5,false,"negative fraction"],
@@ -61,7 +123,7 @@ func submit(model, uid: String, usage: String) -> bool:
 	return false
 
 func run() -> void:
-	var data=JSON.parse_string(FileAccess.get_file_as_string("res://checks/fixtures/generated_cards.json"))
+	var data: Dictionary = CARD_FIXTURE.duplicate(true)
 	if not check(data is Dictionary and data.get("cards") is Array,"generated fixture parsed"):
 		finish()
 		return
@@ -97,12 +159,12 @@ func run() -> void:
 	for uid in zones: seen[uid]=true
 	check(zones.size()==seen.size() and zones.size()==before+2,"dynamic card count conserved over all zones")
 	check(model.cards.registry.related(model.cards.definitions,"test_parent","children").has("test_token"),"definition-level child references retained")
-	var retained=JSON.parse_string(FileAccess.get_file_as_string("res://checks/fixtures/generated_cards.json")).cards[1].duplicate(true)
+	var retained: Dictionary = CARD_FIXTURE.cards[1].duplicate(true)
 	retained.id="test_retained"
 	retained.name="Retained token"
 	retained.relations={"parent":"","children":[],"related":[]}
-	retained.retain_own_actions=JSON.parse_string("{\"retain_own_actions\":2}").retain_own_actions
-	check(retained.retain_own_actions is float,"retention duration is a JSON number")
+	retained.retain_own_actions=2.0
+	check(retained.retain_own_actions is float,"retention duration supports integral floats")
 	if not check(model.cards.register_definition(retained),"retention definition registered"):
 		finish()
 		return

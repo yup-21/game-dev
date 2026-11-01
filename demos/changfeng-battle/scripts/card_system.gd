@@ -18,16 +18,16 @@ var effect_handlers = EffectHandlers.new()
 var instances: Dictionary:
 	get: return state.card_instances
 
-func _init(battle_state, path: String = SchoolCatalog.DEFAULT_TINGFENG, school_selection: Dictionary = {}, learned_selection: Dictionary = {}) -> void:
+func _init(battle_state, manifest_path: String = NativeContent.DEFAULT_MANIFEST, school_selection: Dictionary = {}, learned_selection: Dictionary = {}) -> void:
 	state=battle_state
 	if not effect_handlers.load_error.is_empty():
 		load_error=effect_handlers.load_error
 		return
-	var data: Variant
-	if path in [SchoolCatalog.DEFAULT_TINGFENG, "res://data/tingfeng_cards.json"]:
-		data = NativeContent.new().entries("rule_catalog").get("r37_tingfeng_cards", {}).get("data", {})
-	else:
-		data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var native = NativeContent.new(manifest_path)
+	if not native.load_error.is_empty():
+		load_error = native.load_error
+		return
+	var data: Variant = native.entries("rule_catalog").get("r37_tingfeng_cards", {}).get("data", {})
 	if not data is Dictionary:
 		load_error="无法读取听风卡牌配置"
 		return
@@ -51,16 +51,12 @@ func _init(battle_state, path: String = SchoolCatalog.DEFAULT_TINGFENG, school_s
 			return
 	# Resource definitions share the manifest, but each battle indexes only
 	# skills from schools its actors have learned (same rule as legacy forms).
-	var native = NativeContent.new()
-	if not native.load_error.is_empty():
-		load_error = native.load_error
-		return
 	deck=data.get("deck",{}).get("cards",[]).duplicate(true)
 	combos=data.get("combos",[]).duplicate(true)
 	for entry in deck:
 		if not definitions.has(entry.get("card_id","")) or not whole(entry.get("count"),1) or bool(definitions[str(entry.card_id)].get("generated_only",false)):
 			load_error="牌组引用不合法（衍生卡不得进入起始牌组）"
-	catalog=SchoolCatalog.new()
+	catalog=SchoolCatalog.new(manifest_path)
 	if not catalog.load_error.is_empty():
 		load_error=catalog.load_error
 		return

@@ -21,59 +21,41 @@ func finish(session) -> void:
 	session.free()
 	quit(1 if failures>0 else 0)
 
-func load_numeric_catalog(entry: Dictionary):
-	var path: String="user://demo_flow_numeric_test.json"
-	var file=FileAccess.open(path,FileAccess.WRITE)
-	if file==null:
-		check(false,"numeric test catalog can be written")
-		return null
-	file.store_string(JSON.stringify({"schema_version":1,"encounters":[entry]}))
-	file.close()
-	var director=Director.new(path)
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-	return director
-
 func check_numeric_catalog(director) -> void:
-	var original: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/demo_scenario.json")).encounters[0]
-	var normalized: Dictionary=director.encounter(str(original.id))
-	check(original.seed is float and normalized.seed is int and normalized.seed==2026,"JSON seed is normalized without changing its value")
-	var integers: bool=true
-	for actor in director.battle_options(str(original.id)).combatants:
-		integers=integers and actor.id is int and actor.team_id is int and actor.cell[0] is int and actor.cell[1] is int
-	check(integers,"JSON actor IDs, teams and coordinates become integers")
-	for value in [0,-2026]:
-		var entry: Dictionary=original.duplicate(true)
-		entry.seed=value
-		var accepted=load_numeric_catalog(entry)
-		check(accepted!=null and accepted.load_error.is_empty() and accepted.encounter(str(entry.id)).seed==value,"integer seed accepted: "+str(value))
-	check(director._valid_integer(-9223372036854775808.0),"minimum int64 float can be normalized")
-	check(not director._valid_integer(9223372036854775808.0),"float at int64 upper limit is rejected before conversion")
-	for value in [NAN,INF,-INF]:
-		check(not director._valid_integer(value),"non-finite numeric value rejected: "+str(value))
-	var cases: Array=[
-		[0.5,"fraction"],[-0.5,"negative fraction"],
-		["2","numeric string"],[true,"boolean"],[null,"null"],
-		[[],"array"],[{},"dictionary"],
-		[1e20,"positive overflow"],[-1e20,"negative overflow"],
-	]
-	for test_case in cases:
-		var unexpected: Array=[]
-		for field in ["seed","id","team_id","cell_x","cell_y"]:
-			var entry: Dictionary=original.duplicate(true)
-			if field=="seed": entry.seed=test_case[0]
-			elif field in ["id","team_id"]: entry.combatants[0][field]=test_case[0]
-			else: entry.combatants[0].cell[0 if field=="cell_x" else 1]=test_case[0]
-			var rejected=load_numeric_catalog(entry)
-			if rejected==null or rejected.load_error.is_empty() or not rejected.encounter(str(entry.id)).is_empty(): unexpected.append(field)
-		check(unexpected.is_empty(),"JSON rejects "+test_case[1]+" in all integer fields: "+str(unexpected))
-	var overlapping: Dictionary=original.duplicate(true)
-	overlapping.combatants[1].cell=overlapping.combatants[0].cell.duplicate()
-	var semantic=load_numeric_catalog(overlapping)
-	check(semantic!=null and semantic.load_error.is_empty(),"scenario normalization leaves battle rules to BattleModel")
-	if semantic!=null and semantic.load_error.is_empty():
-		var game=Model.new()
-		game.reset(int(semantic.encounter(str(original.id)).seed),0,"tingfeng",semantic.battle_options(str(original.id)))
-		check(game.state.mode=="FINISHED" and not game.state.party_error.is_empty(),"BattleModel rejects overlapping JSON spawn cells")
+    var original: Dictionary = director.encounter("escort_ambush")
+    check(not original.is_empty(), "typed encounter exists")
+    check(original.seed is int and original.seed == 2026,
+        "native Resource preserves integer encounter seed")
+    var valid: bool = true
+    for actor in director.battle_options("escort_ambush").get("combatants", []):
+        valid = valid and actor.id is int and actor.team_id is int
+        valid = valid and actor.cell[0] is int and actor.cell[1] is int
+    check(valid, "typed actor IDs, teams and coordinates are integers")
+    for value in [0,-2026]:
+        var entry: Dictionary = original.duplicate(true)
+        entry.id = "r41_numeric_" + str(absi(value))
+        entry.seed = value
+        var accepted = Director.new()
+        check(accepted._register_entry(entry) and accepted.encounter(str(entry.id)).seed == value,
+            "integer seed accepted: " + str(value))
+    check(director._valid_integer(-9223372036854775808.0),
+        "minimum int64 normalized")
+    check(not director._valid_integer(9223372036854775808.0),
+        "upper int64 rejected")
+    for value in [NAN, INF, -INF, 0.5, "2", true]:
+        check(not director._valid_integer(value),
+            "invalid numeric content rejected")
+    var overlapping: Dictionary = original.duplicate(true)
+    overlapping.id = "r41_overlap"
+    overlapping.combatants[1].cell = overlapping.combatants[0].cell.duplicate()
+    var semantic = Director.new()
+    check(semantic._register_entry(overlapping),
+        "encounter schema validates independently of combat rules")
+    var game = Model.new()
+    game.reset(int(overlapping.seed),0,"tingfeng",
+        semantic.battle_options("r41_overlap"))
+    check(game.state.mode=="FINISHED" and not game.state.party_error.is_empty(),
+        "BattleModel rejects overlapping authored spawn cells")
 
 func _run() -> void:
 	var session=Session.new()

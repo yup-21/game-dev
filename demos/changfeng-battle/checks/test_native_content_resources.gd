@@ -1,12 +1,11 @@
 extends SceneTree
-## R18: author a character, buff and item with .tres only; exercise old runtime.
+## R18: load typed character, buff and item cards; reject invalid manifests atomically.
 const NativeContent = preload("res://scripts/content/content_registry.gd")
 const ContentManifest = preload("res://scripts/content/content_manifest.gd")
 const CharacterDefinition = preload("res://scripts/content/character_definition.gd")
 const CharacterRegistry = preload("res://scripts/character_registry.gd")
 const StatusCatalog = preload("res://scripts/status_catalog.gd")
 const ItemCatalog = preload("res://scripts/item_catalog.gd")
-const CharacterRuntime = preload("res://scripts/character_runtime.gd")
 
 const FIXTURE = "res://data/native_examples.tres"
 var failures: int = 0
@@ -31,9 +30,8 @@ func _run() -> void:
     var items: Dictionary = native.entries("item")
     check(items.has("r18_field_medicine"), "typed consumable registered")
 
-    # Test native additions with the actual catalogs; legacy definitions remain intact.
-    var characters = CharacterRegistry.new("res://data/characters/index.json",
-        "res://data/characters/", FIXTURE)
+    # Test optional native manifests through the same production catalogs.
+    var characters = CharacterRegistry.new(FIXTURE)
     check(characters.load_error.is_empty(), "character schema and school references pass")
     check(characters.get_profile("shen_changfeng").get("id") == "shen_changfeng",
         "existing character stays available")
@@ -41,14 +39,12 @@ func _run() -> void:
     check(battle_options.get("character_ids", {}).get(81, "") == "r18_guest_swordsman",
         "native character enters existing battle options without core edits")
 
-    var statuses = StatusCatalog.new(StatusCatalog.DEFAULT_INDEX, FIXTURE)
+    var statuses = StatusCatalog.new(FIXTURE)
     check(statuses.load_error.is_empty() and statuses.get_buff("r18_steady_breath").get("stack_limit") == 2,
         "native buff passes existing status validation")
-    var catalog = ItemCatalog.new(ItemCatalog.DEFAULT_INDEX, null, FIXTURE)
+    var catalog = ItemCatalog.new(FIXTURE)
     check(catalog.load_error.is_empty() and catalog.get_item("r18_field_medicine").get("kind") == "consumable",
         "native item passes existing item validation")
-    # The default production manifest is empty while the old dataset migrates.
-    check(ItemCatalog.new().definitions.size() >= 4, "legacy default catalog count preserved")
 
     var malformed = ContentManifest.new()
     var incomplete = CharacterDefinition.new()

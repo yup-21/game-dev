@@ -23,18 +23,16 @@ var area_bounds: Rect2 = Rect2()
 var error: String = ""
 
 func _init(path: String = DEFAULT_PATH) -> void:
-    if path.ends_with(".tres"):
-        var grid_resource: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
-        if grid_resource is WuxiaGridMapDefinition:
-            _load_grid_record(grid_resource.to_record(), path)
-        else:
-            _load_native(path)
+    if not path.ends_with(".tres") or not ResourceLoader.exists(path):
+        error = "Native map Resource missing: " + path
         return
-    if path.is_empty() or not FileAccess.file_exists(path):
-        error = "Missing baked map: " + path
-        return
-    var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-    _load_grid_record(data, path)
+    var grid_resource: Resource = ResourceLoader.load(path)
+    if grid_resource is WuxiaGridMapDefinition:
+        _load_grid_record(grid_resource.to_record(), path)
+    elif grid_resource is WuxiaMapDefinition:
+        _load_native(path)
+    else:
+        error = "Invalid native map Resource: " + path
 
 func _load_grid_record(data: Variant, path: String) -> void:
     if not data is Dictionary or int(data.get("schema_version",0))!=1:
@@ -128,8 +126,8 @@ func baked_terrain() -> Dictionary:
     return terrain.duplicate(true)
 
 ## R23: a freeform painted polygon map also supplies a conservative 15x10
-## compatibility index for legacy GRID battle interfaces. FREE collision does
-## not use this index; the authored vertices are authoritative.
+## Conservative GRID terrain index for painted maps; FREE collision uses
+## the original authored polygon geometry.
 func _load_native(path: String) -> void:
     var resource: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
     if not resource is WuxiaMapDefinition:
