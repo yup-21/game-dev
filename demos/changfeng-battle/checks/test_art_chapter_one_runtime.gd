@@ -66,6 +66,8 @@ func _run() -> void:
     var opening: Node = load("res://opening.tscn").instantiate()
     root.add_child(opening)
     await process_frame
+    opening.call("_enter_new_game")
+    await process_frame
     for name in ["FirstActPaintedBackground", "FirstActGroundArt",
                  "FirstActForegroundClip", "FirstActWeatherClip"]:
         if opening.get_node_or_null(name) == null:

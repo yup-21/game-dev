@@ -193,6 +193,21 @@ func _enter_new_game() -> void:
 	var session=_session()
 	if session!=null: session.start_new_game()
 	_load_chapter_content()
+	# The menu can start without an active chapter. Rebuild from the newly
+	# selected native chapter every time New Game is invoked.
+	for layer in temple_underlays:
+		layer.free()
+	for layer in temple_overlays:
+		layer.free()
+	temple_underlays.clear()
+	temple_overlays.clear()
+	story_weather_layer = null
+	if temple_picture != null:
+		temple_picture.free()
+		temple_picture = null
+	_load_temple_background()
+	_build_temple_picture()
+	_build_temple_layers()
 	story.begin()
 	cinematic_elapsed = 0.0
 	visible_characters = 0.0
