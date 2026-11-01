@@ -517,11 +517,15 @@ func _signature(plans: Array[Dictionary]) -> String:
 
 
 func _review() -> void:
-    _review_entries([_current_entry()])
+    var entries: Array[Dictionary] = [_current_entry()]
+    _review_entries(entries)
 
 
 func _review_batch() -> void:
-    _review_entries(queue.duplicate(true))
+    var entries: Array[Dictionary] = []
+    for entry in queue:
+        entries.append(entry.duplicate(true))
+    _review_entries(entries)
 
 
 func _review_entries(entries: Array[Dictionary]) -> void:
