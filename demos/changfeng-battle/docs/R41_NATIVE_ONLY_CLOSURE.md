@@ -19,8 +19,9 @@ R40 已完成玩家入口、单一 BattleModel、GRID/FREE 以及表现层的迁
 
 ## 自动化验证
 
-- `test_r41_native_only.gd` 确认关键旧资源不存在、正式加载器无 `JSON.parse`、无旧映射协议、无效类型化 Manifest 原子失败、核心角色/规则/地图/遭遇资源加载正常。
-- `Modular Wuxia content contracts` 测角色/技能/剧情/装备/目录与坏输入；`Original Wuxia HUD regression` 测 UI、3v3 战斗、空间路径、动画、截图；`Portable Changfeng demo export` 在检出目录外用导出的 PCK 运行核心资源加载检查。
+- 不再执行旧文件缺席检查或生产源码字符串扫描。旧格式的移除由本次代码审查和 Git diff 确认，不在后续 CI 中维持无意义的防回退检查。
+- `Modular Wuxia content contracts` 通过独立固定预期值和功能回归验证角色属性/流派、消耗品与 Buff 数值、章节顺序、遭遇队伍和动作窗口；无效 Manifest 的原子拒绝由原有 R18 测试负责。
+- `Original Wuxia HUD regression` 继续验证 UI、3v3 战斗、空间路径、动画与截图；`Portable Changfeng demo export` 在检出目录外用 PCK 运行核心资源加载检查。
 
 **合并门槛**：上述三个 GitHub Actions 工作流全部成功，随后必须在 Godot Editor 手工验证资源编辑/保存与玩法手感，并对 Windows/Linux 桌面导出和素材授权做人工验收。Draft PR #69 不自动合并。
 

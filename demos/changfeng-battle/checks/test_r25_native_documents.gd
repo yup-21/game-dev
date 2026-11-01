@@ -20,17 +20,32 @@ func _run() -> void:
     check(native.load_error.is_empty(), "manifest validates: " + native.load_error)
     check(native.entries("rule_catalog").size() == 2
         and native.entries("technique").has("tf_change_stage"), "typed rulebooks and stage graphs")
-    for id in ["rain_escort_prologue", "river_watch"]:
+    # These values are intentionally independent of the same manifest's lookup.
+    var chapters_expected: Dictionary = {
+        "rain_escort_prologue": {
+            "story":"rain_escort_prologue_story", "encounter":"escort_ambush",
+            "next":"river_watch", "npc":"escort_elder"
+        },
+        "river_watch": {
+            "story":"river_watch_story", "encounter":"river_watch_ambush",
+            "next":"", "npc":"river_messenger"
+        }
+    }
+    for id in chapters_expected:
+        var wanted: Dictionary = chapters_expected[id]
         var chapter: Dictionary = native.entries("chapter").get(id, {})
-        check(not chapter.is_empty() and native.entries("encounter").has(str(chapter.get("encounter_id", ""))),
-            "chapter encounter binding " + id)
-        check(native.entries("story").has(str(chapter.get("story_id", ""))),
-            "chapter story binding " + id)
-    for id in ["escort_ambush", "river_watch_ambush"]:
+        check(chapter.get("story_id") == wanted.story
+            and chapter.get("encounter_id") == wanted.encounter
+            and chapter.get("next_chapter_id") == wanted.next,
+            "fixed chapter story, battle and progression: " + str(id))
+        check(chapter.get("scene", {}).get("npc_character_id") == wanted.npc,
+            "fixed chapter NPC: " + str(id))
+    for id in {"escort_ambush":2026, "river_watch_ambush":2031}:
         var encounter: Dictionary = native.entries("encounter").get(id, {})
-        check(encounter.get("combatants", []).size() == 6
-            and native.entries("map").has(str(encounter.get("map_id", ""))),
-            "six-person encounter and registered map: " + id)
+        check(encounter.get("seed") == {"escort_ambush":2026, "river_watch_ambush":2031}[id]
+            and encounter.get("combatants", []).size() == 6
+            and encounter.get("map_id") == "rainy_bridge",
+            "fixed six-actor encounter, seed and map: " + str(id))
     var map_record: Dictionary = native.entries("map").get("rainy_bridge", {})
     check(map_record.get("grid", {}).get("columns") == 15
         and map_record.get("grid", {}).get("rows") == 10
@@ -43,8 +58,15 @@ func _run() -> void:
     var story = Story.new()
     var map = Map.new()
     var timeline = Timeline.new()
-    check(schools.load_error.is_empty() and schools.forms.size() == 20,
-        "original martial card semantics registered")
+    check(schools.load_error.is_empty() and schools.forms.size() == 20
+        and schools.combos.size() == 7,
+        "ten-school card definitions and combo rules registered")
+    var tingfeng: Dictionary = native.entries("rule_catalog").get(
+        "r37_tingfeng_cards", {}).get("data", {})
+    check(tingfeng.get("cards", []).size() == 6
+        and tingfeng.get("combos", []).size() == 3
+        and tingfeng.get("deck", {}).get("cards", []).size() == 4,
+        "Tingfeng cards, combos and initial deck preserved")
     check(techniques.load_error.is_empty() and techniques.definitions.has("tf_change_stage"),
         "stage graph resolves")
     check(encounters.load_error.is_empty() and not encounters.battle_options("escort_ambush").is_empty(),

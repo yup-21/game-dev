@@ -90,9 +90,9 @@ R29 已删除旧双人/多人场景与专用 UI；规则回归转向 `BattleMode
 
 ## 五式内容
 
-正式资源：`data/native/rule_catalogs/r37_tingfeng_cards.tres`。听风本体与派生共 6 项卡牌定义，初始实体牌由卡组 Resource 配置；每张 CardInstance 的使用方式仍由既有 `CardSystem` 按规则判定，旧 JSON 仅用于字段一致性测试。
+正式资源：`data/native/rule_catalogs/r37_tingfeng_cards.tres`。听风本体与派生共 6 项卡牌定义，初始实体牌由卡组 Resource 配置；每张 CardInstance 的使用方式仍由既有 `CardSystem` 按规则判定，行为回归不再依赖旧 JSON。
 
-原有十套武学及旧技能 ID 映射分别位于 `data/native/rule_catalogs/r36_school_forms.tres` 与 `data/native/legacy/legacy_skill_ids.tres`，由 `SchoolCatalog` 和 `LegacySkillAdapter` 读取；旧 JSON 仅为静态回归 fixture，不用于对战 UID 热替换。
+原有十套武学位于 `data/native/rule_catalogs/r36_school_forms.tres`，由 `SchoolCatalog` 加载；R41 已移除旧技能 ID 映射和历史 JSON，运行时仅接受当前定义 ID。
 
 | 招式 | 张数 | 用法 |
 | --- | ---: | --- |
@@ -142,7 +142,7 @@ R29 已删除旧双人/多人场景与专用 UI；规则回归转向 `BattleMode
 .\checks\verify.ps1 -Stage HD2DInteractions
 ```
 
-`Framework` 检查能力图和 JSON 整数值校验，`Generated` 检查生成卡牌与保留期限，`Lifecycle` 检查模型重开、释放及子系统引用回收。校验同时核对退出码、成功标记和 Godot 错误日志。
+`Framework` 检查原生能力图和数值边界校验，`Generated` 检查生成卡牌与保留期限，`Lifecycle` 检查模型重开、释放及子系统引用回收。校验同时核对退出码、成功标记和 Godot 错误日志。
 
 `Opening` 检查序章数据、分支和场景脚本，`Parties` 检查多人队伍、目标、胜负及无效阵容重开。
 

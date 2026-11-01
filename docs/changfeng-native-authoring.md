@@ -28,7 +28,7 @@
 
 1. 贴图、场景和音效用 `WuxiaAssetDefinition` 注册 `resource`、`asset_kind`、所属角色/事件、帧数，以及 `source` 和 `rights`。角色图集为 **6 列 × 4 行**。加入 `content_manifest.tres.assets` 后可由 `AssetRegistry` 自动解析。
 2. 没有确认权属的原画保持 `status=candidate`、`rights=owner_review_required`；**禁止擅自标为 `approved`**。
-3. CI 应通过 Modular、HUD（含原 Kenney 美术验证、R32 时间轴与 R39 全内容测试）和 Export 三条工作流；R31 已删除重复 Kenney 截图工作流。
+3. CI 应通过 Modular、HUD（含 Kenney 美术验证、R32 时间轴与 R25 原生内容测试）和 Export 三条工作流；R31 已删除重复 Kenney 截图工作流。
 4. 合并前必须在 Godot Editor 手工检查：Inspector 资源编辑/保存；地图画笔交互与坐标；剧情 UI 对话及触发范围；角色 24 姿态、方向、遮挡与特效；Windows/Linux 导出实际打开与体验；所有第三方素材的授权与来源。自动测试不代表已完成这些主观或法律审查。
 
 ## 回归命令
@@ -44,7 +44,5 @@ godot --headless --script res://checks/test_r26_story_recruitment.gd
 godot --headless --script res://checks/test_r27_authoring_pipeline.gd
 godot --headless --script res://checks/test_r32_native_action_timeline.gd
 godot --headless --script res://checks/test_r24_content_closure.gd
-godot --headless --script res://checks/test_r39_content_cleanup.gd
 godot --headless --script res://checks/test_r40_native_entry_closure.gd
-godot --headless --script res://checks/test_r41_native_only.gd
 ```

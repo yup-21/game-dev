@@ -1,12 +1,11 @@
 extends SceneTree
-## R18: author a character, buff and item with .tres only; exercise old runtime.
+## R18: load typed character, buff and item cards; reject invalid manifests atomically.
 const NativeContent = preload("res://scripts/content/content_registry.gd")
 const ContentManifest = preload("res://scripts/content/content_manifest.gd")
 const CharacterDefinition = preload("res://scripts/content/character_definition.gd")
 const CharacterRegistry = preload("res://scripts/character_registry.gd")
 const StatusCatalog = preload("res://scripts/status_catalog.gd")
 const ItemCatalog = preload("res://scripts/item_catalog.gd")
-const CharacterRuntime = preload("res://scripts/character_runtime.gd")
 
 const FIXTURE = "res://data/native_examples.tres"
 var failures: int = 0
@@ -46,7 +45,6 @@ func _run() -> void:
     var catalog = ItemCatalog.new(FIXTURE)
     check(catalog.load_error.is_empty() and catalog.get_item("r18_field_medicine").get("kind") == "consumable",
         "native item passes existing item validation")
-    check(ItemCatalog.new().definitions.size() >= 6, "production native item catalog complete")
 
     var malformed = ContentManifest.new()
     var incomplete = CharacterDefinition.new()

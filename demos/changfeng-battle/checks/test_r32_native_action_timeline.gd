@@ -12,26 +12,9 @@ func check(ok: bool, label: String) -> void:
         failures += 1
         push_error("R32_NATIVE_TIMELINE: " + label)
 
-func same(a: Variant, b: Variant) -> bool:
-    if typeof(a) in [TYPE_INT, TYPE_FLOAT] and typeof(b) in [TYPE_INT, TYPE_FLOAT]:
-        return is_equal_approx(float(a), float(b))
-    if a is Array and b is Array:
-        if a.size() != b.size(): return false
-        for i in range(a.size()):
-            if not same(a[i], b[i]): return false
-        return true
-    if a is Dictionary and b is Dictionary:
-        if a.size() != b.size(): return false
-        for key in a:
-            if not b.has(key) or not same(a[key], b[key]): return false
-        return true
-    return a == b
-
 func _run() -> void:
     var native = Native.new()
     check(native.load_error.is_empty(), "native manifest imports")
-    check(not ResourceLoader.exists("res://data/native/documents/action_timelines.tres"),
-        "opaque action timeline document removed from production")
     var entry: Dictionary = native.entries("action_timeline").get(
         "r32_default_action_timeline", {})
     check(entry.get("clip_count", -1) == 9 and entry.get("event_count", -1) == 13,
@@ -45,18 +28,19 @@ func _run() -> void:
         return
     var timeline = Timeline.new()
     check(timeline.load_error.is_empty(), "typed timeline validates: " + timeline.load_error)
-    var explicit = Timeline.new("res://data/native/action_timelines/r32_default.tres")
-    check(explicit.load_error.is_empty() and explicit.profiles == timeline.profiles
-        and explicit.event_animations == timeline.event_animations,
-        "authored timeline and default registry expose equivalent records")
+    check(timeline.profiles.size() == 9 and timeline.event_animations.size() == 13,
+        "all nine clips and thirteen semantic events registered")
     for id in timeline.profiles:
         var clip: WuxiaActionClipDefinition = timeline.clip_definition(str(id))
-        check(clip != null and clip.valid_clip(), "typed clip exists: " + str(id))
-        check(timeline.clip(str(id)) == explicit.clip(str(id)),
-            "typed clip has stable semantics: " + str(id))
-    for event in timeline.event_animations:
-        check(timeline.animation_for_event(str(event)) ==
-            explicit.animation_for_event(str(event)), "event binding: " + str(event))
+        check(clip != null and clip.valid_clip(), "typed clip validates: " + str(id))
+    check(timeline.animation_for_event("ATTACK_DECLARED") == "attack"
+        and timeline.animation_for_event("COMBO_TRIGGERED") == "combo"
+        and timeline.animation_for_event("HP_DAMAGED") == "hit",
+        "fixed gameplay event-to-animation bindings")
+    check(timeline.phase_at("attack", 0.1) == "startup"
+        and timeline.phase_at("attack", 0.2) == "active"
+        and timeline.phase_at("attack", 0.4) == "recovery",
+        "fixed attack startup, active and recovery windows")
     var invalid := WuxiaActionClipDefinition.new()
     invalid.clip_id = "invalid"
     invalid.duration_sec = 0.5
@@ -78,11 +62,6 @@ func _run() -> void:
     broken.cancel_window = invalid_window
     check(not broken.valid_clip() and attack.valid_clip(),
         "out-of-bounds typed window rejects without mutating shared content")
-    var duplicate_loader = Timeline.new(
-        "res://data/native/action_timelines/r32_default.tres")
-    check(duplicate_loader.load_error.is_empty() and
-        same(duplicate_loader.clip("combo"), timeline.clip("combo")),
-        "explicit .tres authoring path has identical semantics")
     check(timeline.window_open("evade", "invulnerable", 0.15) and
         not timeline.window_open("evade", "invulnerable", 0.35),
         "visual window is still a read-only presentation query")

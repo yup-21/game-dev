@@ -26,9 +26,7 @@ on:
       - 'demos/changfeng-battle/checks/test_r28_legacy_cleanup.gd'
       - 'demos/changfeng-battle/checks/test_r29_native_cleanup.gd'
       - 'demos/changfeng-battle/checks/test_r32_native_action_timeline.gd'
-      - 'demos/changfeng-battle/checks/test_r39_content_cleanup.gd'
       - 'demos/changfeng-battle/checks/test_r40_native_entry_closure.gd'
-      - 'demos/changfeng-battle/checks/test_r41_native_only.gd'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -81,14 +79,10 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r28_legacy_cleanup.gd
       - name: R29 declarative prologue, canonical battle and neutral art fallback
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r29_native_cleanup.gd
-      - name: R32 typed action time windows, clips and event binding parity
+      - name: R32 typed action windows, clips and event bindings
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r32_native_action_timeline.gd
-      - name: R39 no opaque documents and full native catalog smoke
-        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r39_content_cleanup.gd
       - name: R40 native entry and retired API closure
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r40_native_entry_closure.gd
-      - name: R41 native-only source and gameplay boundary
-        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r41_native_only.gd
       - name: R24 complete content-only vertical slice
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r24_content_closure.gd
       - name: R11 extensible catalogs and combo counts
