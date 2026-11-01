@@ -19,6 +19,9 @@ const LEFT_FACING_UNPROFILED_SHEETS := [
     "res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg",
     "res://assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg"
 ]
+## Historical bridge image is retained for P0 production export/provenance
+## only; scenery("rainy_bridge") resolves the native map and never uses it.
+const ARCHIVED_RAINY_BRIDGE_IMAGE := "res://assets/concepts/2026-10-30/scenes/rainy_broken_bridge_battle_v1.jpg"
 const SCENES := {
     "mountain": preload("res://assets/concepts/2026-10-30/scenes/mountain_herbal_workshop_day.jpg"),
     "snow": preload("res://assets/concepts/2026-10-30/scenes/snowy_sword_sect_courtyard.jpg")
