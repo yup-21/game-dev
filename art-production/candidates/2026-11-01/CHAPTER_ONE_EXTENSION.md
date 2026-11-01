@@ -1,15 +1,33 @@
 # 第一幕与六人战斗美术扩展 · 2026-11-01
 
-- 前置分支：#82 首批样板；#83 候选运行时试玩接线。本批新分支基于 #83，不覆盖原有正式角色。
-- 新增：顾清霜、青衫客、黑衣刀客、夜行刺客四套**透明立绘候选与 24 姿势源稿**，受伤老镖头立绘及坐姿、荒道破庙场景母版，共 11 张源 PNG。
-- 本批图片均处于 `concept / needs cleanup`，**不等于批准的动作图集与分层场景**。源图规格及缺陷详见审核记录。
-- `art-production/tools/prepare_chapter_one_assets.py`：本地图像 Alpha/Atlas 审计和破庙四层确定性切分，默认不写，`--write` 只输出缺失层。
-- 初始来源/描述：`CHAPTER_ONE_PROMPTS.md`；逐图 SHA-1 Blob 和预期尺寸：`CHAPTER_ONE_MANIFEST.json`；SHA-256 可由审计脚本实时输出。
-- 第一幕 Godot 原生章节不改：`rain_escort_prologue.tres`，`escort_ambush.tres`；原生 `.tres` 继续唯一运行时内容入口。
+**Draft PR #85，审核分支：`art/chapter-one-candidates-20261101`，依赖 #82 → #83。**
 
-## 距离正式交付的门槛
+## 实际交付
 
-1. 每名战斗角色身份板/四方向、武器不裁切、24 帧纯净透明、同脚点，输出规范化 RGBA Atlas，动画与动作时间轴吻合。
-2. 破庙四层 PNG 实际生成并入库，与现有 `ChapterSceneDefinition` 的剧情层和地图碰撞对齐；前景遮挡截图通过。
-3. 导入 Godot preview，再在**单独审核分支**接角色卡、头像 Registry、动画 Profile 与场景；检查实时不再取旧缓存。
-4. CI+Godot GUI 1600×1000、1440×900 视觉验收、商用权属与负责人批准。未完成前不进入 `approved`。
+| 对象 | 原图/母版 | 可导入产物 | Godot 审核分支接线 |
+| --- | --- | --- | --- |
+| 顾清霜 | 立绘 + 24 姿势源稿 | 1536×1024 归一化 Atlas | 角色卡、九动作 Profile、头像 Registry |
+| 青衫客 | 同上 | 同上 | 同上 |
+| 黑衣刀客 | 同上 | 同上 | 同上 |
+| 夜行刺客 | 同上 | 同上 | 同上 |
+| 老镖头 | 全身立绘 + 负伤坐姿 | 独立透明图片 | NPC 角色卡、静态 Pose、头像 Registry |
+| 荒道破庙 | 1586×992 场景母版 | 1600×1000 四层 + 合成预览 | 原生 `WuxiaSceneArtProfile`、第一幕章节与剧情层 |
+
+- 生成源图 11 PNG；自动衍生 9 PNG（四套 Atlas、五张场景层/预览）；Godot 导入区 15 个逐字节副本，已同步 `art-production/in-use` 及 SHA-256 清单。
+- 来源提示词：`CHAPTER_ONE_PROMPTS.md`；完整二级来源链及精确哈希：`CHAPTER_ONE_MANIFEST.json`。
+- 可重复准备脚本：`art-production/tools/prepare_chapter_one_assets.py`，默认只审计，`--write` 仅写入缺失项，覆盖需要显式 `--replace`。
+- Godot 仍仅用原生 `.tres` 作为角色、动作、章节和场景数据入口；没有新增 JSON 游戏运行时或角色硬编码。
+- 章剧情与六人 `escort_ambush` 的规则不变。新增的多层剧情渲染在探索阶段启用可遮挡前景、独立可关天气，并避开上/下 HUD。
+
+## 机器验证与审核状态
+
+候选源图的尺寸、RGBA、24 格基础动作映射、归一化安全边距与脚点、分层合成一致性、原生 Resource 加载和剧情/战斗入口均安排 CI 验证。具体检查记录见 `art-production/reviews/2026-11-01-chapter-one-extension.md`。
+
+**状态：`candidate / owner_review_required`。** 技术预检通过不代表艺术品质批准，尤其以下事项仍待负责人现场验收：
+
+- 身份设定四视图及旧美术风格一致性；刀剑尖、袖针、技能特效每帧完整度与相邻帧连贯性；
+- 目前均为单方向三分之四视图，真实前/后/左/右方向还未补齐；
+- 第一幕角色实际站位、镖车附近路径、前景遮挡、两种分辨率 GUI 截图、六人战的多次人工游玩；
+- 商业授权与近似风险确认。
+
+**本 PR 不合入 main，直到批准签名。**

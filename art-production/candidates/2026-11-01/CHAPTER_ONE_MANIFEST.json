@@ -1,15 +1,18 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "batch": "2026-11-01/chapter_one_extension",
   "project": "长风浮生录",
   "scope": "rain_escort_prologue + escort_ambush",
-  "status": "concept / needs_technical_cleanup / owner_review_required",
-  "runtime_bindings_changed": false,
+  "status": "candidate / technical_preflight_pass / owner_review_required",
+  "runtime_bindings_changed": true,
+  "runtime_scope": "Draft PR #85 only; not merged to main, not approved",
+  "art_style": "art-production/standards/ART_PRODUCTION_STANDARD.md",
   "source": "ChatGPT built-in image generation",
   "model_version": "not exposed",
   "seed": "not exposed",
-  "rights_review": "pending",
+  "rights_review": "pending human commercial-rights and likeness check",
   "prompt_record": "art-production/candidates/2026-11-01/CHAPTER_ONE_PROMPTS.md",
+  "rebuild_tool": "art-production/tools/prepare_chapter_one_assets.py",
   "artifacts": [
     {
       "path": "art-production/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png",
@@ -19,7 +22,7 @@
       ],
       "kind": "concept/fullbody_portrait",
       "git_blob_sha1": "a8657880eea49c7d20c1a54a7612e17a4f78279a",
-      "sha256": null,
+      "sha256": "bd53c0d05a5e48ad306d5b53b24d267beffd6548930d014be380747f2b429d70",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -30,7 +33,7 @@
       ],
       "kind": "concept/24_pose_unprocessed_atlas",
       "git_blob_sha1": "bd99870dedfcac1c492a2abcffd35deec209aed5",
-      "sha256": null,
+      "sha256": "264febf4a52922e17825da123aa50d9ee3f28d72c07c02791859a12087779550",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -41,7 +44,7 @@
       ],
       "kind": "concept/fullbody_portrait",
       "git_blob_sha1": "3902be4e25793546af4c83ee1d7695393e92162c",
-      "sha256": null,
+      "sha256": "d66430f0c6d90999f208905d2baed2feeb97faecc784cb737e2a25e458810d5d",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -52,7 +55,7 @@
       ],
       "kind": "concept/24_pose_unprocessed_atlas",
       "git_blob_sha1": "633536c9c5e9a66429865bf51401c93bd39353b7",
-      "sha256": null,
+      "sha256": "459da1bcce1e59098aa6928926d9692d11c6bfcd7255e0ec225f05b89bfe438c",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -63,7 +66,7 @@
       ],
       "kind": "concept/fullbody_portrait",
       "git_blob_sha1": "7b0d5321ac10e2d88a1bbabde78e817726dc2621",
-      "sha256": null,
+      "sha256": "56db76d09f2f92d070def2208f0e267f81bbf0761a87b242bbc4428f190b21e9",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -74,7 +77,7 @@
       ],
       "kind": "concept/24_pose_unprocessed_atlas",
       "git_blob_sha1": "11685ba26d22516a92af6a93afaa841f6b7febdc",
-      "sha256": null,
+      "sha256": "43436315ef64cd95445bb2d1d2f3234866eab7ab36c696507199015e4c6e3596",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -85,7 +88,7 @@
       ],
       "kind": "concept/fullbody_portrait",
       "git_blob_sha1": "ce6a278583eb20bd7be0fb8ba4d02ef86099d2ca",
-      "sha256": null,
+      "sha256": "41b961d411f18aca256927ebb84a392a191810f5d76ac4bc486a57d1c4ebe00b",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -96,7 +99,7 @@
       ],
       "kind": "concept/24_pose_unprocessed_atlas",
       "git_blob_sha1": "4af9fa105a935f2dff42f3768098de0b911224f8",
-      "sha256": null,
+      "sha256": "2b776f062875955f87c8eab461e89d4ff97ee5ecfe35a2238d5bec364bb13ea3",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -107,7 +110,7 @@
       ],
       "kind": "concept/fullbody_portrait",
       "git_blob_sha1": "9e4a9a5803fc5c5742717f0e35c923bdbc869470",
-      "sha256": null,
+      "sha256": "d0e87a855b30555cc505270664aac9db94299b394cd5e9da825cf0beca60ae2d",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -118,7 +121,7 @@
       ],
       "kind": "concept/story_injured_pose",
       "git_blob_sha1": "8a92f9074fe0204854f5f303c0bae369cee093d1",
-      "sha256": null,
+      "sha256": "199f65d96cfa8761ec80d7f3b4f759b8c31151eb95c067213a2b3bf7a7942e76",
       "model": "Built-in image generation, exact model/seed not exposed"
     },
     {
@@ -129,8 +132,249 @@
       ],
       "kind": "concept/environment_master",
       "git_blob_sha1": "d624b4192846da457626fccb932b0d39d9011e83",
-      "sha256": null,
+      "sha256": "3612e340623d6391aa8a59f1d91a17d8415b95dc235269d3fb8f6d1d7f87af55",
       "model": "Built-in image generation, exact model/seed not exposed"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "candidate/normalized_atlas",
+      "git_blob_sha1": "4df15d1ae43e16583e76d8539a79db985625fc10",
+      "sha256": "afb2594f1769c8666230ea39cb4d2f11491c7731ee15334d8378ac0690f9289c",
+      "derivation": "deterministic Pillow transform of same-batch source"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "candidate/normalized_atlas",
+      "git_blob_sha1": "b020f123dc15a36d0f8052fed7eb05dc2ad1ab16",
+      "sha256": "5d189d08cebe473d033528c1d4c46f2dd09b93bf908fd29cc1cf8e35af3d9128",
+      "derivation": "deterministic Pillow transform of same-batch source"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "candidate/normalized_atlas",
+      "git_blob_sha1": "3c38877175ad1e4ba8157275bf2afb13e12133b5",
+      "sha256": "82613b36446129027227a7b6eb9d6b939f3869e0659b0ee84fb1c0d46128193d",
+      "derivation": "deterministic Pillow transform of same-batch source"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "kind": "candidate/normalized_atlas",
+      "git_blob_sha1": "6a66d12f004bae7695c7b555b7feb16f1ebcee36",
+      "sha256": "58480ddffbeb406c68ea6720b78d311a93130ac806ce01a0aae8dd521233d596",
+      "derivation": "deterministic Pillow transform of same-batch source"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png",
+      "dimensions": [
+        1600,
+        1000
+      ],
+      "kind": "candidate/scene_layer",
+      "git_blob_sha1": "f537dd6fcbab5614e5794553186cc4fc6ed2d961",
+      "sha256": "4c48e30dd39b87094df160a4c483f2acde0b1dde3cb7edb6c0644d17dfb5c495",
+      "derivation": "deterministic Pillow transform of same-batch source"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "dimensions": [
+        1600,
+        1000
+      ],
+      "kind": "preview/composite",
+      "git_blob_sha1": "c11b7519e71d985b4269873dd80bf9a0170a70ee",
+      "sha256": "5cdb29a5898a196ae28e8129e91e5db73d45c2e595fbcfab579b69cc6ee9337d",
+      "derivation": "deterministic Pillow transform of same-batch source"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "dimensions": [
+        1600,
+        1000
+      ],
+      "kind": "candidate/scene_layer",
+      "git_blob_sha1": "658bf873a3da52832ba1cd42cd2d0eda8e824fb8",
+      "sha256": "cf62747732ef93c335c7af0962a2f6582b7bb8892cc067aa1ca7e24dcee45460",
+      "derivation": "deterministic Pillow transform of same-batch source"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "dimensions": [
+        1600,
+        1000
+      ],
+      "kind": "candidate/scene_layer",
+      "git_blob_sha1": "95af5e7d68aad001b1db8fbfad6581ff8bbc2b3b",
+      "sha256": "7c826aad5a7f69e20f113ce50b70db4a4ff5ffa6c1f7f421c5371a2a20534a35",
+      "derivation": "deterministic Pillow transform of same-batch source"
+    },
+    {
+      "path": "art-production/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "dimensions": [
+        1600,
+        1000
+      ],
+      "kind": "candidate/scene_layer",
+      "git_blob_sha1": "dba86fdfe5affe8a25eae77d2333726921034960",
+      "sha256": "b4b584d1761ea29fe4a42e831fafef8943b0c08b8d8eef254fc5ba7b25794e24",
+      "derivation": "deterministic Pillow transform of same-batch source"
     }
+  ],
+  "review_runtime_copies": [
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "56db76d09f2f92d070def2208f0e267f81bbf0761a87b242bbc4428f190b21e9",
+      "git_blob_sha1": "7b0d5321ac10e2d88a1bbabde78e817726dc2621"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "afb2594f1769c8666230ea39cb4d2f11491c7731ee15334d8378ac0690f9289c",
+      "git_blob_sha1": "4df15d1ae43e16583e76d8539a79db985625fc10"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "d0e87a855b30555cc505270664aac9db94299b394cd5e9da825cf0beca60ae2d",
+      "git_blob_sha1": "9e4a9a5803fc5c5742717f0e35c923bdbc869470"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "199f65d96cfa8761ec80d7f3b4f759b8c31151eb95c067213a2b3bf7a7942e76",
+      "git_blob_sha1": "8a92f9074fe0204854f5f303c0bae369cee093d1"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "d66430f0c6d90999f208905d2baed2feeb97faecc784cb737e2a25e458810d5d",
+      "git_blob_sha1": "3902be4e25793546af4c83ee1d7695393e92162c"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "5d189d08cebe473d033528c1d4c46f2dd09b93bf908fd29cc1cf8e35af3d9128",
+      "git_blob_sha1": "b020f123dc15a36d0f8052fed7eb05dc2ad1ab16"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "bd53c0d05a5e48ad306d5b53b24d267beffd6548930d014be380747f2b429d70",
+      "git_blob_sha1": "a8657880eea49c7d20c1a54a7612e17a4f78279a"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "82613b36446129027227a7b6eb9d6b939f3869e0659b0ee84fb1c0d46128193d",
+      "git_blob_sha1": "3c38877175ad1e4ba8157275bf2afb13e12133b5"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "41b961d411f18aca256927ebb84a392a191810f5d76ac4bc486a57d1c4ebe00b",
+      "git_blob_sha1": "ce6a278583eb20bd7be0fb8ba4d02ef86099d2ca"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "58480ddffbeb406c68ea6720b78d311a93130ac806ce01a0aae8dd521233d596",
+      "git_blob_sha1": "6a66d12f004bae7695c7b555b7feb16f1ebcee36"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "4c48e30dd39b87094df160a4c483f2acde0b1dde3cb7edb6c0644d17dfb5c495",
+      "git_blob_sha1": "f537dd6fcbab5614e5794553186cc4fc6ed2d961"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "5cdb29a5898a196ae28e8129e91e5db73d45c2e595fbcfab579b69cc6ee9337d",
+      "git_blob_sha1": "c11b7519e71d985b4269873dd80bf9a0170a70ee"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "cf62747732ef93c335c7af0962a2f6582b7bb8892cc067aa1ca7e24dcee45460",
+      "git_blob_sha1": "658bf873a3da52832ba1cd42cd2d0eda8e824fb8"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "7c826aad5a7f69e20f113ce50b70db4a4ff5ffa6c1f7f421c5371a2a20534a35",
+      "git_blob_sha1": "95af5e7d68aad001b1db8fbfad6581ff8bbc2b3b"
+    },
+    {
+      "path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "sha256": "b4b584d1761ea29fe4a42e831fafef8943b0c08b8d8eef254fc5ba7b25794e24",
+      "git_blob_sha1": "dba86fdfe5affe8a25eae77d2333726921034960"
+    }
+  ],
+  "remarks": [
+    "The source atlas frames have RGBA and were normalized to 6x4/24 cells with safe margins and foot baselines; not yet human-approved as fluent animation.",
+    "The temple layers are deterministic alpha masks from a common master, not separately hand-painted layers.",
+    "Game runtime bindings use candidate art only on the review branch."
   ]
 }

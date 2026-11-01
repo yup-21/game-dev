@@ -10,7 +10,7 @@
 - 正式运行时目标：`WuxiaCharacterDefinition` + `WuxiaActorAnimationProfile`
 - 目前动作：idle 2 / move 4 / attack 3 / guard 2 / hit 2 / evade 3 / skill 3 / combo 3 / defeat 2
 
-## 制作状态
+## 初稿制作状态（归档时点）
 
 - 分支：`art/chapter-one-candidates-20261101`，基于 #83，**非批准资产**。
 - 状态：`concept / requires technical cleanup`。不得标注 `approved` 或替换 main 现有运行资源。
@@ -30,3 +30,11 @@
 ## 结论
 
 原始生成图已归档供修订；**不得直接作为正式战斗 Atlas**。技术处理通过后再导出规范化运行 PNG，保留原稿和版本关系。
+
+## 2026-11-01 扩展进度
+
+- [x] 原始生成图保留，逐图哈希与 Prompt 已归档。
+- [x] Godot 审核分支已接入对应 `.tres`，不修改 `main`。
+- [x] 24 帧源图归一化为 `sprite_night_assassin_atlas_normalized_v01.png`，安全边距和脚点通过脚本检测。
+- [x] 九动作原生 `data/native/animations/night_assassin.tres`、角色卡与肖像 Registry 已绑定。
+- [ ] 四方向和帧间动作质量、刀剑与 VFX 边缘人工补绘审核。

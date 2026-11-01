@@ -48,11 +48,11 @@ func _run() -> void:
         and elder.body.texture==Art.story_pose_for_character("escort_elder")
         and elder.body.material==null
         and elder.body.frame_coords==Vector2i.ZERO,
-        "injured elder uses dedicated transparent vector pose, no generated model")
+        "injured elder uses dedicated transparent story pose, no generated model")
     _check(not layer.visible,"story role sprites stay hidden during title")
-    _check(str(registry.for_name("老镖头").art.static_pose)
-        == "res://assets/characters/concepts/escort_elder_injured.svg",
-        "injured vector file is registered on the character dossier")
+    var registered_pose: String = str(registry.for_name("老镖头").art.static_pose)
+    _check(registered_pose.contains("/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png"),
+        "new injured PNG is registered on the character dossier")
     opening.call("_enter_new_game")
     await process_frame
     _check(not layer.visible,"cinematic still portraits do not clash with scene sprites")

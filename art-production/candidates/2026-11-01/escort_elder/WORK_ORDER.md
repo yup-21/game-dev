@@ -10,7 +10,7 @@
 - 正式运行时目标：`WuxiaCharacterDefinition`（静态剧情 Pose）
 - 目前动作：剧情静态坐姿（不参与第一幕战斗）
 
-## 制作状态
+## 初稿制作状态（归档时点）
 
 - 分支：`art/chapter-one-candidates-20261101`，基于 #83，**非批准资产**。
 - 状态：`concept / requires technical cleanup`。不得标注 `approved` 或替换 main 现有运行资源。
@@ -29,3 +29,10 @@
 ## 结论
 
 原始生成图已归档供修订；**不得直接作为正式战斗 Atlas**。技术处理通过后再导出规范化运行 PNG，保留原稿和版本关系。
+
+## 2026-11-01 扩展进度
+
+- [x] 原始生成图保留，逐图哈希与 Prompt 已归档。
+- [x] Godot 审核分支已接入对应 `.tres`，不修改 `main`。
+- [x] 透明立绘 + 负伤坐姿、角色 Resource、肖像 Registry 已联接。
+- [ ] 剧情站位与血迹/绢帛姿态人工批准。
