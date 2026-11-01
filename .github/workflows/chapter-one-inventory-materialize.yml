@@ -1,0 +1,31 @@
+name: Materialize chapter one inventory (temporary review branch job)
+
+on:
+  push:
+    branches:
+      - art/chapter-one-candidates-20261101
+    paths:
+      - '.github/workflows/chapter-one-inventory-materialize.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile-art-production:
+    if: github.repository == 'yup-21/game-dev' && github.ref == 'refs/heads/art/chapter-one-candidates-20261101'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Reconcile P0 source-to-production snapshots without replacing divergent copies
+        run: python3 art-production/tools/inventory_assets.py --write
+      - name: Commit only refreshed offline art inventory and byte-identical in-use images
+        run: |
+          git add art-production/in-use/ art-production/inventory/asset-index.json art-production/inventory/usage-report.md
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'art: synchronize first-act in-use images and SHA inventory'
+            git push origin HEAD:art/chapter-one-candidates-20261101
+          fi
