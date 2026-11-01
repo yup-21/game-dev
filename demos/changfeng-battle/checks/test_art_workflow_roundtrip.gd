@@ -83,6 +83,10 @@ func _initialize() -> void:
         _fail("Real art plans failed: " + str(portrait_plan.get("error", "")) + " / " +
             str(scene_plan.get("error", "")))
         return
+    # Keep the factory alive across the import to catch stale record snapshots.
+    var live_factory = preload("res://scripts/character_factory.gd").new()
+    live_factory.registry.profiles["shen_changfeng"]["art"]["portrait"] = \
+        "res://assets/characters/concepts/escort_captain_portrait.png"
     var real_plans: Array[Dictionary] = [portrait_plan, scene_plan]
     var import_start: Dictionary = Transaction.begin(real_plans)
     if not str(import_start.get("error", "")).is_empty():
@@ -110,8 +114,9 @@ func _initialize() -> void:
         _fail("Scene importer left an old background or outdated calibration")
         return
     var shen_card: WuxiaCharacterDefinition = ResourceLoader.load(character_path)
-    if shen_card.portrait == null or shen_card.portrait.resource_path != str(portrait_plan["next_binding"]):
-        _fail("Portrait importer did not bind the native character card")
+    if shen_card.portrait == null or shen_card.portrait.resource_path != str(portrait_plan["next_binding"]) or \
+            live_factory.presentation_assets("shen_changfeng").get("portrait") != shen_card.portrait:
+        _fail("Portrait importer left a cached factory with historical artwork")
         return
     var real_commit: String = Transaction.commit(real_log)
     if not real_commit.is_empty():
