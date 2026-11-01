@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="WuxiaStoryDefinition" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/story_definition.gd" id="1_story"]
+[ext_resource type="Script" path="res://scripts/content/story_beat_definition.gd" id="2_beat"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_node_definition.gd" id="3_node"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="4_event"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="5_req"]
+
+[sub_resource type="Resource" id="Beat"]
+script = ExtResource("2_beat")
+caption = "雾隘 · 拂晓"
+text = "迷雾掩住小径。游侠岚尘与驿路老者各握有一半线索。"
+duration = 2.5
+
+[sub_resource type="Resource" id="Meet_scout"]
+script = ExtResource("4_event")
+event_type = "set_flag"
+flag_id = "met_r24_lan"
+flag_value = true
+
+[sub_resource type="Resource" id="Meet_elder"]
+script = ExtResource("4_event")
+event_type = "set_flag"
+flag_id = "met_r24_elder"
+flag_value = true
+
+[sub_resource type="Resource" id="Route_clue"]
+script = ExtResource("4_event")
+event_type = "grant_clue"
+clue_id = "r24_hidden_route"
+count = 1
+
+[sub_resource type="Resource" id="Scout"]
+script = ExtResource("3_node")
+node_id = "r24_scout"
+speaker = "岚尘"
+text = "顺着湿苔走，别踏碎石。我与你一同过隘。"
+events = Array[Resource]([SubResource("Meet_scout")])
+
+[sub_resource type="Resource" id="Elder"]
+script = ExtResource("3_node")
+node_id = "r24_elder"
+speaker = "驿路老者"
+text = "隘口北侧有条暗路。拿着这份路标，避开正面的伏兵。"
+events = Array[Resource]([SubResource("Meet_elder"), SubResource("Route_clue")])
+
+[sub_resource type="Resource" id="Need_scout"]
+script = ExtResource("5_req")
+flag_id = "met_r24_lan"
+
+[sub_resource type="Resource" id="Need_elder"]
+script = ExtResource("5_req")
+flag_id = "met_r24_elder"
+
+[resource]
+script = ExtResource("1_story")
+content_id = "r24_fog_pass_story"
+title = "雾隘同行"
+subtitle = "第四幕 · 迷踪"
+entry_node = "r24_scout"
+cinematic_beats = Array[Resource]([SubResource("Beat")])
+dialogue_nodes = Array[Resource]([SubResource("Scout"), SubResource("Elder")])
+return_to_explore = true
+completion_requirements = Array[Resource]([SubResource("Need_scout"), SubResource("Need_elder")])

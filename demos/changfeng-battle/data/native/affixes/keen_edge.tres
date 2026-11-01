@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="WuxiaAffixDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/affix_definition.gd" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+content_id = "keen_edge"
+display_name = "锐锋"
+allowed_slots = Array[String](["weapon"])
+modifiers = Array[Dictionary]([{"stat":"attack","op":"flat","value":2}])

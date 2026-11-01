@@ -5,6 +5,7 @@ const MapBake = preload("res://scripts/map_bake.gd")
 const Spatial = preload("res://scripts/battle_spatial_service.gd")
 const Geometry = preload("res://scripts/battle_spatial_facade.gd")
 const Cards = preload("res://scripts/card_system.gd")
+const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const Attributes = preload("res://scripts/attribute_system.gd")
 const Statuses = preload("res://scripts/status_system.gd")
 const Visibility = preload("res://scripts/visibility_system.gd")
@@ -57,8 +58,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	state.battle_id="battle:%d:%d" % [seed,_battle_serial]
 	state.root_action_id=state.battle_id+":initial"
 	# An authored battlefield owns the terrain for the entire combat graph.
-	# Legacy/unit-test battles without map_definition_path still use the old
-	# deterministic terrain for compatibility.
+	# Combat fixtures without an authored map use deterministic grid terrain.
 	var map_valid := true
 	if options.has("map_definition_path"):
 		if not options.map_definition_path is String or str(options.map_definition_path).is_empty():
@@ -98,7 +98,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	state.profile="tingfeng"
 	attributes=Attributes.new()
 	var schools=options.get("schools",{})
-	cards=Cards.new(state,"res://data/tingfeng_cards.json",schools if schools is Dictionary else {},options.get("learned_schools",{}) if options.get("learned_schools",{}) is Dictionary else {})
+	cards=Cards.new(state,"res://data/content_manifest.tres",schools if schools is Dictionary else {},options.get("learned_schools",{}) if options.get("learned_schools",{}) is Dictionary else {})
 	if not schools is Dictionary: cards.load_error="schools必须是角色到流派ID的对象"
 	if not options.get("learned_schools",{}) is Dictionary: cards.load_error="learned_schools必须是角色到已学流派列表的对象"
 	statuses=Statuses.new(state,cards,attributes)
@@ -106,7 +106,7 @@ func reset(seed: int = 2026,first_actor: int = -1,_profile: String = "tingfeng",
 	hooks=Hooks.new()
 	costs=Costs.new(state,hooks)
 	rules=Rules.new(state,cards,costs,hooks,statuses)
-	techniques=Techniques.new(str(options.get("technique_catalog_path","res://data/techniques.json")))
+	techniques=Techniques.new(str(options.get("technique_catalog_path",Techniques.DEFAULT_PATH)))
 	conditions=Conditions.new(statuses)
 	abilities=Abilities.new(state,cards,costs,rules,techniques,conditions)
 	rules.abilities=abilities

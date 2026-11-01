@@ -3,6 +3,8 @@
 > 单一正式入口：`opening.tscn` → `battle_hd2d.tscn`；基础版本 `main@8d1486b4`，重构工作在 `refactor/battle-architecture-consolidation`（Draft PR #67）。
 > 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
+> **R41 当前状态（2026-11-01）**：所有正式内容只从 `data/content_manifest.tres` 加载，包含武学、角色、装备、技法、章节、遭遇、GRID/FREE 地图和动作时间轴。仓库中的历史 `data/**/*.json`、旧武学 ID 映射 Resource、解析器及旧格式对照测试均已移除。自定义内容也必须使用 `.tres` manifest 和强类型 Resource。R40 已统一快捷/剧情入口、动画与空间服务。下文有关 JSON 索引的 R11–R15 文字仅是历史设计记录，**不是可使用的当前接口**。参阅 [R41 审计](R41_NATIVE_ONLY_CLOSURE.md) 和 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
+
 ## 运行结构
 
 ```mermaid
@@ -35,13 +37,13 @@ flowchart TD
 - `GRID`：保留 15×10 正交格、原移动预算与 Manhattan 基本攻击距离。
 - `FREE`：连续 `Vector2`、圆形碰撞、真实路径长度、自动接近攻击与自由身法落点。
 - `BattleSpatialFacade` 统一回答 `can_land / safe_landing / find_path / path_cost / can_attack / find_attack_approach / forced_move_preview`。当前 `CombatRules` 的基础攻击、FREE 攻击用法与自动接近走 facade；`BattleModel.preview_free_path` 也使用它。部分旧校验仍直接调用 `BattleSpatialService`，属于后续收敛点。
-- FREE 底层仍是 `MapBake` 的障碍 mask 与 `AStar2D` 动态可见性图和路径平滑，**不是** `NavigationPolygon` 独立导航网格。重构不修改寻路算法。
+- FREE 底层采用 `MapBake` 的障碍 mask 与单一 `AStar2D` 动态可见性图和路径平滑，**不是** `NavigationPolygon` 独立导航网格；PR57 的第二份 waypoint 算法实现和转发 API 已在 R40 删除。
 - `forced_move_preview` 仅返回几何建议；真实强制位移仍需经 CombatResolver 授权。GRID/FREE 切换失败不能产生资源与 revision 的副作用。
 
 ## 保留入口、资产与已知限制
 
-- 玩家入口唯一 `battle_hd2d.tscn`；`battle.tscn` / `party_battle.tscn` 作为历史规则视图保留，不触发删除。
-- `hd2d_vfx.gd`、`hd2d_scenery.gd` 是历史兼容实现，不再是正式演出依赖。
+- 玩家入口唯一 `battle_hd2d.tscn`；旧双人/多人 View 和场景已删除，规则测试转到正式场景与 `BattleModel`。
+- 无任何运行时或测试引用的旧 `hd2d_party_bridge.gd`、`hd2d_vfx.gd`、`hd2d_scenery.gd` 已清理；正式 UI 使用 `hd2d_battle.gd` 与 `battle_vfx_2d.gd`。
 - 美术素材既有 Kenney CC0，也有用户上传原画和生成的概念稿；用途/授权分开记录，未确认原创素材的许可证不能宣称 CC0。
 - 完整四方向逐帧图集、姿态条、动作型绝招、交锋慢镜头和音效编排不是这轮重构已完成的功能，属于结构稳定后的新增玩法；旧 6×4 图仅提供动作类别与水平镜像。
 - 目前仍有 UI 创建/AI 更新时间循环留在 `hd2d_battle.gd` 中；R2–R5 优先提取重要行为边界，后续可以继续迁移纯视图而不改规则。
@@ -54,16 +56,16 @@ GitHub Actions `Original Wuxia HUD regression` 对 PR 的正式场景、FREE/GRI
 
 ## R8–R10 组件演进
 
-R8：`BattleWorld2D` 持有插画战场与视觉移动，`BattleHUDView` 持有手牌/状态投影，`BattlePresentationPlayer` 持有 Sprite2D 动画、VFX 和单次 ticket。旧场景接口保持向后兼容。
+R8：`BattleWorld2D` 持有插画战场与视觉移动，`BattleHUDView` 持有手牌/状态投影，`BattlePresentationPlayer` 持有 Sprite2D 动画、VFX 和单次 ticket。不再维护旧场景接口；正式战斗命令合同保持不变。
 
 R9：SPACE 统一通过 `BattleSpatialFacade` 完成 FREE 落点、自动接近复核、强制轴向位移及 GRID 远程 LOS；AI 路径入口与同状态预览缓存也复用 facade。底层 FREE 为 `AStar2D` 可见性图。
 
-R10：新增 `BattleActionTimeline` 和 `data/action_timelines.json`，描述 startup/active/recovery、cancel/reaction/visual-invulnerable 窗口及 cue。**全部属于表现时序元数据**；目前仍由 BattleModel 先结算规则，再由 Presentation 消费语义事件。想实现真正的实时闪避/i-frame 必须扩展权威协议，不能直接让动画驱动修改状态。
+R10（历史阶段）：引入 `BattleActionTimeline`，现使用 `data/native/action_timelines/r32_default.tres`，描述 startup/active/recovery、cancel/reaction/visual-invulnerable 窗口及 cue。**全部属于表现时序元数据**；目前仍由 BattleModel 先结算规则，再由 Presentation 消费语义事件。想实现真正的实时闪避/i-frame 必须扩展权威协议，不能直接让动画驱动修改状态。
 
 
 ## R11–R15 内容扩展架构
 
-重构遵守「**静态定义 → 独立运行时 → 战斗规则结算 → 只读视图**」的单向边界。新增武学、Buff、角色和物品通常只增加 `data/` 内索引及定义文件，不应更改 `BattleModel` 的分支逻辑。
+重构遵守「**静态定义 → 独立运行时 → 战斗规则结算 → 只读视图**」的单向边界。新增武学、Buff、角色和物品只新增对应类型的 `.tres` 并注册到 `data/content_manifest.tres`，不应更改 `BattleModel` 的分支逻辑。
 
 ```mermaid
 flowchart TD

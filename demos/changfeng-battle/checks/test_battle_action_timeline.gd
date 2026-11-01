@@ -31,8 +31,13 @@ func _run() -> void:
     _check(clips.animation_for_event("MOVE_FREE")=="move" and
         clips.animation_for_event("COMBO_TRIGGERED")=="combo",
         "semantic events select authored clips")
-    _check(not clips._valid_profile({"duration":0.5,"startup":0.4,
-        "active":0.4,"recovery":0.1}),"invalid clip duration is rejected")
+    var invalid := WuxiaActionClipDefinition.new()
+    invalid.clip_id = "invalid"
+    invalid.duration_sec = 0.5
+    invalid.startup_sec = 0.4
+    invalid.active_sec = 0.4
+    invalid.recovery_sec = 0.1
+    _check(not clips._valid_profile(invalid),"invalid typed clip duration is rejected")
     var scene: Node2D = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame

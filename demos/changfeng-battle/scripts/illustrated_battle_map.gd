@@ -1,7 +1,7 @@
 extends CanvasLayer
 ## Painted 2D battle. A versioned MapBake, not a perspective camera, is
 ## authoritative for ALL tile footprints, mouse hits and character feet.
-const Art = preload("res://scripts/hd2d_art_catalog.gd")
+const Fallback = preload("res://scripts/fallback_assets.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
 var bake
 var picture: TextureRect
@@ -36,7 +36,7 @@ func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH)
     if ResourceLoader.exists(bake.image_path):
         picture.texture = load(bake.image_path)
     else:
-        picture.texture = Art.scenery("rainy_bridge")
+        picture.texture = Fallback.SCENE
     scene_root.add_child(picture)
 
     debug_grid = Node2D.new()

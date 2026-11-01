@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WuxiaAssetDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/asset_definition.gd" id="1_asset"]
+[ext_resource type="PackedScene" path="res://scenes/character_presentation_preview.tscn" id="2_resource"]
+
+[resource]
+script = ExtResource("1_asset")
+content_id = "r24_lan_actor"
+asset_kind = "actor_scene"
+status = "candidate"
+resource = ExtResource("2_resource")
+source = "project_bundled_preview"
+rights = "owner_review_required"
+owner_character_id = "r24_lan_chen"

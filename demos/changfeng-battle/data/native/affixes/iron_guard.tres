@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="WuxiaAffixDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/affix_definition.gd" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+content_id = "iron_guard"
+display_name = "铁骨"
+allowed_slots = Array[String](["armor","accessory"])
+modifiers = Array[Dictionary]([{"stat":"defense","op":"percent_bp","value":1000}])

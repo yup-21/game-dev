@@ -30,6 +30,7 @@ func _finish_branch(choice: int) -> void:
 	for _i in range(beats): s.next_beat()
 	check(s.phase=="explore","cinematic ends in walkable opening")
 	check(s.interact(),"talk interaction begins")
+	var emitted: Array=[]
 	var visited: Dictionary={}
 	var choice_used: bool=false
 	for _i in range(24):
@@ -41,6 +42,7 @@ func _finish_branch(choice: int) -> void:
 			check(false,"dialogue cycle detected")
 			break
 		visited[s.dialogue_id]=true
+		emitted.append_array(s.take_events())
 		if not node.get("choices",[]).is_empty():
 			check(not choice_used,"choice shown only once")
 			choice_used=true
@@ -49,12 +51,17 @@ func _finish_branch(choice: int) -> void:
 		else:
 			check(s.advance_dialogue(),"plain dialogue advances")
 	check(s.phase=="complete","branch reaches chapter completion")
-	check(s.obtained_fragment,"chapter completion includes the Taixu fragment event")
+	emitted.append_array(s.take_events())
+	check(emitted.has({"type":"set_flag","flag":"helped_escort","value":choice==0}),
+		"branch choice emits its authored flag")
+	check(emitted.has({"type":"set_flag","flag":"obtained_fragment","value":true})
+		and emitted.has({"type":"grant_clue","id":"taixu_fragment","count":1}),
+		"chapter completion emits the Taixu fragment events")
 	check(choice_used,"branch choice was encountered")
 
 func _run() -> void:
 	var s = Story.new()
-	check(s.load_error.is_empty(),"opening JSON validates")
+	check(s.load_error.is_empty(),"typed prologue Resource validates")
 	check(s.phase=="menu" and s.dialogue_id.is_empty(),"new session shows menu")
 	check(not s.interact(),"cannot interact from menu")
 	s.begin()
@@ -64,16 +71,15 @@ func _run() -> void:
 	s.skip_cinematic()
 	check(s.phase=="explore" and s.current_beat().is_empty(),"skip enters exploration without dialogue")
 	check(s.interact(),"exploration triggers first dialogue")
-	check(s.current_dialogue().speaker=="旁白","opening speaker and text come from story JSON")
+	check(s.current_dialogue().speaker=="旁白","opening speaker and text come from story Resource")
 	check(not s.choose(-1) and not s.choose(0),"choices unavailable outside choice node")
 	s.reset()
-	check(s.phase=="menu" and not s.obtained_fragment,"returning to menu resets story state")
+	check(s.phase=="menu" and s.take_events().is_empty(),"returning to menu resets story state")
 	_finish_branch(0)
 	_finish_branch(1)
 	var default_scene=load("res://opening.tscn")
-	var duel_scene=load("res://battle.tscn")
-	var party_scene=load("res://party_battle.tscn")
-	check(default_scene!=null and duel_scene!=null and party_scene!=null,"title and both existing battle scenes resolve")
+	check(default_scene!=null and load("res://battle_hd2d.tscn") is PackedScene,
+		"title and canonical battle scene resolve")
 	check(_opening_root_script_valid(default_scene),"opening root script compiles and instantiates")
 	var missing_script_scene = PackedScene.new()
 	var missing_script_root = Node2D.new()

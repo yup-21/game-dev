@@ -4,38 +4,28 @@ extends RefCounted
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 const Inventory = preload("res://scripts/inventory_runtime.gd")
-const BASE := "res://data/characters/"
+const NativeContent = preload("res://scripts/content/content_registry.gd")
+const Loadout = preload("res://scripts/content/character_loadout.gd")
 var profiles: Dictionary = {}
 var by_actor: Dictionary = {}
 var by_name: Dictionary = {}
 var load_error: String = ""
 
-func _init(index_path: String = BASE + "index.json", definition_root: String = BASE) -> void:
-    if not FileAccess.file_exists(index_path):
-        load_error = "Character index missing: " + index_path
-        return
-    var index: Variant = JSON.parse_string(FileAccess.get_file_as_string(index_path))
-    if not index is Dictionary or index.get("schema_version") != 1 or not index.get("characters") is Array:
-        load_error = "Invalid character index"
+func _init(manifest_path: String = NativeContent.DEFAULT_MANIFEST) -> void:
+    var natives = NativeContent.new(manifest_path)
+    if not natives.load_error.is_empty():
+        load_error = natives.load_error
         return
     var schools = SchoolCatalog.new()
     if not schools.load_error.is_empty():
         load_error = schools.load_error
         return
-    for entry in index.characters:
-        if not entry is String or entry.contains("/") or entry.contains("..") or not entry.ends_with(".json"):
-            load_error = "Unsafe character file path"
-            return
-        var path: String = definition_root + entry
-        if not FileAccess.file_exists(path):
-            load_error = "Missing character definition: " + entry
-            return
-        var d: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-        if not _valid(d, schools) or profiles.has(d.id) or by_name.has(d.name):
-            load_error = "Invalid or duplicate character definition: " + entry
+    for d in natives.entries("character").values():
+        if not _valid(d, schools) or profiles.has(str(d.id)) or by_name.has(str(d.name)):
+            load_error = "Invalid or duplicate native character: " + str(d.get("id", ""))
             return
         if int(d.battle_actor_id) >= 0 and by_actor.has(int(d.battle_actor_id)):
-            load_error = "Duplicate battle actor ID: " + str(d.battle_actor_id)
+            load_error = "Duplicate native actor ID: " + str(d.battle_actor_id)
             return
         profiles[str(d.id)] = d.duplicate(true)
         by_name[str(d.name)] = str(d.id)
@@ -89,6 +79,24 @@ func _valid(d: Variant, schools) -> bool:
             return false
     for technique in d.techniques:
         if not _whole(d.techniques[technique],1,10):
+            return false
+    var presentation: Variant = d.get("presentation", {})
+    if not presentation is Dictionary:
+        return false
+    for key in presentation:
+        if key != "battle_scene":
+            return false
+    var scene_path: Variant = presentation.get("battle_scene", "")
+    if not scene_path is String:
+        return false
+    if not str(scene_path).is_empty():
+        if not str(scene_path).begins_with("res://scenes/") or ".." in scene_path or not ResourceLoader.exists(scene_path, "PackedScene"):
+            return false
+    if d.has("starting_loadout"):
+        # Treat a character card as invalid before it enters the catalog if its
+        # initial inventory cannot be assembled with real item/affix rules.
+        var candidate = Inventory.new()
+        if not candidate.catalog.load_error.is_empty() or not Loadout.apply(d.starting_loadout, candidate):
             return false
     return true
 
@@ -162,7 +170,7 @@ func battle_options(roster: Array, character_ids: Dictionary, builds: Dictionary
         output.equipment[id] = equipment.duplicate(true)
         output.passives[id] = profile.passives.duplicate(true)
         output.techniques[id] = {}
-        # JSON numbers are floats; TechniqueRuntime requires integral ranks.
+        # Typed card attributes are validated before constructing the battle.
         for technique_id in profile.techniques:
             output.techniques[id][str(technique_id)] = int(profile.techniques[technique_id])
         output.character_names[id] = str(profile.name)

@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="WuxiaChapterDefinition" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/chapter_definition.gd" id="1_chapter"]
+[ext_resource type="Script" path="res://scripts/content/chapter_scene_definition.gd" id="2_scene"]
+[ext_resource type="Script" path="res://scripts/content/chapter_npc_definition.gd" id="3_npc"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="4_req"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="5_event"]
+[ext_resource type="Resource" path="res://data/native/stories/r24_fog_pass.tres" id="6_story"]
+[ext_resource type="Texture2D" path="res://assets/scenes/story/ruined_temple_story.webp" id="7_background"]
+
+[sub_resource type="Resource" id="Scout"]
+script = ExtResource("3_npc")
+character_id = "r24_lan_chen"
+position = Vector2(990, 540)
+talk_label = "与岚尘结伴"
+trigger_id = "r24_scout"
+
+[sub_resource type="Resource" id="Elder"]
+script = ExtResource("3_npc")
+character_id = "escort_elder"
+position = Vector2(1230, 620)
+talk_label = "向老者问路"
+trigger_id = "r24_elder"
+
+[sub_resource type="Resource" id="Scene"]
+script = ExtResource("2_scene")
+background = ExtResource("7_background")
+primary_npc = SubResource("Scout")
+npcs = Array[Resource]([SubResource("Elder")])
+player_position = Vector2(350, 705)
+player_bounds = Rect2(155, 345, 1260, 410)
+title = "第四幕 · 雾隘同行"
+place = "江南山口 / 拂晓"
+prompt = "分别与岚尘、驿路老者交谈，取得入山线索。"
+talk_label = "与岚尘结伴"
+complete_title = "雾 隘 同 行"
+complete_text = "人声与兵刃声从浓雾中传来，新的队伍已经成形。"
+battle_label = "进入雾隘 · 迎战"
+
+[sub_resource type="Resource" id="Need_scout"]
+script = ExtResource("4_req")
+flag_id = "met_r24_lan"
+
+[sub_resource type="Resource" id="Need_elder"]
+script = ExtResource("4_req")
+flag_id = "met_r24_elder"
+
+[sub_resource type="Resource" id="Win_pill"]
+script = ExtResource("5_event")
+event_type = "grant_item"
+character_id = "r24_lan_chen"
+item_id = "r24_mist_pill"
+count = 1
+
+[resource]
+script = ExtResource("1_chapter")
+content_id = "r24_fog_pass"
+story = ExtResource("6_story")
+encounter_id = "r24_fog_pass_battle"
+scene = SubResource("Scene")
+requirements = Array[Resource]([SubResource("Need_scout"), SubResource("Need_elder")])
+victory_events = Array[Resource]([SubResource("Win_pill")])

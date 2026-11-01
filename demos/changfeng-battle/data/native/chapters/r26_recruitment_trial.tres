@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="WuxiaChapterDefinition" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/chapter_definition.gd" id="1_chapter"]
+[ext_resource type="Script" path="res://scripts/content/chapter_scene_definition.gd" id="2_scene"]
+[ext_resource type="Script" path="res://scripts/content/chapter_npc_definition.gd" id="3_npc"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="4_gate"]
+[ext_resource type="Resource" path="res://data/native/stories/r26_recruitment_trial.tres" id="5_story"]
+[ext_resource type="Texture2D" path="res://assets/scenes/story/ruined_temple_story.webp" id="6_bg"]
+
+[sub_resource type="Resource" id="Wanderer"]
+script = ExtResource("3_npc")
+character_id = "green_wanderer"
+position = Vector2(1050, 560)
+talk_label = "邀请青衣游侠"
+trigger_id = "r26_wanderer"
+
+[sub_resource type="Resource" id="Scene"]
+script = ExtResource("2_scene")
+background = ExtResource("6_bg")
+primary_npc = SubResource("Wanderer")
+player_position = Vector2(350, 705)
+player_bounds = Rect2(155, 345, 1260, 410)
+title = "第五幕 · 青衣结伴"
+place = "山口驿亭 / 雨后"
+prompt = "与青衣游侠交谈，一同迎战山口伏兵。"
+talk_label = "与游侠交谈"
+complete_title = "同 道 并 肩"
+complete_text = "游侠收剑入鞘，转身与你并肩走向山口。"
+battle_label = "迎击山口伏兵"
+
+[sub_resource type="Resource" id="Gate"]
+script = ExtResource("4_gate")
+flag_id = "r26_companion_joined"
+
+[resource]
+script = ExtResource("1_chapter")
+content_id = "r26_recruitment_trial"
+story = ExtResource("5_story")
+encounter_id = "r26_recruitment_trial_battle"
+scene = SubResource("Scene")
+requirements = Array[Resource]([SubResource("Gate")])

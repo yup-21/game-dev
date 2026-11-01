@@ -1,4 +1,5 @@
 extends SceneTree
+const StoryFixture = preload("res://checks/story_test_helper.gd")
 ## Contract test: an independent chapter, NPC and conditional story are data-only.
 const Session = preload("res://scripts/game_session.gd")
 const Chapters = preload("res://scripts/chapter_catalog.gd")
@@ -16,8 +17,10 @@ func check(ok: bool, label: String) -> void:
 
 func _run() -> void:
     var catalog = Chapters.new()
-    check(catalog.load_error.is_empty(),"two chapter definitions load and cross-reference")
-    check(catalog.chapter_order.size()==2 and catalog.first_chapter_id()=="rain_escort_prologue",
+    check(catalog.load_error.is_empty(),"legacy and native chapter definitions load and cross-reference")
+    check(catalog.chapter_order.slice(0,2)==["rain_escort_prologue","river_watch"]
+        and catalog.first_chapter_id()=="rain_escort_prologue"
+        and catalog.chapter_order.has("r21_crossroads"),
         "chapter index has deterministic entry and order")
     var second: Dictionary = catalog.get_chapter("river_watch")
     check(second.get("encounter_id","")=="river_watch_ambush"
@@ -31,8 +34,10 @@ func _run() -> void:
     root.add_child(session)
     session.start_new_game()
     check(not session.begin_encounter(),"chapter prerequisites cannot be skipped")
-    session.record_choice("escort_urgent",0)
-    session.record_story_event("obtain_fragment")
+    check(StoryFixture.finish_prologue(session,0)
+        and bool(session.flags.get("helped_escort",false))
+        and int(session.items.get("taixu_fragment",0)) == 1,
+        "chapter choice and clue are declared events")
     check(session.begin_encounter(),"first chapter admits its declared encounter")
     check(session.report_battle("victory",0),"first encounter result transitions to aftermath")
     check(session.can_advance_chapter() and session.advance_chapter()

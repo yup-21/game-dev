@@ -1,6 +1,6 @@
 extends SceneTree
-## Single public battle entry; intentionally retain the two deprecated scenes
-## as independently launchable fixtures for historical engine regressions.
+## Single battle entry: legacy views have been replaced by model and live-scene tests.
+const Router = preload("res://scripts/chapter_scene_router.gd")
 const ACTIVE := "res://battle_hd2d.tscn"
 var checks := 0
 var failures := 0
@@ -47,10 +47,12 @@ func _run() -> void:
     for path in ["res://battle.tscn", "res://party_battle.tscn"]:
         _check(not opening_code.contains(path) and not result_code.contains(path),
             "public story/menu/result still points to deprecated " + path)
-    _check(opening_code.contains(ACTIVE) and result_code.contains(ACTIVE),
-        "both story and retry must use the canonical battle scene")
+    _check(Router.path_for("battle") == ACTIVE
+        and opening_code.contains('scene_for("battle")')
+        and result_code.contains('scene_for("battle")'),
+        "menu, story and retry resolve one canonical route; no duplicate scene constants")
     for path in ["res://battle.tscn", "res://party_battle.tscn"]:
-        _check(load(path) != null, "legacy fixture should be kept: " + path)
+        _check(not FileAccess.file_exists(path), "obsolete battle view is removed: " + path)
     view.queue_free()
     await process_frame
     print("BATTLE_ENTRY_PASS checks=%d failures=%d canonical=%s" % [

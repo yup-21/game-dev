@@ -5,6 +5,7 @@ const MAX_EFFECTS: int=32
 const Facing = preload("res://scripts/actor_facing.gd")
 const Geometry = preload("res://scripts/battle_spatial_facade.gd")
 const Posture = preload("res://scripts/posture_system.gd")
+const EffectHandlers = preload("res://scripts/effects/effect_registry.gd")
 var state
 var cards
 var costs
@@ -18,6 +19,7 @@ var turns
 var reactions
 var techniques
 var posture = Posture.new()
+var effect_handlers = EffectHandlers.new()
 
 func _init(s,c,cost_system,validator,registry,combo_system,status_system,visibility_system,event_log) -> void:
 	state=s
@@ -375,6 +377,7 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				return
 			state.root_effect_count+=1
 		var target_id: int=effect_target(source,str(effect.get("target","self")))
+		if effect_handlers.dispatch(self,source,target_id,effect,choice): continue
 		match str(effect.type):
 			"deal_damage": deal_damage(source,target_id,float(effect.amount))
 			"on_attack_hit", "on_attack_miss": pass
@@ -398,8 +401,6 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				if not choice.get("target_cell") is Vector2i: continue
 				var path: Array=state.find_path(state.get_actor(source).cell,choice.target_cell,source)
 				if not path.is_empty() and path.size()<=int(effect.max_distance): move_actor(source,choice.target_cell,path)
-			"add_shield": add_shield(target_id,float(effect.amount),int(effect.get("expires_after_global_ticks",100)))
-			"gain_qi": gain_qi(target_id,float(effect.amount))
 			"deal_posture":
 				var strained = state.get_actor(target_id)
 				if strained==null or strained.hp_u<=0: continue
@@ -418,7 +419,6 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				if int(restored.delta)>0:
 					emit("POSTURE_RECOVERED",{"actor_id":target_id,"source_actor_id":source,
 						"amount":int(restored.delta),"posture":int(restored.current),"max_posture":int(restored.max_posture)})
-			"heal_hp": heal_hp(target_id,float(effect.amount))
 			"modify_pending_damage":
 				if state.attack.is_empty(): continue
 				var delta: int=int(effect.get("flat_delta",0))
@@ -451,10 +451,6 @@ func apply_effects(source: int,effects: Array,choice: Dictionary = {},derived: b
 				apply_effects(source,effect.get(branch,[]),choice,derived)
 			"interrupt_root_attack":
 				if not state.attack.is_empty(): state.attack.interrupted=true
-			"apply_status": add_status(target_id,str(effect.status_id),[],int(effect.get("stacks",1)))
-			"consume_status":
-				statuses.remove(target_id,str(effect.status_id))
-				emit("STATUS_REMOVED",{"actor_id":target_id,"status_id":effect.status_id})
 			"force_move": force_move(source,target_id,effect)
 			"draw_cards":
 				var a=state.get_actor(target_id)

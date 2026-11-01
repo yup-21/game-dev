@@ -4,8 +4,6 @@ const PAPER=Color("ede7d7")
 const INK=Color("243b3b")
 const JADE=Color("37766e")
 const GOLD=Color("b8965d")
-## The retry path must never reopen deprecated 2D party combat.
-const ACTIVE_BATTLE_SCENE := "res://battle_hd2d.tscn"
 var font: SystemFont
 var buttons: Array=[]
 

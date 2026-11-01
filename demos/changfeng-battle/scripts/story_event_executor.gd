@@ -2,6 +2,7 @@ extends RefCounted
 ## Validate and stage story effects before touching a live GameSession.
 ## Battle-state mutation remains exclusively under BattleModel.
 const CharacterRuntime = preload("res://scripts/character_runtime.gd")
+const CharacterFactory = preload("res://scripts/character_factory.gd")
 const Modifiers = preload("res://scripts/stat_modifier_system.gd")
 
 static func valid_event(value: Variant) -> bool:
@@ -14,6 +15,12 @@ static func valid_event(value: Variant) -> bool:
             return value.get("id") is String and not str(value.id).is_empty() and _positive(value.get("count"))
         "grant_item":
             return value.get("character_id") is String and not str(value.character_id).is_empty() and value.get("item_id") is String and not str(value.item_id).is_empty() and _positive(value.get("count"))
+        "recruit_character":
+            return value.get("character_id") is String and not str(value.character_id).is_empty()
+        "learn_school", "switch_school":
+            return value.get("character_id") is String and not str(value.character_id).is_empty() and value.get("school_id") is String and not str(value.school_id).is_empty()
+        "set_attribute":
+            return value.get("character_id") is String and not str(value.character_id).is_empty() and value.get("stat") in ["STR","AGI","CON","MND"] and _attribute(value.get("value"))
         "set_growth":
             if not value.get("character_id") is String or not value.get("source") is String or not value.get("modifiers") is Array:
                 return false
@@ -27,6 +34,9 @@ static func valid_event(value: Variant) -> bool:
 
 static func _positive(value: Variant) -> bool:
     return (value is int or value is float) and is_finite(float(value)) and value == floor(float(value)) and value >= 1 and value <= 99
+
+static func _attribute(value: Variant) -> bool:
+    return (value is int or value is float) and is_finite(float(value)) and value == floor(float(value)) and value >= 1 and value <= 100
 
 static func meets(requirements: Variant, flags: Dictionary) -> bool:
     if not requirements is Array:
@@ -66,6 +76,26 @@ static func prepare(events: Variant, current_flags: Dictionary, current_clues: D
             "grant_item":
                 var item_recipient = next_characters.get(str(event.character_id),null)
                 if item_recipient == null or not item_recipient.inventory.add(str(event.item_id),int(event.count)):
+                    return {"ok":false}
+            "recruit_character":
+                var recruit_id: String = str(event.character_id)
+                if next_characters.has(recruit_id) or next_characters.size() >= 8:
+                    return {"ok":false}
+                var recruit = CharacterFactory.new().create_runtime(recruit_id)
+                if recruit == null:
+                    return {"ok":false}
+                next_characters[recruit_id] = recruit
+            "learn_school":
+                var learner = next_characters.get(str(event.character_id),null)
+                if learner == null or not learner.learn_school(str(event.school_id)):
+                    return {"ok":false}
+            "switch_school":
+                var switcher = next_characters.get(str(event.character_id),null)
+                if switcher == null or not switcher.switch_school(str(event.school_id)):
+                    return {"ok":false}
+            "set_attribute":
+                var trainee = next_characters.get(str(event.character_id),null)
+                if trainee == null or not trainee.set_attribute(str(event.stat),int(event.value)):
                     return {"ok":false}
             "set_growth":
                 var growth_recipient = next_characters.get(str(event.character_id),null)

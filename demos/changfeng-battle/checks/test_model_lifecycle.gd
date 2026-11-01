@@ -2,7 +2,7 @@ extends SceneTree
 ## Watch instances without retaining them, including every subsystem replaced by reset.
 const Model = preload("res://scripts/battle_model.gd")
 const COMPONENTS: Array = ["state", "cards", "attributes", "statuses", "visibility", "hooks", "costs", "rules", "combos", "audit", "turns", "reactions", "resolver", "techniques", "conditions", "abilities"]
-const GRAPH_OPTIONS: Dictionary = {"technique_catalog_path": "res://checks/fixtures/technique_graph.json", "techniques": {0: {"test_chain": 3}}}
+const GRAPH_OPTIONS: Dictionary = {"technique_catalog_path": "res://checks/fixtures/technique_graph.tres", "techniques": {0: {"test_chain": 3}}}
 var passed: int = 0
 var failed: int = 0
 

@@ -1,4 +1,5 @@
 extends RefCounted
+const Conditions = preload("res://scripts/condition_evaluator.gd")
 var state
 var cards
 var attributes
@@ -14,6 +15,13 @@ func _sync_modifiers(actor, id: String, definition: Dictionary, stacks: int) -> 
 		var entry: Dictionary = spec.duplicate(true)
 		entry["stacks"] = stacks
 		entries.append(entry)
+	var evaluator = Conditions.new(self)
+	for conditional in definition.get("conditional_modifiers",[]):
+		if evaluator.allows(actor,conditional.get("when",{})):
+			for spec in conditional.get("modifiers",[]):
+				var entry: Dictionary = spec.duplicate(true)
+				entry["stacks"] = stacks
+				entries.append(entry)
 	var previous: Variant = actor.modifier_sources.get(token,null)
 	if entries.is_empty():
 		if previous == null: return
@@ -22,6 +30,12 @@ func _sync_modifiers(actor, id: String, definition: Dictionary, stacks: int) -> 
 		if previous == entries: return
 		actor.modifier_sources[token] = entries
 	if attributes != null: attributes.recalculate(actor)
+
+func _refresh_conditional(actor) -> void:
+	for id in actor.statuses:
+		var definition: Dictionary = cards.statuses.get(str(id),{})
+		if not definition.get("conditional_modifiers",[]).is_empty():
+			_sync_modifiers(actor,str(id),definition,stacks(actor.id,str(id)))
 
 func has(actor_id: int, id: String) -> bool:
 	var a=state.get_actor(actor_id)
@@ -46,6 +60,7 @@ func add(actor_id: int, id: String, amount: int = 1) -> bool:
 	actor.statuses[id]={"expiry":expiry,"stacks":mini(int(d.get("stack_limit",1)),stacks(actor_id,id)+amount)}
 	if id=="scorch": actor.statuses[id]["next_tick"]=next_tick
 	_sync_modifiers(actor,id,d,int(actor.statuses[id].stacks))
+	_refresh_conditional(actor)
 	return true
 
 func remove(actor_id: int,id: String) -> void:
@@ -56,6 +71,7 @@ func remove(actor_id: int,id: String) -> void:
 	if actor.modifier_sources.has(token):
 		actor.modifier_sources.erase(token)
 		if attributes != null: attributes.recalculate(actor)
+	_refresh_conditional(actor)
 
 func conditional_bonus(actor_id: int,target_id: int,c: Dictionary) -> int:
 	var a=state.get_actor(actor_id)

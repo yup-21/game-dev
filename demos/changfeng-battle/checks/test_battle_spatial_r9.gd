@@ -15,7 +15,7 @@ func _check(ok: bool, message: String) -> void:
 func _run() -> void:
     var model = Model.new()
     model.reset(2026, -1, "tingfeng",
-        {"map_definition_path":"res://data/maps/rainy_bridge.json","spatial_mode":"GRID"})
+        {"map_definition_path":"res://data/maps/rainy_bridge.tres","spatial_mode":"GRID"})
     var actor=model.state.get_actor(0)
     var target=model.state.get_actor(1)
     var grid=Geometry.new(model.state)
@@ -29,7 +29,7 @@ func _run() -> void:
         "GRID LOS rejects unsupported diagonal rays")
 
     model.reset(2026, -1, "tingfeng",
-        {"map_definition_path":"res://data/maps/rainy_bridge.json","spatial_mode":"FREE"})
+        {"map_definition_path":"res://data/maps/rainy_bridge.tres","spatial_mode":"FREE"})
     actor=model.state.get_actor(0)
     target=model.state.get_actor(1)
     var free=Geometry.new(model.state)

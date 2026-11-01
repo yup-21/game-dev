@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="WuxiaEncounterDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/encounter_definition.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://scripts/content/encounter_combatant_definition.gd" id="2_actor"]
+[ext_resource type="Resource" path="res://data/maps/r24_fog_pass_map.tres" id="3_map"]
+
+[sub_resource type="Resource" id="Hero"]
+script = ExtResource("2_actor")
+actor_id = 0
+character_id = "r24_lan_chen"
+display_name = "岚尘"
+team_id = 0
+controller = "PLAYER"
+cell = Vector2i(6, 4)
+
+[sub_resource type="Resource" id="Pursuer"]
+script = ExtResource("2_actor")
+actor_id = 1
+character_id = "pursuer_captain"
+display_name = "追镖首领"
+team_id = 1
+controller = "AI"
+cell = Vector2i(8, 4)
+
+[resource]
+script = ExtResource("1_encounter")
+content_id = "r24_fog_pass_battle"
+seed = 2424
+combatants = Array[Resource]([SubResource("Hero"), SubResource("Pursuer")])
+map_resource = ExtResource("3_map")

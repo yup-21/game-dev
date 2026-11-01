@@ -1,7 +1,9 @@
 extends RefCounted
 ## Pure Sprite2D/CanvasItem effects. This class never mutates combat state.
+const Assets = preload("res://scripts/asset_registry.gd")
 var canvas: Node2D
 var bursts: Array = []
+var native_assets = Assets.new()
 
 func _init(painted_layer: Node2D) -> void:
     canvas = painted_layer
@@ -40,6 +42,15 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
             points.append(Vector2(cos(angle)*length,sin(angle)*length))
     arc.points=points
     root.add_child(arc)
+    # Optional authored overlay. Missing assets keep the existing procedural stroke.
+    var authored: Texture2D = native_assets.texture_for_event(kind)
+    if authored != null:
+        var sprite := Sprite2D.new()
+        sprite.name = "AuthoredVFX"
+        sprite.texture = authored
+        var longest: float = maxf(float(authored.get_width()),float(authored.get_height()))
+        sprite.scale = Vector2.ONE * (80.0 * size / maxf(longest,1.0))
+        root.add_child(sprite)
     if kind in ["slash","combo"]:
         var secondary:=Line2D.new()
         secondary.antialiased=true

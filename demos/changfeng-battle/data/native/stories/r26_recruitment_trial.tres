@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="WuxiaStoryDefinition" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/story_definition.gd" id="1_story"]
+[ext_resource type="Script" path="res://scripts/content/story_beat_definition.gd" id="2_beat"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_node_definition.gd" id="3_node"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="4_event"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="5_gate"]
+
+[sub_resource type="Resource" id="Beat"]
+script = ExtResource("2_beat")
+caption = "山亭 · 雨后"
+text = "青衣游侠在山口等待，前方埋伏已现。"
+duration = 2.5
+
+[sub_resource type="Resource" id="Recruit"]
+script = ExtResource("4_event")
+event_type = "recruit_character"
+character_id = "green_wanderer"
+
+[sub_resource type="Resource" id="Learn"]
+script = ExtResource("4_event")
+event_type = "learn_school"
+character_id = "green_wanderer"
+school_id = "r24_mist_sword"
+
+[sub_resource type="Resource" id="Flag"]
+script = ExtResource("4_event")
+event_type = "set_flag"
+flag_id = "r26_companion_joined"
+flag_value = true
+
+[sub_resource type="Resource" id="Wanderer"]
+script = ExtResource("3_node")
+node_id = "r26_wanderer"
+speaker = "青衣游侠"
+text = "山口有伏兵，我愿同行。雾剑步法也可与你切磋。"
+events = Array[Resource]([SubResource("Recruit"), SubResource("Learn"), SubResource("Flag")])
+
+[sub_resource type="Resource" id="Gate"]
+script = ExtResource("5_gate")
+flag_id = "r26_companion_joined"
+
+[resource]
+script = ExtResource("1_story")
+content_id = "r26_recruitment_story"
+title = "青衣结伴"
+subtitle = "第五幕 · 山亭会盟"
+entry_node = "r26_wanderer"
+cinematic_beats = Array[Resource]([SubResource("Beat")])
+dialogue_nodes = Array[Resource]([SubResource("Wanderer")])
+return_to_explore = true
+completion_requirements = Array[Resource]([SubResource("Gate")])

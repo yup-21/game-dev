@@ -1,0 +1,222 @@
+[gd_resource type="Resource" script_class="WuxiaActionTimelineDefinition" load_steps=40 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/action_time_window.gd" id="1_window"]
+[ext_resource type="Script" path="res://scripts/content/action_cue_definition.gd" id="2_cue"]
+[ext_resource type="Script" path="res://scripts/content/action_clip_definition.gd" id="3_clip"]
+[ext_resource type="Script" path="res://scripts/content/action_event_binding.gd" id="4_binding"]
+[ext_resource type="Script" path="res://scripts/content/action_timeline_definition.gd" id="5_timeline"]
+
+[sub_resource type="Resource" id="Clip_idle"]
+script = ExtResource("3_clip")
+clip_id = "idle"
+duration_sec = 1
+startup_sec = 0
+active_sec = 1
+recovery_sec = 0
+
+[sub_resource type="Resource" id="Clip_move"]
+script = ExtResource("3_clip")
+clip_id = "move"
+duration_sec = 0.55
+startup_sec = 0
+active_sec = 0.55
+recovery_sec = 0
+
+[sub_resource type="Resource" id="Window_attack_cancel"]
+script = ExtResource("1_window")
+from_sec = 0.38
+to_sec = 0.56
+
+[sub_resource type="Resource" id="Window_attack_reaction"]
+script = ExtResource("1_window")
+from_sec = 0.14
+to_sec = 0.34
+
+[sub_resource type="Resource" id="Cue_attack_0"]
+script = ExtResource("2_cue")
+cue_name = "strike_active"
+at_sec = 0.16
+
+[sub_resource type="Resource" id="Cue_attack_1"]
+script = ExtResource("2_cue")
+cue_name = "strike_recovery"
+at_sec = 0.36
+
+[sub_resource type="Resource" id="Clip_attack"]
+script = ExtResource("3_clip")
+clip_id = "attack"
+duration_sec = 0.62
+startup_sec = 0.16
+active_sec = 0.2
+recovery_sec = 0.26
+cancel_window = SubResource("Window_attack_cancel")
+reaction_window = SubResource("Window_attack_reaction")
+cues = Array[Resource]([SubResource("Cue_attack_0"), SubResource("Cue_attack_1")])
+
+[sub_resource type="Resource" id="Window_guard_reaction"]
+script = ExtResource("1_window")
+from_sec = 0.05
+to_sec = 0.25
+
+[sub_resource type="Resource" id="Cue_guard_0"]
+script = ExtResource("2_cue")
+cue_name = "guard_active"
+at_sec = 0.05
+
+[sub_resource type="Resource" id="Clip_guard"]
+script = ExtResource("3_clip")
+clip_id = "guard"
+duration_sec = 0.38
+startup_sec = 0.05
+active_sec = 0.2
+recovery_sec = 0.13
+reaction_window = SubResource("Window_guard_reaction")
+cues = Array[Resource]([SubResource("Cue_guard_0")])
+
+[sub_resource type="Resource" id="Clip_hit"]
+script = ExtResource("3_clip")
+clip_id = "hit"
+duration_sec = 0.46
+startup_sec = 0.04
+active_sec = 0.22
+recovery_sec = 0.2
+
+[sub_resource type="Resource" id="Window_evade_invulnerable"]
+script = ExtResource("1_window")
+from_sec = 0.07
+to_sec = 0.25
+
+[sub_resource type="Resource" id="Cue_evade_0"]
+script = ExtResource("2_cue")
+cue_name = "evade_visual_start"
+at_sec = 0.07
+
+[sub_resource type="Resource" id="Clip_evade"]
+script = ExtResource("3_clip")
+clip_id = "evade"
+duration_sec = 0.38
+startup_sec = 0.05
+active_sec = 0.21
+recovery_sec = 0.12
+invulnerable_window = SubResource("Window_evade_invulnerable")
+cues = Array[Resource]([SubResource("Cue_evade_0")])
+
+[sub_resource type="Resource" id="Window_skill_cancel"]
+script = ExtResource("1_window")
+from_sec = 0.36
+to_sec = 0.5
+
+[sub_resource type="Resource" id="Cue_skill_0"]
+script = ExtResource("2_cue")
+cue_name = "skill_visual_active"
+at_sec = 0.18
+
+[sub_resource type="Resource" id="Clip_skill"]
+script = ExtResource("3_clip")
+clip_id = "skill"
+duration_sec = 0.55
+startup_sec = 0.18
+active_sec = 0.18
+recovery_sec = 0.19
+cancel_window = SubResource("Window_skill_cancel")
+cues = Array[Resource]([SubResource("Cue_skill_0")])
+
+[sub_resource type="Resource" id="Window_combo_cancel"]
+script = ExtResource("1_window")
+from_sec = 0.45
+to_sec = 0.67
+
+[sub_resource type="Resource" id="Cue_combo_0"]
+script = ExtResource("2_cue")
+cue_name = "combo_visual_active"
+at_sec = 0.16
+
+[sub_resource type="Resource" id="Clip_combo"]
+script = ExtResource("3_clip")
+clip_id = "combo"
+duration_sec = 0.78
+startup_sec = 0.16
+active_sec = 0.33
+recovery_sec = 0.29
+cancel_window = SubResource("Window_combo_cancel")
+cues = Array[Resource]([SubResource("Cue_combo_0")])
+
+[sub_resource type="Resource" id="Clip_defeat"]
+script = ExtResource("3_clip")
+clip_id = "defeat"
+duration_sec = 1
+startup_sec = 0.1
+active_sec = 0.6
+recovery_sec = 0.3
+
+[sub_resource type="Resource" id="Event_MOVE"]
+script = ExtResource("4_binding")
+event_type = "MOVE"
+clip_id = "move"
+
+[sub_resource type="Resource" id="Event_MOVE_FREE"]
+script = ExtResource("4_binding")
+event_type = "MOVE_FREE"
+clip_id = "move"
+
+[sub_resource type="Resource" id="Event_ATTACK_DECLARED"]
+script = ExtResource("4_binding")
+event_type = "ATTACK_DECLARED"
+clip_id = "attack"
+
+[sub_resource type="Resource" id="Event_COMBO_TRIGGERED"]
+script = ExtResource("4_binding")
+event_type = "COMBO_TRIGGERED"
+clip_id = "combo"
+
+[sub_resource type="Resource" id="Event_SHIELD"]
+script = ExtResource("4_binding")
+event_type = "SHIELD"
+clip_id = "guard"
+
+[sub_resource type="Resource" id="Event_INTERCEPT_JUDGED"]
+script = ExtResource("4_binding")
+event_type = "INTERCEPT_JUDGED"
+clip_id = "guard"
+
+[sub_resource type="Resource" id="Event_ATTACK_MISSED"]
+script = ExtResource("4_binding")
+event_type = "ATTACK_MISSED"
+clip_id = "evade"
+
+[sub_resource type="Resource" id="Event_DAMAGE"]
+script = ExtResource("4_binding")
+event_type = "DAMAGE"
+clip_id = "hit"
+
+[sub_resource type="Resource" id="Event_HP_DAMAGED"]
+script = ExtResource("4_binding")
+event_type = "HP_DAMAGED"
+clip_id = "hit"
+
+[sub_resource type="Resource" id="Event_SCORCH_TICK"]
+script = ExtResource("4_binding")
+event_type = "SCORCH_TICK"
+clip_id = "hit"
+
+[sub_resource type="Resource" id="Event_ATTACK_INTERRUPTED"]
+script = ExtResource("4_binding")
+event_type = "ATTACK_INTERRUPTED"
+clip_id = "guard"
+
+[sub_resource type="Resource" id="Event_POSTURE_BROKEN"]
+script = ExtResource("4_binding")
+event_type = "POSTURE_BROKEN"
+clip_id = "hit"
+
+[sub_resource type="Resource" id="Event_CHAIN_LINK_CANCELED"]
+script = ExtResource("4_binding")
+event_type = "CHAIN_LINK_CANCELED"
+clip_id = "guard"
+
+[resource]
+script = ExtResource("5_timeline")
+content_id = "r32_default_action_timeline"
+note = "Presentation timing only. No combat authority, i-frame or input permissions are granted by this file."
+clips = Array[Resource]([SubResource("Clip_idle"), SubResource("Clip_move"), SubResource("Clip_attack"), SubResource("Clip_guard"), SubResource("Clip_hit"), SubResource("Clip_evade"), SubResource("Clip_skill"), SubResource("Clip_combo"), SubResource("Clip_defeat")])
+event_bindings = Array[Resource]([SubResource("Event_MOVE"), SubResource("Event_MOVE_FREE"), SubResource("Event_ATTACK_DECLARED"), SubResource("Event_COMBO_TRIGGERED"), SubResource("Event_SHIELD"), SubResource("Event_INTERCEPT_JUDGED"), SubResource("Event_ATTACK_MISSED"), SubResource("Event_DAMAGE"), SubResource("Event_HP_DAMAGED"), SubResource("Event_SCORCH_TICK"), SubResource("Event_ATTACK_INTERRUPTED"), SubResource("Event_POSTURE_BROKEN"), SubResource("Event_CHAIN_LINK_CANCELED")])

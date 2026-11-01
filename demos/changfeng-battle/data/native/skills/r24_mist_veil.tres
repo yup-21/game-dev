@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://scripts/content/skill_usage_definition.gd" id="2_usage"]
+[ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+
+[sub_resource type="Resource" id="Dew"]
+script = ExtResource("3_effect")
+effect_type = "apply_status"
+target = "self"
+parameters = {"status_id": "r24_dew_guard", "stacks": 1}
+
+[sub_resource type="Resource" id="Edge"]
+script = ExtResource("3_effect")
+effect_type = "apply_status"
+target = "self"
+parameters = {"status_id": "r24_mist_edge", "stacks": 1}
+
+[sub_resource type="Resource" id="Follow"]
+script = ExtResource("3_effect")
+effect_type = "grant_card"
+target = "self"
+parameters = {"card_id": "r24_mist_follow", "count": 1, "destination": "hand"}
+
+[sub_resource type="Resource" id="Usage"]
+script = ExtResource("2_usage")
+usage_id = "veil"
+display_name = "敛雾"
+timing = "ACTION"
+cost_qi = 0
+target_kind = "self"
+effects = Array[Resource]([SubResource("Dew"), SubResource("Edge"), SubResource("Follow")])
+
+[resource]
+script = ExtResource("1_skill")
+content_id = "r24_mist_veil"
+display_name = "烟岚剑·敛雾"
+school_id = "r24_mist_sword"
+generated_only = false
+usages = Array[Resource]([SubResource("Usage")])

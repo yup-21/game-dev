@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_character"]
+[ext_resource type="Script" path="res://scripts/content/starting_item_definition.gd" id="2_start"]
+[ext_resource type="Texture2D" path="res://assets/characters/concepts/gu_qingshuang_portrait_v1.png" id="3_portrait"]
+[ext_resource type="Texture2D" path="res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png" id="4_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/character_presentation_preview.tscn" id="5_scene"]
+
+[sub_resource type="Resource" id="Starting_blade"]
+script = ExtResource("2_start")
+item_id = "r24_reed_sword"
+count = 1
+equip = true
+
+[sub_resource type="Resource" id="Starting_pill"]
+script = ExtResource("2_start")
+item_id = "r24_mist_pill"
+count = 2
+
+[resource]
+script = ExtResource("1_character")
+content_id = "r24_lan_chen"
+display_name = "岚尘"
+title = "烟岚谷行者"
+role = "可招募剑客"
+faction = "烟岚剑派"
+weapon = "青芦短剑"
+personality = "寡言而重义，识路辨雾。"
+biography = "岚尘出自烟岚谷，熟悉山口隐径。愿携剑同行，寻回失落的门派卷册。"
+team_hint = "ally"
+battle_actor_id = -1
+school_id = "r24_mist_sword"
+learned_schools = Array[String](["r24_mist_sword"])
+attributes = {"STR": 11, "AGI": 13, "CON": 10, "MND": 11}
+passives = {"insight": 1, "conceal": 1}
+techniques = {"r24_mist_steps": 1}
+starting_items = Array[Resource]([SubResource("Starting_blade"), SubResource("Starting_pill")])
+portrait = ExtResource("3_portrait")
+sprite_sheet = ExtResource("4_sheet")
+portrait_quality = "concept_preview"
+sheet_quality = "concept_preview"
+battle_scene = ExtResource("5_scene")

@@ -1,0 +1,66 @@
+[gd_resource type="Resource" script_class="WuxiaEncounterDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/encounter_definition.gd" id="1_encounter"]
+[ext_resource type="Script" path="res://scripts/content/encounter_combatant_definition.gd" id="2_actor"]
+
+[sub_resource type="Resource" id="Actor_0"]
+script = ExtResource("2_actor")
+actor_id = 0
+character_id = "shen_changfeng"
+display_name = "沈长风"
+team_id = 0
+controller = "PLAYER"
+cell = Vector2i(6, 4)
+
+[sub_resource type="Resource" id="Actor_1"]
+script = ExtResource("2_actor")
+actor_id = 2
+character_id = "gu_qingshuang"
+display_name = "顾清霜"
+team_id = 0
+controller = "PLAYER"
+cell = Vector2i(3, 3)
+
+[sub_resource type="Resource" id="Actor_2"]
+script = ExtResource("2_actor")
+actor_id = 3
+character_id = "green_wanderer"
+display_name = "青衫客"
+team_id = 0
+controller = "AI"
+cell = Vector2i(4, 4)
+
+[sub_resource type="Resource" id="Actor_3"]
+script = ExtResource("2_actor")
+actor_id = 1
+character_id = "pursuer_captain"
+display_name = "追镖首领"
+team_id = 1
+controller = "AI"
+cell = Vector2i(8, 4)
+
+[sub_resource type="Resource" id="Actor_4"]
+script = ExtResource("2_actor")
+actor_id = 4
+character_id = "black_blade"
+display_name = "黑衣刀客"
+team_id = 1
+controller = "AI"
+cell = Vector2i(12, 4)
+
+[sub_resource type="Resource" id="Actor_5"]
+script = ExtResource("2_actor")
+actor_id = 5
+character_id = "night_assassin"
+display_name = "夜行刺客"
+team_id = 1
+controller = "AI"
+cell = Vector2i(13, 3)
+
+[resource]
+script = ExtResource("1_encounter")
+content_id = "escort_ambush"
+title = "雨夜截镖 · 断桥遭遇"
+seed = 2026
+map_id = "rainy_bridge"
+combatants = Array[Resource]([SubResource("Actor_0"), SubResource("Actor_1"), SubResource("Actor_2"), SubResource("Actor_3"), SubResource("Actor_4"), SubResource("Actor_5")])

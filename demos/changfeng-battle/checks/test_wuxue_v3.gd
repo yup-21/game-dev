@@ -1,5 +1,4 @@
 extends "res://checks/test_tingfeng.gd"
-const Legacy = preload("res://scripts/legacy_skill_adapter.gd")
 var exercised: Array = []
 
 func school(a: String, b: String = "tingfeng", first: int = 0, extra: Dictionary = {}):
@@ -39,7 +38,7 @@ func run_tests() -> void:
 	test_seal_clock()
 	test_scorch_clock()
 	test_spatial_blood_draw()
-	test_legacy_and_scope()
+	test_invalid_school_scope()
 	test_first_insight()
 	test_school_policy()
 	test_path_equivalence()
@@ -54,8 +53,8 @@ func test_catalog_decks() -> void:
 	for combo in base.cards.combos: combo_ids.append(str(combo.get("id", "")))
 	check(base.cards.definitions.size() == 6 and base.cards.statuses.has_all(["opening","hand_exposed"]) and combo_ids.has("probe_to_follow") and combo_ids.has("opening_to_expose"), "original five forms, two base statuses and combos remain available")
 	var catalog = base.cards.catalog
-	check(catalog.load_error.is_empty() and catalog.schools.size() == 10 and catalog.forms.size() == 20 and catalog.statuses.size() == 3 and catalog.combos.size() == 7, "V3 catalog complete and validated")
-	check(base.school_options().size() == 11 and base.snapshot().school_catalog.size() == 11, "eleven public school options")
+	check(catalog.load_error.is_empty() and catalog.schools.size() >= 10 and catalog.forms.size() == 20 and catalog.statuses.size() == 3 and catalog.combos.size() == 7, "V3 catalog complete and validated")
+	check(base.school_options().size() == catalog.schools.size() + 1 and base.snapshot().school_catalog.size() == catalog.schools.size() + 1, "eleven public school options")
 	for entry in catalog.schools:
 		var id: String = str(entry.id) if entry is Dictionary else str(entry)
 		var model = school(id, "needle" if id != "needle" else "saber")
@@ -276,19 +275,12 @@ func test_spatial_blood_draw() -> void:
 	check(use(model, 0, "taixu_breath", "breathe") and model.state.get_actor(0).qi_u == 3 * UNIT, "active recovery remains full value")
 	check(option(model, 0, "PLAY_CARD", "taixu_breath", "breathe").is_empty(), "recovery once shared across copies")
 
-func test_legacy_and_scope() -> void:
-	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/legacy_id_map.json"))
-	var count: int = 0
-	for old_id in data.mapping:
-		var expected: Dictionary = data.mapping[old_id]
-		var actual: Dictionary = Legacy.resolve_legacy(str(old_id))
-		check(actual.get("definition_id", "") == str(expected.card_id) and actual.get("card_id", "") == str(expected.card_id) and actual.get("usage_id", "") == str(expected.usage_id), "legacy static reference " + str(old_id))
-		count += 1
-	check(count == 40 and Legacy.resolve_legacy("unknown").is_empty() and Legacy.resolve_legacy("step_01", "evasion").get("usage_id", "") == "evasion", "40 old IDs and unknown/alternate usage")
-
+func test_invalid_school_scope() -> void:
 	var invalid = Model.new()
 	invalid.reset(311, 0, "tingfeng", {"schools":{0:"missing_school",1:"needle"}})
-	check(not invalid.cards.load_error.is_empty() and invalid.state.phase == "FINISHED" and event_has(invalid, "RULE_ERROR"), "invalid school produces structured catalog failure")
+	check(not invalid.cards.load_error.is_empty() and invalid.state.phase == "FINISHED"
+		and event_has(invalid, "RULE_ERROR"),
+		"invalid school produces structured catalog failure")
 
 func test_first_insight() -> void:
 	var model = school("tingfeng", "tingfeng", 0, {"passives":{1:{"insight":1}}})

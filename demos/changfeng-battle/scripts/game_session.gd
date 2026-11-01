@@ -1,14 +1,18 @@
 extends Node
 ## The in-memory source of truth across chapters, battle snapshots and rewards.
-## A new chapter is registered in JSON; combat authority remains in BattleModel.
+## Combat authority remains in BattleModel; initial party loadouts come from character cards.
 const ScenarioDirector = preload("res://scripts/scenario_director.gd")
 const ChapterCatalog = preload("res://scripts/chapter_catalog.gd")
 const CharacterRuntime = preload("res://scripts/character_runtime.gd")
+const CharacterFactory = preload("res://scripts/character_factory.gd")
 const InventoryRuntime = preload("res://scripts/inventory_runtime.gd")
 const StoryEvents = preload("res://scripts/story_event_executor.gd")
 const SceneRouter = preload("res://scripts/chapter_scene_router.gd")
+const Quests = preload("res://scripts/quest_runtime.gd")
+const QUICK_ENCOUNTER_ID := "r40_quick_duel"
 var director = ScenarioDirector.new()
 var chapters = ChapterCatalog.new()
+var quests = Quests.new()
 var phase: String = "menu"
 var chapter_id: String = ""
 var choices: Array = []
@@ -22,9 +26,11 @@ var battle_outcome: String = ""
 var winning_team: int = -1
 var battle_spatial_mode: String = "GRID"
 
-func start_new_game() -> void:
+func start_new_game(entry_chapter_id: String = "") -> void:
+    var first: String = chapters.first_chapter_id() if entry_chapter_id.is_empty() else entry_chapter_id
+    if chapters.get_chapter(first).is_empty(): return
     phase = "story"
-    chapter_id = chapters.first_chapter_id()
+    chapter_id = first
     choices.clear()
     flags.clear()
     items.clear()
@@ -34,23 +40,41 @@ func start_new_game() -> void:
     battle_outcome = ""
     winning_team = -1
     var chapter: Dictionary = chapter_definition()
+    var factory = CharacterFactory.new()
     for actor in director.encounter(str(chapter.get("encounter_id",""))).get("combatants",[]):
-        if int(actor.get("team_id",-1)) != 0:
+        if int(actor.get("team_id",-1)) != 0 or bool(actor.get("recruit_at_story",false)):
             continue
         var id: String = str(actor.get("character_id",""))
         if not id.is_empty() and not characters.has(id):
-            var character = CharacterRuntime.new(id)
-            if character.load_error.is_empty():
+            var character = factory.create_runtime(id)
+            if character != null:
                 characters[id] = character
-    ## Deterministic demo inventory/equipment seed. New chapters do not reseed.
-    var hero = characters.get("shen_changfeng",null)
-    if hero != null:
-        hero.inventory.add("healing_powder",2)
-        hero.inventory.add("breath_pill",1)
-        if hero.inventory.add("river_sword"):
-            var uid: String = str(hero.inventory.last_added_uids[0])
-            hero.inventory.set_affixes(uid,["keen_edge"])
-            hero.inventory.equip(uid)
+
+## Quick combat bypasses story progression, not encounter loading.
+func start_quick_battle() -> bool:
+    var quick: Dictionary = director.encounter(QUICK_ENCOUNTER_ID)
+    if quick.is_empty():
+        return false
+    var factory = CharacterFactory.new()
+    var staged: Dictionary = {}
+    for actor in quick.get("combatants", []):
+        if int(actor.get("team_id",-1)) != 0:
+            continue
+        var id: String = str(actor.get("character_id",""))
+        var runtime = factory.create_runtime(id)
+        if runtime == null:
+            return false
+        staged[id] = runtime
+    characters = staged
+    phase = "quick_battle"
+    chapter_id = ""
+    encounter_id = QUICK_ENCOUNTER_ID
+    battle_outcome = ""
+    winning_team = -1
+    return true
+
+func quest_status(id: String) -> Dictionary:
+    return quests.status(id,flags,items,cleared_encounters)
 
 func chapter_definition() -> Dictionary:
     return chapters.get_chapter(chapter_id)
@@ -65,20 +89,6 @@ func record_choice(node_id: String, option_id: int) -> void:
     if phase != "story":
         return
     choices.append({"chapter_id":chapter_id,"node_id":node_id,"option":option_id})
-    ## Compatibility for the original demo's branch, without constraining
-    ## newly authored chapters, whose choices use declarative events.
-    if chapter_id == "rain_escort_prologue" and node_id == "escort_urgent":
-        flags["helped_escort"] = option_id == 0
-
-func record_story_event(event_id: String) -> void:
-    if phase != "story":
-        return
-    ## Legacy opening_story.json still emits this named marker.
-    if event_id == "obtain_fragment" and not bool(flags.get("obtained_fragment",false)):
-        apply_story_events([
-            {"type":"set_flag","flag":"obtained_fragment","value":true},
-            {"type":"grant_clue","id":"taixu_fragment","count":1}
-        ])
 
 func apply_story_events(events: Array) -> bool:
     if phase != "story":
@@ -116,7 +126,7 @@ func begin_encounter(id: String = "") -> bool:
     return true
 
 func encounter_options() -> Dictionary:
-    if phase != "battle":
+    if phase not in ["battle", "quick_battle"]:
         return {}
     var builds: Dictionary = {}
     for character_id in characters:

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://assets/concepts/2026-10-30/characters/violet_dual_blade_assassin_24_pose.png" id="2_sprite_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+content_id = "night_assassin"
+display_name = "夜行刺客"
+title = "暗袖夜影"
+role = "追兵 · 远袭"
+faction = "神秘追兵"
+weapon = "双短刃（袖针）"
+personality = "少言、迅捷，惯于伺机而动。"
+biography = "追兵队伍中的夜行者，短刃藏锋，袖中兼施暗针。暗器的逐帧表现仍需补齐。"
+team_hint = "enemy"
+battle_actor_id = 5
+school_id = "needle"
+learned_schools = Array[String](["needle","step"])
+attributes = {"STR":9,"AGI":14,"CON":8,"MND":12}
+passives = {"insight":0,"conceal":2}
+techniques = {}
+sprite_sheet = ExtResource("2_sprite_sheet")
+portrait_quality = "sprite_fallback"
+sheet_quality = "24_pose_preview"
+pose_quality = "none"

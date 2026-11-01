@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Script" path="res://scripts/content/map_polygon_definition.gd" id="2_poly"]
+[ext_resource type="Texture2D" path="res://assets/scenes/battle/rainy_bridge_battle.webp" id="3_background"]
+
+[sub_resource type="Resource" id="Obstacle"]
+script = ExtResource("2_poly")
+terrain_kind = "water"
+vertices = PackedVector2Array(750, 180, 850, 180, 850, 600, 750, 600)
+
+[resource]
+script = ExtResource("1_map")
+content_id = "r23_free_brush_map"
+background = ExtResource("3_background")
+viewport_size = Vector2i(1600, 1000)
+area_bounds = Rect2(100, 100, 1400, 800)
+obstacles = Array[Resource]([SubResource("Obstacle")])

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png" id="2_sprite_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+content_id = "green_wanderer"
+display_name = "青衫客"
+title = "踏雪行者"
+role = "游侠 · 身法"
+faction = "同行者"
+weapon = "直剑"
+personality = "阅历丰富，不喜多言，行事稳妥。"
+biography = "一身旧青衫的游侠，凭踏雪步法往来阵中，擅长游走和掩护，背景与姓名仍有待剧情揭示。"
+team_hint = "ally"
+battle_actor_id = 3
+school_id = "step"
+learned_schools = Array[String](["step","needle"])
+attributes = {"STR":10,"AGI":14,"CON":9,"MND":10}
+passives = {"insight":0,"conceal":1}
+techniques = {}
+sprite_sheet = ExtResource("2_sprite_sheet")
+portrait_quality = "sprite_fallback"
+sheet_quality = "24_pose_preview"
+pose_quality = "none"

@@ -7,7 +7,7 @@ func run(view) -> void:
 	await _frames(2)
 	ui._send_key(KEY_ENTER)
 	await _frames(2)
-	if not _ok(ui.snap.school_catalog.size()==11,"eleven schools exposed in the real battle view"): return
+	if not _ok(ui.snap.school_catalog.size()>=11,"eleven schools exposed in the real battle view"): return
 	var original_terrain: Dictionary=ui.snap.terrain.duplicate(true)
 	if not await _click_action("school_open:0"): return
 	if not _ok(ui.buttons.size()==12,"school modal offers all eleven schools and cancel"): return

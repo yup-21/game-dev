@@ -1,4 +1,6 @@
-# 模块化内容制作指南（R11–R17）
+# 模块化内容制作指南（R11–R17 旧内容兼容）
+
+> **R18 起不再使用 JSON 制作新内容。** 本文档记录旧系统的兼容格式，新的角色、Buff、物品请使用 Godot Inspector 和 `.tres`，参见 [NATIVE_CONTENT_R18.md](NATIVE_CONTENT_R18.md)。现有 JSON 在逐类完成 Resource 迁移前继续保留。
 
 本项目保持 **定义层 / 运行态 / 规则执行 / 表现层** 分离。添加内容应优先修改 JSON 资源与索引，不再修改 `BattleModel`、`CombatResolver`、`BattleHUDView`。
 

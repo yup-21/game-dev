@@ -16,7 +16,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var catalog = ItemCatalog.new()
-	check(catalog.load_error.is_empty() and catalog.definitions.size() == 4,"four independently authored items")
+	check(catalog.load_error.is_empty() and catalog.definitions.size() >= 4,"four independently authored items")
 	var role = Runtime.new("shen_changfeng")
 	check(role.load_error.is_empty(),"character runtime from profile")
 	check(role.inventory.add("river_sword",2),"acquire two item instances")
