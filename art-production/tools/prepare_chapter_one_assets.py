@@ -64,9 +64,10 @@ def source_cell_edge_risks(path: Path) -> list[str]:
         for frame_index in range(24):
             x, y = frame_index % 6 * 256, frame_index // 6 * 256
             tile = alpha.crop((x, y, x + 256, y + 256))
+            # Bottom contact alone may be an intentional floor anchor;
+            # inspect upper and lateral cuts where subjects must be isolated.
             edge_bands = {
                 "top": (16, 0, 240, 2),
-                "bottom": (16, 254, 240, 256),
                 "left": (0, 16, 2, 240),
                 "right": (254, 16, 256, 240),
             }
