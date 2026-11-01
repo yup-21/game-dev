@@ -29,18 +29,17 @@ func configure(id: String) -> bool:
         push_error(load_error)
         return false
     name = "Role_" + character_id
-    is_sheet = not str(role.art.sprite_sheet).is_empty()
+    is_sheet = Art.uses_supplied_sheet_for_character(character_id)
     animation_profile = Art.animation_profile_for_character(character_id) if is_sheet else null
     var texture: Texture2D
     if is_sheet:
         if animation_profile != null:
             texture = animation_profile.atlas
-        # Story-only NPCs have no battle actor ID. Load their authored sheet
-        # by stable resource path; battle actors retain the verified atlas path.
+        # Story-only NPCs have no battle actor ID. Read the live native card;
+        # battle actors retain the verified animation profile.
         if texture == null and int(role.battle_actor_id) < 0:
-            var path: String = str(role.art.sprite_sheet)
-            if ResourceLoader.exists(path):
-                texture = load(path) as Texture2D
+            var card: WuxiaCharacterDefinition = Registry.new().definition_for(character_id)
+            texture = card.sprite_sheet if card != null else null
             if texture == null:
                 texture = Art.sheet_for_character(character_id)
         elif texture == null:
