@@ -66,6 +66,9 @@ func _run() -> void:
     var opening: Node = load("res://opening.tscn").instantiate()
     root.add_child(opening)
     await process_frame
+    # No chapter art is required at the title screen; it binds on new game.
+    opening.call("_enter_new_game")
+    await process_frame
     for name in ["FirstActPaintedBackground", "FirstActGroundArt",
                  "FirstActForegroundClip", "FirstActWeatherClip"]:
         if opening.get_node_or_null(name) == null:
@@ -76,7 +79,6 @@ func _run() -> void:
         _fail("opening still draws old full scene as the active background")
         return
     var scene_story = opening.get("story")
-    scene_story.begin()
     scene_story.skip_cinematic()
     await process_frame
     if not opening.get_node("FirstActForegroundClip").visible:

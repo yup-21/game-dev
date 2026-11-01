@@ -48,11 +48,13 @@ func _run() -> void:
         and elder.body.texture==Art.story_pose_for_character("escort_elder")
         and elder.body.material==null
         and elder.body.frame_coords==Vector2i.ZERO,
-        "injured elder uses dedicated transparent vector pose, no generated model")
+        "injured elder uses dedicated transparent PNG pose, no generated model")
     _check(not layer.visible,"story role sprites stay hidden during title")
-    _check(str(registry.for_name("老镖头").art.static_pose)
-        == "res://assets/characters/concepts/escort_elder_injured.svg",
-        "injured vector file is registered on the character dossier")
+    var elder_card: WuxiaCharacterDefinition = load("res://data/native/characters/escort_elder.tres")
+    _check(elder_card != null and elder_card.static_pose != null
+        and str(registry.for_name("老镖头").art.static_pose) == elder_card.static_pose.resource_path
+        and elder_card.static_pose.resource_path.begins_with("res://assets/imported/candidates/"),
+        "injured PNG pose resolves through the native character card")
     opening.call("_enter_new_game")
     await process_frame
     _check(not layer.visible,"cinematic still portraits do not clash with scene sprites")

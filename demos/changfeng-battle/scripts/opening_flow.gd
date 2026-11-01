@@ -193,6 +193,7 @@ func _enter_new_game() -> void:
 	var session=_session()
 	if session!=null: session.start_new_game()
 	_load_chapter_content()
+	_refresh_temple_art()
 	story.begin()
 	cinematic_elapsed = 0.0
 	visible_characters = 0.0
@@ -603,6 +604,25 @@ func _build_temple_picture() -> void:
 	temple_picture.modulate = Color.WHITE
 	temple_picture.visible = false
 	add_child(temple_picture)
+
+func _refresh_temple_art() -> void:
+	# The title screen can be instantiated before a chapter session exists.
+	# Rebind the native scene after start_new_game(), when chapter_id is known.
+	if temple_picture != null:
+		temple_picture.queue_free()
+		temple_picture = null
+	for layer in temple_underlays:
+		if is_instance_valid(layer):
+			layer.queue_free()
+	for layer in temple_overlays:
+		if is_instance_valid(layer):
+			layer.queue_free()
+	temple_underlays.clear()
+	temple_overlays.clear()
+	story_weather_layer = null
+	_load_temple_background()
+	_build_temple_picture()
+	_build_temple_layers()
 
 func _build_temple_layers() -> void:
 	# Optional native WuxiaSceneArtProfile; keep the old single-image fallback.
