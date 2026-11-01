@@ -971,9 +971,9 @@
     {
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
-      "production_path": null,
-      "kind": "animation",
-      "usage_state": "registered_only",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [
         "candidate"
@@ -995,7 +995,9 @@
       "git_blob_sha1": "cd73cec6f8a55fd3b05ff15cffdf29e27566b382",
       "size_bytes": 3338063,
       "references": {
-        "runtime": [],
+        "runtime": [
+          "data/native/scene_art/rainy_bridge.tres"
+        ],
         "registrations": [
           "data/native/assets/r27_scenery_rainy_bridge.tres"
         ],

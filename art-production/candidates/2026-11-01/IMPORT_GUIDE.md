@@ -37,7 +37,8 @@ python3 art-production/tools/prepare_pilot_assets.py
 - ground 选择 `scene_rainy_bridge_ground_v01.png`
 - foreground 选择 `scene_rainy_bridge_foreground_v01.png`
 - weather 选择 `scene_rainy_bridge_weather_v01.png`
-- 4 层均是 **1600×1000** 真 RGBA；共享左上角原点。导入器创建 `WuxiaSceneArtProfile` 并绑定地图的 `scene_art`；禁止从图片自动推断碰撞。
+- story_preview 选择 `scene_rainy_bridge_composite_preview_v01.png`，作为剧情使用的同画布复合图。若场景将用于剧情，这一项必须填写，否则只能显示背景分层贴图。
+- 4 层均是 **1600×1000** 真 RGBA；共享左上角原点。导入器创建 `WuxiaSceneArtProfile`，将复合预览绑定到 `story_preview`，并同步更新地图的 `scene_art` 与 `background`；后续运行不再优先使用旧场景登记图。禁止从图片自动推断碰撞。
 
 **尚未通过的关键关卡**：原 `rainy_bridge.tres` 的 `first_center` / `cell_size` / 障碍是为另一张旧背景校准的。不能把分层图导入成功等同于地图站位正确；须人工完成与现有 15×10 地形的六人站位、桥面、遮挡检查。原母图也有少量静态雨线，关闭 weather 不能消除全部雨。
 
