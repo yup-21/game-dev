@@ -41,3 +41,21 @@
 - Godot 1440×900:
 - Approved SHA / date:
 - 结论：**pending**
+
+## 自动化复核追加（2026-11-01）
+
+在同一 PR 中新增两项**只读**验证，不改变正式游戏角色、地图、Content Manifest 或原有图片：
+
+1. `checks/test_art_pilot_candidates.gd` 读取真实候选：两份 1024×1536 透明立绘、两份 1536×1024 透明 Atlas，以及四张 1600×1000 RGBA 场景图层。对两名角色分别执行 9 类动作的 `WuxiaActorAnimationProfile` / `AnimationPlayer` 首帧检查，并检查场景 `WuxiaSceneArtProfile` 与原生导入器 `plan()`。
+2. `prepare_pilot_assets.py` 加入 Modular CI，重新计算归一化图集与同源场景拆层，对比仓库中已存文件，确保可重复生成且不存在静默漂移。
+
+此外，`checks/capture_art_pilot_candidates.gd` 在虚拟图形显示器中按真实尺寸渲染场景四层和两类角色检查姿势，输出 `captures/art-pilot/pilot-1600x1000.png` 与 `pilot-1440x900.png`。它使用六个**检查站位**，并非六名游戏实体的正式地图/碰撞播放。截图随 HUD CI 以 `unified-wuxia-hud-visual-evidence` 上传，可在 [PR #82 Actions](https://github.com/yup-21/game-dev/pull/82/checks) 查看与下载。
+
+- [x] 离线候选重建比对通过（GitHub CI）
+- [x] Godot 候选角色和场景只读导入预检通过（GitHub CI）
+- [x] 两档候选画面截图已成功生成（图形化 CI；**仅作为待人工审图证据**）
+- [ ] 实际 `battle_hd2d.tscn` 的候选临时绑定、完整战斗动作/特效与地形匹配人工验收
+- [ ] 武器笔画补绘、帧间过渡、前后方向、分层边缘与静态雨丝的美术修订
+- [ ] 项目负责人对身份、商用权属、两档画面签字批准
+
+这些技术结果不变更本批 `candidate / owner_review_required` 身份，亦不构成 `approved` 或 `in_use`。
