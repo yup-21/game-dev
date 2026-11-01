@@ -1,16 +1,17 @@
 # 统一角色卡 · CharacterRegistry
 
-## 角色定义
-`data/characters/index.json` 登记七份独立档案：六位战斗角色和剧情老镖头。档案保存稳定字符串 ID、战斗 ID、姓名、人设、阵营、武器、属性、天赋、流派、已学阶段技能、立绘与 Sprite3D 动作图路径。人物背景是初版设计稿，可由剧情迭代；已提交的 24 姿态或 JPG 图仅供运行预览，不虚报已完成逐帧精修。
+新角色以 `WuxiaCharacterDefinition` 原生 `.tres` 创建并加入 `data/content_manifest.tres.characters`。完整步骤参阅 [唯一内容制作指南](../../../docs/changfeng-native-authoring.md)。
 
-## 接入与唯一数据源
-- `CharacterRegistry` 验证目录、唯一 ID/姓名、角色编号、属性范围、武学引用和安全美术路径，返回防止篡改的深拷贝。
-- `ScenarioDirector` 的位置与控制权是遭遇属性，通过 `character_id` 寻址注册中心；角色姓名、流派、基础属性、天赋、已学技能由注册中心生成。独立 1v1 试玩也采用角色档案。
-- `CombatantState.character_id` 记录身份；HP、Qi、状态、手牌、CTB、技能阶段仍由 `BattleModel` 唯一管理，`CharacterCardUI` 只读。无档案测试与自定义旧遭遇仍有兼容入口。
-- `hd2d_art_catalog.gd` 以档案的 `art.portrait`、`art.sprite_sheet` 匹配预加载资源，不再用角色编号维护第二份身份映射。资源预加载用于 Godot export；新增美术路径需要加入资源缓存。
+## 唯一身份与角色定义
 
-## UI
-点击战斗左侧人物头像，或按 C 查看当前玩家角色；弹出单层水墨人物卡，展示立绘与战斗动作首帧、身份人设、流派核心招式、已学阶段技能、真实 HP/Qi/属性/状态。Esc、背景或「收起」关闭；打开时停止 AI 新的战斗决定。尚无装备/成长数据则明确标注待接入，不编造详情。
+`content_id` 是跨剧情、队伍、装备、美术的稳定角色身份；`battle_actor_id` 是可选预留索引，不是角色身份。新角色可使用 `-1`，由每次 Encounter 指定 actor ID。角色姓名、门派、`learned_schools`、`attributes`、`passives`、`techniques`、人物背景和初始道具保存在同一张原生角色卡。
 
-## 技能绑定原则
-变锋式 `tf_change_stage` 属于沈长风的已学技能，不再向六名不同流派角色自动授予。无角色档案的老式听风测试仍执行原自动阶段机制，以确保历史规则测试可重复。
+`CharacterRegistry` 校验唯一 ID/姓名、属性范围、门派引用、初始装备与美术资源路径，然后向 `CharacterFactory` 提供防篡改数据副本。`ScenarioDirector` 通过 `WuxiaEncounterCombatantDefinition.character_id` 连接角色和战斗站位、阵营、控制权，无需额外角色索引。
+
+## 运行时与表现
+
+`CharacterRuntime` 管理持久成长、背包与装备；`BattleModel` 管理 HP、Qi、CTB、Buff、卡区与技能阶段。`CharacterCardUI` 只读角色快照，不得改变战斗规则。
+
+`WuxiaCharacterDefinition.portrait` / `sprite_sheet` 是 Godot 的 `Texture2D` 引用，`CharacterFactory` 与 `HD2DArtCatalog` 负责解析，必要时使用独立的 fallback 图。动作图集约定 6 列 × 4 行。图集能在 Editor 加载并不代表已经完成全部连贯逐帧动作或获得商用授权。
+
+更改原生角色卡后，运行 `checks/test_character_factory.gd`、`checks/test_character_dynamic_identity.gd`、`checks/test_chapter_pipeline.gd`，并手工确认场景中的身份、立绘和脚点。

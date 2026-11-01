@@ -1,5 +1,8 @@
 # 长风浮生录 Demo 重构路线与测试基线
 
+> **历史记录（R1–R41）**：本页记载对应里程碑当时的状态，不是当前的内容制作或加载指南。R41 后旧游戏 JSON、ID 适配器和相关测试已经删除。正式制作以 [唯一原生 Resource 指南](../../../docs/changfeng-native-authoring.md) 为准。
+
+
 > 基于 `main@8d1486b4b27dd06aaae78739ca13740a5169074d` 创建长期分支 `refactor/battle-architecture-consolidation`。
 > 本文是实施 checklist；没有完成验证的项目一律不能打勾。
 

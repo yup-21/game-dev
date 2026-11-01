@@ -1,5 +1,8 @@
 # R18 — Godot 原生 Resource 内容管线（第一阶段）
 
+> **历史记录（R18）**：本页记载对应里程碑当时的状态，不是当前的内容制作或加载指南。R41 后旧游戏 JSON、ID 适配器和相关测试已经删除。正式制作以 [唯一原生 Resource 指南](../../../docs/changfeng-native-authoring.md) 为准。
+
+
 本项目从 R18 开始，**新增内容只使用 Godot 原生 Resource（`.tres`）制作**。JSON 不再是新内容的编辑格式，亦不建设 JSON → Resource 转换器。R1–R17 的旧 JSON 资产仍需保持可读，迁移完毕后按独立 PR 逐类移除，避免同时破坏剧情、战斗、测试和存档快照。
 
 ## 目前已落地
