@@ -26,6 +26,7 @@ extends WuxiaContentDefinition
 @export_group("Presentation")
 @export var portrait: Texture2D
 @export var sprite_sheet: Texture2D
+@export var animation_profile: WuxiaActorAnimationProfile
 @export var portrait_quality: String = "approved"
 @export var sheet_quality: String = "approved"
 @export var battle_scene: PackedScene
@@ -62,6 +63,8 @@ func to_record() -> Dictionary:
             "sheet_quality": sheet_quality
         }
     }
+    if animation_profile != null:
+        record["art"]["animation_profile"] = animation_profile.resource_path
     if static_pose != null:
         record["art"]["static_pose"] = static_pose.resource_path
         record["art"]["pose_quality"] = pose_quality

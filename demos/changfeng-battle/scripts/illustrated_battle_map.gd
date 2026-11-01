@@ -33,15 +33,23 @@ func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH)
     picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     picture.stretch_mode = TextureRect.STRETCH_SCALE
     picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    if ResourceLoader.exists(bake.image_path):
+    if bake.scene_art != null:
+        picture.texture = bake.scene_art.background
+    elif ResourceLoader.exists(bake.image_path):
         picture.texture = load(bake.image_path)
     else:
         picture.texture = Fallback.SCENE
+    picture.z_index = -10
     scene_root.add_child(picture)
+    if bake.scene_art != null:
+        _paint_layer("GroundArt", bake.scene_art.ground, -8)
+        _paint_layer("ForegroundOcclusion", bake.scene_art.foreground, 110)
+        _paint_layer("WeatherOverlay", bake.scene_art.weather, 120)
 
     debug_grid = Node2D.new()
     debug_grid.name = "BakedGridDebug"
     debug_grid.visible = false
+    debug_grid.z_index = 150
     scene_root.add_child(debug_grid)
     for key in bake.tiles:
         var cell: Vector2i = key
@@ -76,8 +84,30 @@ func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH)
         marks[cell] = marker
     selection = _ellipse(Color(0.37,0.97,0.73,0.52),32,14)
     selection.name = "MoveCursor"
+    selection.z_index = 140
     selection.visible = false
     scene_root.add_child(selection)
+
+func _paint_layer(label: String, texture: Texture2D, depth: int) -> void:
+    if texture == null:
+        return
+    var overlay := TextureRect.new()
+    overlay.name = label
+    overlay.texture = texture
+    overlay.size = picture.size
+    overlay.position = picture.position
+    overlay.pivot_offset = picture.pivot_offset
+    overlay.rotation_degrees = picture.rotation_degrees
+    overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    overlay.stretch_mode = TextureRect.STRETCH_SCALE
+    overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    overlay.z_index = depth
+    scene_root.add_child(overlay)
+
+func set_weather_enabled(enabled: bool) -> void:
+    var overlay := scene_root.get_node_or_null("WeatherOverlay") if scene_root != null else null
+    if overlay != null:
+        overlay.visible = enabled
 
 func _ellipse(color: Color, rx: float, ry: float) -> Polygon2D:
     var node := Polygon2D.new()

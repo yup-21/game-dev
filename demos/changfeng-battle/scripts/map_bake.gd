@@ -6,6 +6,7 @@ const DEFAULT_PATH := "res://data/maps/rainy_bridge.tres"
 const BLOCKED := ["water","rock","bamboo"]
 var id: String = ""
 var image_path: String = ""
+var scene_art: WuxiaSceneArtProfile
 var source_size: Vector2i = Vector2i.ZERO
 var viewport_size: Vector2 = Vector2.ZERO
 var origin: Vector2 = Vector2.ZERO
@@ -27,6 +28,13 @@ func _init(path: String = DEFAULT_PATH) -> void:
         error = "Native map Resource missing: " + path
         return
     var grid_resource: Resource = ResourceLoader.load(path)
+    if grid_resource is WuxiaGridMapDefinition or grid_resource is WuxiaMapDefinition:
+        var authored = grid_resource.get("scene_art") as WuxiaSceneArtProfile
+        if authored != null:
+            if not authored.valid_for(grid_resource.get("viewport_size")):
+                error = "Layered scene profile does not match map viewport: " + path
+                return
+            scene_art = authored
     if grid_resource is WuxiaGridMapDefinition:
         _load_grid_record(grid_resource.to_record(), path)
     elif grid_resource is WuxiaMapDefinition:

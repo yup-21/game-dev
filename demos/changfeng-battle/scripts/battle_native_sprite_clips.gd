@@ -9,7 +9,8 @@ const STATE_ROW := {"idle": 0, "move": 1, "attack": 2, "guard": 3,
 const SINGLE_FRAMES := {"guard": 0, "hit": 1, "evade": 2,
     "skill": 4, "combo": 4, "defeat": 1}
 
-static func attach(sprite: Sprite2D, timeline: Variant) -> AnimationPlayer:
+static func attach(sprite: Sprite2D, timeline: Variant,
+        profile: WuxiaActorAnimationProfile = null) -> AnimationPlayer:
     var player := AnimationPlayer.new()
     player.name = "NativeSpriteAnimation"
     player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
@@ -26,7 +27,10 @@ static func attach(sprite: Sprite2D, timeline: Variant) -> AnimationPlayer:
             "combo": fallback_duration = 0.78
             "defeat": fallback_duration = 1.0
         var duration: float = timeline.duration_for(str(state), fallback_duration)
-        library.add_animation(str(state), _clip(str(state), duration, sprite.scale))
+        var authored: WuxiaActorAnimationClip = profile.clip_for(str(state)) if profile != null else null
+        library.add_animation(str(state),
+            _authored_clip(authored, duration) if authored != null
+            else _clip(str(state), duration, sprite.scale))
     player.add_animation_library("", library)
     player.play("idle")
     player.advance(0.0)
@@ -90,4 +94,21 @@ static func _clip(state: String, authored_duration: float,
             tilt = 0.0
         animation.track_insert_key(scale_track, at, base_scale * size)
         animation.track_insert_key(rotation_track, at, tilt)
+    return animation
+
+## A real per-action atlas preserves the artist's poses and does not stretch
+## sprites procedurally. Non-loop actions fit the semantic ActionTimeline window;
+## idle/walk loops use their independently authored frame rate.
+static func _authored_clip(clip: WuxiaActorAnimationClip, action_duration: float) -> Animation:
+    var animation := Animation.new()
+    var count: int = clip.frames.size()
+    var cycle: float = float(count) / clip.loop_fps
+    var duration: float = cycle if clip.loop else maxf(0.01, action_duration)
+    animation.length = duration
+    animation.loop_mode = Animation.LOOP_LINEAR if clip.loop else Animation.LOOP_NONE
+    var frame_track: int = _value_track(animation, "frame", true)
+    for index in range(count):
+        var at: float = float(index) / clip.loop_fps if clip.loop else (
+            duration * float(index) / float(count))
+        animation.track_insert_key(frame_track, at, int(clip.frames[index]))
     return animation
