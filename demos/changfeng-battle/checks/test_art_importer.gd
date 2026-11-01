@@ -35,6 +35,10 @@ func _initialize() -> void:
         return
     var dock := Dock.new()
     root.add_child(dock)
+    await process_frame
+    if dock.source_list == null or dock.kind == null:
+        _fail("Editor dock did not initialize")
+        return
     if dock.source_list.item_count < 39 or dock.kind.item_count != 5:
         _fail("Editor dock failed to enumerate candidate sources")
         return
