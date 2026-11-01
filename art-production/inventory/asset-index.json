@@ -3,7 +3,7 @@
   "purpose": "Offline production inventory only; Godot .tres is the runtime source of truth.",
   "source_snapshot": {
     "repository": "yup-21/game-dev",
-    "commit": "bd6793798c240658d2209ef2ca6b9976d3d808dd",
+    "commit": "22267884d51fd54cc62a373b31ff90799e57ac25",
     "project_root": "demos/changfeng-battle"
   },
   "usage_states": {
@@ -58,14 +58,6 @@
           "status": "candidate",
           "source": "user_provided_or_generated",
           "rights": "owner_review_required"
-        },
-        {
-          "record": "data/native/assets/r27_elder_portrait.tres",
-          "id": "r27_elder_portrait",
-          "status": "candidate",
-          "source": "project_bundled_concept",
-          "rights": "owner_review_required",
-          "owner_character_id": "escort_elder"
         }
       ],
       "sha256": "07bd35cee0bcf49244f4593ad1a539afb505fea7968db931cdf0b56a38410313",
@@ -73,12 +65,9 @@
       "size_bytes": 2531950,
       "references": {
         "runtime": [
-          "data/native/characters/escort_elder.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
-        "registrations": [
-          "data/native/assets/r27_elder_portrait.tres"
-        ],
+        "registrations": [],
         "tests": [],
         "templates": []
       }
@@ -90,33 +79,19 @@
       "kind": "story_pose",
       "usage_state": "in_use",
       "review_state": "review_required",
-      "registered_statuses": [
-        "candidate"
-      ],
+      "registered_statuses": [],
       "rights": [
-        "owner_review_required"
+        "unknown"
       ],
-      "source_records": [
-        {
-          "record": "data/native/assets/r27_elder_still.tres",
-          "id": "r27_elder_still",
-          "status": "candidate",
-          "source": "project_bundled_concept",
-          "rights": "owner_review_required",
-          "owner_character_id": "escort_elder"
-        }
-      ],
+      "source_records": [],
       "sha256": "920d24668b570e44ac39ca4103742ca0a2156eda26b0445b75d851651b203e48",
       "git_blob_sha1": "295385fc05009e16d3d5fa0a6ed8c8f350a78040",
       "size_bytes": 12542,
       "references": {
         "runtime": [
-          "data/native/characters/escort_elder.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
-        "registrations": [
-          "data/native/assets/r27_elder_still.tres"
-        ],
+        "registrations": [],
         "tests": [
           "checks/test_opening_sprites.gd"
         ],
@@ -173,14 +148,6 @@
           "source": "project_bundled_preview",
           "rights": "owner_review_required",
           "owner_character_id": "r24_lan_chen"
-        },
-        {
-          "record": "data/native/assets/r27_gu_portrait.tres",
-          "id": "r27_gu_portrait",
-          "status": "candidate",
-          "source": "project_bundled_concept",
-          "rights": "owner_review_required",
-          "owner_character_id": "gu_qingshuang"
         }
       ],
       "sha256": "f0ff3f9281ee05c1fa5a58bae47c99693b4d9521ac767fca2a5493a3cf450886",
@@ -188,13 +155,11 @@
       "size_bytes": 2427507,
       "references": {
         "runtime": [
-          "data/native/characters/gu_qingshuang.tres",
           "data/native/characters/r24_lan_chen.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
         "registrations": [
-          "data/native/assets/r24_lan_portrait.tres",
-          "data/native/assets/r27_gu_portrait.tres"
+          "data/native/assets/r24_lan_portrait.tres"
         ],
         "tests": [],
         "templates": []
@@ -456,14 +421,6 @@
           "status": "candidate",
           "source": "user_provided_or_generated",
           "rights": "owner_review_required"
-        },
-        {
-          "record": "data/native/assets/r27_black_sheet.tres",
-          "id": "r27_black_sheet",
-          "status": "candidate",
-          "source": "project_bundled_concept",
-          "rights": "owner_review_required",
-          "owner_character_id": "black_blade"
         }
       ],
       "sha256": "14f26f8d8431252605ad4510b59bf8358a1a5672b5bf1730d6e592569111cfd3",
@@ -471,12 +428,9 @@
       "size_bytes": 2332591,
       "references": {
         "runtime": [
-          "data/native/characters/black_blade.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
-        "registrations": [
-          "data/native/assets/r27_black_sheet.tres"
-        ],
+        "registrations": [],
         "tests": [],
         "templates": []
       }
@@ -517,14 +471,6 @@
           "source": "project_bundled_preview",
           "rights": "owner_review_required",
           "owner_character_id": "r24_lan_chen"
-        },
-        {
-          "record": "data/native/assets/r27_green_sheet.tres",
-          "id": "r27_green_sheet",
-          "status": "candidate",
-          "source": "project_bundled_concept",
-          "rights": "owner_review_required",
-          "owner_character_id": "green_wanderer"
         }
       ],
       "sha256": "ba7c4fdd3df1bc278648241427f65cabf1a2be1a323501af40ade2b1a4843f47",
@@ -532,15 +478,13 @@
       "size_bytes": 2210484,
       "references": {
         "runtime": [
-          "data/native/characters/green_wanderer.tres",
           "data/native/characters/r24_lan_chen.tres",
           "data/native/characters/river_messenger.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
         "registrations": [
           "data/native/assets/r22_messenger_sheet.tres",
-          "data/native/assets/r24_lan_sheet.tres",
-          "data/native/assets/r27_green_sheet.tres"
+          "data/native/assets/r24_lan_sheet.tres"
         ],
         "tests": [],
         "templates": []
@@ -566,14 +510,6 @@
           "status": "candidate",
           "source": "user_provided_or_generated",
           "rights": "owner_review_required"
-        },
-        {
-          "record": "data/native/assets/r27_gu_sheet.tres",
-          "id": "r27_gu_sheet",
-          "status": "candidate",
-          "source": "project_bundled_concept",
-          "rights": "owner_review_required",
-          "owner_character_id": "gu_qingshuang"
         }
       ],
       "sha256": "9bc850bbc34382c143f6dc6c5a0b5ce241db34bae2ac75638a7c4d6d2be3d782",
@@ -581,12 +517,9 @@
       "size_bytes": 2636347,
       "references": {
         "runtime": [
-          "data/native/characters/gu_qingshuang.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
-        "registrations": [
-          "data/native/assets/r27_gu_sheet.tres"
-        ],
+        "registrations": [],
         "tests": [],
         "templates": []
       }
@@ -611,14 +544,6 @@
           "status": "candidate",
           "source": "user_provided_or_generated",
           "rights": "owner_review_required"
-        },
-        {
-          "record": "data/native/assets/r27_night_sheet.tres",
-          "id": "r27_night_sheet",
-          "status": "candidate",
-          "source": "project_bundled_concept",
-          "rights": "owner_review_required",
-          "owner_character_id": "night_assassin"
         }
       ],
       "sha256": "7912684c5a673a4b08a34e56f747686712cdd44737e3301ff7f983263dff7e08",
@@ -626,12 +551,9 @@
       "size_bytes": 2364294,
       "references": {
         "runtime": [
-          "data/native/characters/night_assassin.tres",
           "scripts/hd2d_art_catalog.gd"
         ],
-        "registrations": [
-          "data/native/assets/r27_night_sheet.tres"
-        ],
+        "registrations": [],
         "tests": [],
         "templates": []
       }
@@ -795,6 +717,8 @@
       "size_bytes": 27451,
       "references": {
         "runtime": [
+          "data/art_previews/pursuer_captain_pilot_clip_profile.tres",
+          "data/art_previews/shen_changfeng_pilot_clip_profile.tres",
           "scripts/fallback_assets.gd"
         ],
         "registrations": [],
@@ -882,6 +806,380 @@
       }
     },
     {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png",
+      "kind": "portrait",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r85_black_blade_portrait.tres",
+          "id": "r85_black_blade_portrait",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "black_blade"
+        }
+      ],
+      "sha256": "56db76d09f2f92d070def2208f0e267f81bbf0761a87b242bbc4428f190b21e9",
+      "git_blob_sha1": "7b0d5321ac10e2d88a1bbabde78e817726dc2621",
+      "size_bytes": 2239639,
+      "references": {
+        "runtime": [
+          "data/native/characters/black_blade.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r85_black_blade_portrait.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png",
+      "kind": "animation",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_black_sheet.tres",
+          "id": "r27_black_sheet",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "black_blade"
+        }
+      ],
+      "sha256": "afb2594f1769c8666230ea39cb4d2f11491c7731ee15334d8378ac0690f9289c",
+      "git_blob_sha1": "4df15d1ae43e16583e76d8539a79db985625fc10",
+      "size_bytes": 1123246,
+      "references": {
+        "runtime": [
+          "data/native/animations/black_blade.tres",
+          "data/native/characters/black_blade.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r27_black_sheet.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png",
+      "kind": "portrait",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_elder_portrait.tres",
+          "id": "r27_elder_portrait",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "escort_elder"
+        }
+      ],
+      "sha256": "d0e87a855b30555cc505270664aac9db94299b394cd5e9da825cf0beca60ae2d",
+      "git_blob_sha1": "9e4a9a5803fc5c5742717f0e35c923bdbc869470",
+      "size_bytes": 2276021,
+      "references": {
+        "runtime": [
+          "data/native/characters/escort_elder.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r27_elder_portrait.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png",
+      "kind": "story_pose",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_elder_still.tres",
+          "id": "r27_elder_still",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "escort_elder"
+        }
+      ],
+      "sha256": "199f65d96cfa8761ec80d7f3b4f759b8c31151eb95c067213a2b3bf7a7942e76",
+      "git_blob_sha1": "8a92f9074fe0204854f5f303c0bae369cee093d1",
+      "size_bytes": 2412474,
+      "references": {
+        "runtime": [
+          "data/native/characters/escort_elder.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r27_elder_still.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png",
+      "kind": "portrait",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r85_green_wanderer_portrait.tres",
+          "id": "r85_green_wanderer_portrait",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "green_wanderer"
+        }
+      ],
+      "sha256": "d66430f0c6d90999f208905d2baed2feeb97faecc784cb737e2a25e458810d5d",
+      "git_blob_sha1": "3902be4e25793546af4c83ee1d7695393e92162c",
+      "size_bytes": 2240845,
+      "references": {
+        "runtime": [
+          "data/native/characters/green_wanderer.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r85_green_wanderer_portrait.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png",
+      "kind": "animation",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_green_sheet.tres",
+          "id": "r27_green_sheet",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "green_wanderer"
+        }
+      ],
+      "sha256": "5d189d08cebe473d033528c1d4c46f2dd09b93bf908fd29cc1cf8e35af3d9128",
+      "git_blob_sha1": "b020f123dc15a36d0f8052fed7eb05dc2ad1ab16",
+      "size_bytes": 1239190,
+      "references": {
+        "runtime": [
+          "data/native/animations/green_wanderer.tres",
+          "data/native/characters/green_wanderer.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r27_green_sheet.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png",
+      "kind": "portrait",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_gu_portrait.tres",
+          "id": "r27_gu_portrait",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "gu_qingshuang"
+        }
+      ],
+      "sha256": "bd53c0d05a5e48ad306d5b53b24d267beffd6548930d014be380747f2b429d70",
+      "git_blob_sha1": "a8657880eea49c7d20c1a54a7612e17a4f78279a",
+      "size_bytes": 2300841,
+      "references": {
+        "runtime": [
+          "data/native/characters/gu_qingshuang.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r27_gu_portrait.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "kind": "animation",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_gu_sheet.tres",
+          "id": "r27_gu_sheet",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "gu_qingshuang"
+        }
+      ],
+      "sha256": "82613b36446129027227a7b6eb9d6b939f3869e0659b0ee84fb1c0d46128193d",
+      "git_blob_sha1": "3c38877175ad1e4ba8157275bf2afb13e12133b5",
+      "size_bytes": 1291822,
+      "references": {
+        "runtime": [
+          "data/native/animations/gu_qingshuang.tres",
+          "data/native/characters/gu_qingshuang.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r27_gu_sheet.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png",
+      "kind": "portrait",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r85_night_assassin_portrait.tres",
+          "id": "r85_night_assassin_portrait",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "night_assassin"
+        }
+      ],
+      "sha256": "41b961d411f18aca256927ebb84a392a191810f5d76ac4bc486a57d1c4ebe00b",
+      "git_blob_sha1": "ce6a278583eb20bd7be0fb8ba4d02ef86099d2ca",
+      "size_bytes": 2057421,
+      "references": {
+        "runtime": [
+          "data/native/characters/night_assassin.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r85_night_assassin_portrait.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png",
+      "kind": "animation",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r27_night_sheet.tres",
+          "id": "r27_night_sheet",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": "night_assassin"
+        }
+      ],
+      "sha256": "58480ddffbeb406c68ea6720b78d311a93130ac806ce01a0aae8dd521233d596",
+      "git_blob_sha1": "6a66d12f004bae7695c7b555b7feb16f1ebcee36",
+      "size_bytes": 1229013,
+      "references": {
+        "runtime": [
+          "data/native/animations/night_assassin.tres",
+          "data/native/characters/night_assassin.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r27_night_sheet.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png",
@@ -947,7 +1245,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
-      "kind": "animation",
+      "kind": "scene",
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [],
@@ -972,7 +1270,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
       "production_path": null,
-      "kind": "animation",
+      "kind": "scene",
       "usage_state": "registered_only",
       "review_state": "review_required",
       "registered_statuses": [
@@ -1007,7 +1305,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
-      "kind": "animation",
+      "kind": "scene",
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [],
@@ -1031,7 +1329,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
-      "kind": "animation",
+      "kind": "scene",
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [],
@@ -1055,7 +1353,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
-      "kind": "animation",
+      "kind": "scene",
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [],
@@ -1069,6 +1367,139 @@
       "references": {
         "runtime": [
           "data/native/scene_art/rainy_bridge.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "4c48e30dd39b87094df160a4c483f2acde0b1dde3cb7edb6c0644d17dfb5c495",
+      "git_blob_sha1": "f537dd6fcbab5614e5794553186cc4fc6ed2d961",
+      "size_bytes": 1436197,
+      "references": {
+        "runtime": [
+          "data/native/scene_art/ruined_temple.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [
+        "candidate"
+      ],
+      "rights": [
+        "owner_review_required"
+      ],
+      "source_records": [
+        {
+          "record": "data/native/assets/r22_temple_scene.tres",
+          "id": "r22_temple_scene",
+          "status": "candidate",
+          "source": "2026-11-01_chapter_one_candidate",
+          "rights": "owner_review_required",
+          "owner_character_id": ""
+        }
+      ],
+      "sha256": "5cdb29a5898a196ae28e8129e91e5db73d45c2e595fbcfab579b69cc6ee9337d",
+      "git_blob_sha1": "c11b7519e71d985b4269873dd80bf9a0170a70ee",
+      "size_bytes": 3534483,
+      "references": {
+        "runtime": [
+          "data/native/chapters/rain_escort_prologue.tres"
+        ],
+        "registrations": [
+          "data/native/assets/r22_temple_scene.tres"
+        ],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "cf62747732ef93c335c7af0962a2f6582b7bb8892cc067aa1ca7e24dcee45460",
+      "git_blob_sha1": "658bf873a3da52832ba1cd42cd2d0eda8e824fb8",
+      "size_bytes": 645712,
+      "references": {
+        "runtime": [
+          "data/native/scene_art/ruined_temple.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "7c826aad5a7f69e20f113ce50b70db4a4ff5ffa6c1f7f421c5371a2a20534a35",
+      "git_blob_sha1": "95af5e7d68aad001b1db8fbfad6581ff8bbc2b3b",
+      "size_bytes": 1522255,
+      "references": {
+        "runtime": [
+          "data/native/scene_art/ruined_temple.tres"
+        ],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "res_path": "res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "production_path": "art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "kind": "scene",
+      "usage_state": "in_use",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "b4b584d1761ea29fe4a42e831fafef8943b0c08b8d8eef254fc5ba7b25794e24",
+      "git_blob_sha1": "dba86fdfe5affe8a25eae77d2333726921034960",
+      "size_bytes": 20517,
+      "references": {
+        "runtime": [
+          "data/native/scene_art/ruined_temple.tres"
         ],
         "registrations": [],
         "tests": [],
@@ -1468,28 +1899,6 @@
       }
     },
     {
-      "source_path": "demos/changfeng-battle/assets/kenney/ui/panel_brown_dark.png",
-      "res_path": "res://assets/kenney/ui/panel_brown_dark.png",
-      "production_path": null,
-      "kind": "third_party",
-      "usage_state": "unreferenced",
-      "review_state": "review_required",
-      "registered_statuses": [],
-      "rights": [
-        "unknown"
-      ],
-      "source_records": [],
-      "sha256": "8d29384105ed980877ac42b945a81070d99df9bac7c951d802e38fd38426da5b",
-      "git_blob_sha1": "c98df9f8e088f632e0f1fc1a632ab64d16c42da1",
-      "size_bytes": 436,
-      "references": {
-        "runtime": [],
-        "registrations": [],
-        "tests": [],
-        "templates": []
-      }
-    },
-    {
       "source_path": "demos/changfeng-battle/assets/kenney/ui/panel_brown.png",
       "res_path": "res://assets/kenney/ui/panel_brown.png",
       "production_path": null,
@@ -1504,6 +1913,28 @@
       "sha256": "e5bcda84c20a4d2f44082a9ab8094c959b339cfaffa21e67fcb6b4b6a7f09d36",
       "git_blob_sha1": "02dbbd60b119ecb81d0914cb116467ef8ca628e7",
       "size_bytes": 447,
+      "references": {
+        "runtime": [],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/kenney/ui/panel_brown_dark.png",
+      "res_path": "res://assets/kenney/ui/panel_brown_dark.png",
+      "production_path": null,
+      "kind": "third_party",
+      "usage_state": "unreferenced",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "8d29384105ed980877ac42b945a81070d99df9bac7c951d802e38fd38426da5b",
+      "git_blob_sha1": "c98df9f8e088f632e0f1fc1a632ab64d16c42da1",
+      "size_bytes": 436,
       "references": {
         "runtime": [],
         "registrations": [],
@@ -1615,14 +2046,6 @@
           "status": "runtime",
           "source": "user_provided_or_generated",
           "rights": "owner_review_required"
-        },
-        {
-          "record": "data/native/assets/r22_temple_scene.tres",
-          "id": "r22_temple_scene",
-          "status": "runtime",
-          "source": "user_provided_or_generated",
-          "rights": "owner_review_required",
-          "owner_character_id": ""
         }
       ],
       "sha256": "3776175654e8e405bbbd6230f2f6cb4da978f5da7e0925503000c2d5d02ae71f",
@@ -1633,12 +2056,9 @@
           "data/native/chapters/r21_crossroads.tres",
           "data/native/chapters/r24_fog_pass.tres",
           "data/native/chapters/r26_recruitment_trial.tres",
-          "data/native/chapters/rain_escort_prologue.tres",
           "scripts/opening_flow.gd"
         ],
-        "registrations": [
-          "data/native/assets/r22_temple_scene.tres"
-        ],
+        "registrations": [],
         "tests": [
           "checks/test_export_resources.gd",
           "checks/test_illustrated_maps.gd"
