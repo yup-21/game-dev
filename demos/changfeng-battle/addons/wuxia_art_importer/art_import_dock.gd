@@ -291,7 +291,7 @@ func _refresh_preview() -> void:
         details["width"], details["height"],
         "是" if details["alpha"] else "否", str(details["sha256"]).substr(0, 12)]
     if mode == "atlas":
-        preview.show_atlas(details["texture"], int(columns.value), int(rows.value),
+        preview.call("show_atlas", details["texture"], int(columns.value), int(rows.value),
                            Vector2(feet_x.value, feet_y.value))
         _set_action()
     elif mode == "scene":
@@ -302,9 +302,9 @@ func _refresh_preview() -> void:
                 var item: Dictionary = Service.inspect(layer_path)
                 if str(item.get("error", "")).is_empty():
                     layer_images[layer] = item["texture"]
-        preview.show_scene(layer_images, ResourceLoader.load(_target()) if not _target().is_empty() else null)
+        preview.call("show_scene", layer_images, ResourceLoader.load(_target()) if not _target().is_empty() else null)
     else:
-        preview.show_image(details["texture"])
+        preview.call("show_image", details["texture"])
 
 
 func _set_action() -> void:
@@ -323,14 +323,14 @@ func _set_action() -> void:
         timer.wait_time = 1.0 / clip.loop_fps if clip.loop else 0.15
     current_frame = 0
     if preview != null:
-        preview.show_frame(frames[0])
+        preview.call("show_frame", frames[0])
 
 
 func _next_frame() -> void:
     if _mode() != "atlas" or frames.is_empty() or preview == null:
         return
     current_frame = (current_frame + 1) % frames.size()
-    preview.show_frame(frames[current_frame])
+    preview.call("show_frame", frames[current_frame])
 
 
 func _review() -> void:

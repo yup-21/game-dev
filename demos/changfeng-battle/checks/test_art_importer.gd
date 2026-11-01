@@ -4,8 +4,8 @@ const Importer = preload("res://addons/wuxia_art_importer/art_import_service.gd"
 const Dock = preload("res://addons/wuxia_art_importer/art_import_dock.gd")
 
 func _initialize() -> void:
-    var root: String = Importer.production_root()
-    if not root.ends_with("/art-production"):
+    var production_dir: String = Importer.production_root()
+    if not production_dir.ends_with("/art-production"):
         _fail("Production root escaped repository layout")
         return
     if Importer.inspect(ProjectSettings.globalize_path("res://project.godot")).get("error", "") == "":
@@ -15,7 +15,7 @@ func _initialize() -> void:
     if sources.size() < 39:
         _fail("P0 in-use artwork is absent")
         return
-    var source := root.path_join("in-use/fallback/default_actor_6x4.svg")
+    var source := production_dir.path_join("in-use/fallback/default_actor_6x4.svg")
     var image: Dictionary = Importer.inspect(source)
     if not str(image.get("error", "")).is_empty() or int(image["width"]) <= 0:
         _fail("SVG preview failed: " + str(image.get("error", "")))
