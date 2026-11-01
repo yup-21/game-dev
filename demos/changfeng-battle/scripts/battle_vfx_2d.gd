@@ -11,7 +11,7 @@ func _init(painted_layer: Node2D) -> void:
 # Procedural fallback for events without approved VFX textures.
 # Every burst owns its nodes; no battle state or global camera is modified.
 func _spawn_canvas(position: Vector2, kind: String, tint: Color,
-        duration: float, size: float) -> void:
+        duration: float, size: float, source_event: String = "") -> void:
     if canvas == null:
         return
     var root := Node2D.new()
@@ -82,8 +82,9 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
                 root.add_child(shard)
 
     # Authored transparent textures remain the preferred production art.
-    var authored_spec: Dictionary = native_assets.record_for_event(kind)
-    var authored: Texture2D = native_assets.texture_for_event(kind)
+    var lookup: String = source_event if not source_event.is_empty() and not native_assets.record_for_event(source_event).is_empty() else kind
+    var authored_spec: Dictionary = native_assets.record_for_event(lookup)
+    var authored: Texture2D = native_assets.texture_for_event(lookup)
     var authored_frames: PackedInt32Array = authored_spec.get("frame_indices", PackedInt32Array())
     if authored != null:
         var sprite := Sprite2D.new()
@@ -93,7 +94,8 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
         sprite.vframes = int(authored_spec.get("rows", 1))
         if not authored_frames.is_empty():
             sprite.frame = authored_frames[0]
-        var longest := maxf(float(authored.get_width()), float(authored.get_height()))
+        var longest := maxf(float(authored.get_width()) / float(sprite.hframes),
+            float(authored.get_height()) / float(sprite.vframes))
         sprite.scale = Vector2.ONE * (100.0 * size / maxf(longest, 1.0))
         root.add_child(sprite)
     bursts.append({"node": root, "duration": duration, "left": duration,
@@ -112,34 +114,34 @@ func handle_events(events: Array, actor_nodes: Dictionary) -> void:
             "ATTACK_DECLARED":
                 if actor_nodes.has(source):
                     _spawn_canvas(actor_nodes[source].position, "slash",
-                        Color(0.70, 0.97, 0.92, 0.78), 0.45, 1.15)
+                        Color(0.70, 0.97, 0.92, 0.78), 0.45, 1.15, kind)
             "COMBO_TRIGGERED":
                 if actor_nodes.has(source):
                     _spawn_canvas(actor_nodes[source].position, "combo",
-                        Color(1.00, 0.78, 0.38, 0.90), 0.70, 1.45)
+                        Color(1.00, 0.78, 0.38, 0.90), 0.70, 1.45, kind)
             "HP_DAMAGED", "DAMAGE", "SCORCH_TICK":
                 var victim: int = target if actor_nodes.has(target) else source
                 if actor_nodes.has(victim):
                     _spawn_canvas(actor_nodes[victim].position, "impact",
-                        Color(1.0, 0.36, 0.27, 0.60), 0.32, 0.38)
+                        Color(1.0, 0.36, 0.27, 0.60), 0.32, 0.38, kind)
             "SHIELD", "INTERCEPT_JUDGED":
                 if actor_nodes.has(source):
                     _spawn_canvas(actor_nodes[source].position, "guard",
-                        Color(0.35, 0.88, 0.73, 0.40), 0.38, 0.62)
+                        Color(0.35, 0.88, 0.73, 0.40), 0.38, 0.62, kind)
             "ATTACK_MISSED":
                 if actor_nodes.has(target):
                     _spawn_canvas(actor_nodes[target].position, "evade",
-                        Color(0.70, 0.90, 1.0, 0.28), 0.33, 0.42)
+                        Color(0.70, 0.90, 1.0, 0.28), 0.33, 0.42, kind)
             "POSTURE_BROKEN":
                 # The event actor is the staggered target, not the attacker.
                 if actor_nodes.has(source):
                     _spawn_canvas(actor_nodes[source].position, "shatter",
-                        Color(1.0, 0.75, 0.26, 0.92), 0.58, 1.45)
+                        Color(1.0, 0.75, 0.26, 0.92), 0.58, 1.45, kind)
             "CHAIN_LINK_CANCELED":
                 # Cosmetic counter signal; the resolver has already committed it.
                 if actor_nodes.has(source):
                     _spawn_canvas(actor_nodes[source].position, "guard",
-                        Color(0.65, 0.86, 1.0, 0.70), 0.40, 0.85)
+                        Color(0.65, 0.86, 1.0, 0.70), 0.40, 0.85, kind)
 
 func update(delta: float) -> void:
     for i in range(bursts.size() - 1, -1, -1):

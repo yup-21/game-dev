@@ -54,7 +54,7 @@ func _run() -> void:
     canvas.free()
     var animated_asset: Dictionary = assets.record("r22_vfx_probe")
     animated_asset["id"] = "r22_animated_probe"
-    animated_asset["event_kind"] = "r22_animated_probe"
+    animated_asset["event_kind"] = "ATTACK_DECLARED"
     animated_asset["columns"] = 2
     animated_asset["rows"] = 1
     animated_asset["frame_indices"] = PackedInt32Array([0, 1])
@@ -64,7 +64,7 @@ func _run() -> void:
     root.add_child(animated_canvas)
     var animated_vfx = VFX.new(animated_canvas)
     animated_vfx.native_assets = animated_registry
-    animated_vfx._spawn_canvas(Vector2(180,200), "r22_animated_probe", Color.WHITE, 0.4, 1.0)
+    animated_vfx._spawn_canvas(Vector2(180,200), "slash", Color.WHITE, 0.4, 1.0, "ATTACK_DECLARED")
     var animated_root: Node = animated_canvas.get_child(0) if animated_canvas.get_child_count() > 0 else null
     var animated_sprite: Sprite2D = null
     if animated_root != null:

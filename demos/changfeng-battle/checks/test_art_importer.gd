@@ -40,6 +40,12 @@ func _initialize() -> void:
     if str(invalid_vfx.get("error", "")).is_empty():
         _fail("Out-of-range VFX animation index accepted")
         return
+    var opaque_jpg: String = production_dir.path_join("in-use/characters/animations/blue_swordfighter_pixel_study.jpg")
+    var opaque_vfx: Dictionary = Importer.plan("vfx", opaque_jpg, "",
+        {"asset_id": "art.opaque_vfx", "event_kind": "ATTACK_DECLARED"})
+    if str(opaque_vfx.get("error", "")).is_empty():
+        _fail("Opaque JPEG accepted as production VFX")
+        return
     var ui_source: String = production_dir.path_join("in-use/ui/original/card_probe.svg")
     var ui: Dictionary = Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
     if not str(ui.get("error", "")).is_empty():
