@@ -6,24 +6,23 @@
 | --- | --- |
 | [standards/](standards/) | 美术、动画、场景与资源质量规范 |
 | [prompts/](prompts/) | 可复制的 AI 生成母提示词与分类模板 |
-| [templates/](templates/) | 每次资产制作都需填写的工作单 |
+| [templates/](templates/) | 生成时可参考的工作单 |
 | [skills/](skills/) | 角色、场景、VFX、UI、审核导入的仓库级 Agent Skills；通过仓库根目录 `.agents/skills` 软连接自动发现 |
-| [candidates/](candidates/) | 后续生成的概念图和待审批图；按批次、类型存放 |
-| [reviews/](reviews/) | 人工验收、截图与批准记录 |
-| [inventory/](inventory/) | 当前素材清单、引用、来源与 SHA-256 |
-| [in-use/](in-use/) | 运行时直接引用素材的原字节副本 |
+| [candidates/](candidates/) | 后续生成的概念图和候选版本；按批次、类型存放 |
+| [reviews/](reviews/) | 已有审核、截图及反馈记录 |
+| [inventory/](inventory/) | 仅使用中素材的引用与自动 SHA-256 |
+| [in-use/](in-use/) | 已归档的原字节副本（含历史副本） |
 | [tools/](tools/) | 离线库存工具与 Godot 导入导出指南 |
 
 Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontmatter 规范，详细工作规则由对应 Skill 在使用时按需加载；修改 Skill 只编辑本目录，不维护第二套副本。
 
-## 核心约束
+## 素材管理：两种状态
 
-1. 游戏方向为原创国风手绘、原生 2D 与具有纵深和遮挡的 HD-2D 构图；不强制低像素。
-2. 角色 identity、场景镜头、色板和材质必须先冻结参考，再出变体。所有 AI 候选保存模型版本、提示词、参考图、修改记录及权属。
-3. 候选放在 `candidates/YYYY-MM-DD/<asset-id>/`，源图和编辑母版保留。文件名建议 `<asset-type>_<asset-id>_<variant>_vNN.png`。可在待审核分支将 candidate 显式绑定到原生 `.tres` 进行技术试玩，**不得因此将其标记 approved**；旧版本留存以便回退。
-4. 角色 Atlas / 场景贴图通过预检后可先按 Godot 原生资源接口接入 `demos/changfeng-battle/assets/` 和相应 `.tres`，并加入正式 Content Manifest；正式美术批准是独立的后续门槛。**不要用这里的 JSON/YAML 工作单替代原生运行时定义**。
-5. 因为当前游戏已有资源引用，旧 `demos/changfeng-battle/assets/concepts/` 中的历史素材**暂不搬迁**；保持其路径和可追溯性。新批次统一进入本目录。
-6. `candidate` 表示待审核，`runtime` 表示可加载，不等于 `approved`；批准需技术、视觉、实机、授权共同通过。
+- **candidate 候选**：`candidates/` 下可以保留任意数量的图片版本；只要求记录生成提示词和拟绑定的 Godot Resource 路径。
+- **in_use 使用中**：以原生 `.tres` / Content Manifest 的实际绑定为准，**每个素材槽位只能有一个当前版本**。候选通过既有资源合同校验、能够正常导入和使用后即可切换绑定，无需额外美术返工或新增审批状态。
+- `inventory/` **只记录当前使用中的图片及其资源引用**；SHA-256 由脚本自动计算，用于确认副本与回滚，不要求手工整理来源台账。过期副本或旧候选可暂时留在磁盘，但不计作使用中。
+- 保留旧素材与回退功能，后续按资源槽位逐步清退；本次不修改已能使用的图像。
+- **生成和游戏使用合同不变**：仍按现有角色动作、场景分层、VFX、UI 规范制作与校验。美术讨论、审核记录可以保留，但不是素材管理的第三种状态，也不妨碍满足合同的素材使用。
 
 ## 兼容说明
 
@@ -31,13 +30,13 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 ## 第一批生产试点
 
-沈长风（设定、立绘、九类动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。所有候选经过人工批准，才可以冻结 V2 规格。
+沈长风（设定、立绘、九类动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。技术使用按原生合同校验；创作规格是否冻结仍按原有制作规范确定。
 
 - [2026-11-01 四项优先试点工作单](candidates/2026-11-01/README.md)：包含剧情场景分层与准确的原生资源目标。
-- [运行时代码与存量美术格式差异/验收状态](reviews/2026-11-01/FORMAT_UNIFICATION_STATUS.md)：明确代码已打通但历史图像尚不等于最终批准资产。
+- [运行时代码与存量美术格式差异/验收状态](reviews/2026-11-01/FORMAT_UNIFICATION_STATUS.md)：记录格式接入状态与待人工复核事项。
 
 ## Godot 原生素材导入与导出
 
 Godot 4.7.2 编辑器内的 **Art Production** Dock 提供引用图像导出、角色动画与场景分层导入、批次预检、版本化替换和事务回退。运行时仍只读取 `.tres` Resource，离线清单不充当内容定义。
 
-参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。新导入资源默认 `candidate`，未经人工审查不得标记为 `approved`。本轮审核分支将候选资源接入原生角色卡及地图供试玩；历史资源保留在生产库存与过渡回退路径，后续经视觉/权属批准逐步淘汰。
+参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。候选符合原生合同即可接入对应 Resource；当前绑定即为使用中。历史文件先保留，后续按槽位逐步退出。

@@ -39,6 +39,8 @@ on:
       - 'demos/changfeng-battle/checks/test_r29_native_cleanup.gd'
       - 'demos/changfeng-battle/checks/test_r32_native_action_timeline.gd'
       - 'demos/changfeng-battle/checks/test_r40_native_entry_closure.gd'
+      - 'art-production/tools/inventory_assets.py'
+      - 'art-production/inventory/**'
       - '.github/workflows/wuxia-modular-content.yml'
   workflow_dispatch:
 
@@ -59,6 +61,8 @@ jobs:
         with:
           version: '4.7.2'
           use-dotnet: false
+      - name: Verify only currently used art is inventoried
+        run: python3 art-production/tools/inventory_assets.py --check
       - name: Import project art and scripts
         run: godot --headless --path demos/changfeng-battle --editor --import --quit
       - name: Verify modifier script parses and initializes
