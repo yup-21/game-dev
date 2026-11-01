@@ -172,11 +172,21 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
         result["rows"] = rows
         result["feet_offset"] = fields.get("feet_offset", Vector2(0, -102))
         result["faces_left"] = bool(fields.get("faces_left", false))
-        var profile: WuxiaActorAnimationProfile = owner.get("animation_profile") as WuxiaActorAnimationProfile
-        if profile == null:
-            profile = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
+        var clip_path := str(fields.get("clip_profile_path", "")).strip_edges()
+        var profile: WuxiaActorAnimationProfile = null
+        if not clip_path.is_empty():
+            if not clip_path.begins_with("res://") or not ResourceLoader.exists(clip_path):
+                return {"error": "动画 Profile 模板路径不可用：" + clip_path}
+            profile = ResourceLoader.load(clip_path) as WuxiaActorAnimationProfile
+            if profile == null:
+                return {"error": "动画 Profile 模板不是 WuxiaActorAnimationProfile"}
+        else:
+            profile = owner.get("animation_profile") as WuxiaActorAnimationProfile
+            if profile == null:
+                profile = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
         if profile == null:
             return {"error": "缺少原生动画 Profile 模板"}
+        result["clip_profile_path"] = clip_path
         var staged := profile.duplicate(true) as WuxiaActorAnimationProfile
         staged.atlas = first["texture"]
         staged.columns = cols
@@ -281,9 +291,16 @@ static func save_bindings(plan_data: Dictionary) -> String:
             character.portrait = textures["primary"]
             character.portrait_quality = "candidate"
         else:
-            var template: WuxiaActorAnimationProfile = character.animation_profile
+            var clip_path := str(plan_data.get("clip_profile_path", ""))
+            var template: WuxiaActorAnimationProfile = null
+            if not clip_path.is_empty():
+                template = ResourceLoader.load(clip_path) as WuxiaActorAnimationProfile
+            else:
+                template = character.animation_profile
+                if template == null:
+                    template = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
             if template == null:
-                template = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
+                return "动画 Profile 模板不可用"
             var profile := template.duplicate(true) as WuxiaActorAnimationProfile
             profile.atlas = textures["primary"]
             profile.columns = int(plan_data["columns"])

@@ -26,6 +26,7 @@ var rows: SpinBox
 var feet_x: SpinBox
 var feet_y: SpinBox
 var facing: CheckBox
+var clip_profile: LineEdit
 var atlas_rows: Array[Control] = []
 var action_select: OptionButton
 var preview: Control
@@ -125,6 +126,10 @@ func _ready() -> void:
     facing.toggled.connect(func(_value: bool): _refresh_preview())
     body.add_child(facing)
     atlas_rows.append(facing)
+    clip_profile = LineEdit.new()
+    clip_profile.placeholder_text = "res://data/art_previews/<character>_pilot_clip_profile.tres (可选)"
+    clip_profile.text_changed.connect(func(_value: String): _refresh_preview())
+    atlas_rows.append(_labeled("原生动作帧 Profile 模板（可选）", clip_profile))
     action_select = OptionButton.new()
     for action in WuxiaActorAnimationProfile.REQUIRED_ACTIONS:
         action_select.add_item(action)
@@ -363,6 +368,7 @@ func _fields() -> Dictionary:
         "rows": int(rows.value),
         "feet_offset": Vector2(feet_x.value, feet_y.value),
         "faces_left": facing.button_pressed,
+        "clip_profile_path": clip_profile.text.strip_edges(),
         "versioned_replace": versioned.button_pressed,
         "ground": extras["ground"].text.strip_edges(),
         "foreground": extras["foreground"].text.strip_edges(),
@@ -405,7 +411,9 @@ func _refresh_preview() -> void:
 func _set_action() -> void:
     var selected := action_select.get_item_text(action_select.selected) if action_select.selected >= 0 else "idle"
     var profile: WuxiaActorAnimationProfile = null
-    if not _target().is_empty():
+    if clip_profile != null and not clip_profile.text.strip_edges().is_empty():
+        profile = ResourceLoader.load(clip_profile.text.strip_edges()) as WuxiaActorAnimationProfile
+    if profile == null and not _target().is_empty():
         var character := ResourceLoader.load(_target()) as WuxiaCharacterDefinition
         if character != null:
             profile = character.animation_profile
