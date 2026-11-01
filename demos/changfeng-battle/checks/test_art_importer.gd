@@ -28,6 +28,24 @@ func _initialize() -> void:
     if not str(atlas.get("error", "")).is_empty():
         _fail("Valid atlas plan rejected: " + str(atlas.get("error", "")))
         return
+    # The first pilot has a different nine-action frame order from the fallback.
+    # Preflight must honor an explicit native clip profile without writing runtime data.
+    var pilot_source: String = production_dir.path_join(
+        "candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png")
+    var pilot_clip: String = "res://data/art_previews/shen_changfeng_pilot_clip_profile.tres"
+    var pilot: Dictionary = Importer.plan("atlas", pilot_source,
+        "res://data/native/characters/shen_changfeng.tres",
+        {"columns": 6, "rows": 4, "feet_offset": Vector2(0, -102),
+         "faces_left": false, "clip_profile_path": pilot_clip})
+    if not str(pilot.get("error", "")).is_empty() or str(pilot.get("clip_profile_path", "")) != pilot_clip:
+        _fail("Pilot custom clip profile was not honored: " + str(pilot.get("error", "")))
+        return
+    var invalid_clip: Dictionary = Importer.plan("atlas", pilot_source,
+        "res://data/native/characters/shen_changfeng.tres",
+        {"columns": 6, "rows": 4, "clip_profile_path": "res://data/art_previews/missing.tres"})
+    if str(invalid_clip.get("error", "")).is_empty():
+        _fail("Missing custom clip profile was accepted")
+        return
     var ui_source: String = production_dir.path_join("in-use/ui/original/card_probe.svg")
     var ui: Dictionary = Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
     if not str(ui.get("error", "")).is_empty():
