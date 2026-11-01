@@ -42,16 +42,17 @@ func presentation_assets(character_id: String) -> Dictionary:
     var output: Dictionary = {}
     var art: Dictionary = profile.get("art", {})
     for key in ["portrait", "sprite_sheet"]:
-        var kind: String = "pose_sheet" if key == "sprite_sheet" else key
-        var bound: Texture2D = assets.texture_for_character(character_id,kind)
         var path: String = str(art.get(key, ""))
-        var authored: Texture2D = bound
-        if authored == null and not path.is_empty() and ResourceLoader.exists(path, "Texture2D"):
+        var authored: Texture2D = null
+        if not path.is_empty() and ResourceLoader.exists(path, "Texture2D"):
             authored = ResourceLoader.load(path, "Texture2D") as Texture2D
-        output[key] = authored if authored != null else (Fallback.ACTOR_SHEET if kind == "pose_sheet" else Fallback.PORTRAIT)
+        # The native character card (also in fixture manifests) owns both
+        # textures. Historical AssetRegistry entries cannot shadow an import.
+        output[key] = authored if authored != null else (Fallback.ACTOR_SHEET if key == "sprite_sheet" else Fallback.PORTRAIT)
     var scene_path: String = str(profile.get("presentation", {}).get("battle_scene", ""))
-    var scene: PackedScene = assets.scene_for_character(character_id)
-    output["battle_scene"] = scene if scene != null else (ResourceLoader.load(scene_path, "PackedScene") if not scene_path.is_empty() else null)
+    var scene: PackedScene = ResourceLoader.load(scene_path, "PackedScene") if not scene_path.is_empty() else null
+    # Actor-scene registrations remain available for older cards without one.
+    output["battle_scene"] = scene if scene != null else assets.scene_for_character(character_id)
     return output
 
 func instantiate_presentation(character_id: String) -> Node2D:

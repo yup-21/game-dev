@@ -27,13 +27,17 @@ func _run() -> void:
     var sheet: Texture2D = assets.texture_for_character("river_messenger","pose_sheet")
     check(sheet != null and sheet.get_width() % 6 == 0 and sheet.get_height() % 4 == 0,
         "6x4 animation sheet contract validates")
-    check(Art.portrait_for_character("shen_changfeng") == portrait
+    var hero_card: WuxiaCharacterDefinition = load("res://data/native/characters/shen_changfeng.tres")
+    check(Art.portrait_for_character("shen_changfeng") == hero_card.portrait
         and Art.uses_supplied_sheet_for_character("river_messenger"),
-        "original art facade reads the native registry by character ID")
+        "art facade uses the native character card by ID")
     var factory = Factory.new()
-    check(factory.load_error.is_empty()
-        and factory.presentation_assets("shen_changfeng").get("portrait") == portrait,
-        "CharacterFactory resolves art without modifying actor rules")
+    var old_spec: Dictionary = factory.assets.record("r22_shen_portrait")
+    factory.assets.definitions["r22_shen_portrait"]["path"] = "res://assets/characters/concepts/escort_captain_portrait.png"
+    var factory_uses_card: bool = factory.presentation_assets("shen_changfeng").get("portrait") == hero_card.portrait
+    factory.assets.definitions["r22_shen_portrait"] = old_spec
+    check(factory.load_error.is_empty() and factory_uses_card,
+        "CharacterFactory ignores conflicting historical portrait registrations")
     check(assets.record("r22_vfx_probe").get("status") == "candidate"
         and assets.record("r22_vfx_probe").get("rights") == "owner_review_required",
         "candidate asset is explicitly not certified approved")
