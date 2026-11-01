@@ -6,6 +6,7 @@ const Model = preload("res://scripts/battle_model.gd")
 const SceneRouter = preload("res://scripts/chapter_scene_router.gd")
 const Factory = preload("res://scripts/character_factory.gd")
 const Role = preload("res://scripts/opening_role_sprite.gd")
+const Art = preload("res://scripts/hd2d_art_catalog.gd")
 var failures := 0
 
 func check(ok: bool, label: String) -> void:
@@ -63,12 +64,12 @@ func _run() -> void:
         "story sprite animation is owned by AnimationPlayer")
     sprite.set_motion(Vector2.RIGHT,0.15)
     check(sprite.animation_player.current_animation=="move"
-        and sprite.body.frame_coords.y==1,
-        "motion advances native move track")
+        and Art.animation_profile_for_character("shen_changfeng").clip_for("move").frames.has(sprite.body.frame),
+        "motion advances authored native move track")
     sprite.set_motion(Vector2.ZERO,0.0)
     check(sprite.animation_player.current_animation=="idle"
-        and sprite.body.frame_coords.y==0,
-        "idle uses native track, not a script frame counter")
+        and Art.animation_profile_for_character("shen_changfeng").clip_for("idle").frames.has(sprite.body.frame),
+        "idle uses authored native track, not a script frame counter")
     sprite.free()
     check(not FileAccess.file_exists("res://scripts/battle_spatial_waypoint.gd"),
         "obsolete PR57 pathfinder deleted")
