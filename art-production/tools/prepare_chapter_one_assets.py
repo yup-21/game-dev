@@ -49,15 +49,55 @@ def alpha_observations(path: Path, size: tuple[int, int],
     return problems
 
 
+
+def source_cell_edge_risks(path: Path) -> list[str]:
+    """Flag likely clipped poses before normalization hides source-cell edges.
+
+    This is a conservative triage signal, not proof that every other frame is
+    artistically complete. Strict mode treats flagged source atlases as blockers.
+    """
+    risks: list[str] = []
+    with Image.open(path) as image:
+        if image.size != (1536, 1024) or "A" not in image.getbands():
+            return risks
+        alpha = image.getchannel("A")
+        for frame_index in range(24):
+            x, y = frame_index % 6 * 256, frame_index // 6 * 256
+            tile = alpha.crop((x, y, x + 256, y + 256))
+            edge_bands = {
+                "top": (16, 0, 240, 2),
+                "bottom": (16, 254, 240, 256),
+                "left": (0, 16, 2, 240),
+                "right": (254, 16, 256, 240),
+            }
+            touching = []
+            for edge, bounds in edge_bands.items():
+                band = tile.crop(bounds)
+                # Ignore antialiasing noise and isolated flecks.
+                opaque = band.point(lambda a: 255 if a >= 24 else 0)
+                if opaque.histogram()[255] >= 8:
+                    touching.append(edge)
+            if touching:
+                risks.append(f"frame {frame_index} touches {','.join(touching)}")
+    return risks
+
+
 def audit_sources() -> int:
     problems = []
     for identity in CHARACTERS:
         base = BATCH / identity
         problems.extend(f"{identity} portrait: {x}" for x in alpha_observations(
             base / f"portrait_{identity}_fullbody_v01.png", (1024, 1536)))
+        source_atlas = base / f"sprite_{identity}_atlas_source_v01.png"
         problems.extend(f"{identity} atlas: {x}" for x in alpha_observations(
-            base / f"sprite_{identity}_atlas_source_v01.png",
-            (1536, 1024), atlas=True))
+            source_atlas, (1536, 1024), atlas=True))
+        edge_risks = source_cell_edge_risks(source_atlas)
+        if edge_risks:
+            examples = "; ".join(edge_risks[:8])
+            problems.append(
+                f"{identity} source-cell clipping risk in "
+                f"{len(edge_risks)}/24 frames ({examples}); "
+                "repaint complete isolated frames before re-atlasing")
     base = BATCH / STORY_NPC
     problems.extend(f"{STORY_NPC} portrait: {x}" for x in alpha_observations(
         base / "portrait_escort_elder_fullbody_v01.png", (1024, 1536)))
@@ -74,7 +114,7 @@ def audit_sources() -> int:
     print(f"SOURCE {master.relative_to(ROOT)} SHA256 {file_digest(master)}")
     for issue in problems:
         print(f"NEEDS_REVIEW {issue}")
-    print(f"ART_SOURCE_AUDIT: {len(problems)} unresolved alpha/atlas issues")
+    print(f"ART_SOURCE_AUDIT: {len(problems)} unresolved alpha/atlas/source-boundary issues")
     return len(problems)
 
 
@@ -186,7 +226,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write", action="store_true", help="write missing layered scene outputs")
     parser.add_argument("--replace", action="store_true", help="with --write, allow replacing changed candidates")
-    parser.add_argument("--strict", action="store_true", help="fail on all candidate alpha/frame issues")
+    parser.add_argument("--strict", action="store_true", help="fail on source alpha, frame and boundary-clipping risks")
     args = parser.parse_args()
     if args.replace and not args.write:
         parser.error("--replace requires --write")
