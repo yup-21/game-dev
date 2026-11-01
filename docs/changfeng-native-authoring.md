@@ -2,6 +2,10 @@
 
 本指南是项目**当前唯一的内容注册流程**。打开 Godot 4 项目 `demos/changfeng-battle/project.godot`，使用 Inspector 编辑或复制 `.tres` Resource；正式内容由 `res://data/content_manifest.tres` 显式引用。角色、门派、招式、章节、剧情、遭遇、Buff、物品均不通过 JSON/目录扫描加载。历史 R18–R41 文档只用于查阅迁移过程，不是制作步骤。
 
+## 可复制的现成模板
+
+模板位于 [`demos/changfeng-battle/data/templates/`](../demos/changfeng-battle/data/templates/README.md)：包含角色、物品、两张核心式与门派、剧情 Story、章节和可选 Encounter。复制后需要重命名 `content_id`、在 Inspector 重连跨文件引用，并显式登记到正式 Manifest；独立模板 Manifest 仅用于测试，不会自动进入游戏。
+
 ## 通用步骤
 
 1. 在 `data/native/<领域>/` 中复制现有同类 `.tres`，或用 Inspector 的 **New Resource** 新建对应 `Wuxia*Definition`。为每个 Resource 设置唯一的小写 `content_id`，不要复用其他类别的 ID。

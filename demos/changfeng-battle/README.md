@@ -5,6 +5,10 @@
 
 > **唯一对玩家开放的战斗场景：`battle_hd2d.tscn`。** 启动 Godot 时进入 `opening.tscn`；主菜单仅提供「初入江湖 · 新游戏」和「进入战斗 · HD-2D」两条游戏路径。序章「迎战追兵」、战斗结算后的「重新挑战」也复用这个场景，不再分流到旧版 2D Demo。
 
+## P2 内容制作模板
+
+[可复制的 `.tres` 内容模板](data/templates/README.md) 已覆盖新角色、新物品、含两张核心式的武学，以及 Story/Chapter/Encounter 章节组合。模板使用独立 Manifest 验证，**不在正式游戏中注册**；复制和保存后只需在 `data/content_manifest.tres` 引入，不要修改战斗规则代码。总步骤见 [原生内容制作指南](../../docs/changfeng-native-authoring.md)。
+
 ## R40 最终入口统一
 
 `opening.tscn` 主菜单的「进入战斗 · HD-2D」现在通过 `GameSession.start_quick_battle()` 启动正式登记的 `r40_quick_duel.tres`，而非直接手工拼装旧双人规则。玩家与追镖首领的初始位置来自 `WuxiaEncounterDefinition`，主角药品/气丸/装备来自 `WuxiaCharacterDefinition`，队伍快照由 `CharacterFactory` 和 `ScenarioDirector` 生成；剧情遭遇和快捷战斗最终都进入唯一 `battle_hd2d.tscn` 和 `BattleModel`。
