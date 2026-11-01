@@ -1,6 +1,9 @@
 name: Portable Changfeng demo export
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     paths:
       - 'demos/changfeng-battle/**/*.gd'

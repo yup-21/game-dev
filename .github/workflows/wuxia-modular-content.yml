@@ -1,6 +1,9 @@
 name: Modular Wuxia content contracts
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     paths:
       - 'demos/changfeng-battle/scripts/**'

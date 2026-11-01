@@ -1,6 +1,9 @@
 name: Original Wuxia HUD regression
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     paths:
       - 'demos/changfeng-battle/**/*.gd'
