@@ -14,7 +14,7 @@
 
 - 以 **1600×1000 的 16:10 逻辑画面**做基础设计；同时检查 1440×900 窗口，不能依赖单张图天然填满所有裁剪尺寸。
 - 每张正式场景的交付包包含 `background`（远景）、`ground`（可站立地面）、`foreground`（可遮挡主体）、可选 `weather`/光照遮罩。所有图层采用相同画布原点、尺寸和透明通道；保留可编辑母版。单张概念图不等于分层交付。
-- 附带 Godot 原生 `WuxiaMapDefinition` / `WuxiaGridMapDefinition` 的地面、障碍、出生点、剧情标记。角色脚点与地图可行走区域在同一坐标空间，绝不根据 PNG 颜色推断碰撞。
+- 战斗地图附带 Godot 原生 `WuxiaMapDefinition` / `WuxiaGridMapDefinition` 的地面、障碍、出生点、剧情标记；剧情场景挂到 `WuxiaChapterSceneDefinition.scene_art`，保留章节原背景回退。角色脚点与地图可行走区域在同一坐标空间，绝不根据 PNG 颜色推断碰撞。
 - 固定摄像机比例、地平线和人物脚点参照；重要道具及前景遮挡另建 `Node2D` 层，避免贴死在背景而无法正确穿行。
 - 雨、雾、流水、灯光和落叶均为可关闭的独立表现层；低性能档关闭后不影响路径、LOS 或脚点。
 - 验收：六人可站立区足够清楚，路径/碰撞与画面一致，前景遮挡正确，分辨率截图和真实 GUI 试玩通过。
@@ -33,11 +33,26 @@
 1. 在 `assets/characters/` 放置最终 Atlas、立绘；概念版本保持在 `assets/concepts/`，并记录制作来源。
 2. 复制 `data/templates/actor_animation_profile.tres`，设定 Atlas、列/行、脚点偏移、缩放和每个动作的实际帧索引。循环动作按 `loop_fps` 播放；非循环动作由既有 `BattleActionTimeline` 控制完成时长。
 3. 在对应 `WuxiaCharacterDefinition` 的 `animation_profile` 属性引用该 Resource。正式角色仍需在 `data/content_manifest.tres` 注册；**无需修改 `BattleModel` 或按角色 ID 添加脚本分支**。
-4. 场景制作使用 `WuxiaSceneArtProfile` 引用同画布 `background`、`ground`、`foreground` 和可选 `weather`，并挂到 `WuxiaMapDefinition` 或 `WuxiaGridMapDefinition.scene_art`。地图几何仍由原 Map Resource 决定；未挂 Profile 的老地图继续显示单张背景。正式场景须同时交付可编辑分层母版。
+4. 场景制作使用 `WuxiaSceneArtProfile` 引用同画布 `background`、`ground`、`foreground` 和可选 `weather`，并挂到战斗地图 `WuxiaMapDefinition` / `WuxiaGridMapDefinition.scene_art`，或剧情章节 `WuxiaChapterSceneDefinition.scene_art`。地图几何仍由原 Map Resource 决定；未挂 Profile 的旧地图和旧章节继续显示单张背景。正式场景须同时交付可编辑分层母版。
 5. 导入后预览完整动作；检查角色移动脚点不漂移、攻击方向正确、VFX 与有效帧对齐。未配置 Profile 的老角色保持旧 6×4 兼容播放。
 6. 成品通过材质边缘、动作连续、成本/性能、资源依赖与授权审查之后，才进入 `approved`。
 
-## 5. 制作顺序与验收门槛
+## 5. 各类素材的原生交付合同
+
+| 资产类别 | 可交付格式 | 必需的技术条件 | 原生绑定 |
+| --- | --- | --- | --- |
+| 角色立绘 | 透明 PNG / WebP | 真实 Alpha、单人、身份一致、边缘完整 | `WuxiaCharacterDefinition.portrait` |
+| 角色动画 | 透明 RGBA Atlas（PNG / WebP） | 等尺寸格、列行可整除、九动作合法帧范围、统一脚点 | `WuxiaActorAnimationProfile` |
+| 场景分层 | 同画布背景与透明图层 | 1600×1000 同原点；背景、独立 ground 必需，前景和天气按需 | `WuxiaSceneArtProfile` → Map 或 ChapterScene |
+| 战斗 VFX | 透明 RGBA 图集或单图 | 真实 Alpha；列行可整除；`frame_indices` 不越界，按事件持续时间非循环播放 | `WuxiaAssetDefinition` 的 VFX 事件绑定 |
+| UI / 卡画 | SVG / PNG / WebP 分件 | 文字与交互不烘焙进贴图；九宫格、裁切与小尺寸可读性人工验证 | Godot `Control` / 原生资产引用 |
+
+- **兼容边界**：旧 6×4/256×256 和单张背景仅是过渡格式，不作为新资产合同或 AssetRegistry 全局限制。新 Atlas 的行列和帧号由动画 Profile 唯一解释。
+- **脚点语义**：动画播放使用 `WuxiaActorAnimationProfile.feet_offset`（Sprite2D 像素偏移）与 `actor_scale`；旧资产登记里的归一化 `foot_anchor` 仅为兼容元数据，不能与 `feet_offset` 混算。剧情与战斗必须优先使用同一 Profile。
+- **自动校验不等于批准**：纹理可解码、Alpha、整除、索引和 `.tres` 引用属于技术检查。帧间连续性、四方向身份、实际前景遮挡、UI 手感和授权仍需人工审核。
+- **尚未冻结**：正式角色格子尺寸、动作 FPS、VFX 图集格子、UI 图标母版和色板待试点验收后确定；不得把示例值变成全项目必填规格。
+
+## 6. 制作顺序与验收门槛
 
 **试点：一名主角 + 一名敌人 + 一张战场 + 一张剧情场景**。先完成全流程，再批量制作其他人物和章节；现有角色绑定与故事资料不删除。
 

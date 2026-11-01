@@ -17,7 +17,7 @@ description: "为《长风浮生录》设计、生成、拆分或审核剧情与
 2. **先出概念母版**：明确主角、敌人、NPC 的站位及路线。战斗场景需支持至少六人清晰分布；地图可走区、视觉障碍、前景装饰要分离。整张概念图不是可运行地图。
 3. **分层交付**：以同一画布原点和尺寸输出 background（远景，必需）、ground（可站立地面，必需）、foreground（可遮挡，按需）、weather（雨雾等，按需）；不属于当前图层的像素使用真实透明 Alpha。保留可编辑分层母版。
 4. **保持空间合同**：所有地标在各层的坐标一致，前景对象可在 Node2D 层独立遮挡角色；雨、雾、灯光等表现层可关闭，且关闭后不影响路径、LOS、出生点或触发区域。
-5. **接入 Godot**：创建/更新 WuxiaSceneArtProfile，reference_size 与各贴图尺寸统一为 1600×1000；将其挂到 WuxiaMapDefinition 或 WuxiaGridMapDefinition.scene_art。障碍、地面、出生点、剧情标记与碰撞由原生 Map Resource 定义；绝不依赖 PNG 颜色推断碰撞。
+5. **接入 Godot**：创建/更新 WuxiaSceneArtProfile，reference_size 与各贴图尺寸统一为 1600×1000；将其挂到战斗地图 WuxiaMapDefinition / WuxiaGridMapDefinition.scene_art，或剧情章节 WuxiaChapterSceneDefinition.scene_art。前景/天气在剧情探索阶段独立渲染，剧情对白不遮挡 UI。障碍、地面、出生点、剧情标记与碰撞由原生资源定义；绝不依赖 PNG 颜色推断碰撞。
 6. **核验对位**：在 Godot Editor 中按剧情和战斗玩法实际移动角色，检查脚点、道路边缘、遮挡顺序、地图碰撞与美术对应，并使用 1600×1000、1440×900 两套 GUI 截图。
 
 ## 交付门槛

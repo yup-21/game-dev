@@ -16,6 +16,8 @@ var story = Story.new()
 var chapter_scene: Dictionary = {}
 var npc_position: Vector2 = ESCORT
 var background_path: String = TEMPLE_PAINTING
+var scene_art_path: String = ""
+var story_art_profile: WuxiaSceneArtProfile
 var npc_character_id: String = "escort_elder"
 
 func _load_chapter_content() -> void:
@@ -29,6 +31,7 @@ func _load_chapter_content() -> void:
 	npc_character_id = str(chapter_scene.get("npc_character_id","escort_elder"))
 	npc_position = Vector2(float(chapter_scene.npc_position[0]),float(chapter_scene.npc_position[1]))
 	background_path = str(chapter_scene.get("background",TEMPLE_PAINTING))
+	scene_art_path = str(chapter_scene.get("scene_art",""))
 	player_pos = Vector2(float(chapter_scene.player_position[0]),float(chapter_scene.player_position[1]))
 	story = Story.new(str(chapter.story_path))
 	if session.phase == "story":
@@ -69,6 +72,9 @@ func _npc_distance() -> float:
 var temple_backdrop: Texture2D
 var temple_uses_fallback := false
 var temple_picture: TextureRect
+var ground_picture: TextureRect
+var foreground_picture: TextureRect
+var weather_picture: TextureRect
 var ui_font: SystemFont
 var title_font: SystemFont
 var clock: float = 0.0
@@ -151,6 +157,12 @@ func _process(delta: float) -> void:
 		_sync_story_sprites(Vector2.ZERO,delta)
 	if temple_picture != null:
 		temple_picture.visible = story.phase in ["explore","dialogue","complete"] or (story.phase=="cinematic" and story.cinematic_index > 0)
+	if ground_picture != null:
+		ground_picture.visible = temple_picture != null and temple_picture.visible
+	if foreground_picture != null:
+		foreground_picture.visible = story.phase == "explore"
+	if weather_picture != null:
+		weather_picture.visible = story.phase == "explore"
 	queue_redraw()
 
 func _sync_story_sprites(motion: Vector2, delta: float) -> void:
@@ -556,7 +568,13 @@ func _painted_content(texture: Texture2D) -> bool:
 func _load_temple_background() -> void:
 	temple_uses_fallback = false
 	temple_backdrop = null
-	if ResourceLoader.exists(background_path):
+	story_art_profile = null
+	if scene_art_path.begins_with("res://data/") and not scene_art_path.contains("..") and ResourceLoader.exists(scene_art_path):
+		var authored: WuxiaSceneArtProfile = ResourceLoader.load(scene_art_path) as WuxiaSceneArtProfile
+		if authored != null and authored.valid_for(Vector2i(1600,1000)):
+			story_art_profile = authored
+			temple_backdrop = authored.background
+	if temple_backdrop == null and ResourceLoader.exists(background_path):
 		var original: Texture2D = load(background_path) as Texture2D
 		if _painted_content(original):
 			temple_backdrop = original
@@ -582,13 +600,34 @@ func _build_temple_picture() -> void:
 	temple_picture.position = Vector2.ZERO
 	temple_picture.size = Vector2(1600,1000)
 	temple_picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	temple_picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	temple_picture.stretch_mode = TextureRect.STRETCH_SCALE if story_art_profile != null else TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	temple_picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	temple_picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	temple_picture.z_index = -100
 	temple_picture.modulate = Color.WHITE
 	temple_picture.visible = false
 	add_child(temple_picture)
+	if story_art_profile != null:
+		ground_picture = _add_story_art_layer("GroundArt", story_art_profile.ground, -90)
+		foreground_picture = _add_story_art_layer("ForegroundOcclusion", story_art_profile.foreground, 30)
+		weather_picture = _add_story_art_layer("WeatherOverlay", story_art_profile.weather, 31)
+
+func _add_story_art_layer(label: String, texture: Texture2D, depth: int) -> TextureRect:
+	if texture == null:
+		return null
+	var image := TextureRect.new()
+	image.name = label
+	image.texture = texture
+	image.position = Vector2.ZERO
+	image.size = Vector2(1600,1000)
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_SCALE
+	image.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	image.z_index = depth
+	image.visible = false
+	add_child(image)
+	return image
 
 func _temple_background() -> bool:
 	# The painted TextureRect is a real scene child; calling drawing commands
@@ -601,7 +640,8 @@ func _paint_exploration() -> void:
 		_wet_road(clock)
 		_paint_pavilion(Vector2(1280,570),0.9)
 		_carriage(Vector2(837,625))
-	_rain(clock,110)
+	if story_art_profile == null or story_art_profile.weather == null:
+		_rain(clock,110)
 	# Shen Changfeng and the escort elder are now Sprite2D scene children.
 	# Never paint character frames through this CanvasItem.
 

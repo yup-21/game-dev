@@ -10,6 +10,9 @@
 | [skills/](skills/) | 角色、场景、VFX、UI、审核导入的仓库级 Agent Skills；通过仓库根目录 `.agents/skills` 软连接自动发现 |
 | [candidates/](candidates/) | 后续生成的概念图和待审批图；按批次、类型存放 |
 | [reviews/](reviews/) | 人工验收、截图与批准记录 |
+| [inventory/](inventory/) | 当前素材清单、引用、来源与 SHA-256 |
+| [in-use/](in-use/) | 运行时直接引用素材的原字节副本 |
+| [tools/](tools/) | 离线库存工具与 Godot 导入导出指南 |
 
 Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontmatter 规范，详细工作规则由对应 Skill 在使用时按需加载；修改 Skill 只编辑本目录，不维护第二套副本。
 
@@ -29,3 +32,12 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 ## 第一批生产试点
 
 沈长风（设定、立绘、九类动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。所有候选经过人工批准，才可以冻结 V2 规格。
+
+- [2026-11-01 四项优先试点工作单](candidates/2026-11-01/README.md)：包含剧情场景分层与准确的原生资源目标。
+- [运行时代码与存量美术格式差异/验收状态](reviews/2026-11-01/FORMAT_UNIFICATION_STATUS.md)：明确代码已打通但历史图像尚不等于最终批准资产。
+
+## Godot 原生素材导入与导出
+
+Godot 4.7.2 编辑器内的 **Art Production** Dock 提供引用图像导出、角色动画与场景分层导入、批次预检、版本化替换和事务回退。运行时仍只读取 `.tres` Resource，离线清单不充当内容定义。
+
+参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。新导入资源默认 `candidate`，未经人工审查不得标记为 `approved` 或覆盖正式美术。

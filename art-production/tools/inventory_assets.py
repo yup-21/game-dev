@@ -48,6 +48,8 @@ def destination(path: str) -> str:
     rel = path.removeprefix("assets/")
     name = Path(rel).name
     prefix = "art-production/in-use/"
+    if rel.startswith("imported/"):
+        return prefix + rel
     if rel.startswith("fallback/"):
         return prefix + "fallback/" + name
     if rel.startswith("ui/"):
