@@ -1,42 +1,43 @@
-# 雨夜断桥 · 战斗地图分层试点 WORK_ORDER
+# 雨夜断桥：分层场景制作工作单
 
-## 基本信息
+## 场景合同
+- asset_id: `rainy_bridge`，16:10 固定 HD-2D 镜头
+- 与 `data/maps/rainy_bridge.tres` 的原生地形定义关联，但**没有改动现有 15×10 网格**或背景贴图
+- 主桥沿横向贯穿画面中央，湍流垂向穿过桥下；六人走位视觉区位于桥面
+- 底色：雨夜蓝/墨青/苔绿；局部灯笼暖金，岩石与湿桥石真实手绘材质
+- 源母版 `environment_rainy_bridge_master_v01.png` 为 1586×992。分层时 LANCZOS 采样到严格 1600×1000。
+- 生产日期：2026-11-01
+- 生成工具：内置图像生成工具；底层模型 ID 未公开；seed 不可获取
+- 风格基准：`art-production/standards/ART_PRODUCTION_STANDARD.md` 与 `prompts/ART_STYLE_AI_PROMPTS_V1.md`
+- 来源/权属：本项目定向原创 AI 生成，未使用外部商业角色图；仍须由负责人完成可商用权属、相似性与最终视觉审核
+- 状态：**candidate / owner_review_required**；可在技术审核分支绑定原生 `.tres` 试玩，但不等同 approved
+- 全量提示词见同批 `PROMPTS.md`；SHA-256 与版本源流见 `PILOT_MANIFEST.json`。
 
-- asset_id: `rainy_bridge`
-- asset_type: `environment | scene_layer`
-- target_usage: `battle`
-- status: `concept`
-- owner/reviewer: **待指派**
-- source / rights: **概念生成记录、商用授权待审查**
-- prompt_template_version: `ART_STYLE_AI_PROMPTS_V1`
-- model/version/seed: **新一轮分层制作未开始**
+## 图层
+| 层级 | 文件 | 透明/坐标 |
+| --- | --- | --- |
+| background | `scene_rainy_bridge_background_v01.png` | 1600×1000 RGBA；远山、山谷、水流；地面/前景区域透明 |
+| ground | `scene_rainy_bridge_ground_v01.png` | 1600×1000 RGBA；桥面可站立部分 |
+| foreground | `scene_rainy_bridge_foreground_v01.png` | 1600×1000 RGBA；桥身前缘、竹叶与近景遮挡 |
+| weather | `scene_rainy_bridge_weather_v01.png` | 1600×1000 RGBA；可关闭的独立细雨，程序固定随机种子 |
+| composite preview | `scene_rainy_bridge_composite_preview_v01.png` | 同画布；合成检查，非运行时图层 |
 
-## 参考与镜头锁定
+- 左上角 (0,0)，X 向右、Y 向下；所有图层严格同原点。
+- 从同一母图使用确定性遮罩拆层，避免 AI 再生成导致地标漂移；干层重组在像素上等同缩放后的母图。
+- 离线可编辑母版是源 PNG + 可复现 `tools/prepare_pilot_assets.py` 中的分层多边形；后续美术可在 Krita/PSD 内对独立图层细修。
+- 游戏中由 `WuxiaSceneArtProfile` 引用四层，由地图 `scene_art` 显式挂载，**不能凭贴图颜色自动生成路径或碰撞**。
 
-- 合成构图候选：`demos/changfeng-battle/assets/concepts/2026-11-01/rainy_bridge_environment_candidate.png`，尚不能作为已批准地图。
-- 当前实际背景：`demos/changfeng-battle/assets/scenes/battle/rainy_bridge_battle.webp`，源尺寸 1586×992。
-- 原生网格地图：`res://data/maps/rainy_bridge.tres`，viewport=1600×1000、旧图旋转 -6°、缩放 1.14、15×10 格与显式通行/障碍定义。
-- 对位要求：桥面水平可通行区域以既有网格第 4 行、第 5–10 列为准，河水不可通行；必须保留至少六人清楚站位。**不能为适配图片擅改地图拓扑**。
-- 统一原点：1600×1000 的左上为 (0,0)，地图 Marker / 脚点 / 场景层共用逻辑坐标。
+## 验收现状
+- [x] 4 层画布尺寸 1600×1000 和 RGBA 校验；前景及天气真实透明
+- [x] 单母版、同原点、像素重组；可独立关闭 weather
+- [ ] 当前主桥画面与既有地图 `first_center`、`cell_size`、障碍/出生点的逐点校准
+- [ ] Godot 编辑器里实际六人站位、脚点、前景遮挡和低性能天气开关
+- [ ] 1600×1000、1440×900 GUI 实机截图与负责人视觉/授权批准
+- [ ] 母版中原有细雨依然画在静态背景中；完全关闭全部降雨需后续人工重绘干背景
 
-## 输出与验收
+**结论：图层技术候选；地图 Resource 已在审核分支绑定候选四层；旧图保留用于回退与溯源。**
 
-- `background`：1600×1000 完整远景；`ground`：1600×1000 独立透明可站立地面（必选、不是背景副本）。
-- `foreground`：同画布透明遮挡层；`weather`：同画布可关闭的雨雾层。
-- 需有可编辑分层母版、层合成对位图、前景遮挡示意、与 grid/collision 对照截图、来源和提示词。
-- Godot 目标：`res://data/native/scene_art/rainy_bridge.tres` → `res://data/maps/rainy_bridge.tres` 的 `scene_art`。
-- 先导入候选并测试；批准前不可覆盖目前加载的 WebP。
 
-## 审核清单
+## 统一原生合同与过渡策略
 
-- [ ] 镜头、桥面与现有 grid 对位人工签核
-- [ ] 四层同原点/同尺寸；透明 ground、foreground、weather 均可检验
-- [ ] 角色脚点、六人站位、前景遮挡与河水障碍一致
-- [ ] 关闭天气不改变 LOS / 通行 / 交战
-- [ ] 1600×1000 和 1440×900 GUI 截图、性能与授权
-- [ ] Owner 批准版本及 SHA
-
-## 结论
-
-- 审核状态：`pending`
-- 阻塞：参考未批准、真实可编辑分层素材尚无，地图美术对位和权属签核未完成。
+本工作单保留所有原稿、提示词、母版和 SHA 证据。审核分支仅把候选素材绑定至现有 `.tres`，不复制历史 JSON 加载器，也不删除仍可能需要回退的旧贴图。动作质量、四向站姿、角色身份、地图对位与商业权属均待负责人验收后逐步淘汰旧图。

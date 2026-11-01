@@ -1,6 +1,6 @@
 # 游戏美术素材使用清单
 
-源版本：`bd6793798c240658d2209ef2ca6b9976d3d808dd`
+源版本：`22267884d51fd54cc62a373b31ff90799e57ac25`
 
 由 art-production/tools/inventory_assets.py 生成，检查 Godot Resource、场景与脚本的静态 res://assets/ 引用。
 in_use 表示被游戏正式资源或脚本直接引用，不保证每局都显示，更不等于 approved。
@@ -9,11 +9,11 @@ registered_only 仅在资产登记卡中出现；test_only 不计入正式游戏
 
 | 使用状态 | 文件数 | 总字节数 |
 | --- | ---: | ---: |
-| in_use | 39 | 25174173 |
+| in_use | 61 | 62101404 |
 | registered_only | 1 | 207 |
 | test_only | 2 | 2288 |
 | template_only | 0 | 0 |
-| unreferenced | 29 | 18846195 |
+| unreferenced | 31 | 21390687 |
 
 SHA-256 重复内容组：0
 静态图像缺失引用：0
@@ -22,8 +22,6 @@ SHA-256 重复内容组：0
 
 | Godot 来源 | 制作区副本 | 审核 |
 | --- | --- | --- |
-| `res://assets/characters/concepts/escort_captain_portrait.png` | `art-production/in-use/characters/portraits/escort_captain_portrait.png` | review_required |
-| `res://assets/characters/concepts/escort_elder_injured.svg` | `art-production/in-use/characters/story_poses/escort_elder_injured.svg` | review_required |
 | `res://assets/characters/concepts/gu_qingshuang_portrait_v1.png` | `art-production/in-use/characters/portraits/gu_qingshuang_portrait_v1.png` | review_required |
 | `res://assets/characters/concepts/shen_changfeng_portrait.png` | `art-production/in-use/characters/portraits/shen_changfeng_portrait.png` | review_required |
 | `res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg` | `art-production/in-use/characters/animations/blue_swordfighter_pixel_study.jpg` | review_required |
@@ -39,6 +37,30 @@ SHA-256 重复内容组：0
 | `res://assets/fallback/default_portrait.svg` | `art-production/in-use/fallback/default_portrait.svg` | review_required |
 | `res://assets/fallback/default_scene.svg` | `art-production/in-use/fallback/default_scene.svg` | review_required |
 | `res://assets/fallback/default_story_pose.svg` | `art-production/in-use/fallback/default_story_pose.svg` | review_required |
+| `res://assets/imported/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/black_blade/portrait_black_blade_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/black_blade/sprite_black_blade_atlas_normalized_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/green_wanderer/sprite_green_wanderer_atlas_normalized_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_normalized_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/pursuer_captain/portrait_pursuer_captain_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/pursuer_captain/sprite_pursuer_captain_atlas_normalized_v02.png` | `art-production/in-use/imported/candidates/2026-11-01/pursuer_captain/sprite_pursuer_captain_atlas_normalized_v02.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/shen_changfeng/portrait_shen_changfeng_fullbody_v01.png` | `art-production/in-use/imported/candidates/2026-11-01/shen_changfeng/portrait_shen_changfeng_fullbody_v01.png` | review_required |
+| `res://assets/imported/candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png` | `art-production/in-use/imported/candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png` | review_required |
 | `res://assets/scenes/battle/rainy_bridge_battle.webp` | `art-production/in-use/scenes/battle/rainy_bridge_battle.webp` | review_required |
 | `res://assets/scenes/story/ruined_temple_story.webp` | `art-production/in-use/scenes/story/ruined_temple_story.webp` | review_required |
 | `res://assets/ui/jade_seal.svg` | `art-production/in-use/ui/jade_seal.svg` | review_required |

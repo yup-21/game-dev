@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaChapterDefinition" load_steps=12 format=3]
+[gd_resource type="Resource" script_class="WuxiaChapterDefinition" load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/chapter_definition.gd" id="chapter"]
 [ext_resource type="Script" path="res://scripts/content/chapter_scene_definition.gd" id="scene"]
@@ -6,7 +6,9 @@
 [ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="req"]
 [ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="event"]
 [ext_resource type="Resource" path="res://data/native/stories/rain_escort_prologue.tres" id="story"]
-[ext_resource type="Texture2D" path="res://assets/scenes/story/ruined_temple_story.webp" id="bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png" id="bg"]
+
+[ext_resource type="Resource" path="res://data/native/scene_art/ruined_temple.tres" id="art"]
 
 [sub_resource type="Resource" id="c0"]
 script = ExtResource("npc")
@@ -17,6 +19,7 @@ talk_label = "与受伤镖头交谈"
 [sub_resource type="Resource" id="c1"]
 script = ExtResource("scene")
 background = ExtResource("bg")
+scene_art = ExtResource("art")
 primary_npc = SubResource("c0")
 player_position = Vector2(350, 705)
 player_bounds = Rect2(155, 345, 1260, 410)

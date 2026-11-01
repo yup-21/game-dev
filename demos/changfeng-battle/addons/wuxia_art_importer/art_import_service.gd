@@ -176,11 +176,21 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
         result["rows"] = rows
         result["feet_offset"] = fields.get("feet_offset", Vector2(0, -102))
         result["faces_left"] = bool(fields.get("faces_left", false))
-        var profile: WuxiaActorAnimationProfile = owner.get("animation_profile") as WuxiaActorAnimationProfile
-        if profile == null:
-            profile = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
+        var clip_path := str(fields.get("clip_profile_path", "")).strip_edges()
+        var profile: WuxiaActorAnimationProfile = null
+        if not clip_path.is_empty():
+            if not clip_path.begins_with("res://data/") or clip_path.contains("..") or not ResourceLoader.exists(clip_path):
+                return {"error": "动画 Profile 模板路径不可用：" + clip_path}
+            profile = ResourceLoader.load(clip_path) as WuxiaActorAnimationProfile
+            if profile == null:
+                return {"error": "动画 Profile 模板不是 WuxiaActorAnimationProfile"}
+        else:
+            profile = owner.get("animation_profile") as WuxiaActorAnimationProfile
+            if profile == null:
+                profile = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
         if profile == null:
             return {"error": "缺少原生动画 Profile 模板"}
+        result["clip_profile_path"] = clip_path
         var staged := profile.duplicate(true) as WuxiaActorAnimationProfile
         staged.atlas = first["texture"]
         staged.columns = cols
@@ -190,9 +200,11 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
         result["profile_path"] = "res://data/native/animations/" + str(owner.get("content_id")) + ".tres"
     if mode == "scene":
         var scene_holder: Resource = owner.get("scene") if owner is WuxiaChapterDefinition else owner
+        var old_background: Texture2D = scene_holder.get("background") as Texture2D
         var old_scene: WuxiaSceneArtProfile = scene_holder.get("scene_art") as WuxiaSceneArtProfile
-        result["current_binding"] = old_scene.resource_path if old_scene != null else ""
-        for layer in ["ground", "foreground", "weather"]:
+        result["current_binding"] = old_background.resource_path if old_background != null else ""
+        result["current_scene_profile"] = old_scene.resource_path if old_scene != null else ""
+        for layer in ["ground", "foreground", "weather", "story_preview"]:
             var layer_path := str(fields.get(layer, "")).strip_edges()
             if layer == "ground" and layer_path.is_empty():
                 return {"error": "场景必须提供独立 ground 图层"}
@@ -304,9 +316,16 @@ static func save_bindings(plan_data: Dictionary) -> String:
             character.portrait = textures["primary"]
             character.portrait_quality = "candidate"
         else:
-            var template: WuxiaActorAnimationProfile = character.animation_profile
+            var clip_path := str(plan_data.get("clip_profile_path", ""))
+            var template: WuxiaActorAnimationProfile = null
+            if not clip_path.is_empty():
+                template = ResourceLoader.load(clip_path) as WuxiaActorAnimationProfile
+            else:
+                template = character.animation_profile
+                if template == null:
+                    template = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
             if template == null:
-                template = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
+                return "动画 Profile 模板不可用"
             var profile := template.duplicate(true) as WuxiaActorAnimationProfile
             profile.atlas = textures["primary"]
             profile.columns = int(plan_data["columns"])
@@ -340,12 +359,24 @@ static func save_bindings(plan_data: Dictionary) -> String:
             profile.foreground = textures["foreground"]
         if textures.has("weather"):
             profile.weather = textures["weather"]
+        if textures.has("story_preview"):
+            profile.story_preview = textures["story_preview"]
         if not profile.valid_for(profile.reference_size):
             return "场景层未通过 viewport 一致性检查"
         var art_error := _save(profile, str(plan_data["profile_path"]))
         if not art_error.is_empty():
             return art_error
         scene_holder.set("scene_art", profile)
+        # Both chapter and battle consumers may still read the single background.
+        # Never allow the pre-import painting to mask newly imported layers.
+        scene_holder.set("background", textures["primary"])
+        if map is WuxiaGridMapDefinition:
+            map.source_size = map.viewport_size
+            map.rotation_degrees = 0.0
+            map.image_scale = 1.0
+        elif map is WuxiaMapDefinition:
+            map.image_rotation_degrees = 0.0
+            map.image_scale = 1.0
         var map_error := _save(map, target)
         if map_error.is_empty():
             map.emit_changed()

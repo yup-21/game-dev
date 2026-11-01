@@ -5,11 +5,11 @@
 - asset_id: `rain_escort_prologue_story`
 - asset_type: `environment | scene_layer`
 - target_usage: `story`
-- status: `concept`
+- status: `candidate`（独立审核分支已有 `ruined_temple` 真实分层候选，未批准）
 - owner/reviewer: **待指派**
 - source / rights: **旧背景来源与商业权属待核实**
 - prompt_template_version: `ART_STYLE_AI_PROMPTS_V1`
-- model/version/seed: **尚未开始分层制作**
+- model/version/seed: **见 `../ruined_temple/WORK_ORDER.md` 和 `../CHAPTER_ONE_MANIFEST.json`，seed 不可获取**
 
 ## 参考与镜头锁定
 
@@ -37,4 +37,4 @@
 ## 结论
 
 - 审核状态：`pending`
-- 阻塞：原图权属、批准构图、可编辑分层母版及实机视觉审核尚缺。
+- 阻塞：原图权属、批准构图、完整人工脚点/遮挡与两档实机视觉审核仍缺；候选分层及可复现母版已交付，不能标记 approved。

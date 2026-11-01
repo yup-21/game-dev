@@ -18,13 +18,17 @@ func _run() -> void:
     var view = OpeningScene.instantiate()
     root.add_child(view)
     await process_frame
+    # Title has no active chapter yet. Starting the prologue loads its native art.
+    view._enter_new_game()
+    await process_frame
     var texture: Texture2D = view.temple_backdrop
     _check(texture!=null, "exploration has a scenery texture")
     if texture!=null:
+        _check(texture.resource_path.contains("/ruined_temple/scene_ruined_temple_background_"),
+            "first-act native scene layer replaces title/fallback texture")
         _check(view._painted_content(texture),"chosen first-act texture has nonblank painted content")
         _check(texture.get_width()>=1024 and texture.get_height()>=600,
             "first-act painting has enough resolution for full-screen use")
-    view._enter_new_game()
     view.story.skip_cinematic()
     _check(view.story.phase=="explore","first act reaches real exploration phase")
     await process_frame

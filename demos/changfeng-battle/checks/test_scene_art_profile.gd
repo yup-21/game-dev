@@ -36,8 +36,9 @@ func _initialize() -> void:
         quit(1)
         return
     var chapter_scene := chapter.scene as WuxiaChapterSceneDefinition
-    if chapter_scene.scene_art != null or chapter.to_record().is_empty():
-        push_error("Legacy chapter fallback was broken")
+    var imported: WuxiaSceneArtProfile = chapter_scene.scene_art
+    if imported == null or not imported.valid_for(Vector2i(1600, 1000)) or chapter.to_record().is_empty():
+        push_error("Imported chapter scene art is unavailable or invalid")
         quit(1)
         return
     chapter_scene.scene_art = profile
@@ -45,9 +46,16 @@ func _initialize() -> void:
         push_error("An invalid chapter art profile bypassed validation")
         quit(1)
         return
+    # A chapter without layered art is still supported during the staged
+    # migration, and must keep its legacy single-background fallback.
     chapter_scene.scene_art = null
     if chapter.to_record().is_empty():
-        push_error("Legacy chapter failed to recover after invalid profile")
+        push_error("Legacy chapter fallback was broken")
+        quit(1)
+        return
+    chapter_scene.scene_art = imported
+    if chapter.to_record().is_empty():
+        push_error("Restoring the imported chapter art failed")
         quit(1)
         return
     print("SCENE_ART_PROFILE_OK")

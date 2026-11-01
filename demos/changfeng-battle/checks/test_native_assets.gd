@@ -33,13 +33,19 @@ func _run() -> void:
     flexible["columns"] = 3
     flexible["rows"] = 8
     check(assets._register(flexible), "new pose_sheet registry accepts divisible 3x8 atlas")
-    check(Art.portrait_for_character("shen_changfeng") == portrait
+    var hero_card: WuxiaCharacterDefinition = load("res://data/native/characters/shen_changfeng.tres")
+    check(Art.portrait_for_character("shen_changfeng") == hero_card.portrait
         and Art.uses_supplied_sheet_for_character("river_messenger"),
-        "original art facade reads the native registry by character ID")
+        "art facade prefers the live native character card by ID")
     var factory = Factory.new()
-    check(factory.load_error.is_empty()
-        and factory.presentation_assets("shen_changfeng").get("portrait") == portrait,
-        "CharacterFactory resolves art without modifying actor rules")
+    var old_spec: Dictionary = factory.assets.record("r22_shen_portrait")
+    var conflicting_spec: Dictionary = old_spec.duplicate(true)
+    conflicting_spec["path"] = "res://assets/characters/concepts/escort_captain_portrait.png"
+    factory.assets.definitions["r22_shen_portrait"] = conflicting_spec
+    var factory_uses_card: bool = factory.presentation_assets("shen_changfeng").get("portrait") == hero_card.portrait
+    factory.assets.definitions["r22_shen_portrait"] = old_spec
+    check(factory.load_error.is_empty() and factory_uses_card,
+        "CharacterFactory ignores conflicting historical portrait registrations")
     check(assets.record("r22_vfx_probe").get("status") == "candidate"
         and assets.record("r22_vfx_probe").get("rights") == "owner_review_required",
         "candidate asset is explicitly not certified approved")

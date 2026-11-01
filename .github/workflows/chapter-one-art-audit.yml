@@ -1,0 +1,31 @@
+name: Chapter one art concept audit
+
+on:
+  pull_request:
+    paths:
+      - 'art-production/candidates/2026-11-01/**'
+      - 'art-production/tools/prepare_chapter_one_assets.py'
+      - '.github/workflows/chapter-one-art-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-source-audit:
+    name: Source metadata, alpha and layer reconstruction
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install standalone authoring dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow>=11,<13'
+      - name: Audit five characters, 24-cell source atlases and temple master
+        run: python art-production/tools/prepare_chapter_one_assets.py
+      - name: Verify scene layer export in a disposable checkout
+        run: |
+          python art-production/tools/prepare_chapter_one_assets.py --write
+          python art-production/tools/prepare_chapter_one_assets.py

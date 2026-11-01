@@ -72,7 +72,7 @@ def kind(path: str) -> str:
         return "fallback"
     if path.startswith("assets/ui/"):
         return "ui"
-    if path.startswith("assets/scenes/") or "/scenes/" in path:
+    if path.startswith("assets/scenes/") or "/scenes/" in path or Path(path).name.startswith("scene_"):
         return "scene"
     if path.startswith("assets/kenney/"):
         return "third_party"

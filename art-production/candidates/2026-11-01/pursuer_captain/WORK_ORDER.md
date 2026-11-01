@@ -1,42 +1,35 @@
-# 追镖首领 · 身份与重刀动画试点 WORK_ORDER
+# 追镖首领：敌人/立绘/动画制作工作单
 
-## 基本信息
+## 身份和用途
+- asset_id: `pursuer_captain`，匹配现有敌人 `WuxiaCharacterDefinition`；目标 battle / story
+- 身份锁：身材魁梧的中年追索者，蓄须、下颌旧伤、暗黑铁甲与旧皮革、暗朱红围巾及右臂绑带、沉重单刃刀
+- 与沈长风严格区分：宽肩重刀、暗赤灰黑，不能沿用主角的直剑/窄腰青袍
+- 设定参考：`character_pursuer_captain_identity_sheet_v01.png`（**待负责人确认**）
+- 生产日期：2026-11-01
+- 生成工具：内置图像生成工具；底层模型 ID 未公开；seed 不可获取
+- 风格基准：`art-production/standards/ART_PRODUCTION_STANDARD.md` 与 `prompts/ART_STYLE_AI_PROMPTS_V1.md`
+- 来源/权属：本项目定向原创 AI 生成，未使用外部商业角色图；仍须由负责人完成可商用权属、相似性与最终视觉审核
+- 状态：**candidate / owner_review_required**；可在技术审核分支绑定原生 `.tres` 试玩，但不等同 approved
+- 全量提示词见同批 `PROMPTS.md`；SHA-256 与版本源流见 `PILOT_MANIFEST.json`。
 
-- asset_id: `pursuer_captain`
-- asset_type: `character_design | portrait | sprite`
-- target_usage: `battle | hud`
-- status: `concept`
-- owner/reviewer: **待指派**
-- source / rights: **历史 JPG 来源与商业权属待核实**
-- prompt_template_version: `ART_STYLE_AI_PROMPTS_V1`
-- model/version/seed: **尚未开始新一轮生成**
+## 产物
+- 1536×1024 身份设定板
+- 1024×1536 透明全身立绘 `portrait_pursuer_captain_fullbody_v01.png`
+- V1 原始图集及 V2 动作源图；可技术播放候选 `sprite_pursuer_captain_atlas_normalized_v02.png`
+- 1536×1024、6×4、每格 256×256；动作帧映射：`idle` 0–1；`move` 2–5；`attack` 6–8；`guard` 9–10；`hit` 11–12；`evade` 13–15；`skill` 16–18；`combo` 19–21；`defeat` 22–23。
+- 脚点范围 227–228 像素；技术裁切安全边距检查通过
+- 目标关联：`data/native/characters/pursuer_captain.tres`；审核分支已绑定候选纹理，旧图留存以支持回退；正式转正须人工批准
 
-## 参考与身份锁定
+## 验收现状
+- [x] 真实 RGBA、24 帧、九动作合法、格内留白和脚点技术检查
+- [ ] 身份板/立绘和动作同脸、同刀、同装甲由人工确认
+- [ ] 原始动作剑刀越格造成的刀尖裁断补绘；重刀动作时序与受击/倒地自然度
+- [ ] 前/背/左右完整方向；Godot 编辑器预览与攻防/VFX 对齐
+- [ ] 两档分辨率截图、商用权属与负责人批准
 
-- 正式角色数据：`res://data/native/characters/pursuer_captain.tres`，人设“追镖首领／重刀／冷厉执拗”。
-- 当前占位图：`demos/changfeng-battle/assets/concepts/2026-10-30/character_style/red_thread_fighter_pixel_study.jpg`。
-- 已批准身份设定板：**暂无**；必须先定脸、发式、重刀尺寸、武器惯用手、布甲材质与敌友色彩区分。
-- 与沈长风共用光向、材质密度和身高/脚点尺度，仍保持重刀身形的独立识别度。
+**结论：候选；敌人角色卡已在审核分支绑定候选图，尚未人工批准。**
 
-## 输出与验收
 
-- 文件格式：透明 RGBA PNG/WebP 立绘与统一网格 Atlas；不可继续以白底 JPEG 作为最终动画交付。
-- 九动作：`idle/move/attack/guard/hit/evade/skill/combo/defeat`，完整实际索引；重刀动作需辨识起手、有效帧和收招。
-- `columns`、`rows`、`feet_offset`、`actor_scale` 和 FPS：待试点定，不强制 6×4。
-- Godot 目标：`res://data/native/characters/pursuer_captain.tres`、`res://data/native/animations/pursuer_captain.tres`。
-- 需归档参考输入、提示词全文、模型/seed、分层母版、版本、权属。
-- 当前角色/敌方 AI 和战斗数值保持不变。
+## 统一原生合同与过渡策略
 
-## 审核清单
-
-- [ ] 原创身份设定板与来源批准
-- [ ] 透明边缘、Atlas 切格与帧范围检查
-- [ ] 同一身份从立绘至战斗及方向一致
-- [ ] 重刀动作在事件窗口内可读，脚点无漂移
-- [ ] 1600×1000 / 1440×900 两种 GUI 复测
-- [ ] Owner 批准版本及 SHA
-
-## 结论
-
-- 审核状态：`pending`
-- 阻塞：批准参考、正式逐帧素材、可编辑母版、授权与实机签核尚缺。
+本工作单保留所有原稿、提示词、母版和 SHA 证据。审核分支仅把候选素材绑定至现有 `.tres`，不复制历史 JSON 加载器，也不删除仍可能需要回退的旧贴图。动作质量、四向站姿、角色身份、地图对位与商业权属均待负责人验收后逐步淘汰旧图。

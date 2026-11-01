@@ -9,13 +9,14 @@ extends Resource
 @export var ground: Texture2D
 @export var foreground: Texture2D
 @export var weather: Texture2D
+@export var story_preview: Texture2D  # Optional flattened story view of the same layered scene.
 
 func valid_for(viewport: Vector2i) -> bool:
     if reference_size != viewport or viewport.x <= 0 or viewport.y <= 0:
         return false
     if background == null or ground == null:
         return false
-    for layer in [background, ground, foreground, weather]:
+    for layer in [background, ground, foreground, weather, story_preview]:
         if layer != null and Vector2i(layer.get_size()) != reference_size:
             return false
     return true
