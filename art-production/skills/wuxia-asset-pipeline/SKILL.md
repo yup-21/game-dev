@@ -1,28 +1,27 @@
 ---
 name: wuxia-asset-pipeline
-description: "为《长风浮生录》检查美术素材规格、盘点在用资源、审核候选、准备 Godot 原生 Resource 导入及批准替换时使用；管理 art-production 与游戏资产之间的可追溯关系。"
+description: "在《长风浮生录》中管理候选和使用中美术、查看原生 Resource 绑定、检查合同、导入导出和更新当前使用清单时使用；不改变角色、场景、VFX、UI 的生成规范。"
 ---
 
-# 美术素材验收、归档与原生接入
+# 素材管理与原生接入
 
-## 单一事实来源
+## 管理口径
 
-- 先读取 art-production/standards/ART_PRODUCTION_STANDARD.md、art-production/templates/asset-work-order.md；对 AI 候选再读 art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md。
-- art-production 是制作、审核、索引和交付区，不是运行时自动扫描目录。游戏的角色、地图、物品和武学由 Godot 原生 .tres Resource 及 data/content_manifest.tres 管理。
-- 严格区分：concept/preview 是探索；candidate 是技术合格但待人工审核；approved 是视觉、动作/脚点、实机、授权等人工审核完成；runtime/in_use 表示当前可加载或实际被引用，不代表 approved。不得由 in_use 倒推出批准。
-- 不重命名、搬移或清理正在被引用的旧路径；归档现有素材时复制并保留源路径、哈希和使用位置。不要把离线 JSON/YAML 工作单加载成第二套运行时数据。
+- **只有两种管理状态**：`candidate` 与 `in_use`。一个槽位可有多个候选；每个原生 Resource 属性在任一时刻只能引用一个使用中版本。以 Godot `.tres` 绑定为准，不另建运行时 JSON 或审批数据库。
+- 候选来源只需要**生成提示词和拟绑定的 Resource 路径**。可以继续保留已有工作单和历史文件，但不要要求新素材重复填报模型、seed、审批、来源链等管理字段。SHA 由工具自动计算。
+- 本 Skill 只负责**管理与合同校验**。角色九动作、Atlas 格数、场景分层、VFX 事件与 UI 可读性的制作/使用规则，仍由 `art-production/standards/ART_PRODUCTION_STANDARD.md` 和对应专业 Skill 规定；不要为了管理精简而改动这些合同。
+- 素材满足原生合同且能正常导入使用即可切换为 `in_use`，不额外要求重绘或设置 `approved` 第三种管理状态；创作反馈可留在旧审核记录中。
 
-## 可重复流程
+## 操作流程
 
-1. **发现与归档**：根据项目真实 Resource/scene 引用而不是仅扫描图片目录，查明在用素材、当前路径和依赖。若已有 art-production/inventory/asset-index.json、usage-report.md 或 tools/inventory_assets.py，则优先检查并复用其格式/脚本，不凭空重建。in_use 快照与审核记录分开。
-2. **创建候选包**：在 art-production/candidates/YYYY-MM-DD/<asset-id>/ 保存 WORK_ORDER.md、原图、提示词、模型/seed（如可得）、参考、可编辑母版和修订记录。保持明确版本号，禁止静默覆盖。
-3. **技术校验**：检查解码、真实 Alpha（角色和 VFX 必需）、纹理尺寸、Atlas 整除和帧索引、脚点、场景必需 ground 及同画布图层、透明边缘、文件名及资源依赖。按对应美术 Skill 补充类别特定检查；不要将建议像素尺寸或 FPS 强制标为 frozen。
-4. **原生导入**：角色由 WuxiaActorAnimationProfile/WuxiaCharacterDefinition.animation_profile 引用，场景由 WuxiaSceneArtProfile 和 WuxiaMapDefinition/WuxiaGridMapDefinition.scene_art 引用；素材放置在正式 assets 目录后仍由 .tres 显式挂载。Content Manifest 登记对应正式内容，不给 BattleModel 添加特殊分支。
-5. **验证**：可运行时执行 godot --headless --path demos/changfeng-battle --editor --import --quit，并运行相关项目检查；随后必须在 Godot Editor 实测动画、场景、遮挡、点击与导出，留存 1600×1000 和 1440×900 GUI 截图。headless 成功不等于美术验收。
-6. **人工批准**：记录审查者、版本 SHA、技术/美术/授权结论与日期。未明确批准前只提交候选，不覆盖正式贴图或改动运行时引用；获批准后以可审阅的变更单独接入并标记实际 in_use。
+1. 读取现有 Resource：角色使用 `WuxiaCharacterDefinition` / `WuxiaActorAnimationProfile`，地图与章节使用 `WuxiaSceneArtProfile`，VFX/UI 使用 `WuxiaAssetDefinition`。检查目标槽位已有的唯一使用中绑定。
+2. 将备选素材存入 `art-production/candidates/YYYY-MM-DD/<asset-id>/`，保存提示词和目标 Resource；候选版本数量不限且不覆盖其他版本。
+3. 在 Godot **Art Production** Dock 检查实际合同：可解码、必要 Alpha、Atlas 行列/动作索引、场景同画布、VFX 事件等。通过后按正常事务导入并更新对应 `.tres`，原 Resource 仍是唯一事实来源。
+4. 运行相关 Godot 检查与导出，必要时使用事务回退。旧文件和回退机制先保留，后续单独按槽位逐步移除。
+5. 运行 `python3 art-production/tools/inventory_assets.py --write`，只记录**当前使用中的图像及其实际 Resource/脚本引用**；使用 `--check` 核对副本，不登记候选、未引用或纯测试素材。
 
-## 输出与停止条件
+## 完成标准
 
-- 输出资产索引/实际引用、校验失败清单、Godot 检验结果、审核截图和审批状态；注明未执行的验证步骤，不能声称全部通过。
-- 缺少必要版权凭据、身份批准或图层/动画母版时停止晋升为 approved，列明待补资料。
-- 对现有运行图的替换、删除或移动必须明确目标、可回退路径和审核授权；不要擅自清除历史素材。
+- 每个目标 Resource 槽位只有一个当前绑定，候选可任意多份。
+- 能按现有合同加载、显示和导出，相关原生测试通过。
+- 仅留提示词、Resource 对应关系和自动生成的使用中清单；不因已有图片可用而做额外美术修改。

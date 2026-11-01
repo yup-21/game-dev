@@ -15,7 +15,7 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 6. 日志保存在 `art-production/reviews/export-transactions/<id>/export-log.json`，替换前的副本存于 `before/`。可以点“撤销上次导出”；新增副本移到 `recovered-new/`，不会直接删除。
 
 “全部实际使用”按 P0 的口径扫描：仅游戏脚本、场景和正式 Resource 中 `res://assets/` 图像的静态直接引用，排除模板、测试和纯登记。
-动态路径、条件加载及版权仍需人工核查；`in_use` 不等于 `approved`。
+动态路径、条件加载及版权问题仍可由人工另行核查；不引入额外的素材管理状态。
 
 ## 导入：art-production → 当前 Godot
 
@@ -30,15 +30,15 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 5. 确认前先对本批所有相关 .tres 建事务备份；随后复制图像、等待原生 Importer、逐项保存 Resource。失败时尝试统一恢复 .tres。
 6. 事务日志：`art-production/reviews/import-transactions/<id>/import-log.json`。“撤销上次导入”恢复旧 .tres（如果文件后来没有被改动），新图片保留，新增 .tres 移至 `recovered-new/`。
 
-所有新资产继续标记 `candidate` / `owner_review_required`，**导入通过不等于动作、脚点、遮挡及版权验收通过**。
+素材管理仅有 `candidate` 和 `in_use`：候选图片可保留多份，**对应 `.tres` 槽位的当前唯一绑定就是使用中版本**。通过原生资源合同并能正常使用即可切换绑定；不引入额外审批状态，也不要求重做已经可用的素材。制作和游戏表现规范仍按原有专业 Skill 执行。
 如 Inspector 缓存未刷新，重新打开资源或编辑器。
 
 ## 数据保护与限制
 
 - 导出不修改 `res://assets/`；导入不覆盖旧图片。导入撤销只恢复 .tres，保留新图片供检查。
 - 导出有 SHA 核验与备份；失败时尽量自动回退，若已有后续改动则拒绝静默覆盖。
-- 角色与 VFX 必须有真实 Alpha；VFX 帧号、Atlas 网格/帧号、地图必需透明 ground 的同尺寸画布做技术预检；美术连续性和授权仍需人工验收。
-- 编辑器工具不做持续双向同步。完成手动调整后执行 `python3 art-production/tools/inventory_assets.py --write` 更新离线库存；该脚本对不同 SHA 的旧副本会拒绝覆盖。
+- 角色与 VFX 必须有真实 Alpha；VFX 帧号、Atlas 网格/帧号、地图必需透明 ground 的同尺寸画布做技术预检；美术连续性和授权问题沿用原有人工审核流程，不增加素材管理状态或新使用门槛。
+- 编辑器工具不做持续双向同步。切换 Resource 绑定后执行 `python3 art-production/tools/inventory_assets.py --write` 更新**仅使用中**清单；旧文件可保留供回退，该脚本对不同 SHA 的副本拒绝静默覆盖。
 - 编辑器仅保留“上次导入/导出”的撤销按钮。关闭编辑器后旧日志仍保留在磁盘，可以依日志人工恢复。
 
 ## 回归测试

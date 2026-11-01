@@ -1,6 +1,6 @@
 # 首批美术素材：Godot 原生导入与验收指南
 
-本批 **candidate** 由 2 套角色/敌人、1 套分层场景组成。请在**独立临时工作树或审核分支**使用 Godot 4.7.2 Editor 的 Art Production Dock；未经负责人批准不要在正式 main 修改原角色/地图的 .tres 引用。
+本批 **candidate** 由 2 套角色/敌人、1 套分层场景组成。请在**独立临时工作树或审核分支**使用 Godot 4.7.2 Editor 的 Art Production Dock；先在审核分支验证原生合同，能正常使用后即可将唯一当前 `.tres` 绑定随代码合入 main；旧文件保留供过渡回退。
 
 ## 0. 离线重新装配与预检
 
@@ -48,4 +48,4 @@ python3 art-production/tools/prepare_pilot_assets.py
 - 真实 Godot Editor 下 9 类动作逐一播放，前景遮挡和角色穿行一致，天气关闭不影响路径/LOS。
 - 捕获 1600×1000 和 1440×900 的实际 GUI 截图，记录性能与导出可加载性。
 - 审核 AI 生成来源、商用权属、与现有作品近似风险；在 `art-production/reviews/` 记录版本 SHA、审核者和日期。
-- 上述全部通过前：**candidate，不把 `.tres` 变更合入 main，不替换任何当前在用素材。**
+- 素材管理只分 candidate / in_use：**通过现有 Godot 合同并可正常运行后，可将 `.tres` 当前绑定合入 main**；上述视觉事项沿用原制作规范继续核验，不额外阻断合同合格素材的使用。
