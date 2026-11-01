@@ -825,7 +825,9 @@
           "scripts/fallback_assets.gd"
         ],
         "registrations": [],
-        "tests": [],
+        "tests": [
+          "checks/test_art_runtime_integration.gd"
+        ],
         "templates": [
           "data/templates/character.tres"
         ]
@@ -851,7 +853,9 @@
           "scripts/fallback_assets.gd"
         ],
         "registrations": [],
-        "tests": [],
+        "tests": [
+          "checks/test_art_runtime_integration.gd"
+        ],
         "templates": [
           "data/templates/chapter.tres"
         ]
