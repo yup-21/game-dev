@@ -18,6 +18,7 @@ on:
       - 'demos/changfeng-battle/checks/test_battle_consumables.gd'
       - 'demos/changfeng-battle/checks/test_equipment_affixes.gd'
       - 'demos/changfeng-battle/checks/test_native_content_resources.gd'
+      - 'demos/changfeng-battle/checks/test_content_templates.gd'
       - 'demos/changfeng-battle/checks/test_character_factory.gd'
       - 'demos/changfeng-battle/checks/test_native_effects.gd'
       - 'demos/changfeng-battle/checks/test_native_story_quests.gd'
@@ -56,6 +57,8 @@ jobs:
         run: timeout --signal=TERM 30s godot --headless --path demos/changfeng-battle --script res://checks/test_modifier_bootstrap.gd
       - name: R18 native Resource authoring contracts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_native_content_resources.gd
+      - name: P2 copyable native content template integration
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_content_templates.gd
       - name: R19 native character factory and starting loadout
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_character_factory.gd
       - name: R20 native skills and effect handlers

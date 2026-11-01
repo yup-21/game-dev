@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="WuxiaStoryDefinition" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/story_definition.gd" id="1_story"]
+[ext_resource type="Script" path="res://scripts/content/story_beat_definition.gd" id="2_beat"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_node_definition.gd" id="3_node"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="4_event"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="5_req"]
+
+[sub_resource type="Resource" id="Opening"]
+script = ExtResource("2_beat")
+caption = "样板章节"
+text = "将此镜头文本替换成新章节的开场剧情。"
+duration = 2.5
+
+[sub_resource type="Resource" id="Talk_flag"]
+script = ExtResource("4_event")
+event_type = "set_flag"
+flag_id = "template_met_npc"
+flag_value = true
+
+[sub_resource type="Resource" id="Talk"]
+script = ExtResource("3_node")
+node_id = "template_messenger"
+speaker = "河渡信使"
+text = "这是一段可替换的剧情对白。"
+events = Array[Resource]([SubResource("Talk_flag")])
+
+[sub_resource type="Resource" id="Talk_gate"]
+script = ExtResource("5_req")
+flag_id = "template_met_npc"
+equals = true
+
+[resource]
+script = ExtResource("1_story")
+content_id = "template_story"
+title = "样板剧情"
+subtitle = "待制作章节"
+entry_node = "template_messenger"
+cinematic_beats = Array[Resource]([SubResource("Opening")])
+dialogue_nodes = Array[Resource]([SubResource("Talk")])
+return_to_explore = true
+completion_requirements = Array[Resource]([SubResource("Talk_gate")])

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WuxiaSchoolDefinition" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/school_definition.gd" id="1_school"]
+[ext_resource type="Script" path="res://scripts/content/school_deck_entry_definition.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://data/templates/skill_a.tres" id="3_first"]
+[ext_resource type="Resource" path="res://data/templates/skill_b.tres" id="4_second"]
+
+[sub_resource type="Resource" id="Deck_first"]
+script = ExtResource("2_entry")
+card = ExtResource("3_first")
+count = 6
+
+[sub_resource type="Resource" id="Deck_second"]
+script = ExtResource("2_entry")
+card = ExtResource("4_second")
+count = 6
+
+[resource]
+script = ExtResource("1_school")
+content_id = "template_school"
+display_name = "样板武学"
+identity = "两张核心式与十二张开局牌构成最小合法门派"
+core_forms = Array[Resource]([ExtResource("3_first"), ExtResource("4_second")])
+deck = Array[Resource]([SubResource("Deck_first"), SubResource("Deck_second")])

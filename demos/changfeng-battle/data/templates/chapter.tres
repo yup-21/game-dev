@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="WuxiaChapterDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/chapter_definition.gd" id="1_chapter"]
+[ext_resource type="Script" path="res://scripts/content/chapter_scene_definition.gd" id="2_scene"]
+[ext_resource type="Script" path="res://scripts/content/chapter_npc_definition.gd" id="3_npc"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="4_req"]
+[ext_resource type="Resource" path="res://data/templates/story.tres" id="5_story"]
+[ext_resource type="Texture2D" path="res://assets/fallback/default_scene.svg" id="6_background"]
+
+[sub_resource type="Resource" id="Messenger"]
+script = ExtResource("3_npc")
+character_id = "river_messenger"
+position = Vector2(1050, 560)
+talk_label = "与信使交谈"
+trigger_id = "template_messenger"
+
+[sub_resource type="Resource" id="Scene"]
+script = ExtResource("2_scene")
+background = ExtResource("6_background")
+primary_npc = SubResource("Messenger")
+player_position = Vector2(350, 705)
+player_bounds = Rect2(155, 345, 1260, 410)
+title = "样板章节·序幕"
+place = "待填写场景"
+prompt = "与信使交谈，随后迎战。"
+talk_label = "与信使交谈"
+complete_title = "章节完成"
+complete_text = "样板章节结束。"
+battle_label = "开始遭遇"
+
+[sub_resource type="Resource" id="Need_talk"]
+script = ExtResource("4_req")
+flag_id = "template_met_npc"
+equals = true
+
+[resource]
+script = ExtResource("1_chapter")
+content_id = "template_chapter"
+chapter_order = 90
+story = ExtResource("5_story")
+encounter_id = "r40_quick_duel"
+next_chapter_id = ""
+scene = SubResource("Scene")
+requirements = Array[Resource]([SubResource("Need_talk")])
+victory_events = Array[Resource]([])
+defeat_events = Array[Resource]([])
