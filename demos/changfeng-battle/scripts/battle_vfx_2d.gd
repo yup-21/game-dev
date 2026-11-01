@@ -8,63 +8,94 @@ var native_assets = Assets.new()
 func _init(painted_layer: Node2D) -> void:
     canvas = painted_layer
 
+# Procedural fallback for events without approved VFX textures.
+# Every burst owns its nodes; no battle state or global camera is modified.
 func _spawn_canvas(position: Vector2, kind: String, tint: Color,
         duration: float, size: float) -> void:
-    if canvas==null: return
-    var root:=Node2D.new()
-    root.name="WuxiaVFX2D_"+kind
-    root.position=position+Vector2(0.0,-82.0)
-    root.z_index=150
+    if canvas == null:
+        return
+    var root := Node2D.new()
+    root.name = "WuxiaVFX2D_" + kind
+    root.position = position + Vector2(0.0, -82.0)
+    root.z_index = 150
     canvas.add_child(root)
-    var arc:=Line2D.new()
-    arc.name="MartialStroke"
-    arc.antialiased=true
-    arc.width=5.0*size
-    arc.default_color=tint
-    arc.begin_cap_mode=Line2D.LINE_CAP_ROUND
-    arc.end_cap_mode=Line2D.LINE_CAP_ROUND
-    var points:=PackedVector2Array()
-    var count:=22
-    if kind in ["slash","combo"]:
-        for i in range(count+1):
-            var t:=float(i)/float(count)
-            var angle:=lerpf(-2.30,0.65,t)
-            points.append(Vector2(cos(angle)*55.0*size,sin(angle)*36.0*size))
-    elif kind in ["guard","evade"]:
-        for i in range(count+1):
-            var t:=float(i)/float(count)
-            var angle:=t*TAU
-            points.append(Vector2(cos(angle)*36.0*size,sin(angle)*20.0*size))
+
+    var stroke := Line2D.new()
+    stroke.name = "MartialStroke"
+    stroke.antialiased = true
+    stroke.width = (6.0 if kind in ["slash", "combo"] else 3.0) * size
+    stroke.default_color = tint
+    stroke.begin_cap_mode = Line2D.LINE_CAP_ROUND
+    stroke.end_cap_mode = Line2D.LINE_CAP_ROUND
+    root.add_child(stroke)
+
+    var glow := Line2D.new()
+    glow.name = "SoftGlow"
+    glow.antialiased = true
+    glow.width = stroke.width * 3.4
+    var glow_tint := tint
+    glow_tint.a *= 0.24
+    glow.default_color = glow_tint
+    root.add_child(glow)
+
+    var path := PackedVector2Array()
+    var count := 28
+    for i in range(count + 1):
+        var t := float(i) / float(count)
+        var angle := lerpf(-2.3, 0.65, t)
+        if kind in ["slash", "combo"]:
+            path.append(Vector2(cos(angle) * 57.0 * size,
+                sin(angle) * 40.0 * size))
+        else:
+            angle = t * TAU
+            path.append(Vector2(cos(angle) * 36.0 * size,
+                sin(angle) * 25.0 * size))
+    if kind in ["slash", "combo"]:
+        # A second, offset cut distinguishes combo from a single attack.
+        if kind == "combo":
+            var echo := Line2D.new()
+            echo.name = "ComboEcho"
+            echo.antialiased = true
+            echo.width = 2.5 * size
+            echo.default_color = Color(1.0, 0.95, 0.76, 0.85)
+            echo.points = path
+            echo.position = Vector2(12.0, -12.0) * size
+            root.add_child(echo)
     else:
-        for i in range(9):
-            var angle:=TAU*float(i)/8.0
-            var length:=25.0*size if i%2==0 else 9.0*size
-            points.append(Vector2(cos(angle)*length,sin(angle)*length))
-    arc.points=points
-    root.add_child(arc)
-    # Optional authored overlay. Missing assets keep the existing procedural stroke.
+        stroke.points = path
+        glow.points = path
+        # Short radial shards, not a permanent star-shaped outline.
+        if kind in ["impact", "shatter", "guard"]:
+            var shard_count := 12 if kind == "shatter" else 8
+            for i in range(shard_count):
+                var angle := TAU * float(i) / float(shard_count)
+                var direction := Vector2(cos(angle), sin(angle))
+                var shard := Line2D.new()
+                shard.name = "Shard"
+                shard.antialiased = true
+                shard.width = (2.5 if kind == "shatter" else 1.8) * size
+                shard.default_color = tint.lightened(0.35)
+                shard.points = PackedVector2Array([
+                    direction * 12.0 * size,
+                    direction * (29.0 if kind == "shatter" else 22.0) * size
+                ])
+                root.add_child(shard)
+
+    # Authored transparent textures remain the preferred production art.
     var authored: Texture2D = native_assets.texture_for_event(kind)
     if authored != null:
         var sprite := Sprite2D.new()
         sprite.name = "AuthoredVFX"
         sprite.texture = authored
-        var longest: float = maxf(float(authored.get_width()),float(authored.get_height()))
-        sprite.scale = Vector2.ONE * (80.0 * size / maxf(longest,1.0))
+        var longest := maxf(float(authored.get_width()), float(authored.get_height()))
+        sprite.scale = Vector2.ONE * (100.0 * size / maxf(longest, 1.0))
         root.add_child(sprite)
-    if kind in ["slash","combo"]:
-        var secondary:=Line2D.new()
-        secondary.antialiased=true
-        secondary.width=15.0*size
-        var glow: Color=tint
-        glow.a*=0.22
-        secondary.default_color=glow
-        secondary.points=points
-        root.add_child(secondary)
-    bursts.append({"node":root,"duration":duration,"left":duration,
-        "kind":kind,"color":tint,"canvas":true})
-    if bursts.size()>32:
-        var oldest: Dictionary=bursts.pop_front()
-        if is_instance_valid(oldest.node): oldest.node.queue_free()
+    bursts.append({"node": root, "duration": duration, "left": duration,
+        "kind": kind, "path": path, "size": size})
+    if bursts.size() > 32:
+        var oldest: Dictionary = bursts.pop_front()
+        if is_instance_valid(oldest.node):
+            oldest.node.queue_free()
 
 func handle_events(events: Array, actor_nodes: Dictionary) -> void:
     for event in events:
@@ -112,11 +143,31 @@ func update(delta: float) -> void:
             bursts.remove_at(i)
             continue
         burst.left = maxf(0.0, float(burst.left) - delta)
-        var ratio: float = float(burst.left) / maxf(0.01, float(burst.duration))
-        var elapsed: float = 1.0 - ratio
-        painted.scale = Vector2.ONE * (0.7 + elapsed * 0.8)
-        painted.position.y -= delta * 10.0
-        painted.modulate.a = ratio * ratio
+        var progress: float = 1.0 - float(burst.left) / maxf(0.01, float(burst.duration))
+        var kind: String = str(burst.kind)
+        var stroke: Line2D = painted.get_node("MartialStroke") as Line2D
+        var glow: Line2D = painted.get_node("SoftGlow") as Line2D
+        if kind in ["slash", "combo"]:
+            # Sweep the tip quickly, then let the trail disperse.
+            var sweep := clampf(progress / 0.56, 0.0, 1.0)
+            var path: PackedVector2Array = burst.path
+            var visible_count := maxi(2, int(ceil(sweep * float(path.size()))))
+            var first := maxi(0, visible_count - 11)
+            var segment := PackedVector2Array()
+            for j in range(first, mini(visible_count, path.size())):
+                segment.append(path[j])
+            stroke.points = segment
+            glow.points = segment
+            painted.rotation = -0.12 * (1.0 - sweep)
+        else:
+            var pulse := sin(minf(progress / 0.55, 1.0) * PI * 0.5)
+            painted.scale = Vector2.ONE * (0.64 + 0.65 * pulse)
+            if kind == "evade":
+                painted.position.x += delta * 38.0
+                painted.scale.x *= 0.8
+        var fade_start := 0.46 if kind in ["slash", "combo"] else 0.22
+        var fade := clampf((1.0 - progress) / (1.0 - fade_start), 0.0, 1.0)
+        painted.modulate.a = fade * fade
         if burst.left <= 0.0:
             painted.queue_free()
             bursts.remove_at(i)
