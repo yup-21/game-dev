@@ -16,7 +16,7 @@ description: "为《长风浮生录》检查美术素材规格、盘点在用资
 
 1. **发现与归档**：根据项目真实 Resource/scene 引用而不是仅扫描图片目录，查明在用素材、当前路径和依赖。若已有 art-production/inventory/asset-index.json、usage-report.md 或 tools/inventory_assets.py，则优先检查并复用其格式/脚本，不凭空重建。in_use 快照与审核记录分开。
 2. **创建候选包**：在 art-production/candidates/YYYY-MM-DD/<asset-id>/ 保存 WORK_ORDER.md、原图、提示词、模型/seed（如可得）、参考、可编辑母版和修订记录。保持明确版本号，禁止静默覆盖。
-3. **技术校验**：检查解码、真实 Alpha、纹理尺寸、Atlas 整除和帧索引、脚点、场景四层同源点、透明边缘、文件名及资源依赖。按对应美术 Skill 补充类别特定检查；不要将建议像素尺寸或 FPS 强制标为 frozen。
+3. **技术校验**：检查解码、真实 Alpha（角色和 VFX 必需）、纹理尺寸、Atlas 整除和帧索引、脚点、场景必需 ground 及同画布图层、透明边缘、文件名及资源依赖。按对应美术 Skill 补充类别特定检查；不要将建议像素尺寸或 FPS 强制标为 frozen。
 4. **原生导入**：角色由 WuxiaActorAnimationProfile/WuxiaCharacterDefinition.animation_profile 引用，场景由 WuxiaSceneArtProfile 和 WuxiaMapDefinition/WuxiaGridMapDefinition.scene_art 引用；素材放置在正式 assets 目录后仍由 .tres 显式挂载。Content Manifest 登记对应正式内容，不给 BattleModel 添加特殊分支。
 5. **验证**：可运行时执行 godot --headless --path demos/changfeng-battle --editor --import --quit，并运行相关项目检查；随后必须在 Godot Editor 实测动画、场景、遮挡、点击与导出，留存 1600×1000 和 1440×900 GUI 截图。headless 成功不等于美术验收。
 6. **人工批准**：记录审查者、版本 SHA、技术/美术/授权结论与日期。未明确批准前只提交候选，不覆盖正式贴图或改动运行时引用；获批准后以可审阅的变更单独接入并标记实际 in_use。

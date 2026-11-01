@@ -27,6 +27,10 @@ var feet_x: SpinBox
 var feet_y: SpinBox
 var facing: CheckBox
 var atlas_rows: Array[Control] = []
+var vfx_controls: Array[Control] = []
+var vfx_columns: SpinBox
+var vfx_row_count: SpinBox
+var vfx_frame_indices: LineEdit
 var action_select: OptionButton
 var preview: Control
 var info: Label
@@ -130,6 +134,12 @@ func _ready() -> void:
         action_select.add_item(action)
     atlas_rows.append(_labeled("动画预览", action_select))
     action_select.item_selected.connect(func(_index: int): _set_action())
+    vfx_columns = _vfx_number("VFX 列数", 1)
+    vfx_row_count = _vfx_number("VFX 行数", 1)
+    vfx_frame_indices = LineEdit.new()
+    vfx_frame_indices.placeholder_text = "绝对帧索引，例如 0,1,2,3"
+    vfx_controls.append(_labeled("VFX 播放帧", vfx_frame_indices))
+    vfx_frame_indices.text_changed.connect(func(_value: String): _refresh_preview())
 
     _heading("导入前预览")
     preview = Preview.new()
@@ -261,6 +271,17 @@ func _number(label: String, initial: float, minimum: float, maximum: float) -> S
     return spin
 
 
+func _vfx_number(label: String, initial: float) -> SpinBox:
+    var spin := SpinBox.new()
+    spin.min_value = 1
+    spin.max_value = 64
+    spin.step = 1
+    spin.value = initial
+    vfx_controls.append(_labeled(label, spin))
+    spin.value_changed.connect(func(_value: float): _refresh_preview())
+    return spin
+
+
 func _mode() -> String:
     return MODES[kind.selected] if kind.selected >= 0 else "portrait"
 
@@ -305,6 +326,8 @@ func _mode_changed() -> void:
         extra_rows[layer].visible = mode == "scene"
     for control in atlas_rows:
         control.visible = mode == "atlas"
+    for control in vfx_controls:
+        control.visible = mode == "vfx"
     _load_targets()
     _refresh_preview()
 
@@ -356,11 +379,16 @@ func _on_picked(path: String) -> void:
 
 
 func _fields() -> Dictionary:
+    var frame_numbers := PackedInt32Array()
+    for token in vfx_frame_indices.text.split(",", false):
+        var value: String = token.strip_edges()
+        frame_numbers.append(int(value) if value.is_valid_int() else -1)
     return {
         "asset_id": asset_id.text.strip_edges(),
         "event_kind": event_kind.text.strip_edges(),
-        "columns": int(columns.value),
-        "rows": int(rows.value),
+        "columns": int(vfx_columns.value) if _mode() == "vfx" else int(columns.value),
+        "rows": int(vfx_row_count.value) if _mode() == "vfx" else int(rows.value),
+        "frame_indices": frame_numbers,
         "feet_offset": Vector2(feet_x.value, feet_y.value),
         "faces_left": facing.button_pressed,
         "versioned_replace": versioned.button_pressed,
@@ -389,6 +417,8 @@ func _refresh_preview() -> void:
         preview.call("show_atlas", details["texture"], int(columns.value), int(rows.value),
                            Vector2(feet_x.value, feet_y.value))
         _set_action()
+    elif mode == "vfx":
+        preview.call("show_atlas", details["texture"], int(vfx_columns.value), int(vfx_row_count.value), Vector2.ZERO)
     elif mode == "scene":
         var layer_images := {"primary": details["texture"]}
         for layer in extras:

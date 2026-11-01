@@ -13,6 +13,8 @@ extends WuxiaContentDefinition
 @export_range(1, 64, 1) var rows: int = 1
 @export var faces_left: bool = true
 @export var foot_anchor: Vector2 = Vector2(0.5, 1.0)
+## Optional non-loop VFX atlas frames; playback spans the authored event window.
+@export var frame_indices: PackedInt32Array = PackedInt32Array()
 
 func content_kind() -> String:
     return "asset"
@@ -25,4 +27,5 @@ func to_record() -> Dictionary:
         "source":source,"rights":rights,
         "owner_character_id":owner_character_id,"event_kind":event_kind,
         "columns":columns,"rows":rows,"faces_left":faces_left,
-        "foot_anchor":[foot_anchor.x,foot_anchor.y]}
+        "foot_anchor":[foot_anchor.x,foot_anchor.y],
+        "frame_indices":frame_indices}

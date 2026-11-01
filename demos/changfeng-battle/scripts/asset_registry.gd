@@ -44,6 +44,14 @@ func _register(spec: Variant) -> bool:
             return _fail("Invalid asset grid: " + id)
         # The 6x4 layout is a legacy playback convention, not a registry contract.
         # Authored sheets use their character-owned AnimationProfile for frame indices.
+    if kind == "vfx":
+        var indices: PackedInt32Array = spec.get("frame_indices", PackedInt32Array())
+        var capacity: int = int(spec.get("columns", 1)) * int(spec.get("rows", 1))
+        if indices.size() > 256:
+            return _fail("VFX frame limit exceeded: " + id)
+        for frame in indices:
+            if frame < 0 or frame >= capacity:
+                return _fail("Invalid VFX frame index: " + id)
     var character_id: String = str(spec.get("owner_character_id",""))
     if not character_id.is_empty():
         var key: String = character_id + ":" + kind
@@ -78,6 +86,9 @@ func texture(id: String) -> Texture2D:
 
 func texture_for_character(character_id: String, kind: String) -> Texture2D:
     return texture(str(character_index.get(character_id + ":" + kind,"")))
+
+func record_for_event(event_kind: String) -> Dictionary:
+    return record(str(event_index.get(event_kind, "")))
 
 func texture_for_event(event_kind: String) -> Texture2D:
     return texture(str(event_index.get(event_kind,"")))

@@ -28,6 +28,18 @@ func _initialize() -> void:
     if not str(atlas.get("error", "")).is_empty():
         _fail("Valid atlas plan rejected: " + str(atlas.get("error", "")))
         return
+    var vfx_plan: Dictionary = Importer.plan("vfx", source, "",
+        {"asset_id": "art.vfx_probe_test", "event_kind": "TEST_VFX",
+         "columns": 6, "rows": 4, "frame_indices": PackedInt32Array([0, 1, 2])})
+    if not str(vfx_plan.get("error", "")).is_empty() or vfx_plan.get("frame_indices", PackedInt32Array()).size() != 3:
+        _fail("Valid transparent VFX atlas rejected: " + str(vfx_plan.get("error", "")))
+        return
+    var invalid_vfx: Dictionary = Importer.plan("vfx", source, "",
+        {"asset_id": "art.bad_vfx", "columns": 6, "rows": 4,
+         "frame_indices": PackedInt32Array([999])})
+    if str(invalid_vfx.get("error", "")).is_empty():
+        _fail("Out-of-range VFX animation index accepted")
+        return
     var ui_source: String = production_dir.path_join("in-use/ui/original/card_probe.svg")
     var ui: Dictionary = Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
     if not str(ui.get("error", "")).is_empty():

@@ -24,7 +24,7 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
    - **角色立绘**：更新 `WuxiaCharacterDefinition.portrait`。
    - **角色 Atlas**：设置列数、行数、脚点与朝向；更新 `sprite_sheet` 和 `WuxiaActorAnimationProfile`。
    - **分层场景**：背景与必选地面、可选前景和天气一致的 viewport，更新 `WuxiaSceneArtProfile`。
-   - **UI Atlas / VFX**：填写唯一内容 ID，创建/更新 `WuxiaAssetDefinition` 并注册到 Manifest。
+   - **UI Atlas / VFX**：填写唯一内容 ID，创建/更新 `WuxiaAssetDefinition` 并注册到 Manifest。VFX 必须具备真实 Alpha，可配置列/行及用逗号分隔的绝对播放帧索引；播放速度由事件表现时长决定，图集不要求固定 6×4。
 3. 可直接单项“检查并导入”，或者“加入批次”逐项入队（最多 64 项）后统一检查。
 4. 当固定目标图片路径已有不同内容时，勾选“版本化替换”，新图片保存在 SHA-256 前 12 位后缀的新路径，保留旧图片；预检列出旧/新绑定差异。
 5. 确认前先对本批所有相关 .tres 建事务备份；随后复制图像、等待原生 Importer、逐项保存 Resource。失败时尝试统一恢复 .tres。
@@ -37,7 +37,7 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 
 - 导出不修改 `res://assets/`；导入不覆盖旧图片。导入撤销只恢复 .tres，保留新图片供检查。
 - 导出有 SHA 核验与备份；失败时尽量自动回退，若已有后续改动则拒绝静默覆盖。
-- Alpha、Atlas 网格/帧号、地图画布做技术预检；美术连续性和授权仍需人工验收。
+- 角色与 VFX 必须有真实 Alpha；VFX 帧号、Atlas 网格/帧号、地图必需透明 ground 的同尺寸画布做技术预检；美术连续性和授权仍需人工验收。
 - 编辑器工具不做持续双向同步。完成手动调整后执行 `python3 art-production/tools/inventory_assets.py --write` 更新离线库存；该脚本对不同 SHA 的旧副本会拒绝覆盖。
 - 编辑器仅保留“上次导入/导出”的撤销按钮。关闭编辑器后旧日志仍保留在磁盘，可以依日志人工恢复。
 

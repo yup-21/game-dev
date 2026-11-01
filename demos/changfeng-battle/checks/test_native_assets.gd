@@ -52,6 +52,30 @@ func _run() -> void:
         "event key binds authored VFX Texture2D without resolver/UI hardcoding")
     vfx.clear()
     canvas.free()
+    var animated_asset: Dictionary = assets.record("r22_vfx_probe")
+    animated_asset["id"] = "r22_animated_probe"
+    animated_asset["event_kind"] = "r22_animated_probe"
+    animated_asset["columns"] = 2
+    animated_asset["rows"] = 1
+    animated_asset["frame_indices"] = PackedInt32Array([0, 1])
+    var animated_registry = Assets.new()
+    check(animated_registry._register(animated_asset), "VFX accepts frame-sequenced native atlas")
+    var animated_canvas := Node2D.new()
+    root.add_child(animated_canvas)
+    var animated_vfx = VFX.new(animated_canvas)
+    animated_vfx.native_assets = animated_registry
+    animated_vfx._spawn_canvas(Vector2(180,200), "r22_animated_probe", Color.WHITE, 0.4, 1.0)
+    var animated_root: Node = animated_canvas.get_child(0) if animated_canvas.get_child_count() > 0 else null
+    var animated_sprite: Sprite2D = null
+    if animated_root != null:
+        animated_sprite = animated_root.get_node_or_null("AuthoredVFX") as Sprite2D
+    check(animated_sprite != null and animated_sprite.hframes == 2 and animated_sprite.frame == 0,
+        "VFX atlas starts on authored first frame")
+    animated_vfx.update(0.35)
+    check(animated_sprite != null and animated_sprite.frame == 1,
+        "VFX atlas advances through authored frame indices")
+    animated_vfx.clear()
+    animated_canvas.free()
     var rejected = Assets.new()
     var fake: Dictionary = assets.record("r22_temple_scene")
     fake["id"] = "r22_not_approved"

@@ -148,7 +148,7 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 for registered in manifest.get(category):
                     if registered is WuxiaContentDefinition and registered.content_id == id:
                         return {"error": "登记 ID 已被其他内容占用：" + id}
-    var alpha_required := mode in ["portrait", "atlas"]
+    var alpha_required := mode in ["portrait", "atlas", "vfx"]
     var versioned := bool(fields.get("versioned_replace", false))
     var first := _check_image(source, alpha_required, expected, versioned)
     if not str(first.get("error", "")).is_empty():
@@ -195,7 +195,7 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 return {"error": "ground 不得复用 background 文件；需独立地面图层"}
             if layer_path.is_empty():
                 continue
-            var check := _check_image(layer_path, layer in ["foreground", "weather"], expected, versioned)
+            var check := _check_image(layer_path, layer in ["ground", "foreground", "weather"], expected, versioned)
             if not str(check.get("error", "")).is_empty():
                 return check
             result["files"][layer] = check
@@ -205,6 +205,23 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
         if old_asset != null and old_asset.resource != null:
             result["current_binding"] = old_asset.resource.resource_path
     if mode == "vfx":
+        var vfx_columns: int = int(fields.get("columns", 1))
+        var vfx_rows: int = int(fields.get("rows", 1))
+        if vfx_columns < 1 or vfx_columns > 64 or vfx_rows < 1 or vfx_rows > 64:
+            return {"error": "VFX 图集行列必须为 1..64"}
+        if int(first["width"]) % vfx_columns != 0 or int(first["height"]) % vfx_rows != 0:
+            return {"error": "VFX 图集必须能被行列整除"}
+        var vfx_frames: PackedInt32Array = fields.get("frame_indices", PackedInt32Array())
+        if vfx_frames.is_empty():
+            vfx_frames = PackedInt32Array([0])
+        if vfx_frames.size() > 256:
+            return {"error": "VFX 帧数不可超过 256"}
+        for frame in vfx_frames:
+            if frame < 0 or frame >= vfx_columns * vfx_rows:
+                return {"error": "VFX 帧索引超出图集范围"}
+        result["columns"] = vfx_columns
+        result["rows"] = vfx_rows
+        result["frame_indices"] = vfx_frames
         var event := str(fields.get("event_kind", "")).strip_edges()
         if not event.is_empty():
             var manifest := ResourceLoader.load(MANIFEST) as WuxiaContentManifest
@@ -335,9 +352,10 @@ static func save_bindings(plan_data: Dictionary) -> String:
     card.resource = textures["primary"]
     card.source = "art_production"
     card.rights = "owner_review_required"
-    card.columns = 1
-    card.rows = 1
+    card.columns = int(plan_data.get("columns", 1)) if mode == "vfx" else 1
+    card.rows = int(plan_data.get("rows", 1)) if mode == "vfx" else 1
     if mode == "vfx":
+        card.frame_indices = plan_data.get("frame_indices", PackedInt32Array())
         card.event_kind = str(plan_data.get("event_kind", ""))
     var manifest := ResourceLoader.load(MANIFEST) as WuxiaContentManifest
     if manifest == null:
