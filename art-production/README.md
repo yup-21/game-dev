@@ -7,8 +7,11 @@
 | [standards/](standards/) | 美术、动画、场景与资源质量规范 |
 | [prompts/](prompts/) | 可复制的 AI 生成母提示词与分类模板 |
 | [templates/](templates/) | 每次资产制作都需填写的工作单 |
+| [skills/](skills/) | 角色、场景、VFX、UI、审核导入的仓库级 Agent Skills；通过仓库根目录 `.agents/skills` 软连接自动发现 |
 | [candidates/](candidates/) | 后续生成的概念图和待审批图；按批次、类型存放 |
 | [reviews/](reviews/) | 人工验收、截图与批准记录 |
+
+Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontmatter 规范，详细工作规则由对应 Skill 在使用时按需加载；修改 Skill 只编辑本目录，不维护第二套副本。
 
 ## 核心约束
 
