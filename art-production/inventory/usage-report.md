@@ -9,11 +9,11 @@ registered_only 仅在资产登记卡中出现；test_only 不计入正式游戏
 
 | 使用状态 | 文件数 | 总字节数 |
 | --- | ---: | ---: |
-| in_use | 63 | 64645896 |
+| in_use | 61 | 62101404 |
 | registered_only | 1 | 207 |
 | test_only | 2 | 2288 |
 | template_only | 0 | 0 |
-| unreferenced | 29 | 18846195 |
+| unreferenced | 31 | 21390687 |
 
 SHA-256 重复内容组：0
 静态图像缺失引用：0
@@ -22,8 +22,6 @@ SHA-256 重复内容组：0
 
 | Godot 来源 | 制作区副本 | 审核 |
 | --- | --- | --- |
-| `res://assets/characters/concepts/escort_captain_portrait.png` | `art-production/in-use/characters/portraits/escort_captain_portrait.png` | review_required |
-| `res://assets/characters/concepts/escort_elder_injured.svg` | `art-production/in-use/characters/story_poses/escort_elder_injured.svg` | review_required |
 | `res://assets/characters/concepts/gu_qingshuang_portrait_v1.png` | `art-production/in-use/characters/portraits/gu_qingshuang_portrait_v1.png` | review_required |
 | `res://assets/characters/concepts/shen_changfeng_portrait.png` | `art-production/in-use/characters/portraits/shen_changfeng_portrait.png` | review_required |
 | `res://assets/concepts/2026-10-30/character_style/blue_swordfighter_pixel_study.jpg` | `art-production/in-use/characters/animations/blue_swordfighter_pixel_study.jpg` | review_required |

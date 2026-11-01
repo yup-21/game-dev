@@ -41,9 +41,9 @@
     {
       "source_path": "demos/changfeng-battle/assets/characters/concepts/escort_captain_portrait.png",
       "res_path": "res://assets/characters/concepts/escort_captain_portrait.png",
-      "production_path": "art-production/in-use/characters/portraits/escort_captain_portrait.png",
+      "production_path": null,
       "kind": "portrait",
-      "usage_state": "in_use",
+      "usage_state": "unreferenced",
       "review_state": "review_required",
       "registered_statuses": [
         "candidate"
@@ -64,9 +64,7 @@
       "git_blob_sha1": "2fca02fb5f3bf2f6f9d8a2fb0caa4e331e6a4562",
       "size_bytes": 2531950,
       "references": {
-        "runtime": [
-          "scripts/hd2d_art_catalog.gd"
-        ],
+        "runtime": [],
         "registrations": [],
         "tests": [],
         "templates": []
@@ -75,9 +73,9 @@
     {
       "source_path": "demos/changfeng-battle/assets/characters/concepts/escort_elder_injured.svg",
       "res_path": "res://assets/characters/concepts/escort_elder_injured.svg",
-      "production_path": "art-production/in-use/characters/story_poses/escort_elder_injured.svg",
+      "production_path": null,
       "kind": "story_pose",
-      "usage_state": "in_use",
+      "usage_state": "unreferenced",
       "review_state": "review_required",
       "registered_statuses": [],
       "rights": [
@@ -88,9 +86,7 @@
       "git_blob_sha1": "295385fc05009e16d3d5fa0a6ed8c8f350a78040",
       "size_bytes": 12542,
       "references": {
-        "runtime": [
-          "scripts/hd2d_art_catalog.gd"
-        ],
+        "runtime": [],
         "registrations": [],
         "tests": [
           "checks/test_opening_sprites.gd"
