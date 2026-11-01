@@ -947,7 +947,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png",
-      "kind": "scene",
+      "kind": "animation",
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [],
@@ -972,7 +972,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png",
       "production_path": null,
-      "kind": "scene",
+      "kind": "animation",
       "usage_state": "registered_only",
       "review_state": "review_required",
       "registered_statuses": [
@@ -1007,7 +1007,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_foreground_v01.png",
-      "kind": "scene",
+      "kind": "animation",
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [],
@@ -1031,7 +1031,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_ground_v01.png",
-      "kind": "scene",
+      "kind": "animation",
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [],
@@ -1055,7 +1055,7 @@
       "source_path": "demos/changfeng-battle/assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
       "res_path": "res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
       "production_path": "art-production/in-use/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_weather_v01.png",
-      "kind": "scene",
+      "kind": "animation",
       "usage_state": "in_use",
       "review_state": "review_required",
       "registered_statuses": [],
@@ -1468,28 +1468,6 @@
       }
     },
     {
-      "source_path": "demos/changfeng-battle/assets/kenney/ui/panel_brown.png",
-      "res_path": "res://assets/kenney/ui/panel_brown.png",
-      "production_path": null,
-      "kind": "third_party",
-      "usage_state": "unreferenced",
-      "review_state": "review_required",
-      "registered_statuses": [],
-      "rights": [
-        "unknown"
-      ],
-      "source_records": [],
-      "sha256": "e5bcda84c20a4d2f44082a9ab8094c959b339cfaffa21e67fcb6b4b6a7f09d36",
-      "git_blob_sha1": "02dbbd60b119ecb81d0914cb116467ef8ca628e7",
-      "size_bytes": 447,
-      "references": {
-        "runtime": [],
-        "registrations": [],
-        "tests": [],
-        "templates": []
-      }
-    },
-    {
       "source_path": "demos/changfeng-battle/assets/kenney/ui/panel_brown_dark.png",
       "res_path": "res://assets/kenney/ui/panel_brown_dark.png",
       "production_path": null,
@@ -1504,6 +1482,28 @@
       "sha256": "8d29384105ed980877ac42b945a81070d99df9bac7c951d802e38fd38426da5b",
       "git_blob_sha1": "c98df9f8e088f632e0f1fc1a632ab64d16c42da1",
       "size_bytes": 436,
+      "references": {
+        "runtime": [],
+        "registrations": [],
+        "tests": [],
+        "templates": []
+      }
+    },
+    {
+      "source_path": "demos/changfeng-battle/assets/kenney/ui/panel_brown.png",
+      "res_path": "res://assets/kenney/ui/panel_brown.png",
+      "production_path": null,
+      "kind": "third_party",
+      "usage_state": "unreferenced",
+      "review_state": "review_required",
+      "registered_statuses": [],
+      "rights": [
+        "unknown"
+      ],
+      "source_records": [],
+      "sha256": "e5bcda84c20a4d2f44082a9ab8094c959b339cfaffa21e67fcb6b4b6a7f09d36",
+      "git_blob_sha1": "02dbbd60b119ecb81d0914cb116467ef8ca628e7",
+      "size_bytes": 447,
       "references": {
         "runtime": [],
         "registrations": [],
@@ -1590,8 +1590,7 @@
         "tests": [
           "checks/fixtures/maps/qa_obstacle_court.tres",
           "checks/fixtures/maps/qa_open_arena.tres",
-          "checks/test_export_resources.gd",
-          "checks/test_illustrated_maps.gd"
+          "checks/test_export_resources.gd"
         ],
         "templates": []
       }
