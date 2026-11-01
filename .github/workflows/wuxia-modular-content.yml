@@ -22,6 +22,7 @@ on:
       - 'demos/changfeng-battle/checks/test_actor_animation_profile.gd'
       - 'demos/changfeng-battle/checks/test_scene_art_profile.gd'
       - 'demos/changfeng-battle/checks/test_art_importer.gd'
+      - 'demos/changfeng-battle/checks/test_art_workflow.gd'
       - 'demos/changfeng-battle/checks/test_character_factory.gd'
       - 'demos/changfeng-battle/checks/test_native_effects.gd'
       - 'demos/changfeng-battle/checks/test_native_story_quests.gd'
@@ -68,6 +69,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_scene_art_profile.gd
       - name: P1 art production importer preflight
         run: timeout --signal=TERM 60s godot --headless --path demos/changfeng-battle --script res://checks/test_art_importer.gd
+      - name: P2 art export, batch validation and rollback controls
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_art_workflow.gd
       - name: R19 native character factory and starting loadout
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_character_factory.gd
       - name: R20 native skills and effect handlers
