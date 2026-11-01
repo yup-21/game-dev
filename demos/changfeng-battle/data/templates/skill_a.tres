@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/skill_definition.gd" id="1_skill"]
+[ext_resource type="Script" path="res://scripts/content/skill_usage_definition.gd" id="2_usage"]
+[ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+
+[sub_resource type="Resource" id="Recover"]
+script = ExtResource("3_effect")
+effect_type = "gain_qi"
+target = "self"
+amount = 1.0
+
+[sub_resource type="Resource" id="Usage"]
+script = ExtResource("2_usage")
+usage_id = "focus"
+display_name = "调息"
+timing = "ACTION"
+cost_qi = 0
+target_kind = "self"
+effects = Array[Resource]([SubResource("Recover")])
+
+[resource]
+script = ExtResource("1_skill")
+content_id = "template_form_a"
+display_name = "样板武学·调息"
+school_id = "template_school"
+generated_only = false
+usages = Array[Resource]([SubResource("Usage")])

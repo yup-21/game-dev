@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_character"]
+[ext_resource type="Script" path="res://scripts/content/starting_item_definition.gd" id="2_start"]
+[ext_resource type="Texture2D" path="res://assets/fallback/default_portrait.svg" id="3_portrait"]
+[ext_resource type="Texture2D" path="res://assets/fallback/default_actor_6x4.svg" id="4_sheet"]
+
+[sub_resource type="Resource" id="Starting_medicine"]
+script = ExtResource("2_start")
+item_id = "healing_powder"
+count = 1
+
+[resource]
+script = ExtResource("1_character")
+content_id = "template_wanderer"
+display_name = "模板游侠"
+title = "待创作角色"
+role = "江湖新人"
+faction = "中立"
+weapon = "长剑"
+personality = "待填写性格"
+biography = "复制后填写原创角色设定与背景。"
+team_hint = "ally"
+battle_actor_id = -1
+school_id = "wind_sword"
+learned_schools = Array[String](["wind_sword"])
+attributes = {"STR": 10, "AGI": 10, "CON": 10, "MND": 10}
+passives = {"insight": 0, "conceal": 0}
+starting_items = Array[Resource]([SubResource("Starting_medicine")])
+portrait = ExtResource("3_portrait")
+sprite_sheet = ExtResource("4_sheet")
+portrait_quality = "candidate"
+sheet_quality = "candidate"

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="WuxiaItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+content_id = "template_medicine"
+display_name = "样板回气散"
+description = "复制后修改名称、使用效果及品质。"
+kind = "consumable"
+stack_limit = 20
+effects = Array[Dictionary]([{"type": "gain_qi", "amount": 2}])
