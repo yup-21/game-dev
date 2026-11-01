@@ -76,7 +76,7 @@ static func destination(path: String) -> String:
     return "res://assets/imported/" + relative
 
 
-static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO) -> Dictionary:
+static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO, versioned: bool = false) -> Dictionary:
     var info := inspect(path)
     if not str(info.get("error", "")).is_empty():
         return info
@@ -87,8 +87,15 @@ static func _check_image(path: String, require_alpha: bool, expected: Vector2i =
     var target := destination(path)
     if target.is_empty():
         return {"error": "无法生成导入目标路径"}
+    var previous := ""
     if FileAccess.file_exists(target) and FileAccess.get_sha256(target) != str(info["sha256"]):
-        return {"error": "目标图片已存在且内容不同，拒绝覆盖：" + target}
+        if not versioned:
+            return {"error": "目标图片已存在且内容不同；勾选版本化替换：" + target}
+        previous = target
+        target = target.get_basename() + "__" + str(info["sha256"]).substr(0, 12) + "." + target.get_extension()
+        if FileAccess.file_exists(target) and FileAccess.get_sha256(target) != str(info["sha256"]):
+            return {"error": "版本文件 SHA-256 冲突：" + target}
+    info["replaces"] = previous
     info["destination"] = target
     return info
 
@@ -142,11 +149,19 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                     if registered is WuxiaContentDefinition and registered.content_id == id:
                         return {"error": "登记 ID 已被其他内容占用：" + id}
     var alpha_required := mode in ["portrait", "atlas"]
-    var first := _check_image(source, alpha_required, expected)
+    var versioned := bool(fields.get("versioned_replace", false))
+    var first := _check_image(source, alpha_required, expected, versioned)
     if not str(first.get("error", "")).is_empty():
         return first
     result["files"]["primary"] = first
+    result["next_binding"] = str(first["destination"])
+    result["current_binding"] = ""
+    if mode == "portrait":
+        var old_portrait: Texture2D = owner.get("portrait") as Texture2D
+        result["current_binding"] = old_portrait.resource_path if old_portrait != null else ""
     if mode == "atlas":
+        var old_sheet: Texture2D = owner.get("sprite_sheet") as Texture2D
+        result["current_binding"] = old_sheet.resource_path if old_sheet != null else ""
         var cols := int(fields.get("columns", 6))
         var rows := int(fields.get("rows", 4))
         if cols < 1 or cols > 64 or rows < 1 or rows > 64:
@@ -170,6 +185,8 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             return {"error": "现有动作帧与新 Atlas 不兼容；请在 Inspector 先编辑 Profile 的 clips"}
         result["profile_path"] = "res://data/native/animations/" + str(owner.get("content_id")) + ".tres"
     if mode == "scene":
+        var old_scene: WuxiaSceneArtProfile = owner.get("scene_art") as WuxiaSceneArtProfile
+        result["current_binding"] = old_scene.resource_path if old_scene != null else ""
         for layer in ["ground", "foreground", "weather"]:
             var layer_path := str(fields.get(layer, "")).strip_edges()
             if layer == "ground" and layer_path.is_empty():
@@ -178,11 +195,15 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 return {"error": "ground 不得复用 background 文件；需独立地面图层"}
             if layer_path.is_empty():
                 continue
-            var check := _check_image(layer_path, layer in ["foreground", "weather"], expected)
+            var check := _check_image(layer_path, layer in ["foreground", "weather"], expected, versioned)
             if not str(check.get("error", "")).is_empty():
                 return check
             result["files"][layer] = check
         result["profile_path"] = "res://data/native/scene_art/" + str(owner.get("content_id")) + ".tres"
+    if mode in ["vfx", "ui_atlas"] and ResourceLoader.exists(str(result["target"])):
+        var old_asset := ResourceLoader.load(str(result["target"])) as WuxiaAssetDefinition
+        if old_asset != null and old_asset.resource != null:
+            result["current_binding"] = old_asset.resource.resource_path
     if mode == "vfx":
         var event := str(fields.get("event_kind", "")).strip_edges()
         if not event.is_empty():
