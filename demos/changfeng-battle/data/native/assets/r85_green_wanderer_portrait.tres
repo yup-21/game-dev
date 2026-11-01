@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="WuxiaAssetDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/asset_definition.gd" id="1_asset"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/green_wanderer/portrait_green_wanderer_fullbody_v01.png" id="2_resource"]
+
+[resource]
+script = ExtResource("1_asset")
+content_id = "r85_green_wanderer_portrait"
+asset_kind = "portrait"
+status = "candidate"
+resource = ExtResource("2_resource")
+source = "2026-11-01_chapter_one_candidate"
+rights = "owner_review_required"
+owner_character_id = "green_wanderer"
+columns = 1
+rows = 1

@@ -3,6 +3,7 @@ class_name WuxiaChapterSceneDefinition
 extends Resource
 ## Rendering hints and trigger placements are data; the Node2D template stays shared.
 @export var background: Texture2D
+@export var scene_art: WuxiaSceneArtProfile
 @export var primary_npc: Resource
 @export var npcs: Array[Resource] = []
 @export var player_position: Vector2 = Vector2(350,705)
@@ -32,7 +33,7 @@ func to_record() -> Dictionary:
         if entry.is_empty() or seen.has(str(entry.character_id)): return {}
         seen[str(entry.character_id)] = true
         extras.append(entry)
-    return {"background":background.resource_path,
+    var authored: Dictionary = {"background":background.resource_path,
         "npc_character_id":first.character_id,"npc_position":first.position,
         "npcs":extras,
         "player_position":[player_position.x,player_position.y],
@@ -43,3 +44,14 @@ func to_record() -> Dictionary:
         "complete_text":complete_text,"battle_label":battle_label,
         "reward_label":reward_label,"complete_caption":complete_caption,
         "complete_subtitle":complete_subtitle}
+    if scene_art != null:
+        if not scene_art.valid_for(Vector2i(1600, 1000)):
+            return {}
+        var paths: Dictionary = {}
+        for name in ["background", "ground", "foreground", "weather"]:
+            var layer: Texture2D = scene_art.get(name) as Texture2D
+            if layer != null:
+                if layer.resource_path.is_empty(): return {}
+                paths[name] = layer.resource_path
+        authored["scene_art"] = paths
+    return authored

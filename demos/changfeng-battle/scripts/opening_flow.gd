@@ -16,6 +16,11 @@ var story = Story.new()
 var chapter_scene: Dictionary = {}
 var npc_position: Vector2 = ESCORT
 var background_path: String = TEMPLE_PAINTING
+var scene_art_paths: Dictionary = {}
+var temple_underlays: Array[Control] = []
+var temple_overlays: Array[Control] = []
+var story_weather_enabled: bool = true
+var story_weather_layer: Control
 var npc_character_id: String = "escort_elder"
 
 func _load_chapter_content() -> void:
@@ -29,6 +34,8 @@ func _load_chapter_content() -> void:
 	npc_character_id = str(chapter_scene.get("npc_character_id","escort_elder"))
 	npc_position = Vector2(float(chapter_scene.npc_position[0]),float(chapter_scene.npc_position[1]))
 	background_path = str(chapter_scene.get("background",TEMPLE_PAINTING))
+	var authored_art: Variant = chapter_scene.get("scene_art", {})
+	scene_art_paths = authored_art.duplicate(true) if authored_art is Dictionary else {}
 	player_pos = Vector2(float(chapter_scene.player_position[0]),float(chapter_scene.player_position[1]))
 	story = Story.new(str(chapter.story_path))
 	if session.phase == "story":
@@ -88,6 +95,7 @@ func _ready() -> void:
 	_load_chapter_content()
 	_load_temple_background()
 	_build_temple_picture()
+	_build_temple_layers()
 	ui_font = SystemFont.new()
 	ui_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -149,8 +157,13 @@ func _process(delta: float) -> void:
 			visible_characters = minf(float(str(line.get("text", "")).length()),visible_characters+delta*29.0)
 	if story.phase != "explore":
 		_sync_story_sprites(Vector2.ZERO,delta)
+	var scene_visible: bool = story.phase in ["explore","dialogue","complete"] or (story.phase=="cinematic" and story.cinematic_index > 0)
 	if temple_picture != null:
-		temple_picture.visible = story.phase in ["explore","dialogue","complete"] or (story.phase=="cinematic" and story.cinematic_index > 0)
+		temple_picture.visible = scene_visible
+	for layer in temple_underlays:
+		layer.visible = scene_visible
+	for layer in temple_overlays:
+		layer.visible = story.phase == "explore" and (layer != story_weather_layer or story_weather_enabled)
 	queue_redraw()
 
 func _sync_story_sprites(motion: Vector2, delta: float) -> void:
@@ -556,8 +569,9 @@ func _painted_content(texture: Texture2D) -> bool:
 func _load_temple_background() -> void:
 	temple_uses_fallback = false
 	temple_backdrop = null
-	if ResourceLoader.exists(background_path):
-		var original: Texture2D = load(background_path) as Texture2D
+	var rendered_path: String = str(scene_art_paths.get("background", background_path))
+	if ResourceLoader.exists(rendered_path):
+		var original: Texture2D = load(rendered_path) as Texture2D
 		if _painted_content(original):
 			temple_backdrop = original
 	if temple_backdrop == null:
@@ -565,7 +579,7 @@ func _load_temple_background() -> void:
 		# Never substitute another chapter's painting.
 		temple_backdrop = Fallback.SCENE
 		temple_uses_fallback = true
-		push_warning("First-act painting is empty or unavailable: " + background_path
+		push_warning("First-act painting is empty or unavailable: " + rendered_path
 			+ "; using dedicated default scene.")
 	if not _painted_content(temple_backdrop):
 		push_error("No nonblank illustrated background is available for the first act")
@@ -590,6 +604,57 @@ func _build_temple_picture() -> void:
 	temple_picture.visible = false
 	add_child(temple_picture)
 
+func _build_temple_layers() -> void:
+	# Optional native WuxiaSceneArtProfile; keep the old single-image fallback.
+	if temple_uses_fallback or scene_art_paths.is_empty():
+		return
+	for item in [["ground", "FirstActGroundArt", -99, false],
+		["foreground", "FirstActForegroundClip", 12, true],
+		["weather", "FirstActWeatherClip", 13, true]]:
+		var key: String = str(item[0])
+		var path: String = str(scene_art_paths.get(key, ""))
+		if path.is_empty() or not ResourceLoader.exists(path):
+			push_warning("Missing story art layer: " + path)
+			continue
+		var texture: Texture2D = load(path) as Texture2D
+		if texture == null or texture.get_size() != Vector2(1600, 1000):
+			push_warning("Invalid story art layer: " + path)
+			continue
+		var image := TextureRect.new()
+		image.texture = texture
+		image.name = str(item[1]) + "Texture"
+		image.size = Vector2(1600, 1000)
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_SCALE
+		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if bool(item[3]):
+			# Occlude role feet but never draw above the chapter HUD or dialogue.
+			var clip := Control.new()
+			clip.name = str(item[1])
+			clip.position = Vector2(0, 106)
+			clip.size = Vector2(1600, 730)
+			clip.clip_contents = true
+			clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			clip.z_index = int(item[2])
+			image.position = Vector2(0, -106)
+			clip.add_child(image)
+			add_child(clip)
+			temple_overlays.append(clip)
+			if key == "weather":
+				story_weather_layer = clip
+		else:
+			image.name = str(item[1])
+			image.z_index = int(item[2])
+			add_child(image)
+			temple_underlays.append(image)
+
+
+func set_story_weather_enabled(enabled: bool) -> void:
+	story_weather_enabled = enabled
+	if story_weather_layer != null:
+		story_weather_layer.visible = enabled and story.phase == "explore"
+
+
 func _temple_background() -> bool:
 	# The painted TextureRect is a real scene child; calling drawing commands
 	# from outside Node2D._draw() is no longer necessary.
@@ -601,7 +666,8 @@ func _paint_exploration() -> void:
 		_wet_road(clock)
 		_paint_pavilion(Vector2(1280,570),0.9)
 		_carriage(Vector2(837,625))
-	_rain(clock,110)
+	if scene_art_paths.is_empty() or temple_uses_fallback:
+		_rain(clock,110)
 	# Shen Changfeng and the escort elder are now Sprite2D scene children.
 	# Never paint character frames through this CanvasItem.
 

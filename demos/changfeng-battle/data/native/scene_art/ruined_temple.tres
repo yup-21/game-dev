@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WuxiaSceneArtProfile" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/scene_art_profile.gd" id="1_art"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_background_v01.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_ground_v01.png" id="3_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_foreground_v01.png" id="4_fore"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_weather_v01.png" id="5_rain"]
+
+[resource]
+script = ExtResource("1_art")
+reference_size = Vector2i(1600, 1000)
+background = ExtResource("2_bg")
+ground = ExtResource("3_ground")
+foreground = ExtResource("4_fore")
+weather = ExtResource("5_rain")
