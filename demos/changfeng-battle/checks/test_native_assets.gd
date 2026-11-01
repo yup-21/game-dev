@@ -26,7 +26,13 @@ func _run() -> void:
         "portrait stable binding resolves imported Texture2D")
     var sheet: Texture2D = assets.texture_for_character("river_messenger","pose_sheet")
     check(sheet != null and sheet.get_width() % 6 == 0 and sheet.get_height() % 4 == 0,
-        "6x4 animation sheet contract validates")
+        "legacy 6x4 animation sheet remains supported")
+    var flexible: Dictionary = assets.record("r27_gu_sheet")
+    flexible["id"] = "r22_flexible_atlas_contract"
+    flexible["owner_character_id"] = ""
+    flexible["columns"] = 3
+    flexible["rows"] = 8
+    check(assets._register(flexible), "new pose_sheet registry accepts divisible 3x8 atlas")
     check(Art.portrait_for_character("shen_changfeng") == portrait
         and Art.uses_supplied_sheet_for_character("river_messenger"),
         "original art facade reads the native registry by character ID")

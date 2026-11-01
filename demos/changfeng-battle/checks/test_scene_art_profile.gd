@@ -4,6 +4,11 @@ extends SceneTree
 const SceneProfile = preload("res://scripts/content/scene_art_profile.gd")
 
 func _initialize() -> void:
+    var template: WuxiaSceneArtProfile = load("res://data/templates/scene_art_profile.tres") as WuxiaSceneArtProfile
+    if template == null or template.reference_size != Vector2i(1600, 1000):
+        push_error("Layered scene authoring template is missing")
+        quit(1)
+        return
     var size := Vector2i(12, 8)
     var painting := Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
     painting.fill(Color(0.4, 0.3, 0.2, 1.0))

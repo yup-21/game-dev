@@ -17,7 +17,7 @@
 
 把新角色加入 `data/content_manifest.tres.characters`。创建永久游戏会话角色的逻辑由现有 `CharacterFactory` 完成。
 
-场景分层：新地图可新建 `WuxiaSceneArtProfile`，配齐统一尺寸的 `background`、`ground`，按需加入 `foreground` 与 `weather`，在地图原生资源 `scene_art` 中引用。不得用贴图颜色反推出碰撞或改动地图脚点。
+场景分层：复制 `scene_art_profile.tres` 到自己的 `data/native/scene_art/` 目录，在 Inspector 配齐同一 1600×1000 画布的 `background`、`ground`，按需加入 `foreground` 与 `weather`，然后在地图原生 Resource 的 `scene_art` 属性中引用。该空白模板未绑定贴图，仅用于制作，不得直接标记为批准。碰撞与脚点仍由 Map Resource 定义。
 
 ## 2. 复制一套武学
 

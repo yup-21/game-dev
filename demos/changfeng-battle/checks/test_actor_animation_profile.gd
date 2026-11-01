@@ -35,6 +35,25 @@ func _initialize() -> void:
         push_error("Authored attack frames were not applied")
         quit(1)
         return
+    var flexible: WuxiaActorAnimationProfile = profile.duplicate(true) as WuxiaActorAnimationProfile
+    flexible.columns = 3
+    flexible.rows = 8
+    if not flexible.valid_profile():
+        push_error("Flexible 3x8 atlas layout was rejected")
+        quit(1)
+        return
+    var flexible_sprite := Sprite2D.new()
+    flexible_sprite.texture = flexible.atlas
+    flexible_sprite.hframes = flexible.columns
+    flexible_sprite.vframes = flexible.rows
+    root.add_child(flexible_sprite)
+    var flexible_player: AnimationPlayer = NativeClips.attach(flexible_sprite, timeline, flexible)
+    flexible_player.play("attack")
+    flexible_player.advance(0.0)
+    if flexible_sprite.frame != 12:
+        push_error("Flexible authored frame indices were not applied")
+        quit(1)
+        return
     var broken := Clip.new()
     broken.action = "attack"
     broken.frames = PackedInt32Array([999])

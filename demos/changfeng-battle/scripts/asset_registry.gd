@@ -42,8 +42,8 @@ func _register(spec: Variant) -> bool:
                 loaded.get_width() < columns or loaded.get_height() < rows or \
                 loaded.get_width() % columns != 0 or loaded.get_height() % rows != 0:
             return _fail("Invalid asset grid: " + id)
-        if kind == "pose_sheet" and (columns != 6 or rows != 4):
-            return _fail("Battle pose sheet must be 6x4: " + id)
+        # The 6x4 layout is a legacy playback convention, not a registry contract.
+        # Authored sheets use their character-owned AnimationProfile for frame indices.
     var character_id: String = str(spec.get("owner_character_id",""))
     if not character_id.is_empty():
         var key: String = character_id + ":" + kind

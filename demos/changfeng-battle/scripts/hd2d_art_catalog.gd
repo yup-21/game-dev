@@ -140,6 +140,9 @@ static func sheet_for_actor(actor_id: int, enemy: bool = false) -> Texture2D:
     return sheet_for_character(str(profile.get("id","")),enemy)
 
 static func sheet_for_character(character_id: String, enemy: bool = false) -> Texture2D:
+    var authored_profile: WuxiaActorAnimationProfile = animation_profile_for_character(character_id)
+    if authored_profile != null:
+        return authored_profile.atlas
     var profile: Dictionary = _registry.get_profile(character_id)
     var binding: Dictionary = _asset_registry.record_for_character(character_id,"pose_sheet")
     var path: String = str(binding.get("path",profile.get("art",{}).get("sprite_sheet","")))
@@ -184,7 +187,10 @@ static func avatar_for_character(character_id: String, enemy: bool = false) -> T
     var atlas := AtlasTexture.new()
     var sheet := sheet_for_character(character_id,enemy)
     atlas.atlas = sheet
-    atlas.region = Rect2(Vector2.ZERO,Vector2(sheet.get_width()/6.0,sheet.get_height()/4.0))
+    var authored_profile: WuxiaActorAnimationProfile = animation_profile_for_character(character_id)
+    var columns: int = authored_profile.columns if authored_profile != null else COLS
+    var rows: int = authored_profile.rows if authored_profile != null else ROWS
+    atlas.region = Rect2(Vector2.ZERO, Vector2(sheet.get_width()/float(columns), sheet.get_height()/float(rows)))
     return atlas
 
 static func avatar(actor_id: int, enemy: bool = false) -> Texture2D:
@@ -196,6 +202,9 @@ static func avatar(actor_id: int, enemy: bool = false) -> Texture2D:
 ## Keep sprite orientation as an ART attribute, independent from battle rules.
 ## An actor profile may override this with art.faces_left when new sheets vary.
 static func sheet_faces_left_for_character(character_id: String) -> bool:
+    var authored_profile: WuxiaActorAnimationProfile = animation_profile_for_character(character_id)
+    if authored_profile != null:
+        return authored_profile.faces_left_unflipped
     var profile: Dictionary = _registry.get_profile(character_id)
     var art: Dictionary = profile.get("art", {})
     var path: String = str(art.get("sprite_sheet", ""))
@@ -209,6 +218,8 @@ static func sheet_faces_left(actor_id: int) -> bool:
     return sheet_faces_left_for_character(str(profile.get("id","")))
 
 static func uses_supplied_sheet_for_character(character_id: String) -> bool:
+    if animation_profile_for_character(character_id) != null:
+        return true
     var profile: Dictionary = _registry.get_profile(character_id)
     var binding: Dictionary = _asset_registry.record_for_character(character_id,"pose_sheet")
     var path: String = str(binding.get("path",profile.get("art",{}).get("sprite_sheet","")))
