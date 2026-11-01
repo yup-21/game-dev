@@ -60,6 +60,16 @@ func _initialize() -> void:
     if dock.source_list.item_count < 39 or dock.kind.item_count != 5:
         _fail("Editor dock failed to enumerate candidate sources")
         return
+    dock.kind.select(2)
+    dock._mode_changed()
+    var chapter_found := false
+    for index in range(dock.targets.item_count):
+        if str(dock.targets.get_item_metadata(index)) == "res://data/native/chapters/rain_escort_prologue.tres":
+            chapter_found = true
+            break
+    if not chapter_found:
+        _fail("Chapter story scenes are missing from the scene import selector")
+        return
     dock.queue_free()
     var bad := Importer.plan("portrait", source, "res://data/maps/rainy_bridge.tres", {})
     if str(bad.get("error", "")).is_empty():
@@ -68,6 +78,10 @@ func _initialize() -> void:
     bad = Importer.plan("scene", source, "res://data/maps/rainy_bridge.tres", {})
     if str(bad.get("error", "")).is_empty():
         _fail("Missing scene ground was accepted")
+        return
+    bad = Importer.plan("scene", source, "res://data/native/chapters/rain_escort_prologue.tres", {})
+    if str(bad.get("error", "")).contains("目标不是有效的地图或章节"):
+        _fail("Chapter definition was not recognized as a scene target")
         return
     bad = Importer.plan("ui_atlas", source, "", {"asset_id": "../../bad"})
     if str(bad.get("error", "")).is_empty():

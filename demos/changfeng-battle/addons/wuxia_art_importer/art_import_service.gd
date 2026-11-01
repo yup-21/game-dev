@@ -123,12 +123,16 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
         if not owner is WuxiaCharacterDefinition:
             return {"error": "角色 Resource 类型不正确"}
     elif mode == "scene":
-        if not target.begins_with("res://data/maps/") or not target.ends_with(".tres"):
-            return {"error": "需要选择 data/maps 内的地图 Resource"}
+        if not target.ends_with(".tres") or not (
+                target.begins_with("res://data/maps/") or target.begins_with("res://data/native/chapters/")):
+            return {"error": "需要选择 data/maps 地图或 data/native/chapters 章节 Resource"}
         owner = ResourceLoader.load(target)
-        if not owner is WuxiaMapDefinition and not owner is WuxiaGridMapDefinition:
-            return {"error": "地图 Resource 类型不正确"}
-        expected = owner.get("viewport_size")
+        if owner is WuxiaMapDefinition or owner is WuxiaGridMapDefinition:
+            expected = owner.get("viewport_size")
+        elif owner is WuxiaChapterDefinition and owner.get("scene") is WuxiaChapterSceneDefinition:
+            expected = Vector2i(1600, 1000)
+        else:
+            return {"error": "场景目标不是有效的地图或章节 Resource"}
     else:
         var id := str(fields.get("asset_id", "")).strip_edges()
         if not _valid_id(id):
@@ -185,7 +189,8 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             return {"error": "现有动作帧与新 Atlas 不兼容；请在 Inspector 先编辑 Profile 的 clips"}
         result["profile_path"] = "res://data/native/animations/" + str(owner.get("content_id")) + ".tres"
     if mode == "scene":
-        var old_scene: WuxiaSceneArtProfile = owner.get("scene_art") as WuxiaSceneArtProfile
+        var scene_holder: Resource = owner.get("scene") if owner is WuxiaChapterDefinition else owner
+        var old_scene: WuxiaSceneArtProfile = scene_holder.get("scene_art") as WuxiaSceneArtProfile
         result["current_binding"] = old_scene.resource_path if old_scene != null else ""
         for layer in ["ground", "foreground", "weather"]:
             var layer_path := str(fields.get(layer, "")).strip_edges()
@@ -199,7 +204,8 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             if not str(check.get("error", "")).is_empty():
                 return check
             result["files"][layer] = check
-        result["profile_path"] = "res://data/native/scene_art/" + str(owner.get("content_id")) + ".tres"
+        var scene_id := str(owner.get("content_id")) + ("_story" if owner is WuxiaChapterDefinition else "")
+        result["profile_path"] = "res://data/native/scene_art/" + scene_id + ".tres"
     if mode in ["vfx", "ui_atlas"] and ResourceLoader.exists(str(result["target"])):
         var old_asset := ResourceLoader.load(str(result["target"])) as WuxiaAssetDefinition
         if old_asset != null and old_asset.resource != null:
@@ -322,21 +328,24 @@ static func save_bindings(plan_data: Dictionary) -> String:
     if mode == "scene":
         var map := ResourceLoader.load(target)
         if map == null:
-            return "地图 Resource 在导入期间发生变化"
+            return "场景 Resource 在导入期间发生变化"
+        var scene_holder: Resource = map.get("scene") if map is WuxiaChapterDefinition else map
+        if scene_holder == null:
+            return "章节缺少场景定义"
         var profile := WuxiaSceneArtProfile.new()
-        profile.reference_size = map.get("viewport_size")
+        profile.reference_size = Vector2i(1600, 1000) if map is WuxiaChapterDefinition else map.get("viewport_size")
         profile.background = textures["primary"]
         profile.ground = textures["ground"]
         if textures.has("foreground"):
             profile.foreground = textures["foreground"]
         if textures.has("weather"):
             profile.weather = textures["weather"]
-        if not profile.valid_for(map.get("viewport_size")):
+        if not profile.valid_for(profile.reference_size):
             return "场景层未通过 viewport 一致性检查"
         var art_error := _save(profile, str(plan_data["profile_path"]))
         if not art_error.is_empty():
             return art_error
-        map.set("scene_art", profile)
+        scene_holder.set("scene_art", profile)
         var map_error := _save(map, target)
         if map_error.is_empty():
             map.emit_changed()

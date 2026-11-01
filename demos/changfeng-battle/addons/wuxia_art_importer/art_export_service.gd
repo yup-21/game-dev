@@ -143,8 +143,9 @@ static func plan(kind: String, resource_path: String = "", allow_replace: bool =
             return {"error": "无法加载选定 Resource"}
         if kind == "character" and not source is WuxiaCharacterDefinition:
             return {"error": "所选不是角色 Resource"}
-        if kind == "scene" and not source is WuxiaMapDefinition and not source is WuxiaGridMapDefinition:
-            return {"error": "所选不是地图 Resource"}
+        if kind == "scene" and not (source is WuxiaMapDefinition or source is WuxiaGridMapDefinition or
+                (source is WuxiaChapterDefinition and source.get("scene") is WuxiaChapterSceneDefinition)):
+            return {"error": "所选不是地图或章节场景 Resource"}
         var graph := _resource_graph(resource_path)
         if graph["truncated"]:
             return {"error": "Resource 依赖超过 512 个，拒绝不完整导出"}

@@ -8,7 +8,7 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 ## 导出：当前 Godot → art-production
 
 1. 选择“全部实际使用图片 / 单个角色依赖 / 单个地图依赖 / 指定 .tres 依赖”。
-2. 按角色或地图导出时选择已有 Resource；指定资源输入 `res://data/...`。
+2. 按角色、地图或剧情章节导出时选择已有 Resource；指定资源输入 `res://data/...`。
 3. 点击“预检导出差异”，检查新建、相同、不同的副本。
 4. 如生产区已有不同内容副本，必须手动勾选“允许覆盖”并重新检查。
 5. 确认后原字节复制到 `art-production/in-use/`；单个资源范围还会将 .tres 依赖副本保存于 `in-use/resources/`，仅供离线审计。
@@ -23,7 +23,7 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 2. 选择素材类型，并明确设置角色、地图或内容 ID：
    - **角色立绘**：更新 `WuxiaCharacterDefinition.portrait`。
    - **角色 Atlas**：设置列数、行数、脚点与朝向；更新 `sprite_sheet` 和 `WuxiaActorAnimationProfile`。
-   - **分层场景**：背景与必选地面、可选前景和天气一致的 viewport，更新 `WuxiaSceneArtProfile`。
+   - **分层场景**：选择 `data/maps/` 战斗地图或 `data/native/chapters/` 剧情章节；背景与必选地面、可选前景和天气统一为 1600×1000，更新 `WuxiaSceneArtProfile`，挂到 Map 或 ChapterScene。剧情章节仍保留单图回退。预览显示章节主角/NPC 脚点。
    - **UI Atlas / VFX**：填写唯一内容 ID，创建/更新 `WuxiaAssetDefinition` 并注册到 Manifest。VFX 必须具备真实 Alpha，可配置列/行及用逗号分隔的绝对播放帧索引；播放速度由事件表现时长决定，图集不要求固定 6×4。`event_kind` 优先填原始战斗事件（如 `ATTACK_DECLARED`、`HP_DAMAGED`、`COMBO_TRIGGERED`）；旧视觉键（如 `slash`）继续兼容。
 3. 可直接单项“检查并导入”，或者“加入批次”逐项入队（最多 64 项）后统一检查。
 4. 当固定目标图片路径已有不同内容时，勾选“版本化替换”，新图片保存在 SHA-256 前 12 位后缀的新路径，保留旧图片；预检列出旧/新绑定差异。

@@ -42,6 +42,11 @@ func _initialize() -> void:
     if not str(scene.get("error", "")).is_empty() or scene["entries"].is_empty():
         _fail("Map dependency export is incomplete: " + str(scene.get("error", "")))
         return
+    var chapter_scene: Dictionary = Export.plan(
+        "scene", "res://data/native/chapters/rain_escort_prologue.tres")
+    if not str(chapter_scene.get("error", "")).is_empty() or chapter_scene["entries"].is_empty():
+        _fail("Story chapter dependency export is incomplete: " + str(chapter_scene.get("error", "")))
+        return
     var specific: Dictionary = Export.plan(
         "resource", "res://data/native/characters/shen_changfeng.tres")
     if specific["entries"].size() != character["entries"].size():

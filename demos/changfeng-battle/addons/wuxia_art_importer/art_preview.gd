@@ -88,11 +88,21 @@ func _draw_scene() -> void:
             draw_texture_rect(layers[layer], dest, false)
     if map_resource == null:
         return
-    var viewport: Vector2i = map_resource.get("viewport_size")
+    var chapter_scene: WuxiaChapterSceneDefinition = null
+    if map_resource is WuxiaChapterDefinition:
+        chapter_scene = map_resource.get("scene") as WuxiaChapterSceneDefinition
+    var viewport: Vector2i = Vector2i(1600, 1000) if chapter_scene != null else map_resource.get("viewport_size")
     if viewport.x <= 0 or viewport.y <= 0:
         return
     var ratio := dest.size / Vector2(viewport)
-    if map_resource is WuxiaMapDefinition:
+    if chapter_scene != null:
+        draw_circle(dest.position + chapter_scene.player_position * ratio, 4.0, Color(0.24, 0.96, 0.65))
+        var npcs: Array[Resource] = [chapter_scene.primary_npc]
+        npcs.append_array(chapter_scene.npcs)
+        for npc in npcs:
+            if npc is WuxiaChapterNpcDefinition:
+                draw_circle(dest.position + npc.position * ratio, 4.0, Color.ORANGE)
+    elif map_resource is WuxiaMapDefinition:
         var polygon_map := map_resource as WuxiaMapDefinition
         for obstacle in polygon_map.obstacles:
             if not obstacle is WuxiaMapPolygonDefinition:

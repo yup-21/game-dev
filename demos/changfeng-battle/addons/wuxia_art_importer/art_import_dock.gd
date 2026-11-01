@@ -98,7 +98,7 @@ func _ready() -> void:
     kind.item_selected.connect(func(_index: int): _mode_changed())
     body.add_child(kind)
     targets = OptionButton.new()
-    target_row = _labeled("角色卡 / 地图 Resource", targets)
+    target_row = _labeled("角色 / 地图 / 章节 Resource", targets)
     targets.item_selected.connect(func(_index: int): _refresh_preview())
     asset_id = LineEdit.new()
     asset_id.placeholder_text = "例如 ui.sword_cards"
@@ -335,33 +335,34 @@ func _mode_changed() -> void:
 func _load_targets() -> void:
     targets.clear()
     var mode := _mode()
-    var folder := ""
+    var folders: Array[String] = []
     if mode in ["portrait", "atlas"]:
-        folder = "res://data/native/characters"
+        folders.append("res://data/native/characters")
     elif mode == "scene":
-        folder = "res://data/maps"
-    if folder.is_empty():
-        return
-    var dir := DirAccess.open(folder)
-    if dir == null:
-        return
-    var entries := Array(DirAccess.get_files_at(folder))
-    entries.sort()
-    for filename in entries:
-        if not str(filename).ends_with(".tres"):
+        folders.assign(["res://data/maps", "res://data/native/chapters"])
+    for folder in folders:
+        var dir := DirAccess.open(folder)
+        if dir == null:
             continue
-        var path := folder.path_join(str(filename))
-        var resource := ResourceLoader.load(path)
-        if mode == "scene" and not (resource is WuxiaMapDefinition or resource is WuxiaGridMapDefinition):
-            continue
-        if mode in ["portrait", "atlas"] and not resource is WuxiaCharacterDefinition:
-            continue
-        var label := str(filename).get_basename()
-        if resource is WuxiaContentDefinition:
-            label = resource.content_id
-        var index := targets.item_count
-        targets.add_item(label)
-        targets.set_item_metadata(index, path)
+        var entries := Array(DirAccess.get_files_at(folder))
+        entries.sort()
+        for filename in entries:
+            if not str(filename).ends_with(".tres"):
+                continue
+            var path := folder.path_join(str(filename))
+            var resource := ResourceLoader.load(path)
+            if mode == "scene" and not (resource is WuxiaMapDefinition or
+                    resource is WuxiaGridMapDefinition or
+                    (resource is WuxiaChapterDefinition and resource.get("scene") is WuxiaChapterSceneDefinition)):
+                continue
+            if mode in ["portrait", "atlas"] and not resource is WuxiaCharacterDefinition:
+                continue
+            var label := str(filename).get_basename()
+            if resource is WuxiaContentDefinition:
+                label = resource.content_id
+            var index := targets.item_count
+            targets.add_item(label)
+            targets.set_item_metadata(index, path)
     if targets.item_count > 0:
         targets.select(0)
 
@@ -683,21 +684,27 @@ func _export_kind_changed() -> void:
     export_target.clear()
     if mode not in ["character", "scene"]:
         return
-    var folder := "res://data/native/characters" if mode == "character" else "res://data/maps"
-    var all_files := Array(DirAccess.get_files_at(folder))
-    all_files.sort()
-    for file in all_files:
-        var path: String = folder.path_join(str(file))
-        if not path.ends_with(".tres"):
+    var folders: Array[String] = ["res://data/native/characters"] if mode == "character" else [
+        "res://data/maps", "res://data/native/chapters"]
+    for folder in folders:
+        var dir := DirAccess.open(folder)
+        if dir == null:
             continue
-        var obj: Resource = ResourceLoader.load(path)
-        if mode == "character" and not obj is WuxiaCharacterDefinition:
-            continue
-        if mode == "scene" and not obj is WuxiaMapDefinition and not obj is WuxiaGridMapDefinition:
-            continue
-        var index := export_target.item_count
-        export_target.add_item(path.get_file().get_basename())
-        export_target.set_item_metadata(index, path)
+        var all_files := Array(DirAccess.get_files_at(folder))
+        all_files.sort()
+        for file in all_files:
+            var path: String = folder.path_join(str(file))
+            if not path.ends_with(".tres"):
+                continue
+            var obj: Resource = ResourceLoader.load(path)
+            if mode == "character" and not obj is WuxiaCharacterDefinition:
+                continue
+            if mode == "scene" and not (obj is WuxiaMapDefinition or obj is WuxiaGridMapDefinition or
+                    (obj is WuxiaChapterDefinition and obj.get("scene") is WuxiaChapterSceneDefinition)):
+                continue
+            var index := export_target.item_count
+            export_target.add_item(path.get_file().get_basename())
+            export_target.set_item_metadata(index, path)
     if export_target.item_count > 0:
         export_target.select(0)
 
