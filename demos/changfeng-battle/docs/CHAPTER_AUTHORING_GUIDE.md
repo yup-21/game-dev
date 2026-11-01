@@ -1,46 +1,41 @@
-# 章节、剧情事件与连续战斗制作指南（V2–V3）
+# 章节、剧情事件与连续战斗制作指南
 
-本阶段验证“第二章只靠数据接入”与“连续两场战斗沿用同一角色运行态”。不实现磁盘存档。
+通用 Resource 创建、Manifest 注册及校验步骤以 [唯一正式内容制作指南](../../../docs/changfeng-native-authoring.md) 为准。本文件专门说明**已有双章节游戏会话的行为边界**，不另建章节索引。
 
-## 章节注册
+## 接入一章剧情
 
-1. 在 `data/chapters/` 新建章节 JSON，并写入 `index.json`。索引顺序的首项为新游戏入口。
-2. 章节指定 `story_path`（剧情 JSON）、`encounter_id`（`data/demo_scenario.json` 中的遭遇）、`next_chapter_id` 和 `scene`。
-3. `scene` 提供背景、探索玩家初始点、NPC 的 `character_id` 与脚点、移动范围、界面文字。运行时使用同一 `opening.tscn` 模板和真实 `RoleSprite`。
-4. `requirements` 是进入战斗的必要 flag 数组；`victory_events` / `defeat_events` 在相应结算时执行。
-5. `ChapterCatalog` 会校验章节路径、剧情索引、NPC 引用、遭遇 ID、下一章指向、事件定义和场景配置。
+1. 在 `data/native/stories/` 创建 `WuxiaStoryDefinition`；对白由 `WuxiaDialogueNodeDefinition`、`WuxiaDialogueChoiceDefinition` 和 `WuxiaStoryEventDefinition` 组合，条件由 `WuxiaFlagRequirementDefinition` 表示。
+2. 在 `data/native/encounters/` 创建 `WuxiaEncounterDefinition`，引用已经登记的角色和地图。为两方配置唯一 actor ID、`team_id`、`controller` 与合法地图脚点。
+3. 在 `data/native/chapters/` 创建 `WuxiaChapterDefinition`，引用 Story 与 `encounter_id`，嵌入 `WuxiaChapterSceneDefinition`（背景、NPC、主角起点和行动范围），并配置 `chapter_order`、`next_chapter_id`、战斗门槛与胜败事件。
+4. 将三个文件分别登记到 `data/content_manifest.tres` 的 `stories`、`encounters`、`chapters`；原生 `ChapterCatalog` 会核对 Story、角色、地图与 Encounter 引用。`GameSession.start_new_game()` 从最小 `chapter_order` 开始；也可在测试中指定 `entry_chapter_id`。
 
-第二章 `river_watch.json` 使用另一张背景、独立信使 NPC、独立遭遇 ID 和条件选择；剧情通过第一幕 `helped_escort` 标志分支，选择结果不会被写死在 `GameSession`。
+现有正式章节是 `rain_escort_prologue.tres` 与 `river_watch.tres`，后者引用独立的信使 NPC、剧情和六人遭遇；增加下一章只需要资源和必要美术，不需要在 `GameSession` 写新分支。
 
-## 剧情事件
+## 对话与事件
 
-`OpeningStory` 的对话节点或选择可附加 `events` 数组；事件到达时由 `take_events()` 一次性送入 `GameSession.apply_story_events()`。目前支持：
+`OpeningStory` 将当前对白节点的事件交给 `GameSession.apply_story_events()`；`StoryEventExecutor` 校验后原子提交：
 
-| 命令 | 效果 |
+| 事件类型 | 效果 |
 | --- | --- |
-| `set_flag` | 设置会话布尔剧情标志 |
-| `grant_clue` | 增加非装备类剧情线索（会话计数） |
-| `grant_item` | 通过 `InventoryRuntime.add()` 向指定 `character_id` 的常驻背包发放物品 |
-| `set_growth` | 通过 `CharacterRuntime.set_growth()` 修改角色永久成长来源 |
+| `set_flag` | 设置布尔剧情标志 |
+| `grant_clue` | 增加剧情线索 |
+| `grant_item` | 发放已注册物品到指定角色背包 |
+| `recruit_character` | 招募已注册角色 |
+| `learn_school` / `switch_school` | 学习或切换已注册门派 |
+| `set_attribute` / `set_growth` | 设置属性或永久成长来源 |
 
-对话选择的 `requires` 数组支持 `{ "flag": "helped_escort", "equals": true }` 条件；仅显示合法选项。章节进入战斗的 `requirements` 使用同一条件格式。
+选项的 `requires`、章节的 `requirements` 都使用 `WuxiaFlagRequirementDefinition`。事件先在角色副本中整体校验，任何一项失败都不会部分修改 flags、背包、装备和成长。`StoryEventExecutor` 不允许直接修改战斗 HP、CTB 或手牌。`return_to_explore` 的 Story 必须配置可以满足的完成条件。
 
-事件提交是原子的：先创建角色快照副本，再统一校验和执行。若任一项无效（未知角色、未知物品、背包上限、属性配置错误），所有 flag、线索、装备和库存都维持原值。执行器不持有 `BattleState`，无法直接改变 HP、CTB、卡区。
+## 两场战斗如何共享角色
 
-`record_story_event("obtain_fragment")` 是旧序章的命名事件兼容桥梁；新章节使用 `events`，无需在会话脚本中添加对应 `match` 分支。
+- `GameSession.start_new_game()` 创建常驻 `CharacterRuntime`，初始物品来自 `WuxiaCharacterDefinition.starting_items`。
+- `GameSession.encounter_options()` 将角色 `battle_build()` 与 `ScenarioDirector` 的 encounter 定义结合，创建本场 `BattleModel`。
+- `BattleModel` 只操作本场的背包副本；通过经过校验的 `inventory_snapshot()` 提交战斗消耗，结算后同步常驻角色。角色装备 UID、词条及成长不允许通过伪造的战斗快照篡改。
+- `advance_chapter()` 保留物品、装备、已学门派、成长和剧情标志；首次胜利奖励只发一次。HP、临时 Buff、当前手牌不跨战斗继承。
 
-## 两场战斗的资源交接
+当前 Demo 尚未提供跨程序重启的磁盘存档。章节背景、动画、真实人物脚点及授权仍需 Godot GUI 人工验收。
 
-- `GameSession.start_new_game()` 创建本次游玩常驻 `CharacterRuntime`，为主角演示配备江行长剑（锐锋词条）、两份金疮药和一颗回气丹。
-- `GameSession.encounter_options()` 将玩家队伍 `battle_build()` 传入 `ScenarioDirector`，按稳定的 `character_id` 绑定本场 actor ID。
-- `BattleModel.reset()` 复制每名队员的背包，出牌、Buff 和消耗命令仍全部由战斗权威系统执行。
-- 结算时 `hd2d_battle.gd` 向会话递交所有我方角色的 `inventory_snapshot()`。会话只接受同一遭遇中我方角色的快照；校验 `instances`、`equipped` 和 `next_uid` 未变化，仅从战斗副本回写 `stacks`。
-- 回写与章节奖励作为一个事务提交。首次战胜遭遇领取一次奖励，点击“重新挑战”不会重复刷奖励。
-- `advance_chapter()` 保留角色属性、学会的武学、成长来源、装备 UID/词条、背包及剧情标志，切换章节配置与剧情图。第二章入场不再发初始物品。
-
-**边界：** 战斗结束暂不继承 HP、临时 Buff 或卡牌手牌；它们由每场战斗重新初始化。没有中途存档、跨重启存档，也没有装备经济/锻造材料消耗。第二章的地图与 NPC 动作采用现有资产临时复用，目的是验证资源与关卡生产链路，不代表正式美术通过审查。
-
-## 自动验收
+## 回归
 
 ```sh
 godot --headless --path demos/changfeng-battle --editor --import --quit
@@ -48,9 +43,4 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_chapte
 godot --headless --path demos/changfeng-battle --script res://checks/test_two_encounter_state.gd
 ```
 
-- `test_chapter_pipeline.gd`：章节/资源/NPC/条件选项、进入遭遇门槛、奖励事务、非法事件回滚。
-- `test_two_encounter_state.gd`：两次真实 `BattleModel` 入场、`USE_ITEM` 消耗、装备防篡改、首次奖励、跨章继承。
-- 旧 `test_demo_flow.gd`、六人战斗与全部武学/角色/装备 CI 必须继续通过。
-- 导出包需要包含章节索引、章节 JSON、信使角色定义及第二章剧情 JSON。
-
-正式人工验收：从标题新游戏进入第一幕 → 首战胜利 → 结算“进入下一幕” → 第二幕探索与信使分支 → 第二战 → 结算药囊数量，返回主菜单后重新开始不继承旧游玩物品。
+完整人工路线：新游戏 → 第一幕 NPC 对话 → 3v3 → 胜利结算 → 第二幕信使 → 3v3 → 物品/装备/奖励确认。不能用 headless PASS 代替人工试玩。
