@@ -2,6 +2,7 @@ extends SceneTree
 ## Direct startup regression for Issue #21.
 ## Importing the project alone does not parse every optional scene script.
 const SCENE_PATH := "res://battle_hd2d.tscn"
+const Art = preload("res://scripts/hd2d_art_catalog.gd")
 
 func _initialize() -> void:
     call_deferred("_run")
@@ -64,8 +65,8 @@ func _run() -> void:
         push_error("HD2D_STARTUP: 6x4 illustrated atlas missing")
         quit(1)
         return
-    var texture: ImageTexture = hero.texture as ImageTexture
-    var rival_texture: ImageTexture = foe.texture as ImageTexture
+    var texture: Texture2D = hero.texture
+    var rival_texture: Texture2D = foe.texture
     if texture == null or rival_texture == null:
         push_error("HD2D_STARTUP: illustrated atlas is not an image texture")
         quit(1)
@@ -91,7 +92,8 @@ func _run() -> void:
         return
     driver.call("play", 0, "attack")
     driver.call("update", 0.16, {})
-    if hero.frame < 12 or hero.frame > 17:
+    var hero_profile: WuxiaActorAnimationProfile = Art.animation_profile_for_character("shen_changfeng")
+    if hero_profile == null or not hero_profile.clip_for("attack").frames.has(hero.frame):
         push_error("HD2D_STARTUP: attack animation frame not selected")
         quit(1)
         return
@@ -103,7 +105,7 @@ func _run() -> void:
         quit(1)
         return
     driver.call("update", 0.65, {})
-    if hero.frame != 19:
+    if not hero_profile.clip_for("hit").frames.has(hero.frame):
         push_error("HD2D_STARTUP: hit reaction did not follow attack")
         quit(1)
         return

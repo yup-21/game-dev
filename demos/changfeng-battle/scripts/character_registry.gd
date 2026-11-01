@@ -10,9 +10,11 @@ var profiles: Dictionary = {}
 var by_actor: Dictionary = {}
 var by_name: Dictionary = {}
 var load_error: String = ""
+var native_content
 
 func _init(manifest_path: String = NativeContent.DEFAULT_MANIFEST) -> void:
     var natives = NativeContent.new(manifest_path)
+    native_content = natives
     if not natives.load_error.is_empty():
         load_error = natives.load_error
         return
@@ -99,6 +101,12 @@ func _valid(d: Variant, schools) -> bool:
         if not candidate.catalog.load_error.is_empty() or not Loadout.apply(d.starting_loadout, candidate):
             return false
     return true
+
+## Live native card for editor/runtime art consumers. The record snapshot above
+## is deliberately immutable, but presentation imports update this Resource.
+func definition_for(id: String) -> WuxiaCharacterDefinition:
+    return native_content.resource_for("character", id) as WuxiaCharacterDefinition
+
 
 func get_profile(id: String) -> Dictionary:
     return profiles.get(id, {}).duplicate(true)

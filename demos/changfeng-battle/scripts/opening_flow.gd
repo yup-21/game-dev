@@ -75,6 +75,9 @@ var temple_picture: TextureRect
 var ground_picture: TextureRect
 var foreground_picture: TextureRect
 var weather_picture: TextureRect
+var foreground_clip: Control
+var weather_clip: Control
+var story_weather_enabled: bool = true
 var ui_font: SystemFont
 var title_font: SystemFont
 var clock: float = 0.0
@@ -159,10 +162,10 @@ func _process(delta: float) -> void:
 		temple_picture.visible = story.phase in ["explore","dialogue","complete"] or (story.phase=="cinematic" and story.cinematic_index > 0)
 	if ground_picture != null:
 		ground_picture.visible = temple_picture != null and temple_picture.visible
-	if foreground_picture != null:
-		foreground_picture.visible = story.phase == "explore"
-	if weather_picture != null:
-		weather_picture.visible = story.phase == "explore"
+	if foreground_clip != null:
+		foreground_clip.visible = story.phase == "explore"
+	if weather_clip != null:
+		weather_clip.visible = story.phase == "explore" and story_weather_enabled
 	queue_redraw()
 
 func _sync_story_sprites(motion: Vector2, delta: float) -> void:
@@ -192,6 +195,20 @@ func _enter_new_game() -> void:
 	var session=_session()
 	if session!=null: session.start_new_game()
 	_load_chapter_content()
+	# The title has no active chapter. A New Game must rebind the selected
+	# native scene instead of retaining the title's legacy/fallback painting.
+	for layer in [temple_picture, ground_picture, foreground_clip, weather_clip]:
+		if layer != null:
+			layer.free()
+	temple_picture = null
+	ground_picture = null
+	foreground_picture = null
+	weather_picture = null
+	foreground_clip = null
+	weather_clip = null
+	story_weather_enabled = true
+	_load_temple_background()
+	_build_temple_picture()
 	story.begin()
 	cinematic_elapsed = 0.0
 	visible_characters = 0.0
@@ -609,10 +626,10 @@ func _build_temple_picture() -> void:
 	add_child(temple_picture)
 	if story_art_profile != null:
 		ground_picture = _add_story_art_layer("GroundArt", story_art_profile.ground, -90)
-		foreground_picture = _add_story_art_layer("ForegroundOcclusion", story_art_profile.foreground, 30)
-		weather_picture = _add_story_art_layer("WeatherOverlay", story_art_profile.weather, 31)
+		foreground_picture = _add_story_art_layer("ForegroundOcclusion", story_art_profile.foreground, 12, true)
+		weather_picture = _add_story_art_layer("WeatherOverlay", story_art_profile.weather, 13, true)
 
-func _add_story_art_layer(label: String, texture: Texture2D, depth: int) -> TextureRect:
+func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to_world: bool = false) -> TextureRect:
 	if texture == null:
 		return null
 	var image := TextureRect.new()
@@ -624,10 +641,35 @@ func _add_story_art_layer(label: String, texture: Texture2D, depth: int) -> Text
 	image.stretch_mode = TextureRect.STRETCH_SCALE
 	image.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	image.z_index = depth
-	image.visible = false
-	add_child(image)
+	if clip_to_world:
+		# Keep foreground and rain above feet, never over the chapter HUD.
+		var clip := Control.new()
+		clip.name = label + "Clip"
+		clip.position = Vector2(0,106)
+		clip.size = Vector2(1600,730)
+		clip.clip_contents = true
+		clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		clip.z_index = depth
+		clip.visible = false
+		image.position = Vector2(0,-106)
+		clip.add_child(image)
+		add_child(clip)
+		if label == "WeatherOverlay":
+			weather_clip = clip
+		else:
+			foreground_clip = clip
+	else:
+		image.z_index = depth
+		image.visible = false
+		add_child(image)
 	return image
+
+
+func set_story_weather_enabled(enabled: bool) -> void:
+	story_weather_enabled = enabled
+	if weather_clip != null:
+		weather_clip.visible = enabled and story.phase == "explore"
+
 
 func _temple_background() -> bool:
 	# The painted TextureRect is a real scene child; calling drawing commands
@@ -640,7 +682,7 @@ func _paint_exploration() -> void:
 		_wet_road(clock)
 		_paint_pavilion(Vector2(1280,570),0.9)
 		_carriage(Vector2(837,625))
-	if story_art_profile == null or story_art_profile.weather == null:
+	if story_weather_enabled and (story_art_profile == null or story_art_profile.weather == null):
 		_rain(clock,110)
 	# Shen Changfeng and the escort elder are now Sprite2D scene children.
 	# Never paint character frames through this CanvasItem.

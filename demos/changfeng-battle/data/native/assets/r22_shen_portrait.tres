@@ -1,14 +1,14 @@
 [gd_resource type="Resource" script_class="WuxiaAssetDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/asset_definition.gd" id="1_def"]
-[ext_resource type="Texture2D" path="res://assets/characters/concepts/shen_changfeng_portrait.png" id="2_image"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/shen_changfeng/portrait_shen_changfeng_fullbody_v01.png" id="2_image"]
 
 [resource]
 script = ExtResource("1_def")
 content_id = "r22_shen_portrait"
 asset_kind = "portrait"
-status = "runtime"
+status = "candidate"
 resource = ExtResource("2_image")
-source = "user_provided_or_generated"
+source = "art-production/candidates/2026-11-01"
 rights = "owner_review_required"
 owner_character_id = "shen_changfeng"

@@ -15,22 +15,23 @@ func _initialize() -> void:
     call_deferred("_run")
 
 func _run() -> void:
-    var bridge_path := "res://assets/scenes/battle/rainy_bridge_battle.webp"
+    var painted_map: WuxiaGridMapDefinition = load(MapBake.DEFAULT_PATH)
+    var bridge_path: String = painted_map.background.resource_path
     var temple_path := "res://assets/scenes/story/ruined_temple_story.webp"
     _check(ResourceLoader.exists(bridge_path) and ResourceLoader.exists(temple_path),
         "both user-supplied paintings must be bundled in this Git tree")
     var bridge: Texture2D = load(bridge_path) as Texture2D
     var temple: Texture2D = load(temple_path) as Texture2D
     _check(bridge!=null and temple!=null and
-        bridge.get_size()==Vector2(1586,992) and temple.get_size()==Vector2(1586,992),
-        "both exact-layout HD paintings imported at 1586x992")
+        bridge.get_size()==Vector2(1600,1000) and temple.get_size()==Vector2(1586,992),
+        "pilot bridge is 1600x1000 and the existing temple is 1586x992")
     var scene: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame
     var model = scene.get("model")
     var painted = scene.get("illustrated_map")
     _check(painted!=null and painted.picture.texture==bridge,
-        "battle must display the actual user-supplied full painted river map")
+        "battle must display the native pilot bridge background")
     _check(scene.get_node_or_null("River")==null and
         scene.get_node_or_null("WuxiaScenery")==null and
         scene.get_node_or_null("Ground_6_4")==null,
@@ -57,8 +58,9 @@ func _run() -> void:
     _check(hero.hframes==6 and hero.vframes==4,
         "2D actor preserves original action atlas frame convention")
     _check(painted.bake.tiles.size()==150
-        and painted.bake.image_rotation_degrees==-6.0,
-        "150 painted tiles are baked and bridge painting is leveled")
+        and painted.bake.image_rotation_degrees==0.0
+        and painted.bake.scene_art != null,
+        "150 game tiles are retained under the pixel-aligned layered bridge")
     var seq = model.state.revision
     painted.update_actor(0,Vector2(6,4),13,false,true)
     _check(hero.frame==13 and model.state.revision==seq,

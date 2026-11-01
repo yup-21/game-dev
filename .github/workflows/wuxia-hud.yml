@@ -195,6 +195,13 @@ jobs:
           timeout --signal=TERM 150s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_opening_story_2d.gd
           test -s demos/changfeng-battle/captures/opening-explore.png
           test -s demos/changfeng-battle/captures/opening-dialogue.png
+      - name: Capture two-resolution art-pilot candidate overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 150s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_art_pilot_candidates.gd
+          test -s demos/changfeng-battle/captures/art-pilot/pilot-1600x1000.png
+          test -s demos/changfeng-battle/captures/art-pilot/pilot-1440x900.png
       - name: Upload screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -203,5 +210,6 @@ jobs:
           path: |
             demos/changfeng-battle/captures/hd2d-validation/*.png
             demos/changfeng-battle/captures/opening-*.png
+            demos/changfeng-battle/captures/art-pilot/*.png
             demos/changfeng-battle/assets/scenes/story/ruined_temple_story.webp
           if-no-files-found: warn

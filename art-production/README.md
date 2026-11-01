@@ -20,8 +20,8 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 1. 游戏方向为原创国风手绘、原生 2D 与具有纵深和遮挡的 HD-2D 构图；不强制低像素。
 2. 角色 identity、场景镜头、色板和材质必须先冻结参考，再出变体。所有 AI 候选保存模型版本、提示词、参考图、修改记录及权属。
-3. 候选放在 `candidates/YYYY-MM-DD/<asset-id>/`，源图和编辑母版保留。文件名建议 `<asset-type>_<asset-id>_<variant>_vNN.png`。人工批准前不可覆盖正式运行素材。
-4. 角色最终 Atlas / 场景贴图在通过审核后，按 Godot 原生资源接口接入 `demos/changfeng-battle/assets/` 和相应 `.tres`，并加入正式 Content Manifest。**不要用这里的 JSON/YAML 工作单替代原生运行时定义**。
+3. 候选放在 `candidates/YYYY-MM-DD/<asset-id>/`，源图和编辑母版保留。文件名建议 `<asset-type>_<asset-id>_<variant>_vNN.png`。可在待审核分支将 candidate 显式绑定到原生 `.tres` 进行技术试玩，**不得因此将其标记 approved**；旧版本留存以便回退。
+4. 角色 Atlas / 场景贴图通过预检后可先按 Godot 原生资源接口接入 `demos/changfeng-battle/assets/` 和相应 `.tres`，并加入正式 Content Manifest；正式美术批准是独立的后续门槛。**不要用这里的 JSON/YAML 工作单替代原生运行时定义**。
 5. 因为当前游戏已有资源引用，旧 `demos/changfeng-battle/assets/concepts/` 中的历史素材**暂不搬迁**；保持其路径和可追溯性。新批次统一进入本目录。
 6. `candidate` 表示待审核，`runtime` 表示可加载，不等于 `approved`；批准需技术、视觉、实机、授权共同通过。
 
@@ -40,4 +40,4 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 Godot 4.7.2 编辑器内的 **Art Production** Dock 提供引用图像导出、角色动画与场景分层导入、批次预检、版本化替换和事务回退。运行时仍只读取 `.tres` Resource，离线清单不充当内容定义。
 
-参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。新导入资源默认 `candidate`，未经人工审查不得标记为 `approved` 或覆盖正式美术。
+参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。新导入资源默认 `candidate`，未经人工审查不得标记为 `approved`。本轮审核分支将候选资源接入原生角色卡及地图供试玩；历史资源保留在生产库存与过渡回退路径，后续经视觉/权属批准逐步淘汰。

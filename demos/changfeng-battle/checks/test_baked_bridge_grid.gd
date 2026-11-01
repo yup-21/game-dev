@@ -23,8 +23,9 @@ func _run() -> void:
     _check(baked.tiles.size()==150 and baked.terrain.size()==150,
         "every square of 15x10 has a tile and authoritative terrain")
     _check(baked.origin.y==48.0 and baked.step.x==90.0 and baked.step.y==68.0
-        and baked.image_rotation_degrees==-6.0 and baked.image_scale>=1.1,
-        "flat orthographic tile lattice and independently rotated painting")
+        and baked.image_rotation_degrees==0.0 and baked.image_scale==1.0
+        and baked.scene_art != null and baked.scene_art.valid_for(Vector2i(1600,1000)),
+        "flat orthographic tile lattice and native layered painting")
     var rows_align := true
     var hitboxes_roundtrip := true
     var blocked_rejected := true
@@ -101,8 +102,8 @@ func _run() -> void:
         "real HD-2D scene owns the baked grid projection")
     if painted!=null:
         var model=scene.get("model")
-        _check(painted.picture.rotation_degrees==-6.0 and painted.picture.texture!=null,
-            "runtime artwork rotated to level real wooden bridge")
+        _check(painted.picture.rotation_degrees==0.0 and painted.picture.texture!=null,
+            "runtime layered artwork uses pixel-aligned unrotated canvas")
         _check(model.state.terrain==baked.terrain,
             "presentation and gameplay share precisely the same 150 tile types")
         for cell in baked.terrain:

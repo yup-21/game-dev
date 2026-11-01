@@ -2,6 +2,7 @@ extends SceneTree
 ## Facing belongs to the authoritative combatant, never an inferred UI pose.
 const Model=preload("res://scripts/battle_model.gd")
 const Facing=preload("res://scripts/actor_facing.gd")
+const Art=preload("res://scripts/hd2d_art_catalog.gd")
 var checks := 0
 var failures := 0
 
@@ -126,17 +127,22 @@ func _run() -> void:
         var sprite: Sprite2D=protagonist.get_node_or_null("ActionSprite") as Sprite2D
         var enemy_sprite: Sprite2D=opponent.get_node_or_null("ActionSprite") as Sprite2D
         _check(sprite!=null and enemy_sprite!=null,"painted scene owns two visible action sprites")
+        var hero_west: bool = false
+        var foe_west: bool = false
         if sprite!=null and enemy_sprite!=null:
-            _check(bool(sprite.get_meta("faces_left_unflipped",false)) and bool(enemy_sprite.get_meta("faces_left_unflipped",false)),
-                "supplied 6x4 atlases face WEST before flip, unlike generated fallback")
-            _check(sprite.flip_h and not enemy_sprite.flip_h,
-                "initial east-facing hero and west-facing enemy are mirrored against authored atlas")
+            hero_west = Art.animation_profile_for_character("shen_changfeng").faces_left_unflipped
+            foe_west = Art.animation_profile_for_character("pursuer_captain").faces_left_unflipped
+            _check(bool(sprite.get_meta("faces_left_unflipped",not hero_west)) == hero_west
+                and bool(enemy_sprite.get_meta("faces_left_unflipped",not foe_west)) == foe_west,
+                "combatant sprites inherit their respective native facing profiles")
+            _check(sprite.flip_h == hero_west and enemy_sprite.flip_h != foe_west,
+                "initial east/west teams orient from authored atlas facing")
             var driver=scene.get("animation_driver")
             driver.set_facing(0,Facing.NORTH)
-            _check(sprite.flip_h and driver.facing_for(0)==Facing.NORTH,
+            _check(sprite.flip_h == hero_west and driver.facing_for(0)==Facing.NORTH,
                 "north movement retains prior horizontal silhouette")
             driver.set_facing(0,Facing.EAST)
-            _check(sprite.flip_h,"east heading mirrors a west-facing supplied atlas")
+            _check(sprite.flip_h == hero_west,"east heading follows the atlas-facing flag")
         var battle=scene.get("model")
         var step: Dictionary=battle.submit(battle.request("MOVE",0,{"target_cell":Vector2i(5,4)}))
         _check(bool(step.get("success",false)),"rendered scene move is legal")
@@ -145,7 +151,7 @@ func _run() -> void:
             for _frame in range(8):
                 await process_frame
             if sprite!=null:
-                _check(not sprite.flip_h,"model MOVE event turns west-facing atlas back to its unflipped pose")
+                _check(sprite.flip_h != hero_west,"model MOVE event turns sprite west relative to its authored pose")
             _check(scene.get("animation_driver").facing_for(0)==Facing.WEST,
                 "sprite animation track maintains authoritative westward direction")
     # Multi-party CTB scene uses the same state and pointers.

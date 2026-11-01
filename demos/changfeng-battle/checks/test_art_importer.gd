@@ -28,6 +28,13 @@ func _initialize() -> void:
     if not str(atlas.get("error", "")).is_empty():
         _fail("Valid atlas plan rejected: " + str(atlas.get("error", "")))
         return
+    var invalid_clip: Dictionary = Importer.plan("atlas", source,
+        "res://data/native/characters/shen_changfeng.tres", {
+            "columns": 6, "rows": 4,
+            "clip_profile_path": "res://data/art_previews/not_a_profile.tres"})
+    if str(invalid_clip.get("error", "")).is_empty():
+        _fail("Missing custom clip profile was accepted")
+        return
     var vfx_plan: Dictionary = Importer.plan("vfx", source, "",
         {"asset_id": "art.vfx_probe_test", "event_kind": "TEST_VFX",
          "columns": 6, "rows": 4, "frame_indices": PackedInt32Array([0, 1, 2])})
@@ -71,6 +78,20 @@ func _initialize() -> void:
         _fail("Chapter story scenes are missing from the scene import selector")
         return
     dock.queue_free()
+    var bridge_dir: String = production_dir.path_join("candidates/2026-11-01/rainy_bridge")
+    var bridge_plan: Dictionary = Importer.plan("scene",
+        bridge_dir.path_join("scene_rainy_bridge_background_v01.png"),
+        "res://data/maps/rainy_bridge.tres", {
+            "ground": bridge_dir.path_join("scene_rainy_bridge_ground_v01.png"),
+            "foreground": bridge_dir.path_join("scene_rainy_bridge_foreground_v01.png"),
+            "weather": bridge_dir.path_join("scene_rainy_bridge_weather_v01.png"),
+            "story_preview": bridge_dir.path_join("scene_rainy_bridge_composite_preview_v01.png")
+        })
+    var bridge_card: WuxiaGridMapDefinition = load("res://data/maps/rainy_bridge.tres")
+    if not str(bridge_plan.get("error", "")).is_empty() or bridge_plan["files"].size() != 5 or \
+            str(bridge_plan.get("current_binding", "")) != bridge_card.background.resource_path:
+        _fail("Scene import must preflight the current map background and composite preview")
+        return
     var bad := Importer.plan("portrait", source, "res://data/maps/rainy_bridge.tres", {})
     if str(bad.get("error", "")).is_empty():
         _fail("Portrait import accepted map Resource")

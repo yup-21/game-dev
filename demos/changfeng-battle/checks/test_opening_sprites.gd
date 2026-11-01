@@ -48,11 +48,11 @@ func _run() -> void:
         and elder.body.texture==Art.story_pose_for_character("escort_elder")
         and elder.body.material==null
         and elder.body.frame_coords==Vector2i.ZERO,
-        "injured elder uses dedicated transparent vector pose, no generated model")
+        "injured elder uses dedicated transparent story pose, no generated model")
     _check(not layer.visible,"story role sprites stay hidden during title")
-    _check(str(registry.for_name("老镖头").art.static_pose)
-        == "res://assets/characters/concepts/escort_elder_injured.svg",
-        "injured vector file is registered on the character dossier")
+    var registered_pose: String = str(registry.for_name("老镖头").art.static_pose)
+    _check(registered_pose.contains("/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png"),
+        "new injured PNG is registered on the character dossier")
     opening.call("_enter_new_game")
     await process_frame
     _check(not layer.visible,"cinematic still portraits do not clash with scene sprites")
@@ -64,14 +64,16 @@ func _run() -> void:
     _check(hero.position==start and elder.position==Vector2(1050,570),
         "player and NPC keep precise world feet anchors")
     var tex = hero.body.texture
+    var authored: WuxiaActorAnimationProfile = Art.animation_profile_for_character("shen_changfeng")
+    var expected_east_flip: bool = authored.faces_left_unflipped if authored != null else true
     hero.set_motion(Vector2.RIGHT,0.15)
     _check(hero.animation_player is AnimationPlayer
         and hero.animation_player.current_animation == "move"
-        and hero.walking and hero.body.frame_coords.y==1
-        and hero.body.flip_h and hero.body.texture==tex,
-        "eastward walking mirrors the west-authored pose sheet")
+        and hero.walking and (authored == null or authored.clip_for("move").frames.has(hero.body.frame))
+        and hero.body.flip_h == expected_east_flip and hero.body.texture==tex,
+        "eastward walking follows the authored profile direction and move frames")
     hero.set_motion(Vector2.LEFT,0.14)
-    _check(not hero.body.flip_h,"westward walking uses the native unflipped pose")
+    _check(hero.body.flip_h != expected_east_flip,"westward walking mirrors the authored facing")
     elder.set_motion(Vector2.RIGHT,1.2)
     _check(elder.animation_player == null and not elder.walking
         and elder.body.frame_coords==Vector2i.ZERO,
