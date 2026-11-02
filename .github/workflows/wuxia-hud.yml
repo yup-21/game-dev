@@ -262,6 +262,7 @@ jobs:
           test -s demos/changfeng-battle/captures/shen-rig-first/art-templates/art_frames.json
           test -s demos/changfeng-battle/captures/shen-rig-first/art-templates/master-rig-template.svg
           test -s demos/changfeng-battle/captures/shen-rig-first/bind-pose.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/humanoid-core-only.png
           for action in idle walk attack_sword; do
             test -s "demos/changfeng-battle/captures/shen-rig-first/$action.gif"
           done
