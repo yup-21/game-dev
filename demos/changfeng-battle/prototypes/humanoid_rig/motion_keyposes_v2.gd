@@ -21,7 +21,8 @@ const LEG_REST := {
 
 # Eight sample poses include the loop seam (last point = first point).
 const WALK_TIMES := [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80]
-const WALK_BOB := [4.0, 5.0, 6.0, 5.0, 4.0, 5.0, 6.0, 5.0, 4.0]
+const WALK_BOB := [7.0, 5.0, 8.0, 4.0, 7.0, 5.0, 8.0, 4.0, 7.0]
+const WALK_PELVIS_X := [-1.0, 0.0, 2.0, 3.0, 1.0, -2.0, -1.0, 0.0, -1.0]
 const FRONT_TOE_X := [35.0, 31.0, 27.0, 20.0, 15.0, 18.0, 27.0, 35.0, 35.0]
 const FRONT_LIFT := [0.0, 0.0, 0.0, 0.0, 0.0, 8.0, 7.0, 0.0, 0.0]
 const REAR_TOE_X := [-19.0, -17.0, -5.0, 2.0, 2.0, -3.0, -11.0, -19.0, -19.0]
@@ -29,7 +30,8 @@ const REAR_LIFT := [0.0, 8.0, 8.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Preparation / pull-back / drive / impact / follow-through / settle.
 const ATTACK_TIMES := [0.0, 0.12, 0.24, 0.36, 0.43, 0.57, 0.76]
-const ATTACK_BOB := [4.0, 6.0, 8.0, 7.0, 4.0, 5.0, 4.0]
+const ATTACK_BOB := [4.0, 7.0, 10.0, 8.0, 4.0, 6.0, 4.0]
+const ATTACK_PELVIS_X := [0.0, -3.0, -6.0, 8.0, 14.0, 7.0, 0.0]
 const ATTACK_FRONT_X := [29.0, 28.0, 30.0, 40.0, 42.0, 35.0, 29.0]
 const ATTACK_FRONT_LIFT := [0.0, 0.0, 4.0, 6.0, 0.0, 0.0, 0.0]
 const ATTACK_REAR_X := [-8.0, -10.0, -14.0, -13.0, -11.0, -10.0, -8.0]
@@ -72,11 +74,11 @@ static func _ornament(owner: Node, animation: Animation, decorations: Dictionary
 
 
 static func _leg_angles(prefix: String, toe_x: float, lift: float,
-        pelvis_bob: float) -> Vector3:
+        pelvis_bob: float, pelvis_dx: float) -> Vector3:
     # 2-bone IK in the authored rest-pose coordinate frame.
     # Keep heel/toe at or above the floor, with a level foot through stance.
     var rest: Dictionary = LEG_REST[prefix]
-    var hip: Vector2 = rest["hip"] + Vector2(0.0, pelvis_bob)
+    var hip: Vector2 = rest["hip"] + Vector2(pelvis_dx, pelvis_bob)
     var knee_rest: Vector2 = rest["knee"]
     var ankle_rest: Vector2 = rest["ankle"]
     var foot_offset: Vector2 = rest["toe"] - ankle_rest
@@ -100,11 +102,11 @@ static func _leg_angles(prefix: String, toe_x: float, lift: float,
 
 
 static func _grounded_legs(owner: Node, animation: Animation, bones: Dictionary,
-        times: Array, bob: Array, toe_front: Array, lift_front: Array,
+        times: Array, bob: Array, pelvis_x: Array, toe_front: Array, lift_front: Array,
         toe_rear: Array, lift_rear: Array) -> void:
     var pelvis_keys: Array = []
     for i in range(times.size()):
-        pelvis_keys.append([times[i], Vector2(0.0, -100.0 + float(bob[i]))])
+        pelvis_keys.append([times[i], Vector2(float(pelvis_x[i]), -100.0 + float(bob[i]))])
     _track(owner, animation, bones["Pelvis"], "position", pelvis_keys, false)
     for group in ["Front", "Rear"]:
         var hip_keys: Array = []
@@ -113,7 +115,7 @@ static func _grounded_legs(owner: Node, animation: Animation, bones: Dictionary,
         for i in range(times.size()):
             var x: float = float(toe_front[i]) if group == "Front" else float(toe_rear[i])
             var lift: float = float(lift_front[i]) if group == "Front" else float(lift_rear[i])
-            var ik := _leg_angles(group, x, lift, float(bob[i]))
+            var ik := _leg_angles(group, x, lift, float(bob[i]), float(pelvis_x[i]))
             hip_keys.append([times[i], ik.x])
             knee_keys.append([times[i], ik.y])
             ankle_keys.append([times[i], ik.z])
@@ -139,15 +141,15 @@ static func idle(owner: Node, bones: Dictionary, decorations: Dictionary) -> Ani
 
 static func walk(owner: Node, bones: Dictionary, decorations: Dictionary) -> Animation:
     var a := _animation(0.80, true)
-    _grounded_legs(owner, a, bones, WALK_TIMES, WALK_BOB, FRONT_TOE_X,
-        FRONT_LIFT, REAR_TOE_X, REAR_LIFT)
-    _angles(owner, a, bones, "Waist", [0, 2, 3, 1, 0, -2, -3, -1, 0], WALK_TIMES)
-    _angles(owner, a, bones, "Chest", [-2, -1, 2, 3, 2, 1, -2, -3, -2], WALK_TIMES)
-    _angles(owner, a, bones, "Neck", [1, 1, 0, -1, -1, -1, 0, 1, 1], WALK_TIMES)
-    _angles(owner, a, bones, "FrontShoulder", [11, 7, 1, -10, -12, -8, 2, 9, 11], WALK_TIMES)
-    _angles(owner, a, bones, "RearShoulder", [-11, -7, -1, 10, 12, 8, -2, -9, -11], WALK_TIMES)
-    _angles(owner, a, bones, "FrontElbow", [-4, -8, -10, -5, 3, 4, 0, -3, -4], WALK_TIMES)
-    _angles(owner, a, bones, "RearElbow", [4, 6, 9, 5, -3, -4, 0, 3, 4], WALK_TIMES)
+    _grounded_legs(owner, a, bones, WALK_TIMES, WALK_BOB, WALK_PELVIS_X,
+        FRONT_TOE_X, FRONT_LIFT, REAR_TOE_X, REAR_LIFT)
+    _angles(owner, a, bones, "Waist", [12, 10, 8, 11, 12, 10, 8, 11, 12], WALK_TIMES)
+    _angles(owner, a, bones, "Chest", [7, 9, 11, 8, 7, 9, 11, 8, 7], WALK_TIMES)
+    _angles(owner, a, bones, "Neck", [-5, -4, -6, -5, -5, -4, -6, -5, -5], WALK_TIMES)
+    _angles(owner, a, bones, "FrontShoulder", [-48, -54, -61, -52, -46, -38, -49, -53, -48], WALK_TIMES)
+    _angles(owner, a, bones, "RearShoulder", [25, 32, 42, 35, 25, 20, 33, 32, 25], WALK_TIMES)
+    _angles(owner, a, bones, "FrontElbow", [60, 69, 73, 65, 60, 55, 62, 66, 60], WALK_TIMES)
+    _angles(owner, a, bones, "RearElbow", [-57, -62, -68, -62, -57, -49, -58, -63, -57], WALK_TIMES)
     _ornament(owner, a, decorations, "HairTip", [5, 7, 4, -2, -5, -6, -3, 2, 5], WALK_TIMES)
     _ornament(owner, a, decorations, "CoatFrontTip", [5, 7, 2, -3, -5, -7, -2, 2, 5], WALK_TIMES)
     _ornament(owner, a, decorations, "CoatBackTip", [-5, -7, -2, 3, 5, 7, 2, -2, -5], WALK_TIMES)
@@ -157,7 +159,7 @@ static func walk(owner: Node, bones: Dictionary, decorations: Dictionary) -> Ani
 static func attack(owner: Node, bones: Dictionary, decorations: Dictionary,
         weapon_socket: Marker2D) -> Animation:
     var a := _animation(0.76, false)
-    _grounded_legs(owner, a, bones, ATTACK_TIMES, ATTACK_BOB,
+    _grounded_legs(owner, a, bones, ATTACK_TIMES, ATTACK_BOB, ATTACK_PELVIS_X,
         ATTACK_FRONT_X, ATTACK_FRONT_LIFT, ATTACK_REAR_X,
         [0, 0, 0, 0, 0, 0, 0])
     _angles(owner, a, bones, "Waist", [0, -4, -9, 6, 12, 4, 0], ATTACK_TIMES)
