@@ -3,7 +3,9 @@ extends SceneTree
 
 const SCENE := preload("res://prototypes/shen_bone2d_v2/shen_bone2d_v2_validation.tscn")
 const OUTPUT := "res://captures/shen-bone2d-v2/"
-const CAPTURE_RECT := Rect2i(500, 150, 600, 700)
+# Close crop for checking shoulders, hands, knees and boot contact.
+# The full overview remains 1600x1000 at the true 200px game scale.
+const CAPTURE_RECT := Rect2i(575, 450, 450, 350)
 
 var scene: Node
 var player: AnimationPlayer
