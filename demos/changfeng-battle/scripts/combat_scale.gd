@@ -22,5 +22,11 @@ static func actor_height_pixels() -> float:
 static func footprint_radius_pixels() -> float:
     return to_pixels(FOOTPRINT_RADIUS_UNITS)
 
+## Runtime transforms must not resize or rotate painted ground separately
+## from its world-space walkable and obstacle coordinates.
+static func valid_map_art_transform(scale: float, degrees: float) -> bool:
+    return is_finite(scale) and is_finite(degrees) and \
+        absf(scale - 1.0) <= 0.001 and absf(degrees) <= 0.001
+
 static func valid_map_pixels_per_unit(value: float) -> bool:
     return is_finite(value) and absf(value - PIXELS_PER_UNIT) <= 0.001
