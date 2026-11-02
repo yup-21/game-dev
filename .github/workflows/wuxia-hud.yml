@@ -137,6 +137,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_rig_first.gd
       - name: Validate grounded footsteps and authored sword key poses
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_motion_v2.gd
+      - name: Validate source-frame traced actual Skeleton2D poses
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_true_source_pose_trace.gd
       - name: Verify vertical and mixed map viewport scroll without world-scale drift
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_world_viewport_scroll.gd
       - name: Test north-south streets and four-way junctions at the same world scale
@@ -276,6 +278,16 @@ jobs:
           for action in idle walk attack_sword; do
             test -s "demos/changfeng-battle/captures/shen-rig-first/$action.gif"
           done
+      - name: Compare each original sprite to the real fitted Godot bones
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_true_source_pose_trace.gd
+          python3 tools/build_shen_true_trace_visuals.py
+          for action in idle walk attack; do
+            test -s "demos/changfeng-battle/captures/shen-rig-first/true-source-trace/$action-pose-comparison.png"
+          done
+          test -s demos/changfeng-battle/captures/shen-rig-first/true-source-trace/joint-errors.json
       - name: Visual retarget old Shen material onto universal body rig
         shell: bash
         run: |
