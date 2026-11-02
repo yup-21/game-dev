@@ -88,3 +88,29 @@ PR 的 `Original Wuxia HUD regression / visual-evidence` job 会自动生成：
 - 原图中被躯干/袖子遮挡的肢体区域无法凭现有像素恢复。
 - 剑部件取自现有攻击帧，和侧身待机主体并非真正同一张分层原稿，因此连接处只用于技术验证。
 - 本轮不以“达到正式角色美术质量”为通过条件；判断目标是 Bone2D 工作流是否明显优于继续修 24 帧图集。
+
+
+## V2：使用专用拆件素材重新验证
+
+V1 的视觉验收判定为不合格。失败原因是把完整人物帧按矩形区域裁切后直接挂 Bone2D，素材本身缺少被遮挡区域、关节重叠和独立衣摆/头发，因此旋转后不可避免出现纸片感、重复像素和切口。V2 不再沿用该拆法。
+
+V2 使用本轮新生成的两套专用素材：基础拆件表 + 动作换件表。验证实现采用：
+
+- 人体主结构：`Skeleton2D + Bone2D`。
+- 长发与三片衣摆：`Polygon2D`，每片使用两根骨骼的顶点权重，验证柔性变形而不是刚性旋转。
+- 待机/行走：主要依赖骨架和 Mesh 权重。
+- 出剑：切换攻击躯干、挥剑手臂+剑、动态头发、动态衣摆和两条攻击腿附件，再用 AnimationPlayer 驱动整体蓄力/挥出/回收。
+- 格挡：切换更紧凑的格挡躯干和双手持剑附件。
+- Rig 根节点继续锁定世界脚点，并统一到项目 200px 可见角色高度。
+
+V2 预览入口：
+
+`res://prototypes/shen_bone2d_v2/shen_bone2d_v2_validation.tscn`
+
+V2 自动视觉产物：
+
+`captures/shen-bone2d-v2/overview.png`、`keyframes-contact-sheet.png` 以及 `idle.gif`、`walk.gif`、`attack_sword.gif`、`guard.gif`。
+
+### 原型存储说明
+
+由于当前 GitHub 连接不能直接提交本地二进制文件，V2 的紧凑 WebP 验证 Atlas 暂时以四个 `atlas.b64.*` 文本分片存放，并在运行时解码。这只是本 PR 的技术验证手段。若 V2 视觉验收通过，正式素材应以正常 PNG/WebP 独立文件进入 art-production / Godot 导入流程，不保留 base64 分片方案。
