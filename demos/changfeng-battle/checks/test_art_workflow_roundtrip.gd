@@ -110,9 +110,9 @@ func _initialize() -> void:
         _fail("Pilot full import transaction failed: " + str(full_import["error"]))
         return
     var full_log: String = str(full_import["journal"])
-    var live_map: WuxiaGridMapDefinition = ResourceLoader.load("res://data/maps/rainy_bridge.tres")
+    var live_map: WuxiaMapDefinition = ResourceLoader.load("res://data/maps/rainy_bridge.tres")
     live_map.background = load("res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp")
-    live_map.rotation_degrees = -6.0
+    live_map.image_rotation_degrees = -6.0
     live_map.image_scale = 1.1
     for planned_import in batch:
         var copied: String = Importer.copy_images(planned_import["files"])
@@ -130,9 +130,9 @@ func _initialize() -> void:
         Transaction.rollback(full_log, true)
         _fail("Pilot full import commit failed: " + full_saved)
         return
-    var imported_map: WuxiaGridMapDefinition = load("res://data/maps/rainy_bridge.tres")
+    var imported_map: WuxiaMapDefinition = load("res://data/maps/rainy_bridge.tres")
     if imported_map.background != imported_map.scene_art.background or imported_map.scene_art.story_preview == null or \
-            imported_map.rotation_degrees != 0.0 or imported_map.image_scale != 1.0:
+            imported_map.image_rotation_degrees != 0.0 or imported_map.image_scale != 1.0:
         _fail("Full import left old map, transformation or story art active")
         return
     var live_hero: WuxiaCharacterDefinition = ResourceLoader.load(character_path)

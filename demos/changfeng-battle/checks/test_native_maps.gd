@@ -68,8 +68,8 @@ func _run() -> void:
             sound_path = false
     check(sound_path, "detour segments are continuously collision-free")
     var legacy = MapBake.new()
-    check(legacy.error.is_empty() and not legacy.polygon_mode and legacy.terrain.size() == 150,
-        "original authored bridge JSON remains unchanged and valid")
+    check(legacy.error.is_empty() and legacy.polygon_mode and legacy.terrain.size() == 150,
+        "new bridge polygon replaces the old authored grid mask")
     check(ResourceLoader.exists("res://addons/wuxia_map_editor/plugin.gd","Script")
         and ResourceLoader.exists("res://addons/wuxia_map_editor/map_painter_canvas.gd","Script"),
         "editor painter scripts are bundled for Inspector use")

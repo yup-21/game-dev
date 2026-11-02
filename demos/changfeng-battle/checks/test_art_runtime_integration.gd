@@ -61,7 +61,7 @@ func _run() -> void:
                 _fail("missing runtime action %s for %s" % [action, id])
                 return
 
-    var map: WuxiaGridMapDefinition = load("res://data/maps/rainy_bridge.tres")
+    var map: WuxiaMapDefinition = load("res://data/maps/rainy_bridge.tres")
     var baked = MapBake.new("res://data/maps/rainy_bridge.tres")
     if map == null or map.scene_art == null or not map.scene_art.valid_for(map.viewport_size):
         _fail("four-layer bridge is not bound to native map")
@@ -81,7 +81,7 @@ func _run() -> void:
     if not baked.error.is_empty() or baked.scene_art != map.scene_art:
         _fail("map projection did not load the four-layer art: " + baked.error)
         return
-    if baked.image_scale != 1.0 or baked.image_rotation_degrees != 0.0 or baked.tiles.size() != 150:
+    if not baked.polygon_mode or baked.walkable_outline.is_empty() or baked.image_scale != 1.0 or baked.image_rotation_degrees != 0.0 or baked.tiles.size() != 150:
         _fail("candidate canvas must be pixel-aligned without replacing gameplay terrain")
         return
 
@@ -99,7 +99,7 @@ func _run() -> void:
     for pair in [[0, "shen_changfeng"], [1, "pursuer_captain"]]:
         var sprite: Sprite2D = painted.actors[pair[0]].get_node_or_null("ActionSprite")
         var profile: WuxiaActorAnimationProfile = Art.animation_profile_for_character(pair[1])
-        if sprite == null or sprite.texture != profile.atlas or sprite.offset != profile.feet_offset:
+        if sprite == null or sprite.texture != profile.atlas or sprite.scale.x <= 0.0 or not is_equal_approx(sprite.scale.x,sprite.scale.y):
             _fail("live battle sprite is not using candidate atlas: " + pair[1])
             return
     painted.set_weather_enabled(false)

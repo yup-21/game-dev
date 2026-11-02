@@ -32,10 +32,10 @@ func _run() -> void:
         var clipped: PackedVector2Array=space.trim_path(path,5.0)
         check(clipped.size()==2 and absf(clipped[-1].distance_to(start)-5.0)<0.01,
             "fractional move budget")
-    var water: Vector2 = space.bake.cell_center(Vector2i(7,2))
+    var water: Vector2 = space.bake.cell_center(Vector2i(7,9))
     check(not space.is_valid_position(water,8.0)
         and space.find_path(start,water,8.0).is_empty(),
-        "painted river rejects both landing and path")
+        "outside painted bridge rejects both landing and path")
     space.set_actors({8:{"position":near,"radius":10.0,"alive":true}})
     check(not space.is_valid_position(near,8.0)
         and space.is_valid_position(near,8.0,8),

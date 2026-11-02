@@ -2,11 +2,13 @@
 extends Control
 ## Small canvas drawing map-space vertices. No tile paint or JSON export.
 signal polygon_ready(vertices: PackedVector2Array, terrain_kind: String)
+signal walkable_ready(vertices: PackedVector2Array)
 signal marker_ready(position: Vector2, marker_kind: String)
 var map_resource: WuxiaMapDefinition
 var active: bool = false
 var terrain_kind: String = "blocked"
 var drawing_marker: bool = false
+var drawing_walkable: bool = false
 var marker_kind: String = "spawn"
 var draft: PackedVector2Array = PackedVector2Array()
 
@@ -19,10 +21,19 @@ func edit_map(value: WuxiaMapDefinition) -> void:
     draft.clear()
     active = false
     drawing_marker = false
+    drawing_walkable = false
     queue_redraw()
 
 func begin_polygon(kind: String) -> void:
     terrain_kind = kind
+    drawing_marker = false
+    drawing_walkable = false
+    draft.clear()
+    active = true
+    queue_redraw()
+
+func begin_walkable() -> void:
+    drawing_walkable = true
     drawing_marker = false
     draft.clear()
     active = true
@@ -31,15 +42,20 @@ func begin_polygon(kind: String) -> void:
 func begin_marker(kind: String) -> void:
     marker_kind = kind
     drawing_marker = true
+    drawing_walkable = false
     draft.clear()
     active = true
     queue_redraw()
 
 func finish_polygon() -> bool:
     if not active or drawing_marker or draft.size() < 3: return false
-    polygon_ready.emit(draft.duplicate(),terrain_kind)
+    if drawing_walkable:
+        walkable_ready.emit(draft.duplicate())
+    else:
+        polygon_ready.emit(draft.duplicate(),terrain_kind)
     draft.clear()
     active = false
+    drawing_walkable = false
     queue_redraw()
     return true
 
@@ -47,6 +63,7 @@ func cancel_polygon() -> void:
     draft.clear()
     active = false
     drawing_marker = false
+    drawing_walkable = false
     queue_redraw()
 
 func _image_rect() -> Rect2:
@@ -78,11 +95,16 @@ func _draw() -> void:
     if map_resource == null or map_resource.background == null:
         return
     var rect: Rect2 = _image_rect()
-    draw_texture_rect(map_resource.background,rect,false)
+    var preview: Texture2D = map_resource.background
+    if map_resource.scene_art != null and map_resource.scene_art.story_preview != null:
+        preview = map_resource.scene_art.story_preview
+    draw_texture_rect(preview,rect,false)
     var bounds: Rect2 = map_resource.area_bounds
     var p0: Vector2 = _screen_point(bounds.position,rect)
     var p1: Vector2 = _screen_point(bounds.end,rect)
     draw_rect(Rect2(p0,p1-p0),Color(0.35,0.95,0.67),false,2.0)
+    if not map_resource.walkable_outline.is_empty():
+        _draw_path(map_resource.walkable_outline,rect,Color(0.33,1.0,0.57),true)
     for obstacle in map_resource.obstacles:
         if obstacle is WuxiaMapPolygonDefinition:
             _draw_path(obstacle.vertices,rect,Color(1.0,0.53,0.30),true)

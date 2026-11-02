@@ -15,7 +15,7 @@ func _initialize() -> void:
     call_deferred("_run")
 
 func _run() -> void:
-    var painted_map: WuxiaGridMapDefinition = load(MapBake.DEFAULT_PATH)
+    var painted_map: WuxiaMapDefinition = load(MapBake.DEFAULT_PATH)
     var bridge_path: String = painted_map.background.resource_path
     var temple_path := "res://assets/imported/in-use/legacy/scenes/story/ruined_temple_story.webp"
     _check(ResourceLoader.exists(bridge_path) and ResourceLoader.exists(temple_path),
@@ -43,11 +43,11 @@ func _run() -> void:
     var right: Vector2=painted.point_for_cell(Vector2i(8,4))
     _check(left.y==bridge_point.y and right.y==bridge_point.y
         and left.x<bridge_point.x and bridge_point.x<right.x,
-        "bridge is a continuous horizontal orthographic grid row")
-    var river: Vector2=painted.point_for_cell(Vector2i(7,8))
-    _check(model.state.terrain[Vector2i(7,8)]=="water"
-        and not model.state.passable(Vector2i(7,8)),
-        "painted foreground rapids are blocked, not a fictional ford")
+        "derived tactical centres remain horizontal within the painted world")
+    var river: Vector2=painted.point_for_cell(Vector2i(7,9))
+    _check(model.state.terrain[Vector2i(7,9)]=="rock"
+        and not model.state.passable(Vector2i(7,9)),
+        "painted image outside walking contour is blocked, not a fictional ford")
     _check(painted.cell_from_screen(bridge_point,model.state.terrain)==Vector2i(7,4),
         "map projection inverses the real traversable bridge")
     _check(painted.cell_from_screen(river,model.state.terrain)==Vector2i(-1,-1),

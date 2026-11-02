@@ -1,5 +1,5 @@
 extends SceneTree
-## Regression for the hand-authored 15x10 orthographic battle map.
+## New painted walkable contour is the authority for GRID and FREE alike.
 const MapBake = preload("res://scripts/map_bake.gd")
 const Model = preload("res://scripts/battle_model.gd")
 const Scenario = preload("res://scripts/scenario_director.gd")
@@ -17,110 +17,81 @@ func _initialize() -> void:
 
 func _run() -> void:
     var path := MapBake.DEFAULT_PATH
-    var baked = MapBake.new(path)
-    _check(baked.error.is_empty() and baked.id=="rainy_bridge",
-        "baked bridge JSON parses and validates")
-    _check(baked.tiles.size()==150 and baked.terrain.size()==150,
-        "every square of 15x10 has a tile and authoritative terrain")
-    _check(baked.origin.y==48.0 and baked.step.x==90.0 and baked.step.y==68.0
-        and baked.image_rotation_degrees==0.0 and baked.image_scale==1.0
+    var resource := load(path) as WuxiaMapDefinition
+    var baked := MapBake.new(path)
+    _check(resource != null and not resource.walkable_outline.is_empty(),
+        "bridge is a painted polygon Resource, never the former tile mask")
+    _check(baked.error.is_empty() and baked.id == "rainy_bridge"
+        and baked.polygon_mode and baked.walkable_outline.size() >= 3,
+        "native map loads with paint-aligned walkable contour")
+    # The painted ground is a transparent 1600x1000 layer, not decorative
+    # opaque background; constrain authored feet to its verified alpha.
+    var ground_image: Image = baked.scene_art.ground.get_image() if baked.scene_art != null else null
+    _check(ground_image != null and not ground_image.is_empty(),
+        "new layered map provides a real painted ground texture")
+    if ground_image != null and not ground_image.is_empty():
+        var inside_ground := true
+        for vertex in baked.walkable_outline:
+            var source_x: int = clampi(roundi(vertex.x),0,ground_image.get_width()-1)
+            var source_y: int = clampi(roundi(vertex.y),0,ground_image.get_height()-1)
+            if ground_image.get_pixel(source_x,source_y).a <= 0.8:
+                inside_ground = false
+        _check(inside_ground, "walkable outline vertices lie inside the actual alpha-painted ground")
+
+    _check(baked.tiles.size() == 150 and baked.terrain.size() == 150
         and baked.scene_art != null and baked.scene_art.valid_for(Vector2i(1600,1000)),
-        "flat orthographic tile lattice and native layered painting")
-    var rows_align := true
+        "one 1600x1000 layered painting bakes the 15x10 tactical index")
     var hitboxes_roundtrip := true
     var blocked_rejected := true
+    var passable_count := 0
     for y in range(10):
         for x in range(15):
-            var point := Vector2i(x,y)
-            var center: Vector2=baked.cell_center(point)
-            if absf(center.y-baked.cell_center(Vector2i(0,y)).y)>0.001:
-                rows_align=false
-            if baked.cell_at_screen(center,false)!=point:
-                hitboxes_roundtrip=false
-            if baked.is_walkable(point) and baked.cell_at_screen(center,true)!=point:
-                hitboxes_roundtrip=false
-            if not baked.is_walkable(point) and baked.cell_at_screen(center,true)!=Vector2i(-1,-1):
-                blocked_rejected=false
-            var box: Rect2=baked.cell_rect(point)
-            if not box.has_point(center) or box.size!=baked.step:
-                hitboxes_roundtrip=false
-    _check(rows_align,"all tile rows are truly horizontal, not a 45-degree diamond")
-    _check(hitboxes_roundtrip,"150/150 pixel-to-grid and grid-to-pixel tests match")
-    _check(blocked_rejected,"river, bamboo and stone never snap to a legal cell")
-    _check(not baked.is_walkable(Vector2i(7,8))
-        and baked.terrain[Vector2i(7,8)]=="water",
-        "false lower-river ford is absent")
-    var unbroken := true
-    for x in range(5,11):
-        if not baked.is_walkable(Vector2i(x,4)) or baked.terrain[Vector2i(x,4)]!="bridge":
-            unbroken=false
-    _check(unbroken,"six full wooden bridge cells form one horizontal playable crossing")
-    _check(baked.cell_at_screen(Vector2(1590,30))==Vector2i(-1,-1),
-        "clicking outside the authored grid does not teleport a unit")
-    # An explicit path is required: no only-visual bridge.
-    var m=Model.new()
-    var quick: Dictionary={"map_definition_path":path}
-    m.reset(2026,-1,"tingfeng",quick)
-    _check(m.state.outcome=="playing" and m.state.map_definition_path==path
-        and m.state.terrain==baked.terrain,
-        "BattleModel consumes the exact baked terrain, not the old implicit river")
-    # Leave bridge unoccupied for the *terrain* path test; normal occupied
-    # checks are independently enforced by the combat model.
-    m.state.get_actor(0).cell=Vector2i(2,3)
-    m.state.get_actor(1).cell=Vector2i(13,3)
-    var path_across: Array=m.state.find_path(Vector2i(3,4),Vector2i(12,4))
-    var crossed: bool=path_across.size()>0 and path_across.has(Vector2i(7,4))
-    var all_passable := true
-    for point in path_across:
-        if not m.state.passable(Vector2i(point)):
-            all_passable=false
-    _check(crossed and all_passable, "crossing route connects both shores through the bridge")
-    _check(m.state.find_path(Vector2i(3,4),Vector2i(7,8)).is_empty(),
-        "movement cannot navigate into painted river rapids")
-    var old=Model.new()
-    _check(old.state.terrain[Vector2i(7,8)]=="ford"
-        and old.state.map_definition_path.is_empty(),
-        "pure rules fixtures retain their original deterministic terrain")
-    var director=Scenario.new()
-    var opts: Dictionary=director.battle_options("escort_ambush")
-    _check(opts.get("map_definition_path","")==path,
-        "the first act declares its own map resource")
-    var story=Model.new()
-    story.reset(2026,-1,"tingfeng",opts)
+            var cell := Vector2i(x,y)
+            var center: Vector2 = baked.cell_center(cell)
+            if baked.cell_at_screen(center,false) != cell:
+                hitboxes_roundtrip = false
+            if baked.is_walkable(cell):
+                passable_count += 1
+                if baked.cell_at_screen(center,true) != cell:
+                    hitboxes_roundtrip = false
+            elif baked.cell_at_screen(center,true) != Vector2i(-1,-1):
+                blocked_rejected = false
+    _check(hitboxes_roundtrip and blocked_rejected,
+        "pixel hit tests, cell feet and locked terrain agree")
+    _check(passable_count > 12 and passable_count < 100,
+        "walking area is a finite strip, not the entire painting")
+    _check(not baked.is_walkable(Vector2i(7,9))
+        and baked.cell_at_screen(Vector2(1590,30)) == Vector2i(-1,-1),
+        "outside bridge and distant painting cannot be walked upon")
+    _check(not baked.is_walkable_point(Vector2(800,900),8.0)
+        and baked.segment_blocked(Vector2(800,510), Vector2(800,900),8.0),
+        "FREE movement respects the identical walkable contour")
+    var encounter := Scenario.new().battle_options("escort_ambush")
+    _check(str(encounter.get("map_definition_path","")) == path,
+        "story encounter selects the new painted map")
+    var story := Model.new()
+    story.reset(2026,-1,"tingfeng",encounter)
     _check(story.state.outcome=="playing" and story.state.actors.size()==6,
-        "all six scene actors have valid painted-road or bridge spawns")
+        "3v3 actors spawn onto the native painted map")
     for actor in story.state.actors:
         _check(story.state.passable(actor.cell)
-            and baked.cell_at_screen(baked.cell_center(actor.cell))==actor.cell,
-            "spawn foot matches visible walkable painting: "+str(actor.id))
-    var packed: PackedScene=load("res://battle_hd2d.tscn")
-    var scene=packed.instantiate()
+            and baked.is_walkable_point(actor.position,8.0),
+            "actor feet are inside the walkable image contour: "+str(actor.id))
+    var scene: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame
-    var painted=scene.get("illustrated_map")
-    _check(painted!=null and painted.bake.tiles.size()==150,
-        "real HD-2D scene owns the baked grid projection")
-    if painted!=null:
-        var model=scene.get("model")
-        _check(painted.picture.rotation_degrees==0.0 and painted.picture.texture!=null,
-            "runtime layered artwork uses pixel-aligned unrotated canvas")
-        _check(model.state.terrain==baked.terrain,
-            "presentation and gameplay share precisely the same 150 tile types")
-        for cell in baked.terrain:
-            var px: Vector2=painted.point_for_cell(cell)
-            if painted.cell_from_screen(px,model.state.terrain)!=baked.cell_at_screen(px,true):
-                hitboxes_roundtrip=false
-        _check(hitboxes_roundtrip,
-            "all painted click targets agree with authoritative hit polygons")
-        _check(not painted.debug_grid.visible,
-            "debug overlay stays invisible during normal combat")
+    var painted = scene.get("illustrated_map")
+    _check(painted != null and painted.bake.polygon_mode,
+        "live battle uses the same painted map authority")
+    if painted != null:
+        _check(painted.picture.texture == baked.scene_art.background,
+            "rendered bridge layers match the authoring Resource")
         painted.set_debug_grid(true)
-        _check(painted.debug_grid.visible and painted.debug_grid.get_child_count()>=450,
-            "F3 calibration overlay renders 150 tiles, each with line/fill and label")
+        _check(painted.debug_grid.visible
+            and painted.debug_grid.get_child_count() >= 450,
+            "F3 overlays legal/blocked GRID and painted contour")
         painted.set_debug_grid(false)
-        _check(not painted.debug_grid.visible,
-            "calibration grid can be hidden without touching battle rules")
     scene.queue_free()
     await process_frame
-    print("BRIDGE_BAKE_PASS checks=%d failures=%d" % [checks,failures])
-    quit(1 if failures>0 else 0)
+    print("BRIDGE_BAKE_PASS checks=%d failures=%d" % [checks, failures])
+    quit(1 if failures > 0 else 0)

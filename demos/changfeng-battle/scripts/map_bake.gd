@@ -18,6 +18,7 @@ var height: int = 0
 var terrain: Dictionary = {}
 var tiles: Dictionary = {}
 var polygon_mode: bool = false
+var walkable_outline: PackedVector2Array = PackedVector2Array()
 var polygons: Array = []
 var markers: Dictionary = {}
 var area_bounds: Rect2 = Rect2()
@@ -163,6 +164,23 @@ func _load_native(path: String) -> void:
             area_bounds.end.y > viewport_size.y or image_scale <= 0.0:
         error = "Invalid native artwork/calibration"
         return
+    var authored_walkable: Variant = spec.get("walkable_outline", [])
+    if not authored_walkable is Array or authored_walkable.size() > 64:
+        error = "Invalid painted walkable outline"
+        return
+    for coordinates in authored_walkable:
+        if not _valid_pair(coordinates):
+            error = "Invalid painted walkable point"
+            return
+        var point: Vector2 = _vec(coordinates)
+        if not area_bounds.has_point(point):
+            error = "Walkable point outside painted map bounds"
+            return
+        walkable_outline.append(point)
+    if not walkable_outline.is_empty() and (walkable_outline.size() < 3 or \
+            Geometry2D.triangulate_polygon(walkable_outline).is_empty()):
+        error = "Malformed painted walkable outline"
+        return
     var source_polygons: Variant = spec.get("obstacles",[])
     if not source_polygons is Array or source_polygons.size() > 64:
         error = "Invalid native obstacle count"
@@ -193,6 +211,9 @@ func _load_native(path: String) -> void:
         if not area_bounds.has_point(point) or markers.has(str(marker.get("id",""))):
             error = "Duplicate or out-of-bounds map marker"
             return
+        if not walkable_outline.is_empty() and not Geometry2D.is_point_in_polygon(point,walkable_outline):
+            error = "Marker outside painted walkable ground"
+            return
         for obstacle in polygons:
             if Geometry2D.is_point_in_polygon(point,obstacle.points):
                 error = "Map marker placed inside a blocked polygon"
@@ -208,9 +229,11 @@ func _load_native(path: String) -> void:
             var cell := Vector2i(x,y)
             var centre: Vector2 = cell_center(cell)
             var terrain_kind: String = "road"
+            if not walkable_outline.is_empty() and not Geometry2D.is_point_in_polygon(centre,walkable_outline):
+                terrain_kind = "rock"
             for obstacle in polygons:
                 if Geometry2D.is_point_in_polygon(centre,obstacle.points):
-                    terrain_kind = str(obstacle.kind)
+                    terrain_kind = "rock" if str(obstacle.kind) == "blocked" else str(obstacle.kind)
                     break
             var walkable: bool = terrain_kind == "road"
             terrain[cell] = terrain_kind
@@ -222,6 +245,11 @@ func is_walkable_point(point: Vector2, radius: float = 0.0) -> bool:
     if not polygon_mode or radius < 0.0 or not is_finite(point.x) or \
             not is_finite(point.y) or not area_bounds.grow(-radius).has_point(point):
         return false
+    if not walkable_outline.is_empty():
+        if not Geometry2D.is_point_in_polygon(point,walkable_outline):
+            return false
+        if radius > 0.0 and _near_polygon_edge(point,walkable_outline,radius):
+            return false
     for obstacle in polygons:
         var points: PackedVector2Array = obstacle.points
         if Geometry2D.is_point_in_polygon(point,points):
@@ -233,8 +261,28 @@ func is_walkable_point(point: Vector2, radius: float = 0.0) -> bool:
                 return false
     return true
 
+func _near_polygon_edge(point: Vector2, polygon: PackedVector2Array, radius: float) -> bool:
+    for i in range(polygon.size()):
+        var a: Vector2 = polygon[i]
+        var b: Vector2 = polygon[(i + 1) % polygon.size()]
+        if point.distance_to(Geometry2D.get_closest_point_to_segment(point,a,b)) < radius + 0.001:
+            return true
+    return false
+
+func _crosses_outline(start: Vector2, finish: Vector2) -> bool:
+    if not Geometry2D.is_point_in_polygon(start,walkable_outline) or \
+            not Geometry2D.is_point_in_polygon(finish,walkable_outline):
+        return true
+    for i in range(walkable_outline.size()):
+        if Geometry2D.segment_intersects_segment(start,finish,walkable_outline[i],
+                walkable_outline[(i+1)%walkable_outline.size()]) != null:
+            return true
+    return false
+
 func segment_blocked(start: Vector2, finish: Vector2, radius: float = 0.0) -> bool:
     if not polygon_mode: return false
+    if not walkable_outline.is_empty() and _crosses_outline(start, finish):
+        return true
     for obstacle in polygons:
         var points: PackedVector2Array = obstacle.points
         if Geometry2D.is_point_in_polygon(start,points) or \

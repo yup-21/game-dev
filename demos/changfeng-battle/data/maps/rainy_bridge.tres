@@ -1,49 +1,18 @@
-[gd_resource type="Resource" script_class="WuxiaGridMapDefinition" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scripts/content/grid_map_definition.gd" id="1_grid"]
-[ext_resource type="Script" path="res://scripts/content/grid_terrain_key_definition.gd" id="2_key"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png" id="3_background"]
-
-[ext_resource type="Resource" path="res://data/native/scene_art/rainy_bridge.tres" id="4_scene_art"]
-
-[sub_resource type="Resource" id="Key_0"]
-script = ExtResource("2_key")
-symbol = "T"
-terrain_kind = "bamboo"
-
-[sub_resource type="Resource" id="Key_1"]
-script = ExtResource("2_key")
-symbol = "R"
-terrain_kind = "rock"
-
-[sub_resource type="Resource" id="Key_2"]
-script = ExtResource("2_key")
-symbol = "W"
-terrain_kind = "water"
-
-[sub_resource type="Resource" id="Key_3"]
-script = ExtResource("2_key")
-symbol = "."
-terrain_kind = "road"
-
-[sub_resource type="Resource" id="Key_4"]
-script = ExtResource("2_key")
-symbol = "B"
-terrain_kind = "bridge"
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png" id="2_background"]
+[ext_resource type="Resource" path="res://data/native/scene_art/rainy_bridge.tres" id="3_art"]
 
 [resource]
-script = ExtResource("1_grid")
+script = ExtResource("1_map")
 content_id = "rainy_bridge"
-background = ExtResource("3_background")
-scene_art = ExtResource("4_scene_art")
-source_size = Vector2i(1600, 1000)
+background = ExtResource("2_background")
+scene_art = ExtResource("3_art")
 viewport_size = Vector2i(1600, 1000)
-rotation_degrees = 0
+area_bounds = Rect2(80, 320, 1440, 200)
+image_rotation_degrees = 0.0
 image_scale = 1.0
-columns = 15
-rows_count = 10
-first_center = Vector2(154, 48)
-cell_size = Vector2(90, 68)
-painted_rows = Array[String](["TTTTTTWWWWWWTTT", "RRRRRRWWWWWWRRR", "RRRRRRWWWWWWRRR", ".....RWWWWWW...", "R....BBBBBB....", "RRRRRWWWWWWRR..", "RRRRRWWWWWWRR..", "R...RWWWWWWRR..", "R...RWWWWWWRR..", "RR..RWWWWWWR..."])
-terrain_keys = Array[Resource]([SubResource("Key_0"), SubResource("Key_1"), SubResource("Key_2"), SubResource("Key_3"), SubResource("Key_4")])
-notes = "Pilot 2026-11-01 visual candidate; original 15x10 terrain and spawns are preserved pending painted-geometry review. Manually baked from the provided painted bridge, after rotating the artwork -6 degrees. Bridge is a single horizontal playable lane at logical row 4, columns 5–10; foreground rapids have no ford. X increases to the right; Y increases down. Nonwalkable image features have explicit tile types."
+walkable_outline = PackedVector2Array(88, 350, 225, 351, 375, 352, 525, 353, 675, 354, 825, 355, 975, 356, 1125, 357, 1275, 358, 1425, 359, 1512, 360, 1512, 478, 1425, 479, 1275, 480, 1125, 481, 975, 482, 825, 483, 675, 484, 525, 485, 375, 486, 225, 487, 88, 487)
+obstacles = Array[Resource]([])
+markers = Array[Resource]([])

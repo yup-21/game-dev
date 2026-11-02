@@ -8,6 +8,9 @@ extends WuxiaContentDefinition
 @export var area_bounds: Rect2 = Rect2(100,100,1400,800)
 @export var image_rotation_degrees: float = 0.0
 @export var image_scale: float = 1.0
+## Outline is the only traversable ground in the original painted image.
+## Empty means older rectangular maps; never derives movement from a backdrop.
+@export var walkable_outline: PackedVector2Array = PackedVector2Array()
 @export var obstacles: Array[Resource] = []
 @export var markers: Array[Resource] = []
 
@@ -19,6 +22,16 @@ func to_record() -> Dictionary:
             viewport_size.x < 100 or viewport_size.y < 100 or \
             area_bounds.size.x < 100 or area_bounds.size.y < 100:
         return {}
+    var ground_polygon: Array = []
+    if not walkable_outline.is_empty():
+        if walkable_outline.size() < 3 or walkable_outline.size() > 64 or \
+                Geometry2D.triangulate_polygon(walkable_outline).is_empty():
+            return {}
+        for point in walkable_outline:
+            if not is_finite(point.x) or not is_finite(point.y) or \
+                    not area_bounds.has_point(point):
+                return {}
+            ground_polygon.append([point.x, point.y])
     var normalized: Array = []
     for obstacle in obstacles:
         if not obstacle is WuxiaMapPolygonDefinition:
@@ -32,7 +45,8 @@ func to_record() -> Dictionary:
     for marker in markers:
         if not marker is WuxiaMapMarkerDefinition: return {}
         var record: Dictionary = marker.to_record()
-        if record.is_empty() or seen_markers.has(str(record.id)) or not area_bounds.has_point(marker.position):
+        if record.is_empty() or seen_markers.has(str(record.id)) or not area_bounds.has_point(marker.position) or \
+                (not walkable_outline.is_empty() and not Geometry2D.is_point_in_polygon(marker.position, walkable_outline)):
             return {}
         seen_markers[str(record.id)] = true
         anchors.append(record)
@@ -44,4 +58,5 @@ func to_record() -> Dictionary:
             area_bounds.size.x,area_bounds.size.y],
         "rotation_degrees":image_rotation_degrees,
         "image_scale":image_scale,
+        "walkable_outline":ground_polygon,
         "obstacles":normalized,"markers":anchors}

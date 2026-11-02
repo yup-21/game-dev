@@ -47,10 +47,9 @@ func _run() -> void:
             and encounter.get("map_id") == "rainy_bridge",
             "fixed six-actor encounter, seed and map: " + str(id))
     var map_record: Dictionary = native.entries("map").get("rainy_bridge", {})
-    check(map_record.get("grid", {}).get("columns") == 15
-        and map_record.get("grid", {}).get("rows") == 10
-        and map_record.get("rows", []).size() == 10,
-        "painted map retains 15x10 collision geometry")
+    check(map_record.get("walkable_outline", []).size() >= 3
+        and map_record.get("viewport", []) == [1600, 1000],
+        "painted map declares a polygon in the new image coordinate space")
     var schools = Schools.new()
     var techniques = Techniques.new()
     var encounters = Scenarios.new()
