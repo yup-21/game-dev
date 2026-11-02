@@ -1,0 +1,111 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://prototypes/shen_rig_first/shen_skeleton_first.gd" id="1"]
+
+[node name="ShenSkeletonFirst" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Skeleton2D" type="Skeleton2D" parent="."]
+position = Vector2(800, 730)
+
+[node name="Root" type="Bone2D" parent="Skeleton2D"]
+position = Vector2(0, 0)
+
+[node name="Pelvis" type="Bone2D" parent="Skeleton2D/Root"]
+position = Vector2(0, -100)
+
+[node name="Waist" type="Bone2D" parent="Skeleton2D/Root/Pelvis"]
+position = Vector2(0, -24)
+
+[node name="Chest" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist"]
+position = Vector2(2, -23)
+
+[node name="Neck" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest"]
+position = Vector2(6, -19)
+
+[node name="Head" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/Neck"]
+position = Vector2(1, -18)
+
+[node name="RearShoulder" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest"]
+position = Vector2(-14, -1)
+
+[node name="RearElbow" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/RearShoulder"]
+position = Vector2(-13, 31)
+
+[node name="RearWrist" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/RearShoulder/RearElbow"]
+position = Vector2(11, 21)
+
+[node name="RearHand" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/RearShoulder/RearElbow/RearWrist"]
+position = Vector2(8, 5)
+
+[node name="FrontShoulder" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest"]
+position = Vector2(12, 0)
+
+[node name="FrontElbow" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/FrontShoulder"]
+position = Vector2(17, 30)
+
+[node name="FrontWrist" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/FrontShoulder/FrontElbow"]
+position = Vector2(3, 20)
+
+[node name="FrontHand" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/FrontShoulder/FrontElbow/FrontWrist"]
+position = Vector2(5, 6)
+
+[node name="SwordGrip" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/FrontShoulder/FrontElbow/FrontWrist/FrontHand"]
+position = Vector2(1, -2)
+
+[node name="SwordBlade" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/FrontShoulder/FrontElbow/FrontWrist/FrontHand/SwordGrip"]
+position = Vector2(45, -54)
+
+[node name="RearHip" type="Bone2D" parent="Skeleton2D/Root/Pelvis"]
+position = Vector2(-12, 5)
+
+[node name="RearKnee" type="Bone2D" parent="Skeleton2D/Root/Pelvis/RearHip"]
+position = Vector2(-6, 42)
+
+[node name="RearAnkle" type="Bone2D" parent="Skeleton2D/Root/Pelvis/RearHip/RearKnee"]
+position = Vector2(0, 38)
+
+[node name="RearFoot" type="Bone2D" parent="Skeleton2D/Root/Pelvis/RearHip/RearKnee/RearAnkle"]
+position = Vector2(10, 10)
+
+[node name="FrontHip" type="Bone2D" parent="Skeleton2D/Root/Pelvis"]
+position = Vector2(12, 5)
+
+[node name="FrontKnee" type="Bone2D" parent="Skeleton2D/Root/Pelvis/FrontHip"]
+position = Vector2(7, 40)
+
+[node name="FrontAnkle" type="Bone2D" parent="Skeleton2D/Root/Pelvis/FrontHip/FrontKnee"]
+position = Vector2(-1, 40)
+
+[node name="FrontFoot" type="Bone2D" parent="Skeleton2D/Root/Pelvis/FrontHip/FrontKnee/FrontAnkle"]
+position = Vector2(11, 10)
+
+[node name="HairRoot" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/Neck/Head"]
+position = Vector2(-17, -2)
+
+[node name="HairMid" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/Neck/Head/HairRoot"]
+position = Vector2(-17, 41)
+
+[node name="HairTip" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/Neck/Head/HairRoot/HairMid"]
+position = Vector2(-5, 37)
+
+[node name="CoatRoot" type="Bone2D" parent="Skeleton2D/Root/Pelvis"]
+position = Vector2(-3, -10)
+
+[node name="CoatBackMid" type="Bone2D" parent="Skeleton2D/Root/Pelvis/CoatRoot"]
+position = Vector2(-25, 48)
+
+[node name="CoatBackTip" type="Bone2D" parent="Skeleton2D/Root/Pelvis/CoatRoot/CoatBackMid"]
+position = Vector2(-11, 51)
+
+[node name="CoatFrontMid" type="Bone2D" parent="Skeleton2D/Root/Pelvis/CoatRoot"]
+position = Vector2(28, 46)
+
+[node name="CoatFrontTip" type="Bone2D" parent="Skeleton2D/Root/Pelvis/CoatRoot/CoatFrontMid"]
+position = Vector2(18, 52)
+
+[node name="CoatInnerMid" type="Bone2D" parent="Skeleton2D/Root/Pelvis/CoatRoot"]
+position = Vector2(5, 50)
+
+[node name="CoatInnerTip" type="Bone2D" parent="Skeleton2D/Root/Pelvis/CoatRoot/CoatInnerMid"]
+position = Vector2(3, 52)
