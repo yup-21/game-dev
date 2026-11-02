@@ -57,12 +57,33 @@ func _draw() -> void:
                 continue
             draw_circle(_joint(name), 2.4,
                 Color(0.10, 0.94, 1.0) if not uncertain.has(name) else Color(0.60, 0.67, 0.72))
+        # Weapon is an independent marker chain, not a body bone.
+        # Draw its REAL Godot grip and tip, including cases where the
+        # source artwork is too damaged to trust the authored sword-tip.
+        var hand: Bone2D = _bones.get("FrontHand")
+        if hand != null:
+            var grip: Marker2D = hand.get_node("WeaponSocket") as Marker2D
+            var tip: Marker2D = grip.get_node("WeaponTip") as Marker2D
+            var actual_grip: Vector2 = skeleton.to_local(grip.global_position)
+            var actual_tip: Vector2 = skeleton.to_local(tip.global_position)
+            var weapon_color := Color(0.86, 0.87, 0.90, 0.90)
+            if uncertain.has("SwordBlade"):
+                weapon_color = Color(0.65, 0.67, 0.70, 0.72)
+            draw_line(actual_grip, actual_tip, weapon_color, 2.1, true)
+            draw_circle(actual_grip, 3.5, Color(0.95, 0.70, 0.28))
+            draw_circle(actual_tip, 2.7, weapon_color)
     if show_goals:
         for name in targets:
-            if not _bones.has(name):
+            var current: Vector2
+            if _bones.has(name):
+                current = _joint(name)
+            elif name == "SwordGrip" or name == "SwordBlade":
+                var hand: Bone2D = _bones.get("FrontHand")
+                var marker: Marker2D = hand.get_node("WeaponSocket") as Marker2D
+                current = skeleton.to_local(marker.global_position) if name == "SwordGrip" else skeleton.to_local(marker.get_node("WeaponTip").global_position)
+            else:
                 continue
             var goal: Vector2 = targets[name]
-            var current := _joint(name)
             var low_confidence := uncertain.has(name)
             var cross_color := Color(0.96, 0.70, 0.18) if low_confidence else Color(1.0, 0.35, 0.50)
             draw_line(goal + Vector2(-3, 0), goal + Vector2(3, 0), cross_color, 1.1)
