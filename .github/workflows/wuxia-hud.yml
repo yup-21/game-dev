@@ -139,6 +139,12 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_motion_v2.gd
       - name: Validate source-frame traced actual Skeleton2D poses
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_true_source_pose_trace.gd
+      - name: Generate independent candidate PNG cutouts from actual prior artwork
+        run: |
+          python3 tools/build_shen_rig_art_templates.py
+          python3 tools/build_shen_bone_candidate_cutouts.py
+      - name: Verify 20 actual PNG textures bind to Godot Bone2D
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_candidate_binding.gd
       - name: Verify vertical and mixed map viewport scroll without world-scale drift
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_world_viewport_scroll.gd
       - name: Test north-south streets and four-way junctions at the same world scale
@@ -278,6 +284,19 @@ jobs:
           for action in idle walk attack_sword; do
             test -s "demos/changfeng-battle/captures/shen-rig-first/$action.gif"
           done
+      - name: Bind 20 separate candidate PNGs and capture Godot animation visuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/build_shen_bone_candidate_cutouts.py
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_candidate_bound.gd
+          python3 tools/build_shen_candidate_visual_evidence.py
+          test -s demos/changfeng-battle/captures/shen-rig-first/candidate-bound/bind-with-bones.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/candidate-bound/keyframes.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/candidate-cutout-sheet.png
+          for action in idle walk attack_sword; do
+            test -s "demos/changfeng-battle/captures/shen-rig-first/candidate-bound/$action.gif"
+          done
       - name: Compare each original sprite to the real fitted Godot bones
         shell: bash
         run: |
@@ -309,5 +328,6 @@ jobs:
             demos/changfeng-battle/captures/shen-bone2d-v2/**
             demos/changfeng-battle/captures/shen-bone2d-v3/**
             demos/changfeng-battle/captures/shen-rig-first/**
+            demos/changfeng-battle/prototypes/shen_rig_first/candidate_cutouts/**
             demos/changfeng-battle/assets/scenes/story/ruined_temple_story.webp
           if-no-files-found: warn
