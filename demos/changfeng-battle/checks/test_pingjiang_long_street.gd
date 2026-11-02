@@ -64,5 +64,30 @@ func _run() -> void:
         "mouse-to-world and world-to-screen remain invertible after scrolling")
     check(Scale.actor_height_pixels() == 200.0 and radius == 24.0,
         "actor scale and ground footprint did not change")
+    # Instantiate the actual playable QA scene, including layered art and
+    # Shen Changfeng's existing sprite, then drive the SAME camera function.
+    var packed := load("res://scenes/pingjiang_scroll_qa.tscn") as PackedScene
+    check(packed != null, "standalone QA scene is loadable")
+    if packed != null:
+        var visual: Node2D = packed.instantiate() as Node2D
+        root.add_child(visual)
+        await process_frame
+        var stage: Node2D = visual.get("stage")
+        var player: Node2D = visual.get("player")
+        var sprite: Sprite2D = visual.get("actor_sprite")
+        check(stage != null and player != null and sprite != null,
+            "layered long street instantiates with the current Shen Changfeng atlas")
+        if stage != null and player != null:
+            check(stage.position == Vector2.ZERO, "playable scene starts at western camera clamp")
+            player.position = center
+            visual.call("_update_camera_and_status")
+            check(stage.position == Vector2(-1600, 0),
+                "real scene follows player from first to second screen")
+            player.position = right
+            visual.call("_update_camera_and_status")
+            check(stage.position == Vector2(-3200, 0),
+                "real scene clamps camera at eastern boundary")
+        visual.queue_free()
+        await process_frame
     print("PINGJIANG_SCROLL_PASS failures=%d" % failures)
     quit(1 if failures > 0 else 0)
