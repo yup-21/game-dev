@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=8 format=3]
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-03/pingjiang_north_lane/scene_pingjiang_north_lane_background_v01.svg" id="2_bg"]
+[ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_north_lane_qa.tres" id="3_art"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
+
+[sub_resource type="Resource" id="PlayerStart"]
+script = ExtResource("4_marker")
+marker_id = "player_start"
+marker_kind = "spawn"
+position = Vector2(800, 3500)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromSouth"]
+script = ExtResource("4_marker")
+marker_id = "from_south"
+marker_kind = "spawn"
+position = Vector2(800, 3500)
+radius = 24.0
+
+[sub_resource type="Resource" id="ToSouth"]
+script = ExtResource("4_marker")
+marker_id = "to_south"
+marker_kind = "zone_exit"
+position = Vector2(800, 3860)
+radius = 85.0
+exit_side = "south"
+target_zone_id = "pingjiang_east_market_qa"
+target_entry_id = "from_north"
+
+[sub_resource type="Resource" id="NorthEnd"]
+script = ExtResource("4_marker")
+marker_id = "north_end"
+marker_kind = "vfx_anchor"
+position = Vector2(800, 230)
+radius = 24.0
+
+[resource]
+script = ExtResource("1_map")
+content_id = "pingjiang_north_lane_qa"
+background = ExtResource("2_bg")
+scene_art = ExtResource("3_art")
+viewport_size = Vector2i(1600, 4000)
+pixels_per_unit = 80.0
+primary_axis = "vertical"
+area_bounds = Rect2(0, 0, 1600, 4000)
+image_rotation_degrees = 0.0
+image_scale = 1.0
+walkable_outline = PackedVector2Array(565, 30, 1035, 30, 1035, 3970, 565, 3970)
+obstacles = Array[Resource]([])
+markers = Array[Resource]([SubResource("PlayerStart"), SubResource("FromSouth"), SubResource("ToSouth"), SubResource("NorthEnd")])
