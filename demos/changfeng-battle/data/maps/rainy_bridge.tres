@@ -1,49 +1,18 @@
-[gd_resource type="Resource" script_class="WuxiaGridMapDefinition" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scripts/content/grid_map_definition.gd" id="1_grid"]
-[ext_resource type="Script" path="res://scripts/content/grid_terrain_key_definition.gd" id="2_key"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png" id="3_background"]
-
-[ext_resource type="Resource" path="res://data/native/scene_art/rainy_bridge.tres" id="4_scene_art"]
-
-[sub_resource type="Resource" id="Key_0"]
-script = ExtResource("2_key")
-symbol = "T"
-terrain_kind = "bamboo"
-
-[sub_resource type="Resource" id="Key_1"]
-script = ExtResource("2_key")
-symbol = "R"
-terrain_kind = "rock"
-
-[sub_resource type="Resource" id="Key_2"]
-script = ExtResource("2_key")
-symbol = "W"
-terrain_kind = "water"
-
-[sub_resource type="Resource" id="Key_3"]
-script = ExtResource("2_key")
-symbol = "."
-terrain_kind = "road"
-
-[sub_resource type="Resource" id="Key_4"]
-script = ExtResource("2_key")
-symbol = "B"
-terrain_kind = "bridge"
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/rainy_bridge/scene_rainy_bridge_background_v01.png" id="2_background"]
+[ext_resource type="Resource" path="res://data/native/scene_art/rainy_bridge.tres" id="3_art"]
 
 [resource]
-script = ExtResource("1_grid")
+script = ExtResource("1_map")
 content_id = "rainy_bridge"
-background = ExtResource("3_background")
-scene_art = ExtResource("4_scene_art")
-source_size = Vector2i(1600, 1000)
+background = ExtResource("2_background")
+scene_art = ExtResource("3_art")
 viewport_size = Vector2i(1600, 1000)
-rotation_degrees = 0
+area_bounds = Rect2(130, 360, 1340, 340)
+image_rotation_degrees = 0.0
 image_scale = 1.0
-columns = 15
-rows_count = 10
-first_center = Vector2(154, 48)
-cell_size = Vector2(90, 68)
-painted_rows = Array[String](["TTTTTTWWWWWWTTT", "RRRRRRWWWWWWRRR", "RRRRRRWWWWWWRRR", ".....RWWWWWW...", "R....BBBBBB....", "RRRRRWWWWWWRR..", "RRRRRWWWWWWRR..", "R...RWWWWWWRR..", "R...RWWWWWWRR..", "RR..RWWWWWWR..."])
-terrain_keys = Array[Resource]([SubResource("Key_0"), SubResource("Key_1"), SubResource("Key_2"), SubResource("Key_3"), SubResource("Key_4")])
-notes = "UNALIGNED: This 15x10 collision mask is inherited from the previous bridge layout and has NOT been visually calibrated to the layered 1600x1000 art. Do not treat the old bridge lane as authoritative painted geometry. Open Wuxia Map Editor with the scene art composite and repaint terrain to the actual bridge deck before shipping."
+walkable_outline = PackedVector2Array(165, 446, 345, 440, 555, 453, 805, 458, 1065, 450, 1265, 436, 1450, 445, 1450, 650, 1265, 635, 1070, 640, 805, 653, 545, 665, 345, 667, 165, 668)
+obstacles = Array[Resource]([])
+markers = Array[Resource]([])
