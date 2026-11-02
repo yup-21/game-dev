@@ -441,7 +441,7 @@
       "bones": [
         {
           "name": "HairRoot",
-          "parent": "Head",
+          "parent": null,
           "anchor": [
             -8,
             -186
@@ -473,7 +473,7 @@
       "bones": [
         {
           "name": "CoatRoot",
-          "parent": "Pelvis",
+          "parent": null,
           "anchor": [
             -3,
             -110
