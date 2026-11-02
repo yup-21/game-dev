@@ -50,8 +50,8 @@ const PLACEMENTS := {
     "robe_inner": Vector2(-26, -103),
     "hair_back": Vector2(-42, -201),
     "guard_arms": Vector2(-18, -205),
-    "arm_front": Vector2(9, -151),
-    "arm_back": Vector2(-43, -149),
+    "arm_front": Vector2(0, -151),
+    "arm_back": Vector2(-40, -159),
     "robe_flare_mid": Vector2(-16, -106),
     "torso_guard": Vector2(-21, -164),
     "torso_attack": Vector2(-25, -163),
@@ -164,8 +164,8 @@ func _build_rig() -> void:
     var head := _add_bone("Head", spine, Vector2(9, -162) * ART_SCALE, Vector2(0, -141) * ART_SCALE)
     var hair_root := _add_bone("HairRoot", head, Vector2(-16, -189) * ART_SCALE, Vector2(9, -162) * ART_SCALE)
     _add_bone("HairTip", hair_root, Vector2(-29, -118) * ART_SCALE, Vector2(-16, -189) * ART_SCALE)
-    var arm_back := _add_bone("ArmBack", spine, Vector2(-25, -148) * ART_SCALE, Vector2(0, -141) * ART_SCALE)
-    var arm_front := _add_bone("ArmFront", spine, Vector2(20, -148) * ART_SCALE, Vector2(0, -141) * ART_SCALE)
+    var arm_back := _add_bone("ArmBack", spine, Vector2(-23, -153) * ART_SCALE, Vector2(0, -141) * ART_SCALE)
+    var arm_front := _add_bone("ArmFront", spine, Vector2(12, -149) * ART_SCALE, Vector2(0, -141) * ART_SCALE)
     var leg_back := _add_bone("LegBack", hips, Vector2(-7, -89) * ART_SCALE, Vector2(0, -104) * ART_SCALE)
     var shin_back := _add_bone("ShinBack", leg_back, Vector2(-7, -57) * ART_SCALE, Vector2(-7, -89) * ART_SCALE)
     _add_bone("FootBack", shin_back, Vector2(-7, -19) * ART_SCALE, Vector2(-7, -57) * ART_SCALE)
@@ -180,11 +180,13 @@ func _build_rig() -> void:
     for bone in _bones.values():
         bone.rest = bone.transform
 
-    var back_arm_sprite := _add_rigid_piece("ArmBackPiece", arm_back, "arm_back", Vector2(-25, -148) * ART_SCALE, -6)
+    # The baked torso includes a dark rear armhole. Render the rear sleeve
+    # above the torso so the sleeve covers the hole instead of showing a gap.
+    var back_arm_sprite := _add_rigid_piece("ArmBackPiece", arm_back, "arm_back", Vector2(-23, -153) * ART_SCALE, 3)
     var torso_sprite := _add_rigid_piece("TorsoPiece", spine, "torso", Vector2(0, -141) * ART_SCALE, 2)
     var pelvis_sprite := _add_rigid_piece("PelvisPiece", hips, "pelvis", Vector2(0, -104) * ART_SCALE, 1)
     var belt_sprite := _add_rigid_piece("BeltPiece", hips, "belt", Vector2(0, -104) * ART_SCALE, 5)
-    var front_arm_sprite := _add_rigid_piece("ArmFrontPiece", arm_front, "arm_front", Vector2(20, -148) * ART_SCALE, 7)
+    var front_arm_sprite := _add_rigid_piece("ArmFrontPiece", arm_front, "arm_front", Vector2(12, -149) * ART_SCALE, 7)
     var head_sprite := _add_rigid_piece("HeadPiece", head, "head", Vector2(9, -162) * ART_SCALE, 8)
     # Head remains visible for attack/guard swaps; only the neutral torso/arms are replaced.
     _neutral_upper.assign([back_arm_sprite, torso_sprite, pelvis_sprite, belt_sprite, front_arm_sprite])
