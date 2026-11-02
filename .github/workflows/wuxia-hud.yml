@@ -127,6 +127,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_facade.gd
       - name: Enforce single combat unit, sprite proportions and map scale
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_combat_scale.gd
+      - name: Verify vertical and mixed map viewport scroll without world-scale drift
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_world_viewport_scroll.gd
       - name: Test north-south streets and four-way junctions at the same world scale
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_vertical_map_layout.gd
       - name: Validate unified R9 free landing, LOS, forced movement and cache
