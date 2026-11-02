@@ -8,12 +8,18 @@ var kinds: OptionButton
 var marker_kinds: OptionButton
 var marker_id: LineEdit
 var actions: Array[String] = []
+var previous_walkable: PackedVector2Array = PackedVector2Array()
 var status: Label
 
 func _ready() -> void:
     var heading := Label.new()
     heading.text = "武侠 · 多边形地图画笔"
     add_child(heading)
+    var walkable := Button.new()
+    walkable.text = "重画可走区"
+    walkable.tooltip_text = "以新版地图合成贴图为底，点击描出角色脚点可达区域。"
+    walkable.pressed.connect(_start_walkable)
+    add_child(walkable)
     var toolbar := HBoxContainer.new()
     add_child(toolbar)
     kinds = OptionButton.new()
@@ -58,16 +64,23 @@ func _ready() -> void:
     canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
     canvas.connect("polygon_ready",_accept_polygon)
+    canvas.connect("walkable_ready",_accept_walkable)
     canvas.connect("marker_ready",_accept_marker)
     add_child(canvas)
 
 func edit_map(value: Object) -> void:
     map_resource = value as WuxiaMapDefinition
     actions.clear()
+    previous_walkable = PackedVector2Array()
     if canvas != null:
         canvas.call("edit_map",map_resource)
     if status != null:
         status.text = "当前地图：" + (map_resource.content_id if map_resource != null else "未选择")
+
+func _start_walkable() -> void:
+    if map_resource == null: return
+    canvas.call("begin_walkable")
+    status.text = "在合成贴图上描绘完整可走区，双击或“封闭”完成；无需重画15×10旧网格。"
 
 func _start() -> void:
     if map_resource == null: return
@@ -107,6 +120,20 @@ func _finish() -> void:
     if not bool(canvas.call("finish_polygon")):
         status.text = "至少需要 3 个顶点。"
 
+func _accept_walkable(vertices: PackedVector2Array) -> void:
+    if map_resource == null: return
+    var old_outline := map_resource.walkable_outline.duplicate()
+    map_resource.walkable_outline = vertices
+    if map_resource.to_record().is_empty():
+        map_resource.walkable_outline = old_outline
+        status.text = "可走区无效：请检查顶点位置和自交。"
+        return
+    previous_walkable = old_outline
+    actions.append("walkable")
+    map_resource.emit_changed()
+    canvas.queue_redraw()
+    status.text = "已更新可走区，保存后 GRID/FREE 将从相同轮廓生成合法地形。"
+
 func _accept_polygon(vertices: PackedVector2Array, kind: String) -> void:
     if map_resource == null: return
     var polygon := WuxiaMapPolygonDefinition.new()
@@ -121,7 +148,9 @@ func _accept_polygon(vertices: PackedVector2Array, kind: String) -> void:
 func _undo() -> void:
     if map_resource == null or actions.is_empty(): return
     var kind: String = actions.pop_back()
-    if kind == "marker" and not map_resource.markers.is_empty():
+    if kind == "walkable":
+        map_resource.walkable_outline = previous_walkable.duplicate()
+    elif kind == "marker" and not map_resource.markers.is_empty():
         map_resource.markers.remove_at(map_resource.markers.size()-1)
     elif kind == "polygon" and not map_resource.obstacles.is_empty():
         map_resource.obstacles.remove_at(map_resource.obstacles.size()-1)
@@ -137,4 +166,6 @@ func _save() -> void:
         status.text = "地图资源无效：请检查边界、障碍和标记。"
         return
     var result: Error = ResourceSaver.save(map_resource,map_resource.resource_path)
+    if result == OK:
+        actions.clear()
     status.text = "地图已保存。" if result == OK else "保存失败：" + str(result)
