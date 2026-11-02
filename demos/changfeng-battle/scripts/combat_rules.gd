@@ -1,5 +1,6 @@
 extends RefCounted
 const Geometry = preload("res://scripts/battle_spatial_facade.gd")
+const CombatScale = preload("res://scripts/combat_scale.gd")
 ## Pure action enumeration and complete precommit validation.
 var state
 var cards
@@ -203,7 +204,7 @@ func _validate_free_move(req: Dictionary) -> Dictionary:
 	var distance: float=float(landing.distance)
 	if distance<0.25:
 		return failure("NO_MOVEMENT","角色已经位于此落点")
-	var unit_distance: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var unit_distance: float=CombatScale.PIXELS_PER_UNIT
 	var units: int=ceili((distance-0.0001)/unit_distance)
 	var remaining: int=int(actor.stats.get("move_budget",2))-actor.normal_moves_used
 	if units>remaining or remaining<=0:
@@ -296,7 +297,7 @@ func _validate_move_and_attack(req: Dictionary) -> Dictionary:
 	if not costs.can_pay(actor,attack_quote):
 		return failure("INSUFFICIENT_RESOURCE","无法支付攻击本身的气血或内息费用")
 	var remaining: int=int(actor.stats.get("move_budget",2))-actor.normal_moves_used
-	var world_unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var world_unit: float=CombatScale.PIXELS_PER_UNIT
 	var available_distance: float=maxf(0.0,float(remaining)*world_unit)
 	var min_distance: int=1
 	var max_distance: int=1
@@ -426,7 +427,7 @@ func _validate_free_card_move(req: Dictionary) -> Dictionary:
 	var dest_cell: Vector2i=Vector2i(landing.cell)
 	var path: PackedVector2Array=PackedVector2Array(landing.path)
 	var distance: float=float(landing.distance)
-	var maximum: float=float(allowed_steps)*maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var maximum: float=float(allowed_steps)*CombatScale.PIXELS_PER_UNIT
 	if distance<0.25 or distance>maximum+0.001:
 		return failure("MOVE_BUDGET_EXCEEDED","超出该武学步法的实际移动距离")
 	var action: Dictionary={"kind":"PLAY_CARD_FREE_MOVE","actor_id":actor.id,

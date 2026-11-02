@@ -1,8 +1,9 @@
 extends RefCounted
+const CombatScale = preload("res://scripts/combat_scale.gd")
 ## Shared presentation-only sizing: normalize actual opaque silhouette, not
 ## atlas-cell dimensions. A uniform display height keeps characters consistent
 ## even when artists leave different transparent margins in their PNG frames.
-const TARGET_HEIGHT := 200.0
+const TARGET_HEIGHT := CombatScale.PIXELS_PER_UNIT * CombatScale.ACTOR_HEIGHT_UNITS
 const ALPHA_THRESHOLD := 0.20
 static var _bounds_cache: Dictionary = {}
 

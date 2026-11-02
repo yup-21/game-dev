@@ -1,4 +1,5 @@
 extends RefCounted
+const CombatScale = preload("res://scripts/combat_scale.gd")
 ## Offline-authored terrain bake for one whole-image scene. The artwork and
 ## the tile mask are aligned through one fixed, horizontal orthographic lattice:
 ## cell centres, hit rectangles and actor feet use the SAME coordinates.
@@ -11,6 +12,8 @@ var source_size: Vector2i = Vector2i.ZERO
 var viewport_size: Vector2 = Vector2.ZERO
 var origin: Vector2 = Vector2.ZERO
 var step: Vector2 = Vector2.ZERO
+## Tactical sampling step is NOT a length unit.
+var pixels_per_unit: float = CombatScale.PIXELS_PER_UNIT
 var image_rotation_degrees: float = 0.0
 var image_scale: float = 1.0
 var width: int = 0
@@ -53,6 +56,10 @@ func _load_grid_record(data: Variant, path: String) -> void:
     var legend: Variant = data.get("terrain_legend",{})
     if not grid is Dictionary or not transform_data is Dictionary or not lines is Array or not legend is Dictionary:
         error = "Malformed map properties"
+        return
+    pixels_per_unit = float(data.get("pixels_per_unit", CombatScale.PIXELS_PER_UNIT))
+    if not CombatScale.valid_map_pixels_per_unit(pixels_per_unit):
+        error = "Grid map scale differs from combat scale"
         return
     width = int(grid.get("columns",0))
     height = int(grid.get("rows",0))
@@ -145,6 +152,10 @@ func _load_native(path: String) -> void:
     var spec: Dictionary = resource.to_record()
     if spec.is_empty() or str(spec.get("id","")).is_empty():
         error = "Invalid native map definition"
+        return
+    pixels_per_unit = float(spec.get("pixels_per_unit", CombatScale.PIXELS_PER_UNIT))
+    if not CombatScale.valid_map_pixels_per_unit(pixels_per_unit):
+        error = "Map artwork scale differs from combat scale"
         return
     var bounds: Array = spec.get("bounds",[])
     if bounds.size() != 4 or not _valid_pair([bounds[0],bounds[1]]) or \

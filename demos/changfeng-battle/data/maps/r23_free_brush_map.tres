@@ -14,5 +14,6 @@ script = ExtResource("1_map")
 content_id = "r23_free_brush_map"
 background = ExtResource("3_background")
 viewport_size = Vector2i(1600, 1000)
+pixels_per_unit = 80.0
 area_bounds = Rect2(100, 100, 1400, 800)
 obstacles = Array[Resource]([SubResource("Obstacle")])

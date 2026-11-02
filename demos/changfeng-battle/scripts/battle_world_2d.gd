@@ -5,6 +5,7 @@ const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Facing = preload("res://scripts/actor_facing.gd")
 const VisualScale = preload("res://scripts/actor_visual_scale.gd")
+const CombatScale = preload("res://scripts/combat_scale.gd")
 
 var camera: Camera2D
 var illustrated_map: CanvasLayer
@@ -49,7 +50,7 @@ func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
         if idle_clip != null and not idle_clip.frames.is_empty():
             idle_frame = int(idle_clip.frames[0])
     VisualScale.fit(sprite, profile.actor_scale if profile != null else sprite.scale,
-        VisualScale.TARGET_HEIGHT, profile.feet_adjust if profile != null else Vector2.ZERO,
+        CombatScale.actor_height_pixels(), profile.feet_adjust if profile != null else Vector2.ZERO,
         idle_frame)
     sprite.set_meta("faces_left_unflipped", profile.faces_left_unflipped if profile != null
         else (ArtCatalog.sheet_faces_left_for_character(character_id) if not character_id.is_empty()

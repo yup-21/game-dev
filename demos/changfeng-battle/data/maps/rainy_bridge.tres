@@ -10,6 +10,7 @@ content_id = "rainy_bridge"
 background = ExtResource("2_background")
 scene_art = ExtResource("3_art")
 viewport_size = Vector2i(1600, 1000)
+pixels_per_unit = 80.0
 area_bounds = Rect2(80, 320, 1440, 200)
 image_rotation_degrees = 0.0
 image_scale = 1.0

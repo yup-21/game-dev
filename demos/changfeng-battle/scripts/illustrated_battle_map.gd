@@ -3,6 +3,7 @@ extends CanvasLayer
 ## authoritative for ALL tile footprints, mouse hits and character feet.
 const Fallback = preload("res://scripts/fallback_assets.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
+const CombatScale = preload("res://scripts/combat_scale.gd")
 var bake
 var picture: TextureRect
 var actors: Dictionary = {}
@@ -153,7 +154,7 @@ func add_actor(actor: Dictionary, atlas: Texture2D) -> Sprite2D:
     node.name="Role_%d" % id
     node.position=point_for_cell(Vector2i(actor.cell))
     scene_root.add_child(node)
-    var foot := _ellipse(Color(0.35,0.87,0.68,0.50) if int(actor.team_id)==0 else Color(0.96,0.49,0.37,0.51),23,11)
+    var foot := _ellipse(Color(0.35,0.87,0.68,0.50) if int(actor.team_id)==0 else Color(0.96,0.49,0.37,0.51),CombatScale.footprint_radius_pixels(),CombatScale.footprint_radius_pixels()*0.42)
     foot.name="FootAnchor"
     node.add_child(foot)
     var sprite := Sprite2D.new()
@@ -169,7 +170,7 @@ func add_actor(actor: Dictionary, atlas: Texture2D) -> Sprite2D:
     nameplate.name="RoleName"
     nameplate.text=str(actor.name)
     nameplate.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-    nameplate.position=Vector2(-88,-232)
+    nameplate.position=Vector2(-88,-CombatScale.actor_height_pixels()-32.0)
     nameplate.size=Vector2(176,26)
     nameplate.add_theme_color_override("font_color",Color("dcefe0") if int(actor.team_id)==0 else Color("f2c7b7"))
     nameplate.add_theme_font_size_override("font_size",17)

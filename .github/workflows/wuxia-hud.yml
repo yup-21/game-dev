@@ -125,6 +125,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_spatial_api_coexistence.gd
       - name: Validate unified GRID and FREE spatial geometry facade
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_facade.gd
+      - name: Enforce single combat unit, sprite proportions and map scale
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_combat_scale.gd
       - name: Validate unified R9 free landing, LOS, forced movement and cache
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_r9.gd
       - name: Measure FREE path baseline and verify profiling counters

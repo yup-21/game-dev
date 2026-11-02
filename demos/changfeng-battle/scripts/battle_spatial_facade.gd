@@ -1,4 +1,5 @@
 extends RefCounted
+const CombatScale = preload("res://scripts/combat_scale.gd")
 ## Shared geometric queries. Rules still own timing, costs and state mutation.
 ## FREE intentionally retains the MapBake/AStarGrid2D implementation.
 var state: Variant
@@ -8,8 +9,8 @@ func _init(battle_state: Variant) -> void:
 
 func unit_distance() -> float:
     if state.spatial == null:
-        return 1.0
-    return maxf(state.spatial.bake.step.x, state.spatial.bake.step.y)
+        return CombatScale.PIXELS_PER_UNIT
+    return state.spatial.bake.pixels_per_unit
 
 func _sync_actors() -> void:
     if state.spatial == null:
@@ -17,7 +18,7 @@ func _sync_actors() -> void:
     var positions: Dictionary = {}
     for actor in state.actors:
         positions[actor.id] = {"position": actor.position,
-            "radius": 8.0, "alive": actor.hp_u > 0}
+            "radius": CombatScale.footprint_radius_pixels(), "alive": actor.hp_u > 0}
     state.spatial.set_actors(positions)
 
 func can_land(actor: Variant, position: Variant) -> bool:
@@ -27,13 +28,13 @@ func can_land(actor: Variant, position: Variant) -> bool:
     if state.spatial == null or not position is Vector2:
         return false
     _sync_actors()
-    return state.spatial.is_valid_position(position, 8.0, actor.id)
+    return state.spatial.is_valid_position(position, CombatScale.footprint_radius_pixels(), actor.id)
 
 func safe_landing(actor: Variant, requested: Vector2) -> Vector2:
     if state.spatial_mode != "FREE" or state.spatial == null:
         return actor.position
     _sync_actors()
-    return state.spatial.safe_landing(actor.position, requested, 8.0, actor.id)
+    return state.spatial.safe_landing(actor.position, requested, CombatScale.footprint_radius_pixels(), actor.id)
 
 func find_path(actor: Variant, goal: Variant) -> Variant:
     if state.spatial_mode == "GRID":
@@ -43,7 +44,7 @@ func find_path(actor: Variant, goal: Variant) -> Variant:
     if state.spatial == null or not goal is Vector2:
         return PackedVector2Array()
     _sync_actors()
-    return state.spatial.find_path(actor.position, goal, 8.0, actor.id)
+    return state.spatial.find_path(actor.position, goal, CombatScale.footprint_radius_pixels(), actor.id)
 
 func path_cost(path: Variant) -> float:
     if state.spatial_mode == "GRID":
@@ -79,7 +80,7 @@ func can_attack(actor: Variant, target: Variant, min_steps: float,
     _sync_actors()
     var unit: float = unit_distance()
     if not state.spatial.attack_in_range(actor.position, target.position,
-            min_steps * unit, max_steps * unit, 8.0, 8.0):
+            min_steps * unit, max_steps * unit, CombatScale.footprint_radius_pixels(), CombatScale.footprint_radius_pixels()):
         return false
     return not require_line_of_sight or state.spatial.attack_line_clear(
         actor.position, target.position, [actor.id, target.id])
@@ -90,7 +91,7 @@ func find_attack_approach(actor: Variant, target: Variant, min_range: float,
         return {}
     _sync_actors()
     return state.spatial.find_attack_approach(actor.position,target.position,
-        min_range,max_range,budget,8.0,8.0,actor.id,target.id,require_los)
+        min_range,max_range,budget,CombatScale.footprint_radius_pixels(),CombatScale.footprint_radius_pixels(),actor.id,target.id,require_los)
 
 ## Reusable, non-mutating FREE landing and route preparation.
 ## CombatRules remains responsible for timing, budget, hooks, and payment.
@@ -104,14 +105,14 @@ func plan_free_landing(actor: Variant, requested: Vector2) -> Dictionary:
     if state.spatial.bake.cell_at_screen(goal, true) == Vector2i(-1, -1):
         return {"success":false,"error_code":"INVALID_POSITION"}
     _sync_actors()
-    goal = state.spatial.safe_landing(actor.position, goal, 8.0, actor.id)
+    goal = state.spatial.safe_landing(actor.position, goal, CombatScale.footprint_radius_pixels(), actor.id)
     goal = Vector2(roundf(goal.x * 4.0) * 0.25,
         roundf(goal.y * 4.0) * 0.25)
     var cell: Vector2i = state.spatial.bake.cell_at_screen(goal, true)
     if cell == Vector2i(-1, -1):
         return {"success":false,"error_code":"INVALID_POSITION"}
     var path: PackedVector2Array = state.spatial.find_path(
-        actor.position, goal, 8.0, actor.id)
+        actor.position, goal, CombatScale.footprint_radius_pixels(), actor.id)
     if path.size() < 2:
         return {"success":false,"error_code":"UNREACHABLE_POSITION"}
     return {"success":true,"position":goal,"cell":cell,"path":path,
@@ -130,9 +131,9 @@ func check_attack_approach(actor: Variant, target: Variant, plan: Dictionary,
     if travelled > 0.0001:
         destination = Vector2(roundf(destination.x * 4.0) * 0.25,
             roundf(destination.y * 4.0) * 0.25)
-        if not state.spatial.is_valid_position(destination, 8.0, actor.id):
+        if not state.spatial.is_valid_position(destination, CombatScale.footprint_radius_pixels(), actor.id):
             return {"success":false,"error_code":"INVALID_POSITION"}
-        route = state.spatial.find_path(actor.position, destination, 8.0, actor.id)
+        route = state.spatial.find_path(actor.position, destination, CombatScale.footprint_radius_pixels(), actor.id)
         if route.size() < 2:
             return {"success":false,"error_code":"UNREACHABLE_POSITION"}
         travelled = state.spatial.path_length(route)
@@ -140,7 +141,7 @@ func check_attack_approach(actor: Variant, target: Variant, plan: Dictionary,
     if cell == Vector2i(-1, -1):
         return {"success":false,"error_code":"INVALID_POSITION"}
     if not state.spatial.attack_in_range(destination, target.position,
-            min_range, max_range, 8.0, 8.0):
+            min_range, max_range, CombatScale.footprint_radius_pixels(), CombatScale.footprint_radius_pixels()):
         return {"success":false,"error_code":"INVALID_RANGE"}
     if require_los and not state.spatial.attack_line_clear(
             destination, target.position, [actor.id, target.id]):
@@ -190,7 +191,7 @@ func forced_move_preview(actor: Variant, goal: Variant, max_cost: float) -> Dict
     var end: Vector2 = start
     for index in range(1, samples + 1):
         var candidate: Vector2 = start + direction * (float(index) * unit / 24.0)
-        if not state.spatial.is_valid_position(candidate, 8.0, actor.id):
+        if not state.spatial.is_valid_position(candidate, CombatScale.footprint_radius_pixels(), actor.id):
             break
         end = candidate
     if end.distance_to(start) < 0.25:

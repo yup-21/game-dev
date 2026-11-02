@@ -1,6 +1,7 @@
 @tool
 class_name WuxiaActorAnimationProfile
 extends Resource
+const CombatScale = preload("res://scripts/combat_scale.gd")
 ## Character-owned visual contract. Never mutates BattleModel or game state.
 ## Unlike the historical 6x4 pose sheet, actions may use distinct frame ranges.
 
@@ -10,6 +11,9 @@ const REQUIRED_ACTIONS := ["idle", "move", "attack", "guard", "hit",
 @export var atlas: Texture2D
 @export_range(1, 64) var columns: int = 6
 @export_range(1, 64) var rows: int = 4
+## Single-size player/normal enemy sprites. Rendered opaque idle height is
+## normalized to this many combat units; source atlas pixel resolution may vary.
+@export var reference_height_units: float = CombatScale.ACTOR_HEIGHT_UNITS
 @export var feet_offset: Vector2 = Vector2(0, -102)
 ## Final visual feet nudge in world pixels after alpha-based sizing.
 ## Positive Y moves the visible sprite down; negative Y moves it up.
@@ -26,7 +30,11 @@ func valid_profile() -> bool:
         return false
     if atlas.get_width() < columns or atlas.get_height() < rows:
         return false
-    if actor_scale.x <= 0.0 or actor_scale.y <= 0.0:
+    if actor_scale.x <= 0.0 or actor_scale.y <= 0.0 or \
+            not is_finite(actor_scale.x) or not is_finite(actor_scale.y) or \
+            absf(actor_scale.x - actor_scale.y) > 0.001 or \
+            not is_finite(reference_height_units) or \
+            absf(reference_height_units - CombatScale.ACTOR_HEIGHT_UNITS) > 0.001:
         return false
     var seen: Dictionary = {}
     for clip in clips:
