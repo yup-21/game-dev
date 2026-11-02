@@ -233,7 +233,7 @@ func _load_native(path: String) -> void:
                 terrain_kind = "rock"
             for obstacle in polygons:
                 if Geometry2D.is_point_in_polygon(centre,obstacle.points):
-                    terrain_kind = str(obstacle.kind)
+                    terrain_kind = "rock" if str(obstacle.kind) == "blocked" else str(obstacle.kind)
                     break
             var walkable: bool = terrain_kind == "road"
             terrain[cell] = terrain_kind
