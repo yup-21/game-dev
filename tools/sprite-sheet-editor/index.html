@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>精灵图脚点修正工具</title>
+<style>body{font:15px system-ui;background:#171b23;color:#e4e8f0;margin:24px}button,input,select{font:inherit}button{cursor:pointer;padding:7px 12px}label{display:inline-flex;align-items:center;gap:6px;margin:5px 12px 5px 0}input[type=number]{width:70px}canvas{background-color:#333;background-image:linear-gradient(45deg,#454545 25%,transparent 25%),linear-gradient(-45deg,#454545 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#454545 75%),linear-gradient(-45deg,transparent 75%,#454545 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}#sheet{max-width:100%;border:1px solid #888}#preview{border:1px solid #888;image-rendering:pixelated}section{margin:12px 0}small{color:#bbc5d6}#status{white-space:pre-wrap}</style></head><body>
+<h1>精灵图脚点修正工具</h1><p>离线浏览器工具：打开图集 → 检查格线 → 选中单帧 → 调整位置与透明边距 → 导出修正图集。原文件不会被覆盖。</p>
+<section><label>图集 PNG <input type="file" id="file" accept="image/png,image/webp"></label><label>列 <input type="number" id="cols" min="1" value="6"></label><label>行 <input type="number" id="rows" min="1" value="4"></label><button id="apply">应用网格</button><button id="auto">自动统一脚底</button></section>
+<section><label>帧序号（从0开始）<input type="number" id="index" min="0" value="0"></label><label>水平偏移 <input type="number" id="dx" value="0"></label><label>垂直偏移 <input type="number" id="dy" value="0"></label><button id="reset">重置当前帧</button><button id="play">播放 / 暂停</button><label>帧率 <input type="number" id="fps" min="1" max="30" value="8"></label></section>
+<section><label>透明边距阈值（像素透明度）<input type="number" id="threshold" min="0" max="254" value="8"></label><label>脚底保留距离（px）<input type="number" id="footmargin" min="0" value="4"></label><button id="export">导出 PNG</button><button id="exportdata">导出校准 JSON</button></section>
+<small>点击下方图集选择帧。画布红色格线仅用于检查，不写入导出文件。方向键移动当前帧（Shift + 方向键移动 5px）。自动对齐按每格内可见像素的最低点调整，不适用于单帧内容已跨格的情况。</small>
+<section><canvas id="sheet"></canvas></section><section><canvas id="preview" width="192" height="192"></canvas> <span id="status"></span></section>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),sheet=$('sheet'),ctx=sheet.getContext('2d'),preview=$('preview'),pctx=preview.getContext('2d');
+let img=null,raw=null,frames=[],cw=0,ch=0,selected=0,playing=false,last=0;
+function num(id){return Number($(id).value)}
+function say(s){$('status').textContent=s}
+function valid(){if(!img)return false;const c=num('cols'),r=num('rows');if(!Number.isInteger(c)||!Number.isInteger(r)||c<1||r<1||img.width%c||img.height%r){say('错误：图集宽高必须分别被列数、行数整除。');return false}return true}
+function apply(){if(!valid())return;cw=img.width/num('cols');ch=img.height/num('rows');frames=Array.from({length:num('cols')*num('rows')},(_,i)=>({dx:0,dy:0}));selected=0;draw();say('网格：'+cw+' × '+ch+'，共 '+frames.length+' 帧。请检查源图是否已跨格。')}
+function setIndex(i){selected=Math.max(0,Math.min(frames.length-1,i));$('index').value=selected;sync();draw()}
+function sync(){if(!frames.length)return;$('dx').value=frames[selected].dx;$('dy').value=frames[selected].dy}
+function renderSheet(target,grid){if(!img||!frames.length)return;target.width=img.width;target.height=img.height;const c=target.getContext('2d');c.clearRect(0,0,target.width,target.height);const cols=num('cols');
+frames.forEach((f,i)=>{let x=(i%cols)*cw,y=Math.floor(i/cols)*ch;c.save();c.beginPath();c.rect(x,y,cw,ch);c.clip();c.drawImage(img,x,y,cw,ch,x+f.dx,y+f.dy,cw,ch);c.restore();if(grid){c.lineWidth=i===selected?3:1;c.strokeStyle=i===selected?'#ffe175':'#e76a73';c.strokeRect(x+.5,y+.5,cw-1,ch-1)}});
+}
+function draw(){renderSheet(sheet,true);renderPreview()}
+function renderPreview(){pctx.clearRect(0,0,192,192);if(!img||!frames.length)return;const col=selected%num('cols'),row=Math.floor(selected/num('cols')),f=frames[selected],scale=Math.min(176/cw,176/ch);pctx.save();pctx.translate(96-cw*scale/2,96-ch*scale/2);pctx.scale(scale,scale);pctx.beginPath();pctx.rect(0,0,cw,ch);pctx.clip();pctx.drawImage(img,col*cw,row*ch,cw,ch,f.dx,f.dy,cw,ch);pctx.strokeStyle='#ffd166';pctx.beginPath();pctx.moveTo(0,ch-num('footmargin'));pctx.lineTo(cw,ch-num('footmargin'));pctx.stroke();pctx.restore()}
+function edit(){if(!frames.length)return;frames[selected].dx=num('dx');frames[selected].dy=num('dy');draw()}
+$('file').onchange=e=>{const file=e.target.files[0];if(!file)return;const url=URL.createObjectURL(file),image=new Image();image.onload=()=>{img=image;URL.revokeObjectURL(url);apply()};image.onerror=()=>{URL.revokeObjectURL(url);say('图片加载失败')};image.src=url};
+$('apply').onclick=apply;$('index').onchange=()=>setIndex(num('index'));$('dx').oninput=edit;$('dy').oninput=edit;
+$('reset').onclick=()=>{if(!frames.length)return;frames[selected]={dx:0,dy:0};sync();draw()};
+sheet.onclick=e=>{if(!frames.length)return;const box=sheet.getBoundingClientRect(),x=(e.clientX-box.left)*sheet.width/box.width,y=(e.clientY-box.top)*sheet.height/box.height;setIndex(Math.floor(y/ch)*num('cols')+Math.floor(x/cw))};
+document.onkeydown=e=>{if(!frames.length||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)||['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;e.preventDefault();const f=frames[selected],n=e.shiftKey?5:1;if(e.key==='ArrowLeft')f.dx-=n;if(e.key==='ArrowRight')f.dx+=n;if(e.key==='ArrowUp')f.dy-=n;if(e.key==='ArrowDown')f.dy+=n;sync();draw()};
+$('auto').onclick=()=>{if(!frames.length)return;const work=document.createElement('canvas');work.width=img.width;work.height=img.height;const c=work.getContext('2d',{willReadFrequently:true});c.drawImage(img,0,0);const pixels=c.getImageData(0,0,img.width,img.height).data,margin=num('footmargin'),threshold=num('threshold'),cols=num('cols');let empty=0;frames.forEach((f,i)=>{const ox=(i%cols)*cw,oy=Math.floor(i/cols)*ch;let bottom=-1;for(let y=ch-1;y>=0&&bottom<0;y--)for(let x=0;x<cw;x++)if(pixels[((oy+y)*img.width+ox+x)*4+3]>threshold){bottom=y;break}if(bottom<0){empty++;continue}f.dy=ch-1-margin-bottom});sync();draw();say('已按格内像素最低点对齐。空白帧：'+empty+'。注意：跨格像素无法自动恢复，需要原始逐帧文件或重画。')};
+function save(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$('export').onclick=()=>{if(!frames.length)return;const c=document.createElement('canvas');renderSheet(c,false);c.toBlob(b=>{if(b)save(b,'sprite_aligned.png')},'image/png')};
+$('exportdata').onclick=()=>{if(!frames.length)return;const data={columns:num('cols'),rows:num('rows'),frame_width:cw,frame_height:ch,foot_margin:num('footmargin'),offsets:frames};save(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),'sprite_alignment.json')};
+$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'暂停':'播放 / 暂停'};
+function tick(now){if(playing&&frames.length&&now-last>=1000/Math.max(1,num('fps'))){last=now;setIndex((selected+1)%frames.length)}requestAnimationFrame(tick)}requestAnimationFrame(tick);
+</script></body></html>
