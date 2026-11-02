@@ -119,6 +119,14 @@ static func apply(scene: Node2D, reference: Dictionary) -> Dictionary:
         total += value
         maximum = maxf(maximum, value)
     var source_quality := "partially_occluded" if low.size() >= 8 else "usable"
+    var grip_current: Vector2 = skeleton.to_local(grip.global_position)
+    var tip_current: Vector2 = skeleton.to_local(tip.global_position)
+    var grip_error := -1.0
+    var tip_error := -1.0
+    if target.has("SwordGrip"):
+        grip_error = snappedf(grip_current.distance_to(target["SwordGrip"]), 0.01)
+    if target.has("SwordBlade"):
+        tip_error = snappedf(tip_current.distance_to(target["SwordBlade"]), 0.01)
     return {
         "name": reference["name"],
         "source_frame": reference["source_frame"],
@@ -130,5 +138,8 @@ static func apply(scene: Node2D, reference: Dictionary) -> Dictionary:
         "source_quality": source_quality,
         "reference_landmarks_world": target,
         "root_still_fixed": skeleton.position == Vector2(800.0, 730.0),
-        "weapon_grip_world": skeleton.to_local(grip.global_position),
+        "weapon_grip_world": grip_current,
+        "weapon_tip_world": tip_current,
+        "weapon_grip_error_px": grip_error,
+        "weapon_tip_error_px": tip_error,
     }
