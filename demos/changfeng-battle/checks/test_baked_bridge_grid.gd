@@ -63,7 +63,7 @@ func _run() -> void:
         _check(story.state.passable(actor.cell)
             and baked.is_walkable_point(actor.position,8.0),
             "actor feet are inside the walkable image contour: "+str(actor.id))
-    var scene := load("res://battle_hd2d.tscn").instantiate()
+    var scene: Node = load("res://battle_hd2d.tscn").instantiate()
     root.add_child(scene)
     await process_frame
     var painted = scene.get("illustrated_map")
