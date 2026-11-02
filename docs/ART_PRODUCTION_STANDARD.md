@@ -1,5 +1,7 @@
 # 《长风浮生录》美术与动画制作规范 V1
 
+> **历史兼容副本，不再更新规则正文。** 当前标准请看 [art-production/standards/ART_PRODUCTION_STANDARD.md](../art-production/standards/ART_PRODUCTION_STANDARD.md)；新城镇及大地图比例尺请看 [TOWN_MAP_SCALE_PRODUCTION.md](../art-production/standards/TOWN_MAP_SCALE_PRODUCTION.md)。运行时以 Godot 原生 Resource 和 `combat_scale.gd` 为准。
+
 **适用范围：整个游戏，而非某个 Demo 场景。** 本规范同时约束角色、地图、剧情演出与战斗表现。Godot 原生 Resource 是游戏内容入口；源图和制作过程可以保留在概念素材区，但不能作为第二套运行时数据格式。
 
 ## 1. 美术方向与资产状态
