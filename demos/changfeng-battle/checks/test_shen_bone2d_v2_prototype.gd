@@ -42,6 +42,17 @@ func _run() -> void:
     check(absf(scene.debug_rendered_height() - CombatScale.actor_height_pixels()) < 1.0,
         "v2 visible reference height follows shared 200px actor scale")
 
+    # Regress the actual rig registration, not only clip names or node counts:
+    # these would pass even if the limbs were assembled 100px apart.
+    var layout: Dictionary = scene.debug_registration()
+    check(float(layout["head_to_torso"]) <= 12.0, "head joins the collar")
+    check(float(layout["rear_shoulder_overlap"]) >= 8.0, "rear sleeve covers shoulder")
+    check(float(layout["front_shoulder_overlap"]) >= 8.0, "front sleeve covers shoulder")
+    check(absf(float(layout["foot_baseline"])) <= 2.0, "front boot touches anchor line")
+    check(absf(float(layout["hem_baseline"])) <= 5.0, "robe ends at foot baseline")
+    check(absf(float(layout["rig_scale"]) * 201.0 - CombatScale.actor_height_pixels()) < 1.0,
+        "atlas-native rig scale reaches canonical 200px height")
+
     scene.call("_play", "attack_sword")
     await process_frame
     check(scene.get_node("RigV2/AttackUpper").visible, "attack swaps turn on")
