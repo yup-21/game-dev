@@ -18,6 +18,12 @@ func _run() -> void:
     await process_frame
 
     check(scene.debug_atlas_size() == Vector2i(512, 221), "embedded clean atlas decodes")
+    check(scene.get_node("Background").z_index < scene.get_node("RigV2/HairMesh").z_index,
+        "back hair is drawn above opaque stage background")
+    check(scene.get_node("Background").z_index < scene.get_node("RigV2/RobeLeftMesh").z_index,
+        "back robe panel is drawn above opaque stage background")
+    check(scene.get_node("Background").z_index < scene.get_node("RigV2/Skeleton2D/Hips/Spine/ArmBack/ArmBackPiece").z_index,
+        "back arm cannot be hidden behind opaque stage")
     check(scene.has_node("RigV2/Skeleton2D/Hips/Spine/Head"), "head bone exists")
     check(scene.has_node("RigV2/Skeleton2D/Hips/Spine/Head/HairRoot/HairTip"), "hair chain exists")
     check(scene.has_node("RigV2/Skeleton2D/Hips/SkirtRoot/SkirtTipLeft"), "left skirt chain exists")
