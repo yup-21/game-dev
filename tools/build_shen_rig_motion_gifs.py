@@ -8,15 +8,15 @@ BASE = ROOT / "demos/changfeng-battle/captures/shen-rig-first"
 SPECS = {"idle": 150, "walk": 100, "attack_sword": 88}
 KEYS = (0, 2, 5, 7)
 
-def main():
+def assemble(group_dir: Path):
     frames = {}
     for name, duration in SPECS.items():
-        paths = sorted((BASE / name).glob("frame-*.png"))
+        paths = sorted((group_dir / name).glob("frame-*.png"))
         if len(paths) != 8:
             raise SystemExit(f"{name}: found {len(paths)} frames, expected 8")
         source = [Image.open(p).convert("RGB") for p in paths]
         frames[name] = source
-        source[0].save(BASE / (name + ".gif"), append_images=source[1:],
+        source[0].save(group_dir / (name + ".gif"), append_images=source[1:],
             save_all=True, loop=0, duration=duration, optimize=True)
     width, height = 300, 205
     out = Image.new("RGB", (width * 4, (height + 25) * 3), (24, 29, 35))
@@ -29,11 +29,16 @@ def main():
             y = row * (height+25)
             out.paste(img, (x, y+25))
             draw.text((x+8,y+5), f"{name} / frame {index}", fill="#ffffff", font=ImageFont.load_default())
-    out.save(BASE / "keyframes.png")
+    out.save(group_dir / "keyframes.png")
     for name in SPECS:
         if not (BASE / (name + ".gif")).stat().st_size:
             raise SystemExit("Missing " + name + " GIF")
-    print("SHEN_RIG_FIRST_GIFS_OK")
+    return len(frames)
+
+def main():
+    combined = assemble(BASE)
+    core_only = assemble(BASE / "core-only")
+    print(f"SHEN_RIG_FIRST_GIFS_OK combined={combined} core_only={core_only}")
 
 if __name__ == "__main__":
     main()
