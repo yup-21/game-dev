@@ -117,6 +117,10 @@ Keep the torso and weapon trajectory continuous with the adjacent supplied frame
 
 ## 6. 场景设定与可运行地图贴图
 
+**城镇、街区、大地图补充**：生成前先阅读 [城镇与大地图统一比例尺规范](../standards/TOWN_MAP_SCALE_PRODUCTION.md)，使用 `art-production/tools/scene_scale_guide.py` 生成的透明标尺图作为参考。普通角色始终 200 世界像素高，街区以 1600×1000 单屏为单位生成；场景各层同坐标、同画布、无运行时二次拉伸。城市通过街区连接表现，不靠一张超大画布缩小角色。
+
+**重要：此比例尺是构图和后期校准合同，不是仅凭 AI 提示词就能保证的像素精度。**
+
 技术合同：**1600×1000 / 16:10** 逻辑画面，另验 1440×900。正式交付同尺寸、同原点的 `background`、`ground`、`foreground`、可选 `weather`，用 `WuxiaSceneArtProfile` 引用；碰撞、出生点、可走地面仍来自 Map Resource。**生成一张漂亮的整图不等于完成可玩地图。**
 
 ### 场景设定图
