@@ -46,9 +46,9 @@ func _run() -> void:
         "clicking an enemy selects reachable near-side collision-free feet")
     _check(not spatial.find_path(start,chosen,8.0).is_empty(),
         "snapped landing has a real safe path")
-    var water: Vector2=spatial.bake.cell_center(Vector2i(7,2))
+    var water: Vector2=spatial.bake.cell_center(Vector2i(7,9))
     _check(spatial.safe_landing(start,water,8.0)==water,
-        "terrain water click never silently snaps onto nearby playable land")
+        "painting boundary click never silently snaps onto nearby playable land")
     # Two adjacent blockers in a bridge lane must not turn a reachable
     # click on an actor into an unreachable landing preference.
     var crowded_start: Vector2 = middle + Vector2(-65.0, 0.0)
