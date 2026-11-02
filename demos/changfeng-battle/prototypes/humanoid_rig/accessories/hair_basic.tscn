@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[node name="HairRig" type="Skeleton2D"]
+
+[node name="HairRoot" type="Bone2D" parent="."]
+position = Vector2(0, 0)
+
+[node name="HairMid" type="Bone2D" parent="HairRoot"]
+position = Vector2(-17, 41)
+
+[node name="HairTip" type="Bone2D" parent="HairRoot/HairMid"]
+position = Vector2(-5, 37)
