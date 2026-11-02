@@ -286,6 +286,7 @@ func debug_validation() -> Dictionary:
             hierarchy_ok = false
 
     var decoration_ok := true
+    var accessory_deltas: Array = []
     var expected_decoration_count := 0
     for accessory in _contract.get("accessories", []):
         var group := str(accessory["name"])
@@ -302,7 +303,9 @@ func debug_validation() -> Dictionary:
                 continue
             var bone: Bone2D = _accessory_bones[name]
             var target := Vector2(float(entry["anchor"][0]), float(entry["anchor"][1]))
-            if _skeleton.to_local(bone.global_position).distance_to(target) > 0.01:
+            var actual: Vector2 = _skeleton.to_local(bone.global_position)
+            if actual.distance_to(target) > 0.01:
+                accessory_deltas.append({"name": name, "expected": target, "actual": actual})
                 decoration_ok = false
             if entry["parent"] != null and bone.get_parent() != _accessory_bones.get(str(entry["parent"])):
                 decoration_ok = false
@@ -322,6 +325,7 @@ func debug_validation() -> Dictionary:
         "hierarchy_ok": hierarchy_ok,
         "anchors_match": anchors_ok,
         "accessories_aligned": decoration_ok and _accessory_bones.size() == expected_decoration_count,
+        "accessory_deltas": accessory_deltas,
         "sockets_aligned": sockets_ok,
         "core_is_separate": _skeleton.get_bone_count() == _bones.size(),
         "root_ground": _skeleton.position == GROUND_POINT,
