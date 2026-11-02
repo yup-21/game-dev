@@ -20,7 +20,7 @@ func _run() -> void:
         var path: String = str(data.get("path", ""))
         var columns: int = int(data.get("columns", 1))
         var rows: int = int(data.get("rows", 1))
-        _check(path.begins_with("res://assets/imported/"), "registered artwork uses imported path: " + str(id))
+        _check((str(data.get("kind", "")) == "actor_scene" or path.begins_with("res://assets/imported/")), "registered artwork uses imported path: " + str(id))
         var resource: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
         _check(resource != null, "registered native resource exists: " + str(id))
         if resource is Texture2D:

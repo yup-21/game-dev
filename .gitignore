@@ -29,3 +29,7 @@ Thumbs.db
 
 # Local planning document; outside the published demo scope
 /长风浮生录_完整游戏企划案.md
+
+# Offline regenerated art usage views (native .tres owns the binding)
+/art-production/inventory/asset-index.json
+/art-production/inventory/usage-report.md
