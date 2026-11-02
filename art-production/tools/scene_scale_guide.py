@@ -210,7 +210,7 @@ def main() -> int:
     spec=plan(args.width,args.height,foot_x,args.foot_y,
               args.ground_top,args.ground_bottom,args.door_x,
               args.orientation,args.lane_left,args.lane_right,
-              args.lane_top,args.lane_bottom)
+              args.lane_top,args.lane_bottom if args.lane_bottom is not None else args.height-80)
     print(f"Reference 1u={spec['pixels_per_unit']:g}px, actor={spec['actor_height_px']}px, "
           f"ground depth={(args.ground_bottom-args.ground_top)/spec['pixels_per_unit']:.2f}u")
     if args.width < 1600 or args.height < 1000:
