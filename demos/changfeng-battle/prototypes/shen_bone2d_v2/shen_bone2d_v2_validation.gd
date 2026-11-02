@@ -42,7 +42,7 @@ const REGIONS := {
 }
 const PLACEMENTS := {
     "hair_back": Vector2(230, 70) * ART_SCALE,
-    "arm_back": Vector2(210, 180) * ART_SCALE,
+    "arm_back": Vector2(185, 155) * ART_SCALE,
     "robe_left": Vector2(215, 270) * ART_SCALE,
     "torso": Vector2(270, 150) * ART_SCALE,
     "pelvis": Vector2(275, 255) * ART_SCALE,
@@ -55,7 +55,7 @@ const PLACEMENTS := {
     "thigh_front": Vector2(330, 355) * ART_SCALE,
     "shin_front": Vector2(334, 421) * ART_SCALE,
     "foot_front": Vector2(330, 485) * ART_SCALE,
-    "arm_front": Vector2(340, 180) * ART_SCALE,
+    "arm_front": Vector2(345, 155) * ART_SCALE,
     "head": Vector2(300, 100) * ART_SCALE,
     "torso_attack": Vector2(245, 150) * ART_SCALE,
     "torso_guard": Vector2(255, 145) * ART_SCALE,
@@ -174,7 +174,7 @@ func _build_rig() -> void:
     var belt_sprite := _add_rigid_piece("BeltPiece", hips, "belt", Vector2(310, 270) * ART_SCALE, 5)
     var front_arm_sprite := _add_rigid_piece("ArmFrontPiece", arm_front, "arm_front", Vector2(345, 185) * ART_SCALE, 7)
     var head_sprite := _add_rigid_piece("HeadPiece", head, "head", Vector2(325, 120) * ART_SCALE, 8)
-    _neutral_upper.assign([back_arm_sprite, torso_sprite, pelvis_sprite, belt_sprite, front_arm_sprite, head_sprite])
+    # Head remains visible for attack/guard swaps; only the neutral torso/arms are replaced.\n    _neutral_upper.assign([back_arm_sprite, torso_sprite, pelvis_sprite, belt_sprite, front_arm_sprite])
 
     var tb := _add_rigid_piece("ThighBackPiece", leg_back, "thigh_back", Vector2(295, 340) * ART_SCALE, -5)
     var sb := _add_rigid_piece("ShinBackPiece", shin_back, "shin_back", Vector2(295, 410) * ART_SCALE, -5)
