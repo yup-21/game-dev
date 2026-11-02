@@ -87,7 +87,7 @@ func _initialize() -> void:
             "weather": bridge_dir.path_join("scene_rainy_bridge_weather_v01.png"),
             "story_preview": bridge_dir.path_join("scene_rainy_bridge_composite_preview_v01.png")
         })
-    var bridge_card: WuxiaGridMapDefinition = load("res://data/maps/rainy_bridge.tres")
+    var bridge_card: WuxiaMapDefinition = load("res://data/maps/rainy_bridge.tres")
     if not str(bridge_plan.get("error", "")).is_empty() or bridge_plan["files"].size() != 5 or \
             str(bridge_plan.get("current_binding", "")) != bridge_card.background.resource_path:
         _fail("Scene import must preflight the current map background and composite preview")
