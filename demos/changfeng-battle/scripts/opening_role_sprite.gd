@@ -72,7 +72,7 @@ func configure(id: String) -> bool:
         # edges and proportions instead of masking a rectangular portrait.
         var image_size: Vector2 = texture.get_size()
         body.offset = Vector2(0,-image_size.y*0.5)
-        body.scale = Vector2(184.0/image_size.x,220.0/image_size.y)
+        body.scale = Vector2.ONE * (260.0 / image_size.y)
     foot_shadow = Polygon2D.new()
     foot_shadow.name = "FootShadow"
     foot_shadow.color = Color(0.015,0.060,0.065,0.22)
