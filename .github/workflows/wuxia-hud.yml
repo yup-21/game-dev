@@ -131,6 +131,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_bone2d_prototype.gd
       - name: Validate Shen Changfeng native Bone2D v2 hybrid rig
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_bone2d_v2_prototype.gd
+      - name: Validate Shen Changfeng V3 bind-first prototype
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_bone2d_v3_prototype.gd
       - name: Verify vertical and mixed map viewport scroll without world-scale drift
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_world_viewport_scroll.gd
       - name: Test north-south streets and four-way junctions at the same world scale
@@ -237,6 +239,17 @@ jobs:
           for action in idle walk attack_sword guard; do
             test -s "demos/changfeng-battle/captures/shen-bone2d-v2/$action.gif"
           done
+      - name: Capture Shen Changfeng V3 bind-first visual acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_bone2d_v3_visual.gd
+          python3 tools/build_shen_bone2d_v3_visual_evidence.py
+          test -s demos/changfeng-battle/captures/shen-bone2d-v3/bind-pose-overlay.png
+          test -s demos/changfeng-battle/captures/shen-bone2d-v3/keyframes-contact-sheet.png
+          for action in idle walk attack_sword; do
+            test -s "demos/changfeng-battle/captures/shen-bone2d-v3/$action.gif"
+          done
       - name: Upload screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -248,5 +261,6 @@ jobs:
             demos/changfeng-battle/captures/art-pilot/*.png
             demos/changfeng-battle/captures/shen-bone2d/**
             demos/changfeng-battle/captures/shen-bone2d-v2/**
+            demos/changfeng-battle/captures/shen-bone2d-v3/**
             demos/changfeng-battle/assets/scenes/story/ruined_temple_story.webp
           if-no-files-found: warn
