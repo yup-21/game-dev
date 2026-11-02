@@ -117,7 +117,7 @@ Keep the torso and weapon trajectory continuous with the adjacent supplied frame
 
 ## 6. 场景设定与可运行地图贴图
 
-**城镇、街区、大地图补充**：横向主街、竖向街巷与十字街口使用同一尺度。生成前先阅读 [城镇与大地图统一比例尺规范](../standards/TOWN_MAP_SCALE_PRODUCTION.md)，使用 `art-production/tools/scene_scale_guide.py` 生成的透明标尺图作为参考。普通角色始终 200 世界像素高，街区以 1600×1000 单屏为单位生成；场景各层同坐标、同画布、无运行时二次拉伸。城市通过街区连接表现，不靠一张超大画布缩小角色。纵向地图仍是 1600×1000 的横屏画布，不旋转背景、不把角色向远处缩小。通过 `--orientation vertical`（南北）、`--orientation mixed`（十字街口）输出对应的参考层。
+**城镇、街区、大地图补充**：横向主街、竖向街巷与十字街口使用同一尺度。生成前先阅读 [城镇与大地图统一比例尺规范](../standards/TOWN_MAP_SCALE_PRODUCTION.md)，使用 `art-production/tools/scene_scale_guide.py` 生成的透明标尺图作为参考。普通角色始终 200 世界像素高，街区以 1600×1000 单屏为单位生成；场景各层同坐标、同画布、无运行时二次拉伸。城市通过街区连接表现，不靠一张超大画布缩小角色。纵向单屏仍是 1600×1000 的横屏画布；连续南北长街可以使用 1600×2400 等完整世界画布，并由固定 1600×1000 游戏视口跟随人物滚动，不旋转背景、不把角色向远处缩小。通过 `--orientation vertical`（南北）、`--orientation mixed`（十字街口）输出对应的参考层。
 
 **重要：此比例尺是构图和后期校准合同，不是仅凭 AI 提示词就能保证的像素精度。**
 
@@ -155,7 +155,7 @@ RGBA, no opaque placeholder color, no extra objects, no text or UI.
 
 ### 竖向街道与十字街口补充提示词
 
-使用 `--orientation vertical` 的透明比例尺引导层控制南北街，使用 `--orientation mixed` 控制十字街口。两种场景仍是 1600×1000 横屏，并须在相同坐标点验证站立人物的 200px 可见高度。
+使用 `--orientation vertical` 的透明比例尺引导层控制南北街，使用 `--orientation mixed` 控制十字街口。两种场景都使用横向 1600×1000 **游戏视口**，可以制作 1600×2400 等真实完整世界画布，并须在不同 Y 位置验证人物始终为 200px 高；分层贴图、原生场景 `world_size` / `viewport_size` 必须与世界画布完全一致。
 
 ```text
 原创中国武侠城镇，固定横屏 1600x1000、2.5D 轻俯视地面，
