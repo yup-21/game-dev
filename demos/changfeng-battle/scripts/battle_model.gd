@@ -4,6 +4,7 @@ const State = preload("res://scripts/battle_state.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
 const Spatial = preload("res://scripts/battle_spatial_service.gd")
 const Geometry = preload("res://scripts/battle_spatial_facade.gd")
+const CombatScale = preload("res://scripts/combat_scale.gd")
 const Cards = preload("res://scripts/card_system.gd")
 const SchoolCatalog = preload("res://scripts/school_catalog.gd")
 const Attributes = preload("res://scripts/attribute_system.gd")
@@ -378,7 +379,7 @@ func _spatial_ai_candidates(actor_id: int) -> Array:
 	var remaining: int=mini(int(actor.stats.get("move_budget",2))-actor.normal_moves_used,
 		int(float(available_qi)/10000.0))
 	if remaining<=0: return result
-	var unit: float=maxf(state.spatial.bake.step.x,state.spatial.bake.step.y)
+	var unit: float=CombatScale.PIXELS_PER_UNIT
 	var geometry=Geometry.new(state)
 	for target in opponents:
 		var goal: Dictionary=geometry.find_attack_approach(actor,target,
