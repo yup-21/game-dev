@@ -1,30 +1,20 @@
 extends RefCounted
 ## Explicit mapping: artwork never leaks card information or changes combat state.
-## Art source: assets/ui/original/*.svg, original jade-and-ink vectors.
-const PROBE = preload("res://assets/ui/original/card_probe.svg")
-const SUNDER = preload("res://assets/ui/original/card_sunder.svg")
-const STEP = preload("res://assets/ui/original/card_step.svg")
-const GUARD = preload("res://assets/ui/original/card_guard.svg")
-const CHANGE = preload("res://assets/ui/original/card_change.svg")
-const COMBO = preload("res://assets/ui/original/card_combo.svg")
-const BREATH = preload("res://assets/ui/original/card_breath.svg")
-const CLASH = preload("res://assets/ui/original/card_clash.svg")
-const SEAL = preload("res://assets/ui/original/jade_seal.svg")
+## Art source: imported/in-use/legacy/ui/original/*.svg, original jade-and-ink vectors.
+const PROBE = preload("res://assets/imported/in-use/legacy/ui/original/card_probe.svg")
+const SUNDER = preload("res://assets/imported/in-use/legacy/ui/original/card_sunder.svg")
+const STEP = preload("res://assets/imported/in-use/legacy/ui/original/card_step.svg")
+const GUARD = preload("res://assets/imported/in-use/legacy/ui/original/card_guard.svg")
+const CHANGE = preload("res://assets/imported/in-use/legacy/ui/original/card_change.svg")
+const COMBO = preload("res://assets/imported/in-use/legacy/ui/original/card_combo.svg")
+const BREATH = preload("res://assets/imported/in-use/legacy/ui/original/card_breath.svg")
+const CLASH = preload("res://assets/imported/in-use/legacy/ui/original/card_clash.svg")
+const SEAL = preload("res://assets/imported/in-use/legacy/ui/original/jade_seal.svg")
 
-static var _painted_cache: Dictionary = {}
-
-static func _art(name: String, vector_fallback: Texture2D) -> Texture2D:
-    # Optional full-detail 384x512 art; keep an always-available vector fallback.
-    if _painted_cache.has(name):
-        return _painted_cache[name]
-    var path := "res://assets/ui/original/painted/card_%s.png" % name
-    var texture := vector_fallback
-    if ResourceLoader.exists(path):
-        var imported := ResourceLoader.load(path) as Texture2D
-        if imported != null:
-            texture = imported
-    _painted_cache[name] = texture
-    return texture
+## Card art is bound to the currently imported vector assets.
+## No legacy filename probing or hidden per-card image override.
+static func _art(_name: String, vector_fallback: Texture2D) -> Texture2D:
+    return vector_fallback
 
 static func for_card(card: Dictionary) -> Texture2D:
     var id := str(card.get("definition_id", card.get("card_id", card.get("id", ""))))
