@@ -77,7 +77,7 @@ func _load_grid_record(data: Variant, path: String) -> void:
     image_scale = float(transform_data.get("scale",1.0))
     image_path = str(data.get("background",""))
     id = str(data.get("id",""))
-    if id.is_empty() or not image_path.begins_with("res://assets/imported/") or image_path.contains("..") or not ResourceLoader.exists(image_path) or step.x<=0.0 or step.y<=0.0 or image_scale<1.0 or image_scale>1.5 or absf(image_rotation_degrees)>15.0:
+    if id.is_empty() or not image_path.begins_with("res://assets/imported/") or image_path.contains("..") or not ResourceLoader.exists(image_path) or step.x<=0.0 or step.y<=0.0 or not CombatScale.valid_map_art_transform(image_scale, image_rotation_degrees):
         error = "Invalid artwork path or calibration"
         return
     for y in range(height):
@@ -172,7 +172,8 @@ func _load_native(path: String) -> void:
     if not image_path.begins_with("res://assets/imported/") or \
             not ResourceLoader.exists(image_path) or area_bounds.position.x < 0 or \
             area_bounds.position.y < 0 or area_bounds.end.x > viewport_size.x or \
-            area_bounds.end.y > viewport_size.y or image_scale <= 0.0:
+            area_bounds.end.y > viewport_size.y or \
+            not CombatScale.valid_map_art_transform(image_scale, image_rotation_degrees):
         error = "Invalid native artwork/calibration"
         return
     var authored_walkable: Variant = spec.get("walkable_outline", [])
