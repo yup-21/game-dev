@@ -24,37 +24,12 @@ func _run() -> void:
     _check(baked.error.is_empty() and baked.id == "rainy_bridge"
         and baked.polygon_mode and baked.walkable_outline.size() >= 3,
         "native map loads with paint-aligned walkable contour")
-    # Lightweight alpha-distribution audit of the NEW ground paint.
-    # Artists may compare this grid to the authored geometry; no collision
-    # is inferred from alpha without an explicit gameplay mask contract.
+    # The painted ground is a transparent 1600x1000 layer, not decorative
+    # opaque background; constrain authored feet to its verified alpha.
     var ground_image: Image = baked.scene_art.ground.get_image() if baked.scene_art != null else null
+    _check(ground_image != null and not ground_image.is_empty(),
+        "new layered map provides a real painted ground texture")
     if ground_image != null and not ground_image.is_empty():
-        print("PAINTED_GROUND_ALPHA_BEGIN (32x20, .=clear +=partial #=opaque)")
-        for sample_y in range(20):
-            var alpha_row := ""
-            for sample_x in range(32):
-                var coordinate := Vector2i(
-                    mini(ground_image.get_width()-1, (sample_x*2+1)*ground_image.get_width()/64),
-                    mini(ground_image.get_height()-1, (sample_y*2+1)*ground_image.get_height()/40))
-                var opacity: float = ground_image.get_pixelv(coordinate).a
-                alpha_row += "#" if opacity >= 0.8 else ("+" if opacity >= 0.15 else ".")
-            print(alpha_row)
-        print("PAINTED_GROUND_ALPHA_END")
-        print("PAINTED_GROUND_BOUNDS_BEGIN (sample x, first/last solid y, pixels)")
-        for col in range(0, 32):
-            var x: int = mini(ground_image.get_width()-1, col*ground_image.get_width()/32 + ground_image.get_width()/64)
-            var first: int = -1
-            var last: int = -1
-            var count: int = 0
-            for y in range(ground_image.get_height()):
-                var opacity: float = ground_image.get_pixel(x,y).a
-                if opacity > 0.80:
-                    if first == -1:
-                        first = y
-                    last = y
-                    count += 1
-            print("%d %d %d %d" % [x,first,last,count])
-        print("PAINTED_GROUND_BOUNDS_END")
         var inside_ground := true
         for vertex in baked.walkable_outline:
             var source_x: int = clampi(roundi(vertex.x),0,ground_image.get_width()-1)
