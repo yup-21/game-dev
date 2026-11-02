@@ -55,6 +55,14 @@ func _run() -> void:
                     count += 1
             print("%d %d %d %d" % [x,first,last,count])
         print("PAINTED_GROUND_BOUNDS_END")
+        var inside_ground := true
+        for vertex in baked.walkable_outline:
+            var source_x: int = clampi(roundi(vertex.x),0,ground_image.get_width()-1)
+            var source_y: int = clampi(roundi(vertex.y),0,ground_image.get_height()-1)
+            if ground_image.get_pixel(source_x,source_y).a <= 0.8:
+                inside_ground = false
+        _check(inside_ground, "walkable outline vertices lie inside the actual alpha-painted ground")
+
     _check(baked.tiles.size() == 150 and baked.terrain.size() == 150
         and baked.scene_art != null and baked.scene_art.valid_for(Vector2i(1600,1000)),
         "one 1600x1000 layered painting bakes the 15x10 tactical index")
