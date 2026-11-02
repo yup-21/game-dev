@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_character"]
 [ext_resource type="Script" path="res://scripts/content/starting_item_definition.gd" id="2_start"]
-[ext_resource type="Texture2D" path="res://assets/characters/concepts/gu_qingshuang_portrait_v1.png" id="3_portrait"]
-[ext_resource type="Texture2D" path="res://assets/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png" id="4_sheet"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/characters/concepts/gu_qingshuang_portrait_v1.png" id="3_portrait"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/concepts/2026-10-30/characters/green_robed_wanderer_24_pose.png" id="4_sheet"]
 [ext_resource type="PackedScene" path="res://scenes/character_presentation_preview.tscn" id="5_scene"]
 
 [sub_resource type="Resource" id="Starting_blade"]
