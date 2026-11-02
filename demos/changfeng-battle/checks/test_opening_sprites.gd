@@ -50,7 +50,7 @@ func _run() -> void:
         and elder.body.material==null
         and elder.body.frame_coords==Vector2i.ZERO,
         "injured elder uses dedicated transparent story pose, no generated model")
-    var hero_ink := VisualScale._opaque_bounds(hero.body.texture,6,4)
+    var hero_ink := VisualScale._opaque_bounds(hero.body.texture,6,4,1)
     var elder_ink := VisualScale._opaque_bounds(elder.body.texture,1,1)
     if hero_ink.size.y >= 16 and hero_ink.size.y < 245 and \
             elder_ink.size.y >= 16 and elder_ink.size.y < int(elder.body.texture.get_height()*0.96):
@@ -93,8 +93,8 @@ func _run() -> void:
         "wounded elder remains a deliberate static pose")
     hero.set_motion(Vector2.ZERO,0.10)
     _check(not hero.walking and hero.animation_player.current_animation == "idle"
-        and hero.body.frame_coords==Vector2i.ZERO,
-        "idle restores stance and never invents new frames")
+        and hero.body.frame_coords==Vector2i(1,0),
+        "idle restores authored side stance and never invents new frames")
     opening.player_pos=Vector2(1040,580)
     opening.call("_sync_story_sprites",Vector2.ZERO,0.0)
     _check(hero.feet()==Vector2(1040,580),"sprite moves with authoritative explore position")
