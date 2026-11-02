@@ -34,8 +34,8 @@ func _run() -> void:
     root.add_child(view)
     await process_frame
     await process_frame
-    _check(_actions(view) == ["start", "hd2d", "pingjiang_qa", "quit"],
-        "main menu keeps one HD-2D battle and an isolated map QA, without duel/party variants")
+    _check(_actions(view) == ["start", "hd2d", "pingjiang_qa", "pingjiang_vertical_qa", "quit"],
+        "main menu keeps one HD-2D battle and two isolated map QA entries, without duel/party variants")
     view.get("story").set("phase", "complete")
     view.queue_redraw()
     await process_frame
