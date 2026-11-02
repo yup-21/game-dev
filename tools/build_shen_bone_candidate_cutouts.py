@@ -129,21 +129,33 @@ def build():
         if name=="sword":
             piece=draw_sword(size,a,b)
         else:
-            mask=capsule(size,st,en,width/2)
-            piece=Image.new("RGBA",size,FILL[name])
-            piece.putalpha(mask.point(lambda v:int(v*.95)))
+            # Preserve real silhouette alpha on original head/robe/hair and
+            # avoid visible pill-shaped patches around the face and hems.
+            # Only hidden mechanical joints receive low-opacity seam fill.
+            decorative=name in ("head","hair_back","coat_front","coat_back","coat_inner")
+            narrow=name.startswith("boot_")
+            mask=capsule(size,st,en,(width/2)*(0.70 if narrow else 1.0))
+            piece=Image.new("RGBA",size,(0,0,0,0))
+            if not decorative:
+                underlay=Image.new("RGBA",size,FILL[name])
+                alpha_fill=mask.point(lambda v:int(v*(0.62 if narrow else 0.54)))
+                underlay.putalpha(alpha_fill)
+                piece.alpha_composite(underlay)
             paint=source_piece(atlas_img,name)
             bbox=mask.getbbox()
             if paint is not None and bbox:
                 bw,bh=bbox[2]-bbox[0],bbox[3]-bbox[1]
                 if bw>2 and bh>2:
                     paint=paint.resize((bw,bh),Image.Resampling.LANCZOS)
-                    alpha=Image.new("L",size,0)
-                    alpha.paste(paint.getchannel("A"),bbox[:2])
-                    alpha=ImageChops.multiply(alpha,mask)
                     material=Image.new("RGBA",size)
                     material.paste(paint,bbox[:2])
-                    piece.alpha_composite(Image.composite(material,Image.new("RGBA",size),alpha))
+                    paint_alpha=Image.new("L",size,0)
+                    paint_alpha.paste(paint.getchannel("A"),bbox[:2])
+                    paint_alpha=ImageChops.multiply(paint_alpha,mask)
+                    material.putalpha(paint_alpha)
+                    piece.alpha_composite(material)
+            # The source's genuine alpha hides the old robe boundary. A new
+            # separate clothing paint pass can later finish these candidates.
         # Each layer retains the ENTIRE canonical canvas, including empty
         # padding around the named bone pivot.
         name_path=OUTPUT/f"{name}.png"
