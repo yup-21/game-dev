@@ -28,6 +28,13 @@ func _run() -> void:
     var mismatched: WuxiaMapDefinition = map.duplicate(true)
     mismatched.pixels_per_unit = 96.0
     check(mismatched.to_record().is_empty(), "mismatched texture map scale rejected")
+    var shifted: WuxiaMapDefinition = map.duplicate(true)
+    shifted.image_scale = 1.25
+    check(shifted.to_record().is_empty(), "zoomed environment art is not accepted")
+    shifted.image_scale = 1.0
+    shifted.image_rotation_degrees = 5.0
+    check(shifted.to_record().is_empty(), "rotated environment art cannot shift collision")
+    check(Scale.valid_map_art_transform(1.0, 0.0), "identity art transform accepted")
     var bake = MapBake.new(path)
     check(bake.error.is_empty() and bake.polygon_mode, "polygon map still loads")
     check(is_equal_approx(bake.pixels_per_unit, Scale.PIXELS_PER_UNIT),
