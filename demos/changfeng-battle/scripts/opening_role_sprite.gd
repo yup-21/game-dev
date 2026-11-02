@@ -7,6 +7,7 @@ const Art = preload("res://scripts/hd2d_art_catalog.gd")
 const SpriteClips = preload("res://scripts/battle_native_sprite_clips.gd")
 const Timeline = preload("res://scripts/battle_action_timeline.gd")
 const VisualScale = preload("res://scripts/actor_visual_scale.gd")
+const CombatScale = preload("res://scripts/combat_scale.gd")
 const ANIMATION_COLUMNS := 6
 const ANIMATION_ROWS := 4
 const WALK_FPS := 9.0
@@ -73,13 +74,13 @@ func configure(id: String) -> bool:
         # edges and proportions instead of masking a rectangular portrait.
         var image_size: Vector2 = texture.get_size()
         body.offset = Vector2(0,-image_size.y*0.5)
-        body.scale = Vector2.ONE * (200.0 / image_size.y)
+        body.scale = Vector2.ONE * (CombatScale.actor_height_pixels() / image_size.y)
     var idle_frame: int = 0
     if animation_profile != null:
         var idle_clip: WuxiaActorAnimationClip = animation_profile.clip_for("idle")
         if idle_clip != null and not idle_clip.frames.is_empty():
             idle_frame = int(idle_clip.frames[0])
-    VisualScale.fit(body, body.scale, VisualScale.TARGET_HEIGHT,
+    VisualScale.fit(body, body.scale, CombatScale.actor_height_pixels(),
         animation_profile.feet_adjust if animation_profile != null else Vector2.ZERO,
         idle_frame)
     foot_shadow = Polygon2D.new()
@@ -88,7 +89,7 @@ func configure(id: String) -> bool:
     var polygon := PackedVector2Array()
     for i in range(24):
         var theta := TAU * float(i)/24.0
-        polygon.append(Vector2(cos(theta)*35.0,sin(theta)*8.0))
+        polygon.append(Vector2(cos(theta)*CombatScale.footprint_radius_pixels(),sin(theta)*CombatScale.footprint_radius_pixels()*0.42))
     foot_shadow.polygon = polygon
     add_child(foot_shadow)
     add_child(body)
