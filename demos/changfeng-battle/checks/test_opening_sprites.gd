@@ -52,7 +52,7 @@ func _run() -> void:
         "injured elder uses dedicated transparent story pose, no generated model")
     var hero_ink := VisualScale._opaque_bounds(hero.body.texture,6,4)
     var elder_ink := VisualScale._opaque_bounds(elder.body.texture,1,1)
-    if hero_ink.size.y >= 16 and hero_ink.size.y < 245 and
+    if hero_ink.size.y >= 16 and hero_ink.size.y < 245 and \
             elder_ink.size.y >= 16 and elder_ink.size.y < int(elder.body.texture.get_height()*0.96):
         var hero_height := float(hero_ink.size.y) * hero.body.scale.y
         var elder_height := float(elder_ink.size.y) * elder.body.scale.y
