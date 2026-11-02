@@ -66,7 +66,7 @@ position = Vector2(-6, 42)
 position = Vector2(0, 38)
 
 [node name="RearFoot" type="Bone2D" parent="Skeleton2D/Root/Pelvis/RearHip/RearKnee/RearAnkle"]
-position = Vector2(10, 10)
+position = Vector2(10, 15)
 
 [node name="FrontHip" type="Bone2D" parent="Skeleton2D/Root/Pelvis"]
 position = Vector2(12, 5)
@@ -78,7 +78,7 @@ position = Vector2(7, 40)
 position = Vector2(-1, 40)
 
 [node name="FrontFoot" type="Bone2D" parent="Skeleton2D/Root/Pelvis/FrontHip/FrontKnee/FrontAnkle"]
-position = Vector2(11, 10)
+position = Vector2(11, 15)
 
 [node name="HairRoot" type="Bone2D" parent="Skeleton2D/Root/Pelvis/Waist/Chest/Neck/Head"]
 position = Vector2(-17, -2)
