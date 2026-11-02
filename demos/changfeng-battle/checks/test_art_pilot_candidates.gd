@@ -8,7 +8,7 @@ const ActionTimeline = preload("res://scripts/battle_action_timeline.gd")
 const SceneArt = preload("res://scripts/content/scene_art_profile.gd")
 
 const FIRST_FRAME := {
-    "idle": 0, "move": 2, "attack": 6, "guard": 9, "hit": 11,
+    "idle": 1, "move": 2, "attack": 6, "guard": 9, "hit": 11,
     "evade": 13, "skill": 16, "combo": 19, "defeat": 22,
 }
 

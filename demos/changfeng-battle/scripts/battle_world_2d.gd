@@ -43,8 +43,14 @@ func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
         sprite.vframes = profile.rows
         sprite.offset = profile.feet_offset
         sprite.scale = profile.actor_scale
+    var idle_frame: int = 0
+    if profile != null:
+        var idle_clip: WuxiaActorAnimationClip = profile.clip_for("idle")
+        if idle_clip != null and not idle_clip.frames.is_empty():
+            idle_frame = int(idle_clip.frames[0])
     VisualScale.fit(sprite, profile.actor_scale if profile != null else sprite.scale,
-        VisualScale.TARGET_HEIGHT, profile.feet_adjust if profile != null else Vector2.ZERO)
+        VisualScale.TARGET_HEIGHT, profile.feet_adjust if profile != null else Vector2.ZERO,
+        idle_frame)
     sprite.set_meta("faces_left_unflipped", profile.faces_left_unflipped if profile != null
         else (ArtCatalog.sheet_faces_left_for_character(character_id) if not character_id.is_empty()
         else ArtCatalog.sheet_faces_left(id)))
