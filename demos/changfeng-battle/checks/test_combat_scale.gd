@@ -50,7 +50,7 @@ func _run() -> void:
     check(not geometry.can_attack(state.actors[0], state.actors[1], 0.0, 1.0, false),
         "attack outside one-unit footprint gap is rejected")
     var collision = Geometry.new(state)
-    check(not collision.can_land(state.actors[0], origin + Vector2(Scale.footprint_radius_pixels()*1.5, 0)),
+    check(not collision.can_land(state.actors[0], state.actors[1].position - Vector2(10, 0)),
         "actor footprints cannot overlap")
     for actor_name in ["shen_changfeng", "pursuer_captain", "gu_qingshuang",
             "green_wanderer", "black_blade", "night_assassin"]:
