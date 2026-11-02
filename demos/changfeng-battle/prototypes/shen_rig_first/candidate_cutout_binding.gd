@@ -89,7 +89,7 @@ static func bind_parts(scene: Node2D, core: Dictionary, ornaments: Dictionary,
             missing.append(name)
             continue
         var expected_size := Vector2i(int(entry["canvas_px"][0]), int(entry["canvas_px"][1]))
-        if tex.get_size() != expected_size:
+        if Vector2i(tex.get_size()) != expected_size:
             missing.append(name + ":canvas")
             continue
         if group == "hair" or group == "coat":
