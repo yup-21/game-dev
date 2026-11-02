@@ -230,7 +230,7 @@ func _load_native(path: String) -> void:
             var centre: Vector2 = cell_center(cell)
             var terrain_kind: String = "road"
             if not walkable_outline.is_empty() and not Geometry2D.is_point_in_polygon(centre,walkable_outline):
-                terrain_kind = "blocked"
+                terrain_kind = "rock"
             for obstacle in polygons:
                 if Geometry2D.is_point_in_polygon(centre,obstacle.points):
                     terrain_kind = str(obstacle.kind)
