@@ -65,7 +65,8 @@ static func fit(sprite: Sprite2D, fallback_scale: Vector2 = Vector2.ONE,
         return false
     var factor: float = target_height / float(rect.size.y)
     sprite.scale = Vector2.ONE * factor
-    sprite.offset = Vector2(frame_size.x * 0.5 - (float(rect.position.x)
-        + float(rect.size.x) * 0.5),
-        frame_size.y * 0.5 - float(rect.end.y)) + feet_adjust / factor
+    # Keep the atlas frame's X-centre as the pivot. Centering the alpha
+    # bounding box would shift the actor when a sword/cape changes sides.
+    # The foot remains exactly on the Node2D origin (unless nudged).
+    sprite.offset = Vector2(0.0, frame_size.y * 0.5 - float(rect.end.y)) + feet_adjust / factor
     return true
