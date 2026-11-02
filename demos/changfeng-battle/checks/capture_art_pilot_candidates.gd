@@ -42,10 +42,10 @@ func _run() -> void:
         atlases[id] = data["texture"]
     # These are inspection placements, NOT tested map spawn points.
     var poses := [
-        {"id": "shen_changfeng", "frame": 0, "point": Vector2(375, 424)},
+        {"id": "shen_changfeng", "frame": 1, "point": Vector2(375, 424)},
         {"id": "shen_changfeng", "frame": 6, "point": Vector2(545, 450)},
         {"id": "shen_changfeng", "frame": 9, "point": Vector2(715, 425)},
-        {"id": "pursuer_captain", "frame": 0, "point": Vector2(885, 427)},
+        {"id": "pursuer_captain", "frame": 1, "point": Vector2(885, 427)},
         {"id": "pursuer_captain", "frame": 6, "point": Vector2(1055, 454)},
         {"id": "pursuer_captain", "frame": 9, "point": Vector2(1225, 425)},
     ]
