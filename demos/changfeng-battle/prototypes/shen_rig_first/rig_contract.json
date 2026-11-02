@@ -169,7 +169,7 @@
       "parent": "RearAnkle",
       "anchor": [
         -8,
-        -5
+        0
       ]
     },
     {
@@ -201,7 +201,7 @@
       "parent": "FrontAnkle",
       "anchor": [
         29,
-        -5
+        0
       ]
     },
     {
