@@ -14,6 +14,8 @@ var origin: Vector2 = Vector2.ZERO
 var step: Vector2 = Vector2.ZERO
 ## Tactical sampling step is NOT a length unit.
 var pixels_per_unit: float = CombatScale.PIXELS_PER_UNIT
+## Authoring axis only: FREE navigation always uses both X and Y.
+var primary_axis: String = "horizontal"
 var image_rotation_degrees: float = 0.0
 var image_scale: float = 1.0
 var width: int = 0
@@ -61,6 +63,10 @@ func _load_grid_record(data: Variant, path: String) -> void:
     if not CombatScale.valid_map_pixels_per_unit(pixels_per_unit):
         error = "Grid map scale differs from combat scale"
         return
+    primary_axis = str(data.get("primary_axis", "horizontal"))
+    if primary_axis not in ["horizontal", "vertical", "mixed"]:
+        error = "Invalid map layout orientation"
+        return
     width = int(grid.get("columns",0))
     height = int(grid.get("rows",0))
     if width!=15 or height!=10 or lines.size()!=height:
@@ -77,7 +83,7 @@ func _load_grid_record(data: Variant, path: String) -> void:
     image_scale = float(transform_data.get("scale",1.0))
     image_path = str(data.get("background",""))
     id = str(data.get("id",""))
-    if id.is_empty() or not image_path.begins_with("res://assets/imported/") or image_path.contains("..") or not ResourceLoader.exists(image_path) or step.x<=0.0 or step.y<=0.0 or image_scale<1.0 or image_scale>1.5 or absf(image_rotation_degrees)>15.0:
+    if id.is_empty() or not image_path.begins_with("res://assets/imported/") or image_path.contains("..") or not ResourceLoader.exists(image_path) or step.x<=0.0 or step.y<=0.0 or not CombatScale.valid_map_art_transform(image_scale, image_rotation_degrees):
         error = "Invalid artwork path or calibration"
         return
     for y in range(height):
@@ -157,6 +163,10 @@ func _load_native(path: String) -> void:
     if not CombatScale.valid_map_pixels_per_unit(pixels_per_unit):
         error = "Map artwork scale differs from combat scale"
         return
+    primary_axis = str(spec.get("primary_axis", "horizontal"))
+    if primary_axis not in ["horizontal", "vertical", "mixed"]:
+        error = "Invalid map layout orientation"
+        return
     var bounds: Array = spec.get("bounds",[])
     if bounds.size() != 4 or not _valid_pair([bounds[0],bounds[1]]) or \
             not _valid_pair([bounds[2],bounds[3]]):
@@ -172,7 +182,8 @@ func _load_native(path: String) -> void:
     if not image_path.begins_with("res://assets/imported/") or \
             not ResourceLoader.exists(image_path) or area_bounds.position.x < 0 or \
             area_bounds.position.y < 0 or area_bounds.end.x > viewport_size.x or \
-            area_bounds.end.y > viewport_size.y or image_scale <= 0.0:
+            area_bounds.end.y > viewport_size.y or \
+            not CombatScale.valid_map_art_transform(image_scale, image_rotation_degrees):
         error = "Invalid native artwork/calibration"
         return
     var authored_walkable: Variant = spec.get("walkable_outline", [])
@@ -215,7 +226,7 @@ func _load_native(path: String) -> void:
     for marker in spec.get("markers",[]):
         if not marker is Dictionary or not marker.get("position") is Array or \
                 not _valid_pair(marker.position) or \
-                str(marker.get("kind","")) not in ["spawn","story_trigger","vfx_anchor"]:
+                str(marker.get("kind","")) not in ["spawn","story_trigger","vfx_anchor","zone_exit"]:
             error = "Invalid authored map marker"
             return
         var point: Vector2 = _vec(marker.position)

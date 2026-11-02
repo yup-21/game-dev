@@ -4,6 +4,9 @@ extends Resource
 ## Rendering hints and trigger placements are data; the Node2D template stays shared.
 @export var background: Texture2D
 @export var scene_art: WuxiaSceneArtProfile
+## Real 2D painting/world extent, not the fixed game UI window.
+## 1600x2400 supports a north/south scrolling street without scaling actors.
+@export var world_size: Vector2i = Vector2i(1600, 1000)
 @export var primary_npc: Resource
 @export var npcs: Array[Resource] = []
 @export var player_position: Vector2 = Vector2(350,705)
@@ -21,10 +24,15 @@ extends Resource
 
 func to_record() -> Dictionary:
     if background == null or background.resource_path.is_empty() or \
-            not primary_npc is WuxiaChapterNpcDefinition:
+            not primary_npc is WuxiaChapterNpcDefinition or \
+            world_size.x < 1600 or world_size.y < 1000 or \
+            world_size.x > 8192 or world_size.y > 8192:
+        return {}
+    if world_size != Vector2i(1600, 1000) and \
+            Vector2i(background.get_size()) != world_size:
         return {}
     if scene_art != null and (scene_art.resource_path.is_empty() or \
-            not scene_art.valid_for(Vector2i(1600, 1000))):
+            not scene_art.valid_for(world_size)):
         return {}
     var first: Dictionary = primary_npc.to_record()
     if first.is_empty(): return {}
@@ -37,6 +45,7 @@ func to_record() -> Dictionary:
         seen[str(entry.character_id)] = true
         extras.append(entry)
     var record: Dictionary = {"background":background.resource_path,
+        "world_size":[world_size.x,world_size.y],
         "npc_character_id":first.character_id,"npc_position":first.position,
         "npcs":extras,
         "player_position":[player_position.x,player_position.y],

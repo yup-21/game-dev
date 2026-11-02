@@ -1,5 +1,7 @@
 # 《长风浮生录》统一美术风格与 AI 生成提示词模板 V1
 
+> **历史兼容副本，不再更新规则正文。** 最新提示词请看 [art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md](../art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md)，城镇地图生成请同时使用 [统一场景比例尺规范](../art-production/standards/TOWN_MAP_SCALE_PRODUCTION.md)。
+
 > 状态：**制作模板 / candidate baseline**，供整个项目使用，不局限 Demo。继承 [ART_PRODUCTION_STANDARD.md](ART_PRODUCTION_STANDARD.md)；若有冲突，以运行时 Resource 合同及已批准素材为准。本文的建议尺寸、配色和帧数必须通过首个角色与场景试点后才能标记为 frozen。AI 生成图一律先进入 concept/candidate，不能自动视为 approved。
 
 ## 1. 全项目共同视觉语言（Style DNA）
