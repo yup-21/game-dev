@@ -6,10 +6,11 @@ const TARGET_HEIGHT := 200.0
 const ALPHA_THRESHOLD := 0.20
 static var _bounds_cache: Dictionary = {}
 
-static func _opaque_bounds(texture: Texture2D, columns: int, rows: int) -> Rect2i:
-    if texture == null or columns < 1 or rows < 1:
+static func _opaque_bounds(texture: Texture2D, columns: int, rows: int,
+        reference_frame: int = 0) -> Rect2i:
+    if texture == null or columns < 1 or rows < 1 or reference_frame < 0 or reference_frame >= columns * rows:
         return Rect2i()
-    var key := "%d:%d:%d" % [texture.get_instance_id(), columns, rows]
+    var key := "%d:%d:%d:%d" % [texture.get_instance_id(), columns, rows, reference_frame]
     if _bounds_cache.has(key):
         return _bounds_cache[key]
     var image := texture.get_image()
@@ -23,21 +24,20 @@ static func _opaque_bounds(texture: Texture2D, columns: int, rows: int) -> Rect2
     var min_y := fh
     var max_x := -1
     var max_y := -1
-    # Anchor to the FIRST idle pose only. These atlases use idle frame 1
-    # for a different direction, not a breathing-cycle variation.
+    # Measure the EXACT authored idle pose (side-facing in battle), not
+    # an arbitrary atlas frame. This prevents pose-dependent foot drift.
     # Subsample large static poses for predictable loading cost.
     var stride: int = maxi(1, ceili(float(maxi(fw, fh)) / 256.0))
-    for frame in range(1):
-        var frame_x: int = (frame % columns) * fw
-        var frame_y: int = (frame / columns) * fh
-        for y in range(0, fh, stride):
-            for x in range(0, fw, stride):
-                if image.get_pixel(frame_x + x, frame_y + y).a < ALPHA_THRESHOLD:
-                    continue
-                min_x = mini(min_x, x)
-                min_y = mini(min_y, y)
-                max_x = maxi(max_x, x)
-                max_y = maxi(max_y, y)
+    var frame_x: int = (reference_frame % columns) * fw
+    var frame_y: int = (reference_frame / columns) * fh
+    for y in range(0, fh, stride):
+        for x in range(0, fw, stride):
+            if image.get_pixel(frame_x + x, frame_y + y).a < ALPHA_THRESHOLD:
+                continue
+            min_x = mini(min_x, x)
+            min_y = mini(min_y, y)
+            max_x = maxi(max_x, x)
+            max_y = maxi(max_y, y)
     var visible := Rect2i()
     if max_x >= min_x and max_y >= min_y:
         visible = Rect2i(min_x, min_y,
@@ -47,12 +47,13 @@ static func _opaque_bounds(texture: Texture2D, columns: int, rows: int) -> Rect2
 
 static func fit(sprite: Sprite2D, fallback_scale: Vector2 = Vector2.ONE,
         target_height: float = TARGET_HEIGHT,
-        feet_adjust: Vector2 = Vector2.ZERO) -> bool:
+        feet_adjust: Vector2 = Vector2.ZERO,
+        reference_frame: int = 0) -> bool:
     if sprite == null or sprite.texture == null:
         return false
     var columns: int = maxi(1, sprite.hframes)
     var rows: int = maxi(1, sprite.vframes)
-    var rect: Rect2i = _opaque_bounds(sprite.texture, columns, rows)
+    var rect: Rect2i = _opaque_bounds(sprite.texture, columns, rows, reference_frame)
     var frame_size := Vector2(sprite.texture.get_width() / columns,
         sprite.texture.get_height() / rows)
     # An opaque full-frame matte cannot provide a reliable silhouette.
