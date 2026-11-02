@@ -37,6 +37,11 @@ func _run() -> void:
     for name in ["HairMesh", "RobeLeftMesh", "RobeInnerMesh", "RobeRightMesh"]:
         check(int(mesh_counts.get(name, 0)) == 2, name + " has two-bone Polygon2D weights")
 
+    var feet: Dictionary = scene.debug_swap_foot_alignment()
+    check(absf(float(feet.get("rear", -999))) <= 2.0,
+        "attack rear-leg bottom registers at the common ground baseline")
+    check(absf(float(feet.get("front", -999))) <= 2.0,
+        "attack front-leg bottom registers at the common ground baseline")
     check(scene.debug_has_action_swaps(), "attack and guard swap groups exist")
     check(scene.has_node("RigV2/AttackUpper/AttackArmsSword"), "attack sword attachment exists")
     check(scene.has_node("RigV2/GuardUpper/GuardArmsSword"), "guard sword attachment exists")
