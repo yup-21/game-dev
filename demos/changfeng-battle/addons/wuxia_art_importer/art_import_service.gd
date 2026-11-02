@@ -6,6 +6,44 @@ extends RefCounted
 const EXTENSIONS := ["png", "webp", "jpg", "jpeg", "svg"]
 const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx"]
 const MANIFEST := "res://data/content_manifest.tres"
+const CombatScale = preload("res://scripts/combat_scale.gd")
+
+
+## Candidate art must have a full-size, safely contained idle reference.
+## Old in-use legacy fallback is still importable for compatibility.
+static func candidate_idle_scale_error(texture: Texture2D, columns: int, rows: int,
+        frame_index: int) -> String:
+    var img: Image = texture.get_image() if texture != null else null
+    if img == null or img.is_empty() or columns < 1 or rows < 1 or \
+            img.get_width() % columns != 0 or img.get_height() % rows != 0 or \
+            frame_index < 0 or frame_index >= columns * rows:
+        return "无法读取 Atlas 脚点参考帧"
+    var fw: int = img.get_width() / columns
+    var fh: int = img.get_height() / rows
+    var min_x: int = fw
+    var min_y: int = fh
+    var max_x: int = -1
+    var max_y: int = -1
+    var ox: int = (frame_index % columns) * fw
+    var oy: int = (frame_index / columns) * fh
+    for y in range(fh):
+        for x in range(fw):
+            if img.get_pixel(ox+x,oy+y).a < 0.20:
+                continue
+            min_x = mini(min_x, x)
+            min_y = mini(min_y, y)
+            max_x = maxi(max_x, x)
+            max_y = maxi(max_y, y)
+    if max_x < 0:
+        return "Atlas 待机参考帧没有可见角色"
+    var proportion: float = float(max_y-min_y+1)/float(fh)
+    if proportion < CombatScale.REFERENCE_HEIGHT_MIN_FRACTION or \
+            proportion > CombatScale.REFERENCE_HEIGHT_MAX_FRACTION:
+        return "待机人物高度不符合格高 35%～95% 的贴图比例约束"
+    var margin: int = CombatScale.SAFE_FRAME_MARGIN_PX
+    if min_x < margin or min_y < margin or max_x >= fw-margin or max_y >= fh-margin:
+        return "待机参考帧触碰格线；请为四边各留至少 8px 透明边距"
+    return ""
 
 
 static func production_root() -> String:
@@ -131,6 +169,8 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             return {"error": "需要选择 data/maps 地图或 data/native/chapters 章节 Resource"}
         owner = ResourceLoader.load(target)
         if owner is WuxiaMapDefinition or owner is WuxiaGridMapDefinition:
+            if not CombatScale.valid_map_pixels_per_unit(float(owner.get("pixels_per_unit"))):
+                return {"error": "地图比例尺与战斗统一比例尺不符"}
             expected = owner.get("viewport_size")
         elif owner is WuxiaChapterDefinition and owner.get("scene") is WuxiaChapterSceneDefinition:
             expected = Vector2i(1600, 1000)
@@ -200,6 +240,13 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
         staged.rows = rows
         if not staged.valid_profile():
             return {"error": "现有动作帧与新 Atlas 不兼容；请在 Inspector 先编辑 Profile 的 clips"}
+        if source.simplify_path().begins_with(production_root().path_join("candidates/")):
+            var idle_clip: WuxiaActorAnimationClip = staged.clip_for("idle")
+            var reference: int = int(idle_clip.frames[0]) if idle_clip != null and not idle_clip.frames.is_empty() else -1
+            var scale_problem: String = candidate_idle_scale_error(
+                first["texture"], cols, rows, reference)
+            if not scale_problem.is_empty():
+                return {"error": scale_problem}
         result["profile_path"] = "res://data/native/animations/" + str(owner.get("content_id")) + ".tres"
     if mode == "scene":
         var scene_holder: Resource = owner.get("scene") if owner is WuxiaChapterDefinition else owner
