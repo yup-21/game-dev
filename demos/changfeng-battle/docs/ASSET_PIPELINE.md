@@ -50,6 +50,16 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_asset_
 - 未经过场景图层拆分及透明边缘人工校验的 `candidate` 不能直接接到上述正式接口。
 - 新契约检查：`checks/test_actor_animation_profile.gd` 与 `checks/test_scene_art_profile.gd`。
 
+## 2026-11-02 临时待机修复与脚点微调
+
+六名当前候选角色的原生 `idle` 第 0 帧与第 1 帧是**不同观察角度的站姿**，并非同一朝向的连续呼吸动作；把二者以 9 FPS 循环，会产生反复转身。当前 `data/native/animations/*.tres` 的正式角色 `idle.frames` 临时设为 `PackedInt32Array(0)`。这仅消除错误播放，**不代表美术规范要求的正式待机循环已经制作完成**。后续替换为真正保持一致朝向、连续呼吸的完整动画后，再恢复多帧 idle。
+
+**运行时脚点**：六名角色按待机第 0 帧的非透明轮廓统一显示高度（默认 200 个场景像素）。角色 Node2D 的原点对应脚下的地面落点，图集每格 256×256，`Sprite2D.offset.x` 不再根据武器/衣摆的左右伸展重心漂移。
+
+**可编辑的最后修正**：在 Godot Inspector 打开 `data/native/animations/<角色>.tres`，调整 `feet_adjust`，单位是显示画面像素。例如 `Vector2(0, -8)` 把精灵整体提高 8 像素（脚伸到地面下方时使用）；`Vector2(0, 8)` 则降低 8 像素（脚悬空时使用）。修改后在第一幕和战斗中用脚下地面圆点观察，以角色鞋底为准，不要用剑尖、披风或衣摆最低点作为脚底。比例本身由统一的 `actor_visual_scale.gd` 管理，不依赖旧的 `actor_scale` 单独放大某个角色。
+
+**注意**：`hframes=6`、`vframes=4` 已按 1536×1024 图集正确裁切。若某帧本身已被源图片单元格截断（例如断剑、缺少鞋底），改 offset 只能改变显示位置，无法重画丢失像素；需要重新生成或修订该帧，并在导入前做透明边缘和相邻帧串色检查。CI 的 `captures/art-pilot/native-idle-0-vs-1.png` 是六名角色的原始双帧对照。
+
 ## 角色图集未来的交付合同
 
 在制作正式主角与一名敌人时，冻结角色像素密度、帧尺寸、左右朝向、脚底位置与以下动作：

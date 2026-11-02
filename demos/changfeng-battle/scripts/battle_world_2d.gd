@@ -43,7 +43,8 @@ func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
         sprite.vframes = profile.rows
         sprite.offset = profile.feet_offset
         sprite.scale = profile.actor_scale
-    VisualScale.fit(sprite, profile.actor_scale if profile != null else sprite.scale)
+    VisualScale.fit(sprite, profile.actor_scale if profile != null else sprite.scale,
+        VisualScale.TARGET_HEIGHT, profile.feet_adjust if profile != null else Vector2.ZERO)
     sprite.set_meta("faces_left_unflipped", profile.faces_left_unflipped if profile != null
         else (ArtCatalog.sheet_faces_left_for_character(character_id) if not character_id.is_empty()
         else ArtCatalog.sheet_faces_left(id)))

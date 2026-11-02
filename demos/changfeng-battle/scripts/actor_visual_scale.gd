@@ -23,10 +23,11 @@ static func _opaque_bounds(texture: Texture2D, columns: int, rows: int) -> Rect2
     var min_y := fh
     var max_x := -1
     var max_y := -1
-    # Idle frames 0 and 1 are the reference pose; do not resize mid-animation.
+    # Anchor to the FIRST idle pose only. These atlases use idle frame 1
+    # for a different direction, not a breathing-cycle variation.
     # Subsample large static poses for predictable loading cost.
     var stride: int = maxi(1, ceili(float(maxi(fw, fh)) / 256.0))
-    for frame in range(mini(2, columns * rows)):
+    for frame in range(1):
         var frame_x: int = (frame % columns) * fw
         var frame_y: int = (frame / columns) * fh
         for y in range(0, fh, stride):
@@ -45,7 +46,8 @@ static func _opaque_bounds(texture: Texture2D, columns: int, rows: int) -> Rect2
     return visible
 
 static func fit(sprite: Sprite2D, fallback_scale: Vector2 = Vector2.ONE,
-        target_height: float = TARGET_HEIGHT) -> bool:
+        target_height: float = TARGET_HEIGHT,
+        feet_adjust: Vector2 = Vector2.ZERO) -> bool:
     if sprite == null or sprite.texture == null:
         return false
     var columns: int = maxi(1, sprite.hframes)
@@ -57,10 +59,14 @@ static func fit(sprite: Sprite2D, fallback_scale: Vector2 = Vector2.ONE,
     # Preserve the authored profile in that exceptional case.
     if rect.size.y < 16 or rect.size.y >= int(frame_size.y * 0.96):
         sprite.scale = fallback_scale
+        # Respect the authored foot anchor on opaque/non-sprite images.
+        sprite.offset += Vector2(feet_adjust.x / maxf(fallback_scale.x, 0.001),
+            feet_adjust.y / maxf(fallback_scale.y, 0.001))
         return false
     var factor: float = target_height / float(rect.size.y)
     sprite.scale = Vector2.ONE * factor
-    sprite.offset = Vector2(frame_size.x * 0.5 - (float(rect.position.x)
-        + float(rect.size.x) * 0.5),
-        frame_size.y * 0.5 - float(rect.end.y))
+    # Keep the atlas frame's X-centre as the pivot. Centering the alpha
+    # bounding box would shift the actor when a sword/cape changes sides.
+    # The foot remains exactly on the Node2D origin (unless nudged).
+    sprite.offset = Vector2(0.0, frame_size.y * 0.5 - float(rect.end.y)) + feet_adjust / factor
     return true

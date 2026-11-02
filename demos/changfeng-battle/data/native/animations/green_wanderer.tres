@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Idle"]
 script = ExtResource("2_clip")
 action = "idle"
-frames = PackedInt32Array(0, 1)
+frames = PackedInt32Array(0)
 loop_fps = 9.0
 loop = true
 

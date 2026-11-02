@@ -3,6 +3,9 @@ extends SceneTree
 ## This is a technical check; it does not grant visual or commercial approval.
 const Art = preload("res://scripts/hd2d_art_catalog.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
+const VisualScale = preload("res://scripts/actor_visual_scale.gd")
+const NativeClips = preload("res://scripts/battle_native_sprite_clips.gd")
+const Timeline = preload("res://scripts/battle_action_timeline.gd")
 
 func _initialize() -> void:
     call_deferred("_run")
@@ -60,6 +63,38 @@ func _run() -> void:
             if profile.clip_for(action) == null:
                 _fail("missing runtime action %s for %s" % [action, id])
                 return
+
+    # These 0/1 poses have different viewing angles in the real PNG atlas.
+    # A native idle must not flip between them while standing.
+    for id in ["shen_changfeng", "gu_qingshuang", "green_wanderer",
+            "black_blade", "night_assassin", "pursuer_captain"]:
+        var pose: WuxiaActorAnimationProfile = Art.animation_profile_for_character(id)
+        if pose == null or pose.clip_for("idle") == null or pose.clip_for("idle").frames != PackedInt32Array([0]):
+            _fail("standing animation still alternates authored viewpoints: " + id)
+            return
+        var sprite := Sprite2D.new()
+        sprite.texture = pose.atlas
+        sprite.hframes = pose.columns
+        sprite.vframes = pose.rows
+        var fitted: bool = VisualScale.fit(sprite, pose.actor_scale,
+            VisualScale.TARGET_HEIGHT, pose.feet_adjust)
+        if not fitted:
+            _fail("unable to find opaque idle silhouette for " + id)
+            return
+        var ink: Rect2i = VisualScale._opaque_bounds(sprite.texture,sprite.hframes,sprite.vframes)
+        var frame_h: float = float(sprite.texture.get_height()) / float(sprite.vframes)
+        var visible_foot: float = (float(ink.end.y) - frame_h*0.5
+            + sprite.offset.y) * sprite.scale.y
+        if absf(visible_foot - pose.feet_adjust.y) > 1.1:
+            _fail("native actor feet do not coincide with node origin: " + id)
+            return
+        root.add_child(sprite)
+        var player: AnimationPlayer = NativeClips.attach(sprite,Timeline.new(),pose)
+        player.advance(1.25)
+        if sprite.frame != 0 or absf(sprite.rotation) > 0.001:
+            _fail("idle reintroduces a turn/sway: " + id)
+            return
+        sprite.queue_free()
 
     var map: WuxiaMapDefinition = load("res://data/maps/rainy_bridge.tres")
     var baked = MapBake.new("res://data/maps/rainy_bridge.tres")
