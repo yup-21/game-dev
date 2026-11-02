@@ -1,6 +1,7 @@
 extends SceneTree
 const Model = preload("res://scripts/battle_model.gd")
 const Geometry = preload("res://scripts/battle_spatial_facade.gd")
+const CombatScale = preload("res://scripts/combat_scale.gd")
 var checks := 0
 var failures := 0
 
@@ -49,7 +50,8 @@ func _run() -> void:
         "FREE route reuses baked-space shortest path")
     var unit: float = free.unit_distance()
     var expected: bool = (model.state.spatial.attack_in_range(
-        actor.position,target.position,0.0,unit,8.0,8.0)
+        actor.position,target.position,0.0,unit,
+        CombatScale.footprint_radius_pixels(), CombatScale.footprint_radius_pixels())
         and model.state.spatial.attack_line_clear(
             actor.position,target.position,[actor.id,target.id]))
     _check(free.can_attack(actor,target,0.0,1.0,true)==expected,
