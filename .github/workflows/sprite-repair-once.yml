@@ -1,0 +1,34 @@
+name: One-shot repair active sprite sheets
+on:
+  push:
+    branches:
+      - tool/sprite-sheet-repair-20261102
+    paths:
+      - '.github/workflows/sprite-repair-once.yml'
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check 'Pillow>=11,<13'
+      - name: Produce six repaired 24-frame sheets and rebind native Resources
+        run: python art-production/tools/repair_active_sprite_sheets.py --write
+      - name: Validate active image references
+        run: python art-production/tools/inventory_assets.py --check
+      - name: Commit only generated assets and updated native resource paths
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/sprite-repair-once.yml
+          git add art-production/candidates/2026-11-01 art-production/in-use/imported/candidates/2026-11-01 demos/changfeng-battle/assets/imported/candidates/2026-11-01 demos/changfeng-battle/data/native/animations demos/changfeng-battle/data/native/characters
+          git commit -m 'art: align six active 6x4 sprites and update native bindings'
+          git push origin HEAD:tool/sprite-sheet-repair-20261102
