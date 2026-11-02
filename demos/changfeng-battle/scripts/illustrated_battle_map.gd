@@ -160,7 +160,7 @@ func add_actor(actor: Dictionary, atlas: Texture2D) -> Sprite2D:
     nameplate.name="RoleName"
     nameplate.text=str(actor.name)
     nameplate.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-    nameplate.position=Vector2(-88,-151)
+    nameplate.position=Vector2(-88,-232)
     nameplate.size=Vector2(176,26)
     nameplate.add_theme_color_override("font_color",Color("dcefe0") if int(actor.team_id)==0 else Color("f2c7b7"))
     nameplate.add_theme_font_size_override("font_size",17)
