@@ -3,6 +3,7 @@ extends SceneTree
 ## never a generated SVG, a painter fallback, or a baked-in background.
 const Art = preload("res://scripts/hd2d_art_catalog.gd")
 const Registry = preload("res://scripts/character_registry.gd")
+const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 var checks := 0
 var failures := 0
 
@@ -49,6 +50,18 @@ func _run() -> void:
         and elder.body.material==null
         and elder.body.frame_coords==Vector2i.ZERO,
         "injured elder uses dedicated transparent story pose, no generated model")
+    var hero_ink := VisualScale._opaque_bounds(hero.body.texture,6,4)
+    var elder_ink := VisualScale._opaque_bounds(elder.body.texture,1,1)
+    if hero_ink.size.y >= 16 and hero_ink.size.y < 245 and
+            elder_ink.size.y >= 16 and elder_ink.size.y < int(elder.body.texture.get_height()*0.96):
+        var hero_height := float(hero_ink.size.y) * hero.body.scale.y
+        var elder_height := float(elder_ink.size.y) * elder.body.scale.y
+        _check(absf(hero_height - VisualScale.TARGET_HEIGHT) < 5.0
+            and absf(elder_height - VisualScale.TARGET_HEIGHT) < 5.0,
+            "hero and elder are normalized to the same visible world height")
+    else:
+        _check(hero.body.scale.x > 0.0 and elder.body.scale.x > 0.0,
+            "opaque-matte fallback still has positive character scale")
     _check(not layer.visible,"story role sprites stay hidden during title")
     var registered_pose: String = str(registry.for_name("老镖头").art.static_pose)
     _check(registered_pose.contains("/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png"),
