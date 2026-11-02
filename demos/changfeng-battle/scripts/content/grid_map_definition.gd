@@ -25,7 +25,8 @@ func to_record() -> Dictionary:
     if background == null or background.resource_path.is_empty() or columns != 15 or rows_count != 10:
         return {}
     if source_size.x <= 0 or source_size.y <= 0 or viewport_size.x <= 0 or viewport_size.y <= 0 or \
-            not CombatScale.valid_map_pixels_per_unit(pixels_per_unit):
+            not CombatScale.valid_map_pixels_per_unit(pixels_per_unit) or \
+            not CombatScale.valid_map_art_transform(image_scale, rotation_degrees):
         return {}
     if painted_rows.size() != rows_count or terrain_keys.is_empty():
         return {}
