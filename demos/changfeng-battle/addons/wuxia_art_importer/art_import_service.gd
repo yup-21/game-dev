@@ -171,6 +171,9 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
         if owner is WuxiaMapDefinition or owner is WuxiaGridMapDefinition:
             if not CombatScale.valid_map_pixels_per_unit(float(owner.get("pixels_per_unit"))):
                 return {"error": "地图比例尺与战斗统一比例尺不符"}
+            var art_rotation: float = float(owner.get("rotation_degrees")) if owner is WuxiaGridMapDefinition else float(owner.get("image_rotation_degrees"))
+            if not CombatScale.valid_map_art_transform(float(owner.get("image_scale")), art_rotation):
+                return {"error": "地图贴图变换必须为原始 1:1 尺度且旋转为 0"}
             expected = owner.get("viewport_size")
         elif owner is WuxiaChapterDefinition and owner.get("scene") is WuxiaChapterSceneDefinition:
             expected = Vector2i(1600, 1000)
