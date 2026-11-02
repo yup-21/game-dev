@@ -10,10 +10,12 @@ const ATLAS_PARTS := [
     "res://prototypes/shen_bone2d_v2/atlas.b64.02",
     "res://prototypes/shen_bone2d_v2/atlas.b64.03",
 ]
-const ART_SCALE := 0.45
-const SOURCE_ORIGIN := Vector2(310, 525) * ART_SCALE
-const SOURCE_TOP_Y := 70.0 * ART_SCALE
-const SOURCE_HEIGHT := 455.0 * ART_SCALE
+# All cutouts and pivots are registered in the atlas' native pixel units.
+# (0, 0) is the grounded right-facing actor foot anchor, not a source-sheet
+# coordinate. Scale is applied exactly once by RigV2 to reach 200px in-game.
+const ART_SCALE := 1.0
+const SOURCE_ORIGIN := Vector2.ZERO
+const SOURCE_HEIGHT := 201.0
 const REGIONS := {
     "robe_left": Rect2(4, 4, 43, 108),
     "robe_right": Rect2(51, 4, 44, 108),
@@ -40,31 +42,33 @@ const REGIONS := {
     "foot_front": Rect2(163, 182, 15, 19),
     "foot_back": Rect2(182, 182, 10, 18),
 }
+# Single canonical side-view bind-pose registration, relative to the foot.
+# Every component is top-left registered; no references to the concept PNG.
 const PLACEMENTS := {
-    "hair_back": Vector2(230, 70) * ART_SCALE,
-    "arm_back": Vector2(185, 155) * ART_SCALE,
-    "robe_left": Vector2(215, 270) * ART_SCALE,
-    "torso": Vector2(270, 150) * ART_SCALE,
-    "pelvis": Vector2(275, 255) * ART_SCALE,
-    "robe_inner": Vector2(270, 285) * ART_SCALE,
-    "robe_right": Vector2(340, 270) * ART_SCALE,
-    "belt": Vector2(276, 255) * ART_SCALE,
-    "thigh_back": Vector2(275, 355) * ART_SCALE,
-    "shin_back": Vector2(280, 420) * ART_SCALE,
-    "foot_back": Vector2(280, 485) * ART_SCALE,
-    "thigh_front": Vector2(330, 355) * ART_SCALE,
-    "shin_front": Vector2(334, 421) * ART_SCALE,
-    "foot_front": Vector2(330, 485) * ART_SCALE,
-    "arm_front": Vector2(345, 155) * ART_SCALE,
-    "head": Vector2(300, 100) * ART_SCALE,
-    "torso_attack": Vector2(245, 150) * ART_SCALE,
-    "torso_guard": Vector2(255, 145) * ART_SCALE,
-    "guard_arms": Vector2(245, 135) * ART_SCALE,
-    "attack_swing": Vector2(190, 215) * ART_SCALE,
-    "hair_motion": Vector2(210, 70) * ART_SCALE,
-    "robe_flare_mid": Vector2(275, 295) * ART_SCALE,
-    "leg_extend": Vector2(245, 350) * ART_SCALE,
-    "leg_crouch": Vector2(315, 345) * ART_SCALE,
+    "robe_left": Vector2(-43, -111),
+    "robe_right": Vector2(5, -111),
+    "robe_inner": Vector2(-26, -103),
+    "hair_back": Vector2(-42, -201),
+    "guard_arms": Vector2(-18, -205),
+    "arm_front": Vector2(9, -151),
+    "arm_back": Vector2(-43, -149),
+    "robe_flare_mid": Vector2(-16, -106),
+    "torso_guard": Vector2(-21, -164),
+    "torso_attack": Vector2(-25, -163),
+    "torso": Vector2(-20, -163),
+    "hair_motion": Vector2(-50, -199),
+    "leg_extend": Vector2(-57, -53),
+    "leg_crouch": Vector2(11, -70),
+    "attack_swing": Vector2(-2, -134),
+    "head": Vector2(-5, -184),
+    "pelvis": Vector2(-20, -104),
+    "thigh_front": Vector2(11, -91),
+    "thigh_back": Vector2(-15, -91),
+    "shin_front": Vector2(12, -59),
+    "shin_back": Vector2(-14, -59),
+    "belt": Vector2(-19, -107),
+    "foot_front": Vector2(14, -19),
+    "foot_back": Vector2(-16, -19),
 }
 
 var _texture: ImageTexture
@@ -110,6 +114,9 @@ func _load_embedded_atlas() -> ImageTexture:
     if image.get_size() != Vector2i(512, 221):
         push_error("SHEN_BONE2D_V2: unexpected atlas size " + str(image.get_size()))
         return null
+    # A stray detached hem fragment was present above the attack blade
+    # in the generated sheet. Remove only that fragment, not the sword.
+    image.fill_rect(Rect2i(365, 116, 70, 9), Color.TRANSPARENT)
     return ImageTexture.create_from_image(image)
 
 
@@ -147,42 +154,42 @@ func _build_rig() -> void:
     _skeleton.name = "Skeleton2D"
     _rig.add_child(_skeleton)
 
-    var hips := _add_bone("Hips", _skeleton, Vector2(310, 270) * ART_SCALE, SOURCE_ORIGIN)
-    var spine := _add_bone("Spine", hips, Vector2(310, 180) * ART_SCALE, Vector2(310, 270) * ART_SCALE)
-    var head := _add_bone("Head", spine, Vector2(325, 120) * ART_SCALE, Vector2(310, 180) * ART_SCALE)
-    var hair_root := _add_bone("HairRoot", head, Vector2(300, 90) * ART_SCALE, Vector2(325, 120) * ART_SCALE)
-    _add_bone("HairTip", hair_root, Vector2(280, 235) * ART_SCALE, Vector2(300, 90) * ART_SCALE)
-    var arm_back := _add_bone("ArmBack", spine, Vector2(275, 185) * ART_SCALE, Vector2(310, 180) * ART_SCALE)
-    var arm_front := _add_bone("ArmFront", spine, Vector2(345, 185) * ART_SCALE, Vector2(310, 180) * ART_SCALE)
-    var leg_back := _add_bone("LegBack", hips, Vector2(295, 340) * ART_SCALE, Vector2(310, 270) * ART_SCALE)
-    var shin_back := _add_bone("ShinBack", leg_back, Vector2(295, 410) * ART_SCALE, Vector2(295, 340) * ART_SCALE)
-    _add_bone("FootBack", shin_back, Vector2(295, 480) * ART_SCALE, Vector2(295, 410) * ART_SCALE)
-    var leg_front := _add_bone("LegFront", hips, Vector2(335, 340) * ART_SCALE, Vector2(310, 270) * ART_SCALE)
-    var shin_front := _add_bone("ShinFront", leg_front, Vector2(335, 410) * ART_SCALE, Vector2(335, 340) * ART_SCALE)
-    _add_bone("FootFront", shin_front, Vector2(335, 480) * ART_SCALE, Vector2(335, 410) * ART_SCALE)
-    var skirt_root := _add_bone("SkirtRoot", hips, Vector2(310, 275) * ART_SCALE, Vector2(310, 270) * ART_SCALE)
-    _add_bone("SkirtTipLeft", skirt_root, Vector2(255, 485) * ART_SCALE, Vector2(310, 275) * ART_SCALE)
-    _add_bone("SkirtTipCenter", skirt_root, Vector2(310, 500) * ART_SCALE, Vector2(310, 275) * ART_SCALE)
-    _add_bone("SkirtTipRight", skirt_root, Vector2(370, 485) * ART_SCALE, Vector2(310, 275) * ART_SCALE)
+    var hips := _add_bone("Hips", _skeleton, Vector2(0, -104) * ART_SCALE, SOURCE_ORIGIN)
+    var spine := _add_bone("Spine", hips, Vector2(0, -141) * ART_SCALE, Vector2(0, -104) * ART_SCALE)
+    var head := _add_bone("Head", spine, Vector2(9, -162) * ART_SCALE, Vector2(0, -141) * ART_SCALE)
+    var hair_root := _add_bone("HairRoot", head, Vector2(-16, -189) * ART_SCALE, Vector2(9, -162) * ART_SCALE)
+    _add_bone("HairTip", hair_root, Vector2(-29, -118) * ART_SCALE, Vector2(-16, -189) * ART_SCALE)
+    var arm_back := _add_bone("ArmBack", spine, Vector2(-25, -148) * ART_SCALE, Vector2(0, -141) * ART_SCALE)
+    var arm_front := _add_bone("ArmFront", spine, Vector2(20, -148) * ART_SCALE, Vector2(0, -141) * ART_SCALE)
+    var leg_back := _add_bone("LegBack", hips, Vector2(-7, -89) * ART_SCALE, Vector2(0, -104) * ART_SCALE)
+    var shin_back := _add_bone("ShinBack", leg_back, Vector2(-7, -57) * ART_SCALE, Vector2(-7, -89) * ART_SCALE)
+    _add_bone("FootBack", shin_back, Vector2(-7, -19) * ART_SCALE, Vector2(-7, -57) * ART_SCALE)
+    var leg_front := _add_bone("LegFront", hips, Vector2(18, -89) * ART_SCALE, Vector2(0, -104) * ART_SCALE)
+    var shin_front := _add_bone("ShinFront", leg_front, Vector2(18, -57) * ART_SCALE, Vector2(18, -89) * ART_SCALE)
+    _add_bone("FootFront", shin_front, Vector2(18, -19) * ART_SCALE, Vector2(18, -57) * ART_SCALE)
+    var skirt_root := _add_bone("SkirtRoot", hips, Vector2(0, -107) * ART_SCALE, Vector2(0, -104) * ART_SCALE)
+    _add_bone("SkirtTipLeft", skirt_root, Vector2(-26, -10) * ART_SCALE, Vector2(0, -107) * ART_SCALE)
+    _add_bone("SkirtTipCenter", skirt_root, Vector2(0, -7) * ART_SCALE, Vector2(0, -107) * ART_SCALE)
+    _add_bone("SkirtTipRight", skirt_root, Vector2(29, -10) * ART_SCALE, Vector2(0, -107) * ART_SCALE)
 
     for bone in _bones.values():
         bone.rest = bone.transform
 
-    var back_arm_sprite := _add_rigid_piece("ArmBackPiece", arm_back, "arm_back", Vector2(275, 185) * ART_SCALE, -6)
-    var torso_sprite := _add_rigid_piece("TorsoPiece", spine, "torso", Vector2(310, 180) * ART_SCALE, 2)
-    var pelvis_sprite := _add_rigid_piece("PelvisPiece", hips, "pelvis", Vector2(310, 270) * ART_SCALE, 1)
-    var belt_sprite := _add_rigid_piece("BeltPiece", hips, "belt", Vector2(310, 270) * ART_SCALE, 5)
-    var front_arm_sprite := _add_rigid_piece("ArmFrontPiece", arm_front, "arm_front", Vector2(345, 185) * ART_SCALE, 7)
-    var head_sprite := _add_rigid_piece("HeadPiece", head, "head", Vector2(325, 120) * ART_SCALE, 8)
+    var back_arm_sprite := _add_rigid_piece("ArmBackPiece", arm_back, "arm_back", Vector2(-25, -148) * ART_SCALE, -6)
+    var torso_sprite := _add_rigid_piece("TorsoPiece", spine, "torso", Vector2(0, -141) * ART_SCALE, 2)
+    var pelvis_sprite := _add_rigid_piece("PelvisPiece", hips, "pelvis", Vector2(0, -104) * ART_SCALE, 1)
+    var belt_sprite := _add_rigid_piece("BeltPiece", hips, "belt", Vector2(0, -104) * ART_SCALE, 5)
+    var front_arm_sprite := _add_rigid_piece("ArmFrontPiece", arm_front, "arm_front", Vector2(20, -148) * ART_SCALE, 7)
+    var head_sprite := _add_rigid_piece("HeadPiece", head, "head", Vector2(9, -162) * ART_SCALE, 8)
     # Head remains visible for attack/guard swaps; only the neutral torso/arms are replaced.
     _neutral_upper.assign([back_arm_sprite, torso_sprite, pelvis_sprite, belt_sprite, front_arm_sprite])
 
-    var tb := _add_rigid_piece("ThighBackPiece", leg_back, "thigh_back", Vector2(295, 340) * ART_SCALE, -5)
-    var sb := _add_rigid_piece("ShinBackPiece", shin_back, "shin_back", Vector2(295, 410) * ART_SCALE, -5)
-    var fb := _add_rigid_piece("FootBackPiece", _bones["FootBack"], "foot_back", Vector2(295, 480) * ART_SCALE, -5)
-    var tf := _add_rigid_piece("ThighFrontPiece", leg_front, "thigh_front", Vector2(335, 340) * ART_SCALE, 3)
-    var sf := _add_rigid_piece("ShinFrontPiece", shin_front, "shin_front", Vector2(335, 410) * ART_SCALE, 3)
-    var ff := _add_rigid_piece("FootFrontPiece", _bones["FootFront"], "foot_front", Vector2(335, 480) * ART_SCALE, 3)
+    var tb := _add_rigid_piece("ThighBackPiece", leg_back, "thigh_back", Vector2(-7, -89) * ART_SCALE, -5)
+    var sb := _add_rigid_piece("ShinBackPiece", shin_back, "shin_back", Vector2(-7, -57) * ART_SCALE, -5)
+    var fb := _add_rigid_piece("FootBackPiece", _bones["FootBack"], "foot_back", Vector2(-7, -19) * ART_SCALE, -5)
+    var tf := _add_rigid_piece("ThighFrontPiece", leg_front, "thigh_front", Vector2(18, -89) * ART_SCALE, 3)
+    var sf := _add_rigid_piece("ShinFrontPiece", shin_front, "shin_front", Vector2(18, -57) * ART_SCALE, 3)
+    var ff := _add_rigid_piece("FootFrontPiece", _bones["FootFront"], "foot_front", Vector2(18, -19) * ART_SCALE, 6)
     _neutral_legs.assign([tb, sb, fb, tf, sf, ff])
 
     _hair_mesh = _add_weighted_piece(
@@ -256,8 +263,17 @@ func _add_free_piece(parent: Node2D, name: String, piece: String, top_left: Vect
     var sprite := Sprite2D.new()
     sprite.name = name
     sprite.texture = _atlas_texture(piece)
-    sprite.centered = false
-    sprite.position = top_left - SOURCE_ORIGIN
+    var local_pivot := Vector2.ZERO
+    if piece == "attack_swing":
+        # Rotate around the grip, not around the corner of a 125px-wide slice.
+        local_pivot = Vector2(32, 26)
+    sprite.centered = local_pivot != Vector2.ZERO
+    if sprite.centered:
+        var region: Rect2 = REGIONS[piece]
+        sprite.offset = region.size * 0.5 - local_pivot
+        sprite.position = top_left + local_pivot - SOURCE_ORIGIN
+    else:
+        sprite.position = top_left - SOURCE_ORIGIN
     sprite.z_index = z
     parent.add_child(sprite)
     return sprite
@@ -337,8 +353,9 @@ func _walk_animation() -> Animation:
 
 func _attack_animation() -> Animation:
     var a := _new_animation(0.68, false)
-    _track(a, "RigV2/AttackUpper:rotation", [[0.0, -0.08], [0.17, -0.20], [0.40, 0.13], [0.68, 0.0]])
-    _track(a, "RigV2/AttackUpper:position", [[0.0, Vector2(-5, 2)], [0.17, Vector2(-8, 4)], [0.40, Vector2(10, -2)], [0.68, Vector2(2, 0)]])
+    # Keep torso/head connected. Animate the blade assembly at its grip.
+    _track(a, "RigV2/AttackUpper:position", [[0.0, Vector2(-2, 0)], [0.17, Vector2(-4, 1)], [0.40, Vector2(4, -1)], [0.68, Vector2.ZERO]])
+    _track(a, "RigV2/AttackUpper/AttackArmsSword:rotation", [[0.0, -0.09], [0.17, -0.35], [0.40, 0.10], [0.68, -0.04]])
     _track(a, "RigV2/Skeleton2D/Hips/SkirtRoot/SkirtTipLeft:rotation", [[0.0, 0.0], [0.20, 0.12], [0.42, -0.16], [0.68, 0.0]])
     _track(a, "RigV2/Skeleton2D/Hips/SkirtRoot/SkirtTipRight:rotation", [[0.0, 0.0], [0.20, -0.10], [0.42, 0.17], [0.68, 0.0]])
     return a
@@ -383,6 +400,16 @@ func _set_visual_mode(action: String) -> void:
 func _play(action: String) -> void:
     if _player == null or not _player.has_animation(action):
         return
+    # AnimationPlayer leaves unkeyed properties untouched across clips.
+    # Reset the bind pose so walk -> guard -> attack cannot accumulate drift.
+    _player.stop()
+    for bone in _bones.values():
+        bone.rotation = 0.0
+    _attack_upper.position = Vector2.ZERO
+    _attack_upper.rotation = 0.0
+    _attack_upper.get_node("AttackArmsSword").rotation = 0.0
+    _guard_upper.position = Vector2.ZERO
+    _guard_upper.rotation = 0.0
     _set_visual_mode(action)
     _player.play(action)
     if _status_label != null:
@@ -464,3 +491,20 @@ func debug_root_tracks_are_safe() -> bool:
 
 func debug_rendered_height() -> float:
     return SOURCE_HEIGHT * _rig.scale.y
+
+
+func debug_registration() -> Dictionary:
+    var head_box := Rect2(PLACEMENTS["head"], REGIONS["head"].size)
+    var torso_box := Rect2(PLACEMENTS["torso"], REGIONS["torso"].size)
+    var back_sleeve := Rect2(PLACEMENTS["arm_back"], REGIONS["arm_back"].size)
+    var front_sleeve := Rect2(PLACEMENTS["arm_front"], REGIONS["arm_front"].size)
+    var front_foot := Rect2(PLACEMENTS["foot_front"], REGIONS["foot_front"].size)
+    var robe_box := Rect2(PLACEMENTS["robe_left"], REGIONS["robe_left"].size)
+    return {
+        "head_to_torso": absf(head_box.end.y - torso_box.position.y),
+        "rear_shoulder_overlap": torso_box.intersection(back_sleeve).size.x,
+        "front_shoulder_overlap": torso_box.intersection(front_sleeve).size.x,
+        "foot_baseline": front_foot.end.y,
+        "hem_baseline": robe_box.end.y,
+        "rig_scale": _rig.scale.x if _rig != null else 0.0,
+    }
