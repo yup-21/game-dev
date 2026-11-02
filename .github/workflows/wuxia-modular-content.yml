@@ -72,6 +72,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_actor_animation_profile.gd
       - name: Native layered scene art profile
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_scene_art_profile.gd
+      - name: Pingjiang long-street scrolling scene and map contract
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_pingjiang_long_street.gd
       - name: Read-only offline art pilot reconstruction check
         run: |
           python3 -m venv "${RUNNER_TEMP}/art-pilot-venv"
