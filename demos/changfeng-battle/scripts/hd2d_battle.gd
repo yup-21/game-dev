@@ -1,4 +1,5 @@
 extends Node2D
+const CombatScale = preload("res://scripts/combat_scale.gd")
 ## HD-2D vertical slice. All tactical state and legality remain in BattleModel.
 ## Canonical player battle uses only painted 2D terrain and Sprite2D actors.
 const Model = preload("res://scripts/battle_model.gd")
@@ -910,7 +911,7 @@ func _update_continuous_preview() -> void:
         continuous_preview.clear_all()
         _preview_last_actor = -1
         return
-    var unit: float = maxf(model.state.spatial.bake.step.x, model.state.spatial.bake.step.y)
+    var unit: float = CombatScale.PIXELS_PER_UNIT
     var remaining: int = int(actor.stats.get("move_budget", 2)) - actor.normal_moves_used
     if martial_step:
         var usage: Dictionary = model.cards.usage(selected_card_uid, selected_usage_id)
