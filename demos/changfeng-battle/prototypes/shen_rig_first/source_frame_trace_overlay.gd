@@ -80,7 +80,8 @@ func _draw() -> void:
             elif name == "SwordGrip" or name == "SwordBlade":
                 var hand: Bone2D = _bones.get("FrontHand")
                 var marker: Marker2D = hand.get_node("WeaponSocket") as Marker2D
-                current = skeleton.to_local(marker.global_position) if name == "SwordGrip" else skeleton.to_local(marker.get_node("WeaponTip").global_position)
+                var tip_marker: Marker2D = marker.get_node("WeaponTip") as Marker2D
+                current = skeleton.to_local(marker.global_position) if name == "SwordGrip" else skeleton.to_local(tip_marker.global_position)
             else:
                 continue
             var goal: Vector2 = targets[name]
