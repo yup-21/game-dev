@@ -205,14 +205,14 @@ func _sync_story_sprites(motion: Vector2, delta: float) -> void:
 	_update_story_camera()
 	player_sprite.set_motion(motion,delta)
 	# Tile feet anchor sorting, not fixed painter's layers.
-	player_sprite.z_index = int(player_pos.y/100.0)
+	player_sprite.z_index = clampi(int(player_pos.y/100.0), 0, 10)
 	var index: int = 0
 	for entry in _npcs():
 		if index >= npc_sprites.size(): break
 		var position: Vector2 = _npc_point(entry) + Vector2(0,10)
 		npc_sprites[index].position = position
 		npc_sprites[index].set_motion(Vector2.ZERO,delta)
-		npc_sprites[index].z_index = int(position.y / 100.0)
+		npc_sprites[index].z_index = clampi(int(position.y / 100.0), 0, 10)
 		index += 1
 
 func _session():
