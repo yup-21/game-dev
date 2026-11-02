@@ -176,7 +176,7 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 return {"error": "地图贴图变换必须为原始 1:1 尺度且旋转为 0"}
             expected = owner.get("viewport_size")
         elif owner is WuxiaChapterDefinition and owner.get("scene") is WuxiaChapterSceneDefinition:
-            expected = Vector2i(1600, 1000)
+            expected = Vector2i(owner.get("scene").get("world_size"))
         else:
             return {"error": "场景目标不是有效的地图或章节 Resource"}
     else:
@@ -405,7 +405,7 @@ static func save_bindings(plan_data: Dictionary) -> String:
         if scene_holder == null:
             return "章节缺少场景定义"
         var profile := WuxiaSceneArtProfile.new()
-        profile.reference_size = Vector2i(1600, 1000) if map is WuxiaChapterDefinition else map.get("viewport_size")
+        profile.reference_size = Vector2i(map.get("scene").get("world_size")) if map is WuxiaChapterDefinition else map.get("viewport_size")
         profile.background = textures["primary"]
         profile.ground = textures["ground"]
         if textures.has("foreground"):
