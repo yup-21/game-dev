@@ -124,6 +124,10 @@ func _build_stage() -> void:
     var background := ColorRect.new()
     background.size = Vector2(1600, 1000)
     background.color = Color(0.045, 0.058, 0.065, 1.0)
+    # Z-index takes precedence over child insertion order. Without this,
+    # all deliberately negative-depth pieces (back hair, back arm, rear robe)
+    # disappear *behind the opaque background*.
+    background.z_index = -100
     background.mouse_filter = Control.MOUSE_FILTER_IGNORE
     add_child(background)
     move_child(background, 0)
@@ -132,6 +136,7 @@ func _build_stage() -> void:
     floor.name = "FootBaseline"
     floor.width = 2.0
     floor.default_color = Color(0.58, 0.68, 0.66, 0.55)
+    floor.z_index = 20
     floor.add_point(Vector2(420, 730))
     floor.add_point(Vector2(1180, 730))
     add_child(floor)
