@@ -47,6 +47,21 @@ func _run() -> void:
     if not _grab(OUTPUT.path_join("scene-overview.png"), false):
         quit(1)
         return
+    # A second reference proves the body rig can render without cosmetic rigs.
+    scene.queue_free()
+    await process_frame
+    var plain = SCENE.instantiate()
+    plain.enable_hair = false
+    plain.enable_coat = false
+    scene = plain
+    root.add_child(scene)
+    await process_frame
+    scene.show_bind_pose()
+    await process_frame
+    await RenderingServer.frame_post_draw
+    if not _grab(OUTPUT.path_join("humanoid-core-only.png"), true):
+        quit(1)
+        return
     print("SHEN_RIG_FIRST_VISUAL_OK")
     quit(0)
 
