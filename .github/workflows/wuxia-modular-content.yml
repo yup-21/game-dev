@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'demos/changfeng-battle/scripts/**'
+      - 'art-production/tools/scene_scale_guide.py'
       - 'demos/changfeng-battle/data/**'
       - 'demos/changfeng-battle/checks/test_catalog_extensibility.gd'
       - 'demos/changfeng-battle/checks/test_character_dynamic_identity.gd'
@@ -76,6 +77,15 @@ jobs:
           python3 -m venv "${RUNNER_TEMP}/art-pilot-venv"
           "${RUNNER_TEMP}/art-pilot-venv/bin/python" -m pip install --disable-pip-version-check Pillow
           "${RUNNER_TEMP}/art-pilot-venv/bin/python" art-production/tools/prepare_pilot_assets.py
+      - name: Validate and render one-world-scale town calibration reference
+        run: |
+          python art-production/tools/scene_scale_guide.py --check
+          "${RUNNER_TEMP}/art-pilot-venv/bin/python" art-production/tools/scene_scale_guide.py --output "${RUNNER_TEMP}/town_scale_reference.png"
+          test -s "${RUNNER_TEMP}/town_scale_reference.png"
+          "${RUNNER_TEMP}/art-pilot-venv/bin/python" art-production/tools/scene_scale_guide.py --orientation vertical --output "${RUNNER_TEMP}/town_vertical_reference.png"
+          "${RUNNER_TEMP}/art-pilot-venv/bin/python" art-production/tools/scene_scale_guide.py --orientation mixed --output "${RUNNER_TEMP}/town_crossroads_reference.png"
+          test -s "${RUNNER_TEMP}/town_vertical_reference.png"
+          test -s "${RUNNER_TEMP}/town_crossroads_reference.png"
       - name: Preflight the two pilot actors and four real scene layers
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_art_pilot_candidates.gd
       - name: Bind the two pilot actors and layered bridge in the live battle

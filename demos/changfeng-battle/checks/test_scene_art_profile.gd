@@ -21,6 +21,12 @@ func _initialize() -> void:
         push_error("Valid, aligned scene layers were rejected")
         quit(1)
         return
+    profile.pixels_per_unit = 96.0
+    if profile.valid_for(size):
+        push_error("Mismatched story/indoor scene pixels-per-unit was accepted")
+        quit(1)
+        return
+    profile.pixels_per_unit = 80.0
     if profile.valid_for(Vector2i(16, 9)):
         push_error("Misaligned map viewport was accepted")
         quit(1)

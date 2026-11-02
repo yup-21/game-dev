@@ -8,6 +8,8 @@ const CombatScale = preload("res://scripts/combat_scale.gd")
 @export var viewport_size: Vector2i = Vector2i(1600,1000)
 ## World artwork and battle rules share a fixed pixel-to-unit scale.
 @export var pixels_per_unit: float = CombatScale.PIXELS_PER_UNIT
+## Describes street composition, not a change to X/Y movement, scale or camera.
+@export_enum("horizontal", "vertical", "mixed") var primary_axis: String = "horizontal"
 @export var area_bounds: Rect2 = Rect2(100,100,1400,800)
 @export var image_rotation_degrees: float = 0.0
 @export var image_scale: float = 1.0
@@ -24,7 +26,15 @@ func to_record() -> Dictionary:
     if background == null or background.resource_path.is_empty() or \
             viewport_size.x < 100 or viewport_size.y < 100 or \
             area_bounds.size.x < 100 or area_bounds.size.y < 100 or \
-            not CombatScale.valid_map_pixels_per_unit(pixels_per_unit):
+            primary_axis not in ["horizontal", "vertical", "mixed"] or \
+            not CombatScale.valid_map_pixels_per_unit(pixels_per_unit) or \
+            not CombatScale.valid_map_art_transform(image_scale, image_rotation_degrees):
+        return {}
+    # Historic single-screen backgrounds retain their existing imports. Newly
+    # authored oversized scenes must have genuine world-sized artwork, not a
+    # 1600x1000 screenshot stretched over a vertical street.
+    if viewport_size != Vector2i(1600, 1000) and \
+            Vector2i(background.get_size()) != viewport_size:
         return {}
     var ground_polygon: Array = []
     if not walkable_outline.is_empty():
@@ -59,6 +69,7 @@ func to_record() -> Dictionary:
         "source_size":[background.get_width(),background.get_height()],
         "viewport":[viewport_size.x,viewport_size.y],
         "pixels_per_unit":pixels_per_unit,
+        "primary_axis":primary_axis,
         "bounds":[area_bounds.position.x,area_bounds.position.y,
             area_bounds.size.x,area_bounds.size.y],
         "rotation_degrees":image_rotation_degrees,

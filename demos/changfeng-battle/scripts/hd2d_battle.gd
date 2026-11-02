@@ -759,13 +759,14 @@ func _process(delta: float) -> void:
         intro_title.visible = intro_remaining > 0.0
         intro_subtitle.visible = intro_remaining > 0.0
     camera_shake = maxf(0.0, camera_shake - delta)
-    # CanvasLayer does not follow Camera2D: shake the painted world instead.
+    var moving: Dictionary = world.tick(delta, snap, animation_driver)
+    # CanvasLayer ignores Camera2D. Follow the in-world player in either axis,
+    # then apply transient screen shake. Cursor queries invert this exact shift.
     if illustrated_map != null:
-        illustrated_map.scene_root.position = Vector2(
+        illustrated_map.scene_root.position = world.scroll_offset + Vector2(
             sin(elapsed * 71.0) * 10.0, sin(elapsed * 89.0) * 6.0) * camera_shake
     _update_cursor()
     _update_continuous_preview()
-    var moving: Dictionary = world.tick(delta, snap, animation_driver)
     var finished_ticket: int = presentation_player.tick(delta, moving,
         world.paths_pending())
     if animation_ticket >= 0:

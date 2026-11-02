@@ -8,6 +8,7 @@ const CombatScale = preload("res://scripts/combat_scale.gd")
 @export var source_size: Vector2i = Vector2i.ZERO
 @export var viewport_size: Vector2i = Vector2i(1600, 1000)
 @export var pixels_per_unit: float = CombatScale.PIXELS_PER_UNIT
+@export_enum("horizontal", "vertical", "mixed") var primary_axis: String = "horizontal"
 @export var rotation_degrees: float = 0.0
 @export var image_scale: float = 1.0
 @export var columns: int = 15
@@ -25,7 +26,9 @@ func to_record() -> Dictionary:
     if background == null or background.resource_path.is_empty() or columns != 15 or rows_count != 10:
         return {}
     if source_size.x <= 0 or source_size.y <= 0 or viewport_size.x <= 0 or viewport_size.y <= 0 or \
-            not CombatScale.valid_map_pixels_per_unit(pixels_per_unit):
+            primary_axis not in ["horizontal", "vertical", "mixed"] or \
+            not CombatScale.valid_map_pixels_per_unit(pixels_per_unit) or \
+            not CombatScale.valid_map_art_transform(image_scale, rotation_degrees):
         return {}
     if painted_rows.size() != rows_count or terrain_keys.is_empty():
         return {}
@@ -49,6 +52,7 @@ func to_record() -> Dictionary:
         "source_size":[source_size.x,source_size.y],
         "viewport":[viewport_size.x,viewport_size.y],
         "pixels_per_unit":pixels_per_unit,
+        "primary_axis":primary_axis,
         "art_transform":{"rotation_degrees":rotation_degrees,"scale":image_scale},
         "grid":{"columns":columns,"rows":rows_count,
             "first_center":[first_center.x,first_center.y],

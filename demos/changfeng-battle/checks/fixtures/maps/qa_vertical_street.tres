@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="2_marker"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp" id="3_bg"]
+
+[sub_resource type="Resource" id="North_exit"]
+script = ExtResource("2_marker")
+marker_id = "north_gate"
+marker_kind = "zone_exit"
+exit_side = "north"
+target_zone_id = "town_north_street"
+target_entry_id = "south_gate"
+position = Vector2(800, 160)
+radius = 32.0
+
+[sub_resource type="Resource" id="South_exit"]
+script = ExtResource("2_marker")
+marker_id = "south_gate"
+marker_kind = "zone_exit"
+exit_side = "south"
+target_zone_id = "town_south_street"
+target_entry_id = "north_gate"
+position = Vector2(800, 840)
+radius = 32.0
+
+[resource]
+script = ExtResource("1_map")
+content_id = "qa_vertical_street"
+background = ExtResource("3_bg")
+viewport_size = Vector2i(1600, 1000)
+pixels_per_unit = 80.0
+primary_axis = "vertical"
+area_bounds = Rect2(120, 80, 1360, 840)
+walkable_outline = PackedVector2Array(680, 120, 920, 120, 920, 880, 680, 880)
+markers = Array[Resource]([SubResource("North_exit"), SubResource("South_exit")])
