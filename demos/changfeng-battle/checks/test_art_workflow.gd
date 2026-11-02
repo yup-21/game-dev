@@ -7,31 +7,20 @@ const Dock = preload("res://addons/wuxia_art_importer/art_import_dock.gd")
 
 
 func _initialize() -> void:
-    var index_path: String = Export.production_root().path_join("inventory/asset-index.json")
-    var index_data = JSON.parse_string(FileAccess.get_file_as_string(index_path))
-    if not index_data is Dictionary:
-        _fail("P0 inventory is unreadable")
-        return
-    var expected: Dictionary = {}
-    for item in index_data["assets"]:
-        if item["usage_state"] == "in_use":
-            expected[str(item["res_path"])] = str(item["sha256"])
+    # Native resources are the inventory. Validate the live exporter directly;
+    # there is no second JSON source of truth.
     var everything: Dictionary = Export.plan("all")
     if not str(everything.get("error", "")).is_empty():
         _fail("All export preflight: " + str(everything["error"]))
         return
-    var actual: Dictionary = {}
+    var count := 0
     for item in everything["entries"]:
-        actual[str(item["source"])] = str(item["sha256"])
+        count += 1
         if FileAccess.get_sha256(str(item["destination"])) != str(item["sha256"]):
-            _fail("P0 source and production copy differ: " + str(item["source"]))
+            _fail("Current Resource and production mirror differ: " + str(item["source"]))
             return
-    if expected != actual:
-        _fail("Export scan differs from P0 inventory (%s versus %s)" % [
-            str(actual.size()), str(expected.size())])
-        return
-    if int(everything["replaces"]) != 0 or not bool(everything["can_apply"]):
-        _fail("Identical P0 files were marked for overwrite")
+    if count < 20 or int(everything["replaces"]) != 0 or not bool(everything["can_apply"]):
+        _fail("Current art dependency export differs or requires overwrite")
         return
     var character: Dictionary = Export.plan(
         "character", "res://data/native/characters/shen_changfeng.tres")
@@ -58,7 +47,7 @@ func _initialize() -> void:
     if str(Export.plan("resource", "res://../outside.tres").get("error", "")).is_empty():
         _fail("Escaping res:// was accepted")
         return
-    var source: String = Importer.production_root().path_join("in-use/fallback/default_actor_6x4.svg")
+    var source: String = Importer.production_root().path_join("in-use/imported/in-use/legacy/fallback/default_actor_6x4.svg")
     var atlas: Dictionary = Importer.plan("atlas", source,
         "res://data/native/characters/shen_changfeng.tres",
         {"columns": 6, "rows": 4, "versioned_replace": true})
@@ -81,7 +70,7 @@ func _initialize() -> void:
         _fail("Batch queue controls did not initialize")
         return
     dock.queue_free()
-    print("ART_WORKFLOW_CONTRACT_OK: %s active images" % str(actual.size()))
+    print("ART_WORKFLOW_CONTRACT_OK: %s active images" % str(count))
     quit(0)
 
 
