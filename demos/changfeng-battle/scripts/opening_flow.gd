@@ -176,22 +176,23 @@ func _process(delta: float) -> void:
 ## Painted story world, NPCs and gameplay share one scroll offset.
 ## HUD stays at 1600x1000. Mouse position uses the exact inverse mapping.
 func _update_story_camera() -> void:
-    story_stage_offset = WorldViewport.world_offset(
-        player_pos, Vector2(story_world_size)) if story.phase in ["explore", "dialogue"] \
-        else Vector2.ZERO
-    if temple_picture != null:
-        temple_picture.position = story_stage_offset
-    if ground_picture != null:
-        ground_picture.position = story_stage_offset
-    for overlay in [foreground_picture, weather_picture]:
-        if overlay != null:
-            # Clip viewport starts at y=106; the image must cancel that offset.
-            overlay.position = story_stage_offset - Vector2(0, 106)
-    if characters_layer != null:
-        characters_layer.position = story_stage_offset
+	if story.phase in ["explore", "dialogue"]:
+		story_stage_offset = WorldViewport.world_offset(player_pos, Vector2(story_world_size))
+	else:
+		story_stage_offset = Vector2.ZERO
+	if temple_picture != null:
+		temple_picture.position = story_stage_offset
+	if ground_picture != null:
+		ground_picture.position = story_stage_offset
+	for overlay in [foreground_picture, weather_picture]:
+		if overlay != null:
+			# Clip viewport starts at y=106; cancel its local-space offset.
+			overlay.position = story_stage_offset - Vector2(0, 106)
+	if characters_layer != null:
+		characters_layer.position = story_stage_offset
 
 func _story_screen_to_world(point: Vector2) -> Vector2:
-    return WorldViewport.screen_to_world(point, story_stage_offset)
+	return WorldViewport.screen_to_world(point, story_stage_offset)
 
 func _sync_story_sprites(motion: Vector2, delta: float) -> void:
 	if player_sprite == null or characters_layer == null:
