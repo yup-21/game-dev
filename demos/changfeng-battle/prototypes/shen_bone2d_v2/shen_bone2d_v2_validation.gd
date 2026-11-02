@@ -122,6 +122,7 @@ func _load_embedded_atlas() -> ImageTexture:
 
 func _build_stage() -> void:
     var background := ColorRect.new()
+    background.name = "Background"
     background.size = Vector2(1600, 1000)
     background.color = Color(0.045, 0.058, 0.065, 1.0)
     # Z-index takes precedence over child insertion order. Without this,
