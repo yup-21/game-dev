@@ -24,6 +24,8 @@ func _run() -> void:
     check(bool(state.get("hierarchy_ok", false)), "parent-child hierarchy follows contract")
     check(bool(state.get("anchors_match", false)), "all rest anchors match contract coordinates")
     check(bool(state.get("root_ground", false)), "foot anchor equals 800,730")
+    check(absf(float(state["anchors"]["RearFoot"][1])) < 0.01, "rear foot bone contacts y=0 ground")
+    check(absf(float(state["anchors"]["FrontFoot"][1])) < 0.01, "front foot bone contacts y=0 ground")
     check(absf(CombatScale.actor_height_pixels() - 200.0) < 0.01, "actor height contract is 200px")
     var weapon: Bone2D = scene.get_node("Skeleton2D/Root/Pelvis/Waist/Chest/FrontShoulder/FrontElbow/FrontWrist/FrontHand/SwordGrip/SwordBlade")
     check(weapon != null, "sword is attached through wrist and hand chain")
