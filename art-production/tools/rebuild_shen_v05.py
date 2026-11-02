@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Reproducible 10-action RGBA sprite candidate packer (never changes in-use .tres).
 
-pip install pillow numpy opencv-python
+pip install pillow numpy
 python art-production/tools/rebuild_shen_v05.py --inputs path/to/source_pngs --output candidate_output
 Optionally edit candidate_output/foot_annotations.csv, set reviewed=1, rerun with
 --annotations candidate_output/foot_annotations.csv. Auto foot picks are estimates.
@@ -12,7 +12,6 @@ import csv
 import json
 import math
 import numpy as np
-import cv2
 from PIL import Image, ImageDraw
 
 CELL_W, CELL_H, COLS = 768, 320, 8
