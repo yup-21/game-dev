@@ -62,6 +62,23 @@ func _run() -> void:
     if not _grab(OUTPUT.path_join("humanoid-core-only.png"), true):
         quit(1)
         return
+    # Isolate the human anatomy for acceptance. Coat and hair are not
+    # allowed to mask broken hip/knee/ankle motion during skeleton review.
+    player = scene.get_node("AnimationPlayer") as AnimationPlayer
+    for action in ["idle", "walk", "attack_sword"]:
+        var core_dir := OUTPUT.path_join("core-only").path_join(action)
+        DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(core_dir))
+        var animation := player.get_animation(action)
+        for i in range(8):
+            scene.play_motion(action)
+            var t: float = animation.length * float(i) / float(7 if action == "attack_sword" else 8)
+            player.seek(t, true)
+            player.pause()
+            await process_frame
+            await RenderingServer.frame_post_draw
+            if not _grab(core_dir.path_join("frame-%02d.png" % i), true):
+                quit(1)
+                return
     print("SHEN_RIG_FIRST_VISUAL_OK")
     quit(0)
 
