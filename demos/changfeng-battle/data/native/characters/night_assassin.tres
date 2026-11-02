@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_def"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png" id="2_sprite_sheet"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_aligned_v03.png" id="2_sprite_sheet"]
 
 [ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/night_assassin/portrait_night_assassin_fullbody_v01.png" id="3_portrait"]
 [ext_resource type="Resource" path="res://data/native/animations/night_assassin.tres" id="4_anim"]
