@@ -9,7 +9,7 @@ static var _bounds_cache: Dictionary = {}
 static func _opaque_bounds(texture: Texture2D, columns: int, rows: int) -> Rect2i:
     if texture == null or columns < 1 or rows < 1:
         return Rect2i()
-    var key := "%s:%d:%d" % [texture.resource_path, columns, rows]
+    var key := "%d:%d:%d" % [texture.get_instance_id(), columns, rows]
     if _bounds_cache.has(key):
         return _bounds_cache[key]
     var image := texture.get_image()
@@ -25,7 +25,7 @@ static func _opaque_bounds(texture: Texture2D, columns: int, rows: int) -> Rect2
     var max_y := -1
     # Idle frames 0 and 1 are the reference pose; do not resize mid-animation.
     # Subsample large static poses for predictable loading cost.
-    var stride: int = maxi(1, maxi(fw, fh) / 256)
+    var stride: int = maxi(1, ceili(float(maxi(fw, fh)) / 256.0))
     for frame in range(mini(2, columns * rows)):
         var frame_x: int = (frame % columns) * fw
         var frame_y: int = (frame / columns) * fh
