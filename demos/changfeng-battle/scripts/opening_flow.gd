@@ -4,6 +4,7 @@ extends Node2D
 const Story = preload("res://scripts/opening_story.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const RoleSprite = preload("res://scripts/opening_role_sprite.gd")
+const WorldViewport = preload("res://scripts/world_viewport_offset.gd")
 const Fallback = preload("res://scripts/fallback_assets.gd")
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
@@ -18,6 +19,8 @@ var npc_position: Vector2 = ESCORT
 var background_path: String = TEMPLE_PAINTING
 var scene_art_path: String = ""
 var story_art_profile: WuxiaSceneArtProfile
+var story_world_size: Vector2i = Vector2i(1600, 1000)
+var story_stage_offset: Vector2 = Vector2.ZERO
 var npc_character_id: String = "escort_elder"
 
 func _load_chapter_content() -> void:
@@ -32,6 +35,8 @@ func _load_chapter_content() -> void:
 	npc_position = Vector2(float(chapter_scene.npc_position[0]),float(chapter_scene.npc_position[1]))
 	background_path = str(chapter_scene.get("background",TEMPLE_PAINTING))
 	scene_art_path = str(chapter_scene.get("scene_art",""))
+	var authored_extent: Array = chapter_scene.get("world_size", [1600, 1000])
+	story_world_size = Vector2i(int(authored_extent[0]), int(authored_extent[1]))
 	player_pos = Vector2(float(chapter_scene.player_position[0]),float(chapter_scene.player_position[1]))
 	story = Story.new(str(chapter.story_path))
 	if session.phase == "story":
@@ -168,6 +173,26 @@ func _process(delta: float) -> void:
 		weather_clip.visible = story.phase == "explore" and story_weather_enabled
 	queue_redraw()
 
+## Painted story world, NPCs and gameplay share one scroll offset.
+## HUD stays at 1600x1000. Mouse position uses the exact inverse mapping.
+func _update_story_camera() -> void:
+    story_stage_offset = WorldViewport.world_offset(
+        player_pos, Vector2(story_world_size)) if story.phase in ["explore", "dialogue"] \
+        else Vector2.ZERO
+    if temple_picture != null:
+        temple_picture.position = story_stage_offset
+    if ground_picture != null:
+        ground_picture.position = story_stage_offset
+    for overlay in [foreground_picture, weather_picture]:
+        if overlay != null:
+            # Clip viewport starts at y=106; the image must cancel that offset.
+            overlay.position = story_stage_offset - Vector2(0, 106)
+    if characters_layer != null:
+        characters_layer.position = story_stage_offset
+
+func _story_screen_to_world(point: Vector2) -> Vector2:
+    return WorldViewport.screen_to_world(point, story_stage_offset)
+
 func _sync_story_sprites(motion: Vector2, delta: float) -> void:
 	if player_sprite == null or characters_layer == null:
 		return
@@ -176,6 +201,7 @@ func _sync_story_sprites(motion: Vector2, delta: float) -> void:
 	var exploring: bool = story.phase == "explore"
 	characters_layer.visible = exploring
 	player_sprite.position = player_pos
+	_update_story_camera()
 	player_sprite.set_motion(motion,delta)
 	# Tile feet anchor sorting, not fixed painter's layers.
 	player_sprite.z_index = int(player_pos.y/100.0)
@@ -329,7 +355,7 @@ func _input(event: InputEvent) -> void:
 			"cinematic": _action("continue")
 			"explore":
 				for entry in _npcs():
-					if event.position.distance_to(_npc_point(entry)) < 90.0 and player_pos.distance_to(_npc_point(entry)) < 175.0:
+					if _story_screen_to_world(event.position).distance_to(_npc_point(entry)) < 90.0 and player_pos.distance_to(_npc_point(entry)) < 175.0:
 						_start_dialogue(str(entry.get("trigger_id","")))
 						break
 			"dialogue": _dialogue_next()
@@ -588,7 +614,7 @@ func _load_temple_background() -> void:
 	story_art_profile = null
 	if scene_art_path.begins_with("res://data/") and not scene_art_path.contains("..") and ResourceLoader.exists(scene_art_path):
 		var authored: WuxiaSceneArtProfile = ResourceLoader.load(scene_art_path) as WuxiaSceneArtProfile
-		if authored != null and authored.valid_for(Vector2i(1600,1000)):
+		if authored != null and authored.valid_for(story_world_size):
 			story_art_profile = authored
 			temple_backdrop = authored.background
 	if temple_backdrop == null and ResourceLoader.exists(background_path):
@@ -615,7 +641,7 @@ func _build_temple_picture() -> void:
 	temple_picture.name = "FirstActPaintedBackground"
 	temple_picture.texture = temple_backdrop
 	temple_picture.position = Vector2.ZERO
-	temple_picture.size = Vector2(1600,1000)
+	temple_picture.size = Vector2(story_world_size)
 	temple_picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	temple_picture.stretch_mode = TextureRect.STRETCH_SCALE if story_art_profile != null else TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	temple_picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -636,7 +662,7 @@ func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to
 	image.name = label
 	image.texture = texture
 	image.position = Vector2.ZERO
-	image.size = Vector2(1600,1000)
+	image.size = Vector2(story_world_size)
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	image.stretch_mode = TextureRect.STRETCH_SCALE
 	image.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -695,11 +721,11 @@ func _draw_explore() -> void:
 	var nearest: Dictionary = _nearest_npc()
 	var near: bool = _npc_distance() < 175.0
 	if near and not nearest.is_empty():
-		draw_arc(_npc_point(nearest)+Vector2(0,-14),75,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
+		draw_arc(_npc_point(nearest)+story_stage_offset+Vector2(0,-14),75,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
 		_button(Rect2(850,363,440,54),"E  "+str(nearest.get("talk_label","交谈")),"talk",true)
 	else:
 		for entry in _npcs():
-			_text(_npc_point(entry)+Vector2(-85,-110),str(entry.get("talk_label","交谈")),16,Color("e1d2ac"))
+			_text(_npc_point(entry)+story_stage_offset+Vector2(-85,-110),str(entry.get("talk_label","交谈")),16,Color("e1d2ac"))
 	_panel(Rect2(76,837,1448,125),Color(0.13,0.22,0.20,0.91),Color(GOLD,0.75))
 	_text(Vector2(112,881),_scene_text("prompt","沿官道走近镖车，查探伤者。"),23,PAPER,true)
 	_text(Vector2(114,920),"WASD / 方向键移动   ·   靠近后按 E 交谈",15,Color("d5c8aa"))
