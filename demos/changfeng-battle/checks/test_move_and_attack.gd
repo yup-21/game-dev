@@ -94,8 +94,8 @@ func _run() -> void:
         "combined Qi shortage cannot move or attack")
     var bake=blocked.state.spatial.bake
     _check(not blocked.state.spatial.attack_line_clear(
-        bake.cell_center(Vector2i(4,3)),bake.cell_center(Vector2i(12,3))),
-        "line of sight cannot pass through the authored river bank")
+        bake.cell_center(Vector2i(4,3)),bake.cell_center(Vector2i(12,9))),
+        "line of sight cannot cross outside the painted walkable bridge")
     var forbidden_position: Dictionary=blocked.submit(blocked.request("MOVE_AND_ATTACK",b_id,{
         "attack_kind":"BASIC_ATTACK","target_id":b_target.id,
         "target_position":b_actor.position}))
