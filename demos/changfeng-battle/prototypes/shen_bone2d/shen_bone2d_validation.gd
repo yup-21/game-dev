@@ -277,9 +277,12 @@ func _play(animation_name: String) -> void:
         _status_label.text = "当前动作：%s    源：%s" % [animation_name, _texture_path.get_file()]
 
 func _unhandled_key_input(event: InputEvent) -> void:
-    if not event.pressed:
+    if not event is InputEventKey:
         return
-    match event.keycode:
+    var key_event := event as InputEventKey
+    if not key_event.pressed or key_event.echo:
+        return
+    match key_event.keycode:
         KEY_1:
             _play("idle")
         KEY_2:
