@@ -6,6 +6,7 @@ const Registry = preload("res://scripts/character_registry.gd")
 const Art = preload("res://scripts/hd2d_art_catalog.gd")
 const SpriteClips = preload("res://scripts/battle_native_sprite_clips.gd")
 const Timeline = preload("res://scripts/battle_action_timeline.gd")
+const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const ANIMATION_COLUMNS := 6
 const ANIMATION_ROWS := 4
 const WALK_FPS := 9.0
@@ -72,7 +73,8 @@ func configure(id: String) -> bool:
         # edges and proportions instead of masking a rectangular portrait.
         var image_size: Vector2 = texture.get_size()
         body.offset = Vector2(0,-image_size.y*0.5)
-        body.scale = Vector2.ONE * (260.0 / image_size.y)
+        body.scale = Vector2.ONE * (200.0 / image_size.y)
+    VisualScale.fit(body, body.scale)
     foot_shadow = Polygon2D.new()
     foot_shadow.name = "FootShadow"
     foot_shadow.color = Color(0.015,0.060,0.065,0.22)
