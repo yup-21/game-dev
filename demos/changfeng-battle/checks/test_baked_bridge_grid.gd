@@ -24,6 +24,22 @@ func _run() -> void:
     _check(baked.error.is_empty() and baked.id == "rainy_bridge"
         and baked.polygon_mode and baked.walkable_outline.size() >= 3,
         "native map loads with paint-aligned walkable contour")
+    # Lightweight alpha-distribution audit of the NEW ground paint.
+    # Artists may compare this grid to the authored geometry; no collision
+    # is inferred from alpha without an explicit gameplay mask contract.
+    var ground_image: Image = baked.scene_art.ground.get_image() if baked.scene_art != null else null
+    if ground_image != null and not ground_image.is_empty():
+        print("PAINTED_GROUND_ALPHA_BEGIN (32x20, .=clear +=partial #=opaque)")
+        for sample_y in range(20):
+            var alpha_row := ""
+            for sample_x in range(32):
+                var coordinate := Vector2i(
+                    mini(ground_image.get_width()-1, (sample_x*2+1)*ground_image.get_width()/64),
+                    mini(ground_image.get_height()-1, (sample_y*2+1)*ground_image.get_height()/40))
+                var opacity: float = ground_image.get_pixelv(coordinate).a
+                alpha_row += "#" if opacity >= 0.8 else ("+" if opacity >= 0.15 else ".")
+            print(alpha_row)
+        print("PAINTED_GROUND_ALPHA_END")
     _check(baked.tiles.size() == 150 and baked.terrain.size() == 150
         and baked.scene_art != null and baked.scene_art.valid_for(Vector2i(1600,1000)),
         "one 1600x1000 layered painting bakes the 15x10 tactical index")
