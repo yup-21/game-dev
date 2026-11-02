@@ -24,7 +24,8 @@ func to_record() -> Dictionary:
     if background == null or background.resource_path.is_empty() or \
             viewport_size.x < 100 or viewport_size.y < 100 or \
             area_bounds.size.x < 100 or area_bounds.size.y < 100 or \
-            not CombatScale.valid_map_pixels_per_unit(pixels_per_unit):
+            not CombatScale.valid_map_pixels_per_unit(pixels_per_unit) or \
+            not CombatScale.valid_map_art_transform(image_scale, image_rotation_degrees):
         return {}
     var ground_polygon: Array = []
     if not walkable_outline.is_empty():
