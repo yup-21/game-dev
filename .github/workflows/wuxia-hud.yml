@@ -135,6 +135,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_bone2d_v3_prototype.gd
       - name: Validate skeleton-first joint contract and motion preview
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_rig_first.gd
+      - name: Validate grounded footsteps and authored sword key poses
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_motion_v2.gd
       - name: Verify vertical and mixed map viewport scroll without world-scale drift
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_world_viewport_scroll.gd
       - name: Test north-south streets and four-way junctions at the same world scale
@@ -257,9 +259,13 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/build_shen_rig_art_templates.py
+          python3 tools/build_shen_motion_asset_spec.py
           timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_rig_first.gd
           python3 tools/build_shen_rig_motion_gifs.py
+          python3 tools/build_shen_action_reference_board.py
           test -s demos/changfeng-battle/captures/shen-rig-first/art-templates/art_frames.json
+          test -s demos/changfeng-battle/captures/shen-rig-first/art-templates/required-parts.json
+          test -s demos/changfeng-battle/captures/shen-rig-first/original-sprite-motion-reference.png
           test -s demos/changfeng-battle/captures/shen-rig-first/art-templates/master-rig-template.svg
           test -s demos/changfeng-battle/captures/shen-rig-first/bind-pose.png
           test -s demos/changfeng-battle/captures/shen-rig-first/humanoid-core-only.png
