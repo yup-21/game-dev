@@ -53,6 +53,9 @@ def svg_start(width, height):
 def main() -> None:
     contract = json.loads(CONTRACT.read_text())
     anchors = {item["name"]: item["anchor"] for item in contract["bones"]}
+    for group in contract.get("accessories", []):
+        anchors.update({bone["name"]: bone["anchor"] for bone in group["bones"]})
+    anchors.update({name: marker["anchor"] for name, marker in contract.get("sockets", {}).items()})
     scale = contract["art_source_scale"]
     OUTPUT.mkdir(parents=True, exist_ok=True)
     part_dir = OUTPUT / "per-part-svg"
@@ -64,6 +67,8 @@ def main() -> None:
         "scale_source_px_per_world_px": scale,
         "foot_anchor_world_px": [0, 0],
         "source": str(CONTRACT.relative_to(ROOT)),
+        "core_scene": contract["core_scene"],
+        "accessory_scenes": {g["name"]: g["scene"] for g in contract.get("accessories", [])},
         "parts": [],
     }
 
@@ -95,6 +100,7 @@ def main() -> None:
         manifest["parts"].append({
             "name": name,
             "attach_to_bone": part["attach_to_bone"],
+            "rig_group": part.get("rig_group", "body"),
             "z_index": part["z_index"],
             "source_canvas_size_px": [w * scale, h * scale],
             "pivot_in_source_canvas_px": [float(px), float(py)],
@@ -117,6 +123,18 @@ def main() -> None:
             x, y = anchors[bone["name"]]
             a, b = anchors[bone["parent"]]
             full += f'    <path d="M {fmt(a+130)} {fmt(b+228)} L {fmt(x+130)} {fmt(y+228)}"/>\n'
+    full += '  </g>\n  <g id="decoration-skeletons" fill="none" stroke="#d59632" stroke-width="1.25">\n'
+    for group in contract.get("accessories", []):
+        for bone in group["bones"]:
+            x, y = bone["anchor"]
+            parent = bone["parent"] or group["parent_bone"]
+            a, b = anchors[parent]
+            full += f'    <path d="M {fmt(a+130)} {fmt(b+228)} L {fmt(x+130)} {fmt(y+228)}"/>\n'
+    full += '  </g>\n  <g id="weapon-markers" stroke="#adb4c0" stroke-width="1.4">\n'
+    for name, marker in contract.get("sockets", {}).items():
+        x, y = marker["anchor"]
+        a, b = anchors[marker["parent"]]
+        full += f'    <path d="M {fmt(a+130)} {fmt(b+228)} L {fmt(x+130)} {fmt(y+228)}"/>\n'
     full += '  </g>\n  <g fill="#e8a53f">\n'
     for bone in contract["bones"]:
         x, y = bone["anchor"]
