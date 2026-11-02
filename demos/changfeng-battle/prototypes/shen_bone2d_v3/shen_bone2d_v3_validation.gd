@@ -483,7 +483,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
         KEY_1: _play("idle")
         KEY_2: _play("walk")
         KEY_3: _play("attack_sword")
-        KEY_4: _play("guard")
+        KEY_B: _toggle_bind_overlay()
 
 
 func debug_atlas_size() -> Vector2i:
