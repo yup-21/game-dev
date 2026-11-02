@@ -79,7 +79,7 @@ func _initialize() -> void:
     # Retain a live factory with intentionally stale display data across import.
     var live_factory = Factory.new()
     live_factory.registry.profiles["shen_changfeng"]["art"]["portrait"] = \
-        "res://assets/characters/concepts/escort_captain_portrait.png"
+        "res://assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png"
     var batch: Array[Dictionary] = []
     var production: String = Importer.production_root().path_join("candidates/2026-11-01")
     for actor_id in ["shen_changfeng", "pursuer_captain"]:
@@ -111,7 +111,7 @@ func _initialize() -> void:
         return
     var full_log: String = str(full_import["journal"])
     var live_map: WuxiaGridMapDefinition = ResourceLoader.load("res://data/maps/rainy_bridge.tres")
-    live_map.background = load("res://assets/concepts/2026-10-30/scenes/rainy_broken_bridge_battle_v1.jpg")
+    live_map.background = load("res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp")
     live_map.rotation_degrees = -6.0
     live_map.image_scale = 1.1
     for planned_import in batch:
