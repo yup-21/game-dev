@@ -43,6 +43,8 @@ func _run() -> void:
     check(bool(state.get("core_is_separate", false)), "core Skeleton2D excludes all accessory bones")
     check(bool(state.get("hierarchy_ok", false)), "humanoid hierarchy matches core contract")
     check(bool(state.get("anchors_match", false)), "rest anchors equal shared geometry")
+    if not bool(state.get("accessories_aligned", false)):
+        print("SHEN_RIG_FIRST_ACCESSORY_DELTAS: ", state.get("accessory_deltas", []))
     check(bool(state.get("accessories_aligned", false)), "optional bones follow head/pelvis sockets")
     check(bool(state.get("sockets_aligned", false)), "weapon grip and tip align to hand")
     check(bool(state.get("root_ground", false)), "actor foot anchor is locked")
