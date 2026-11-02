@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'demos/changfeng-battle/scripts/**'
+      - 'art-production/tools/scene_scale_guide.py'
       - 'demos/changfeng-battle/data/**'
       - 'demos/changfeng-battle/checks/test_catalog_extensibility.gd'
       - 'demos/changfeng-battle/checks/test_character_dynamic_identity.gd'
