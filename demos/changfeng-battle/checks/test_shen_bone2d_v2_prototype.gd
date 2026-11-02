@@ -24,6 +24,9 @@ func _run() -> void:
         "back robe panel is drawn above opaque stage background")
     check(scene.get_node("Background").z_index < scene.get_node("RigV2/Skeleton2D/Hips/Spine/ArmBack/ArmBackPiece").z_index,
         "back arm cannot be hidden behind opaque stage")
+    check(scene.get_node("RigV2/Skeleton2D/Hips/Spine/ArmBack/ArmBackPiece").z_index >
+        scene.get_node("RigV2/Skeleton2D/Hips/Spine/TorsoPiece").z_index,
+        "rear shoulder sleeve covers the painted open armhole")
     check(scene.has_node("RigV2/Skeleton2D/Hips/Spine/Head"), "head bone exists")
     check(scene.has_node("RigV2/Skeleton2D/Hips/Spine/Head/HairRoot/HairTip"), "hair chain exists")
     check(scene.has_node("RigV2/Skeleton2D/Hips/SkirtRoot/SkirtTipLeft"), "left skirt chain exists")
@@ -52,8 +55,8 @@ func _run() -> void:
     # these would pass even if the limbs were assembled 100px apart.
     var layout: Dictionary = scene.debug_registration()
     check(float(layout["head_to_torso"]) >= 8.0 and float(layout["head_to_torso"]) <= 24.0, "head overlaps the collar within safe range")
-    check(float(layout["rear_shoulder_overlap"]) >= 8.0, "rear sleeve covers shoulder")
-    check(float(layout["front_shoulder_overlap"]) >= 8.0, "front sleeve covers shoulder")
+    check(float(layout["rear_shoulder_overlap"]) >= 15.0, "rear sleeve covers shoulder")
+    check(float(layout["front_shoulder_overlap"]) >= 15.0, "front sleeve covers shoulder")
     check(absf(float(layout["foot_baseline"])) <= 2.0, "front boot touches anchor line")
     check(absf(float(layout["hem_baseline"])) <= 5.0, "robe ends at foot baseline")
     check(absf(float(layout["rig_scale"]) * 201.0 - CombatScale.actor_height_pixels()) < 1.0,
