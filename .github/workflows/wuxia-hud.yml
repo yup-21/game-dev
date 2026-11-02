@@ -127,6 +127,25 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_battle_spatial_facade.gd
       - name: Enforce single combat unit, sprite proportions and map scale
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_combat_scale.gd
+      - name: Validate Shen Changfeng native Bone2D pilot
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_bone2d_prototype.gd
+      - name: Validate Shen Changfeng native Bone2D v2 hybrid rig
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_bone2d_v2_prototype.gd
+      - name: Validate Shen Changfeng V3 bind-first prototype
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_bone2d_v3_prototype.gd
+      - name: Validate skeleton-first joint contract and motion preview
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_rig_first.gd
+      - name: Validate grounded footsteps and authored sword key poses
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_motion_v2.gd
+      - name: Validate source-frame traced actual Skeleton2D poses
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_shen_true_source_pose_trace.gd
+      - name: Generate independent candidate PNG cutouts from actual prior artwork
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 tools/build_shen_rig_art_templates.py
+          python3 tools/build_shen_bone_candidate_cutouts.py
+      - name: Verify 20 actual PNG textures bind to Godot Bone2D
+        run: timeout --signal=TERM 45s godot --headless --path demos/changfeng-battle --script res://checks/test_shen_candidate_binding.gd
       - name: Verify vertical and mixed map viewport scroll without world-scale drift
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_world_viewport_scroll.gd
       - name: Test north-south streets and four-way junctions at the same world scale
@@ -181,8 +200,11 @@ jobs:
         with:
           version: '4.7.2'
           use-dotnet: false
-      - name: Prepare virtual display and CJK font fallback
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1 fonts-noto-cjk
+      - name: Prepare virtual display, CJK font fallback and GIF tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgl1 fonts-noto-cjk
+          python3 -m pip install --user Pillow
       - name: Capture actual HD-2D battle and selected card
         shell: bash
         run: |
@@ -208,6 +230,92 @@ jobs:
           timeout --signal=TERM 150s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_art_pilot_candidates.gd
           test -s demos/changfeng-battle/captures/art-pilot/pilot-1600x1000.png
           test -s demos/changfeng-battle/captures/art-pilot/pilot-1440x900.png
+      - name: Capture Shen Changfeng Bone2D visual acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_bone2d_visual.gd
+          python3 tools/build_shen_bone2d_visual_evidence.py
+          test -s demos/changfeng-battle/captures/shen-bone2d/overview.png
+          test -s demos/changfeng-battle/captures/shen-bone2d/keyframes-contact-sheet.png
+          for action in idle walk attack_sword guard; do
+            test -s "demos/changfeng-battle/captures/shen-bone2d/$action.gif"
+          done
+      - name: Capture Shen Changfeng Bone2D v2 visual acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_bone2d_v2_visual.gd
+          python3 tools/build_shen_bone2d_v2_visual_evidence.py
+          test -s demos/changfeng-battle/captures/shen-bone2d-v2/overview.png
+          test -s demos/changfeng-battle/captures/shen-bone2d-v2/keyframes-contact-sheet.png
+          for action in idle walk attack_sword guard; do
+            test -s "demos/changfeng-battle/captures/shen-bone2d-v2/$action.gif"
+          done
+      - name: Capture Shen Changfeng V3 bind-first visual acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_bone2d_v3_visual.gd
+          python3 tools/build_shen_bone2d_v3_visual_evidence.py
+          test -s demos/changfeng-battle/captures/shen-bone2d-v3/bind-pose-overlay.png
+          test -s demos/changfeng-battle/captures/shen-bone2d-v3/keyframes-contact-sheet.png
+          for action in idle walk attack_sword; do
+            test -s "demos/changfeng-battle/captures/shen-bone2d-v3/$action.gif"
+          done
+      - name: Capture native skeleton and generate art-first production templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/build_shen_rig_art_templates.py
+          python3 tools/build_shen_motion_asset_spec.py
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_rig_first.gd
+          python3 tools/build_shen_rig_motion_gifs.py
+          python3 tools/build_shen_action_reference_board.py
+          test -s demos/changfeng-battle/captures/shen-rig-first/art-templates/art_frames.json
+          test -s demos/changfeng-battle/captures/shen-rig-first/art-templates/required-parts.json
+          test -s demos/changfeng-battle/captures/shen-rig-first/original-sprite-motion-reference.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/art-templates/master-rig-template.svg
+          test -s demos/changfeng-battle/captures/shen-rig-first/bind-pose.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/humanoid-core-only.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/core-only/keyframes.png
+          for action in idle walk attack_sword; do
+            test -s "demos/changfeng-battle/captures/shen-rig-first/core-only/$action.gif"
+          done
+          for action in idle walk attack_sword; do
+            test -s "demos/changfeng-battle/captures/shen-rig-first/$action.gif"
+          done
+      - name: Bind 20 separate candidate PNGs and capture Godot animation visuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/build_shen_bone_candidate_cutouts.py
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_candidate_bound.gd
+          python3 tools/build_shen_candidate_visual_evidence.py
+          test -s demos/changfeng-battle/captures/shen-rig-first/candidate-bound/bind-with-bones.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/candidate-bound/keyframes.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/candidate-cutout-sheet.png
+          for action in idle walk attack_sword; do
+            test -s "demos/changfeng-battle/captures/shen-rig-first/candidate-bound/$action.gif"
+          done
+      - name: Compare each original sprite to the real fitted Godot bones
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_true_source_pose_trace.gd
+          python3 tools/build_shen_true_trace_visuals.py
+          for action in idle walk attack; do
+            test -s "demos/changfeng-battle/captures/shen-rig-first/true-source-trace/$action-pose-comparison.png"
+          done
+          test -s demos/changfeng-battle/captures/shen-rig-first/true-source-trace/joint-errors.json
+      - name: Visual retarget old Shen material onto universal body rig
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_old_asset_compatibility.gd
+          python3 tools/build_shen_old_asset_compatibility.py
+          test -s demos/changfeng-battle/captures/shen-rig-first/old-asset-compatibility/bind-with-new-core.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/old-asset-compatibility/new-core-over-old-sprites.png
       - name: Upload screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -217,5 +325,10 @@ jobs:
             demos/changfeng-battle/captures/hd2d-validation/*.png
             demos/changfeng-battle/captures/opening-*.png
             demos/changfeng-battle/captures/art-pilot/*.png
+            demos/changfeng-battle/captures/shen-bone2d/**
+            demos/changfeng-battle/captures/shen-bone2d-v2/**
+            demos/changfeng-battle/captures/shen-bone2d-v3/**
+            demos/changfeng-battle/captures/shen-rig-first/**
+            demos/changfeng-battle/prototypes/shen_rig_first/candidate_cutouts/**
             demos/changfeng-battle/assets/scenes/story/ruined_temple_story.webp
           if-no-files-found: warn

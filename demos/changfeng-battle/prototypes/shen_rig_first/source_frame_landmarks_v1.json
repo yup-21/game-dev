@@ -1,0 +1,789 @@
+{
+  "version": 1,
+  "source_atlas": "res://assets/imported/candidates/2026-11-01/shen_changfeng/sprite_shen_changfeng_atlas_normalized_v02.png",
+  "atlas_columns": 6,
+  "atlas_rows": 4,
+  "cell_px": 256,
+  "reference_blowup_size": [
+    470,
+    520
+  ],
+  "render_scale_world_per_reference_px": 0.75,
+  "reference_origin_px": [
+    245,
+    470
+  ],
+  "source_image_top_in_reference_px": 52,
+  "frames": [
+    {
+      "name": "idle_1",
+      "source_frame": 1,
+      "kind": "idle",
+      "points": {
+        "head": [
+          254,
+          245
+        ],
+        "neck": [
+          244,
+          278
+        ],
+        "chest": [
+          246,
+          304
+        ],
+        "pelvis": [
+          246,
+          335
+        ],
+        "FrontShoulder": [
+          269,
+          306
+        ],
+        "FrontElbow": [
+          276,
+          332
+        ],
+        "FrontWrist": [
+          283,
+          351
+        ],
+        "FrontHand": [
+          287,
+          360
+        ],
+        "RearShoulder": [
+          208,
+          307
+        ],
+        "RearElbow": [
+          207,
+          339
+        ],
+        "RearWrist": [
+          209,
+          367
+        ],
+        "RearHand": [
+          210,
+          373
+        ],
+        "FrontHip": [
+          259,
+          355
+        ],
+        "FrontKnee": [
+          269,
+          409
+        ],
+        "FrontAnkle": [
+          269,
+          456
+        ],
+        "FrontFoot": [
+          283,
+          469
+        ],
+        "RearHip": [
+          229,
+          351
+        ],
+        "RearKnee": [
+          223,
+          412
+        ],
+        "RearAnkle": [
+          224,
+          456
+        ],
+        "RearFoot": [
+          214,
+          470
+        ]
+      },
+      "low_confidence": [],
+      "remarks": "Joint centers estimated visually from painted silhouette."
+    },
+    {
+      "name": "walk_2",
+      "source_frame": 2,
+      "kind": "walk",
+      "points": {
+        "head": [
+          296,
+          265
+        ],
+        "neck": [
+          279,
+          297
+        ],
+        "chest": [
+          251,
+          320
+        ],
+        "pelvis": [
+          238,
+          372
+        ],
+        "FrontShoulder": [
+          278,
+          315
+        ],
+        "FrontElbow": [
+          292,
+          330
+        ],
+        "FrontWrist": [
+          317,
+          335
+        ],
+        "FrontHand": [
+          323,
+          330
+        ],
+        "RearShoulder": [
+          226,
+          326
+        ],
+        "RearElbow": [
+          201,
+          347
+        ],
+        "RearWrist": [
+          188,
+          364
+        ],
+        "RearHand": [
+          186,
+          372
+        ],
+        "FrontHip": [
+          254,
+          378
+        ],
+        "FrontKnee": [
+          285,
+          407
+        ],
+        "FrontAnkle": [
+          244,
+          458
+        ],
+        "FrontFoot": [
+          249,
+          466
+        ],
+        "RearHip": [
+          222,
+          380
+        ],
+        "RearKnee": [
+          200,
+          429
+        ],
+        "RearAnkle": [
+          159,
+          458
+        ],
+        "RearFoot": [
+          149,
+          470
+        ]
+      },
+      "low_confidence": [],
+      "remarks": "Joint centers estimated visually from painted silhouette."
+    },
+    {
+      "name": "walk_3",
+      "source_frame": 3,
+      "kind": "walk",
+      "points": {
+        "head": [
+          279,
+          269
+        ],
+        "neck": [
+          268,
+          302
+        ],
+        "chest": [
+          247,
+          325
+        ],
+        "pelvis": [
+          226,
+          368
+        ],
+        "FrontShoulder": [
+          264,
+          322
+        ],
+        "FrontElbow": [
+          285,
+          344
+        ],
+        "FrontWrist": [
+          317,
+          317
+        ],
+        "FrontHand": [
+          325,
+          316
+        ],
+        "RearShoulder": [
+          214,
+          326
+        ],
+        "RearElbow": [
+          180,
+          343
+        ],
+        "RearWrist": [
+          160,
+          352
+        ],
+        "RearHand": [
+          156,
+          351
+        ],
+        "FrontHip": [
+          251,
+          374
+        ],
+        "FrontKnee": [
+          275,
+          408
+        ],
+        "FrontAnkle": [
+          250,
+          457
+        ],
+        "FrontFoot": [
+          261,
+          471
+        ],
+        "RearHip": [
+          209,
+          375
+        ],
+        "RearKnee": [
+          190,
+          423
+        ],
+        "RearAnkle": [
+          156,
+          458
+        ],
+        "RearFoot": [
+          136,
+          470
+        ]
+      },
+      "low_confidence": [],
+      "remarks": "Joint centers estimated visually from painted silhouette."
+    },
+    {
+      "name": "walk_4",
+      "source_frame": 4,
+      "kind": "walk",
+      "points": {
+        "head": [
+          279,
+          268
+        ],
+        "neck": [
+          265,
+          300
+        ],
+        "chest": [
+          246,
+          325
+        ],
+        "pelvis": [
+          227,
+          370
+        ],
+        "FrontShoulder": [
+          267,
+          323
+        ],
+        "FrontElbow": [
+          282,
+          347
+        ],
+        "FrontWrist": [
+          324,
+          330
+        ],
+        "FrontHand": [
+          330,
+          326
+        ],
+        "RearShoulder": [
+          215,
+          325
+        ],
+        "RearElbow": [
+          188,
+          310
+        ],
+        "RearWrist": [
+          177,
+          305
+        ],
+        "RearHand": [
+          172,
+          306
+        ],
+        "FrontHip": [
+          251,
+          374
+        ],
+        "FrontKnee": [
+          276,
+          412
+        ],
+        "FrontAnkle": [
+          287,
+          456
+        ],
+        "FrontFoot": [
+          305,
+          469
+        ],
+        "RearHip": [
+          215,
+          381
+        ],
+        "RearKnee": [
+          170,
+          433
+        ],
+        "RearAnkle": [
+          105,
+          458
+        ],
+        "RearFoot": [
+          91,
+          470
+        ]
+      },
+      "low_confidence": [],
+      "remarks": "Joint centers estimated visually from painted silhouette."
+    },
+    {
+      "name": "walk_5",
+      "source_frame": 5,
+      "kind": "walk",
+      "points": {
+        "head": [
+          282,
+          267
+        ],
+        "neck": [
+          270,
+          299
+        ],
+        "chest": [
+          249,
+          326
+        ],
+        "pelvis": [
+          234,
+          369
+        ],
+        "FrontShoulder": [
+          271,
+          325
+        ],
+        "FrontElbow": [
+          260,
+          347
+        ],
+        "FrontWrist": [
+          237,
+          368
+        ],
+        "FrontHand": [
+          226,
+          377
+        ],
+        "RearShoulder": [
+          226,
+          325
+        ],
+        "RearElbow": [
+          210,
+          347
+        ],
+        "RearWrist": [
+          223,
+          372
+        ],
+        "RearHand": [
+          227,
+          382
+        ],
+        "FrontHip": [
+          254,
+          371
+        ],
+        "FrontKnee": [
+          276,
+          407
+        ],
+        "FrontAnkle": [
+          236,
+          457
+        ],
+        "FrontFoot": [
+          242,
+          468
+        ],
+        "RearHip": [
+          216,
+          378
+        ],
+        "RearKnee": [
+          185,
+          426
+        ],
+        "RearAnkle": [
+          143,
+          459
+        ],
+        "RearFoot": [
+          117,
+          470
+        ]
+      },
+      "low_confidence": [
+        "RearKnee",
+        "RearAnkle",
+        "FrontAnkle"
+      ],
+      "remarks": "Knee/ankle partially covered by robe."
+    },
+    {
+      "name": "attack_6",
+      "source_frame": 6,
+      "kind": "attack",
+      "points": {
+        "head": [
+          308,
+          283
+        ],
+        "neck": [
+          294,
+          320
+        ],
+        "chest": [
+          277,
+          343
+        ],
+        "pelvis": [
+          257,
+          383
+        ],
+        "FrontShoulder": [
+          299,
+          342
+        ],
+        "FrontElbow": [
+          290,
+          360
+        ],
+        "FrontWrist": [
+          257,
+          374
+        ],
+        "FrontHand": [
+          261,
+          381
+        ],
+        "RearShoulder": [
+          253,
+          336
+        ],
+        "RearElbow": [
+          231,
+          351
+        ],
+        "RearWrist": [
+          265,
+          375
+        ],
+        "RearHand": [
+          271,
+          378
+        ],
+        "FrontHip": [
+          274,
+          395
+        ],
+        "FrontKnee": [
+          316,
+          429
+        ],
+        "FrontAnkle": [
+          355,
+          460
+        ],
+        "FrontFoot": [
+          369,
+          470
+        ],
+        "RearHip": [
+          235,
+          397
+        ],
+        "RearKnee": [
+          208,
+          436
+        ],
+        "RearAnkle": [
+          184,
+          459
+        ],
+        "RearFoot": [
+          174,
+          470
+        ],
+        "SwordGrip": [
+          260,
+          384
+        ],
+        "SwordBlade": [
+          115,
+          442
+        ]
+      },
+      "low_confidence": [
+        "FrontHip",
+        "FrontKnee",
+        "FrontAnkle",
+        "FrontFoot",
+        "RearHip",
+        "RearKnee",
+        "RearAnkle",
+        "RearFoot",
+        "SwordBlade"
+      ],
+      "remarks": "Original atlas has detached boot fragments above torso. Lower-limb landmarks are inferred, not artist-observable."
+    },
+    {
+      "name": "attack_7",
+      "source_frame": 7,
+      "kind": "attack",
+      "points": {
+        "head": [
+          269,
+          281
+        ],
+        "neck": [
+          255,
+          311
+        ],
+        "chest": [
+          237,
+          336
+        ],
+        "pelvis": [
+          236,
+          385
+        ],
+        "FrontShoulder": [
+          270,
+          327
+        ],
+        "FrontElbow": [
+          311,
+          328
+        ],
+        "FrontWrist": [
+          359,
+          334
+        ],
+        "FrontHand": [
+          368,
+          334
+        ],
+        "RearShoulder": [
+          223,
+          329
+        ],
+        "RearElbow": [
+          213,
+          344
+        ],
+        "RearWrist": [
+          199,
+          362
+        ],
+        "RearHand": [
+          199,
+          376
+        ],
+        "FrontHip": [
+          252,
+          393
+        ],
+        "FrontKnee": [
+          286,
+          429
+        ],
+        "FrontAnkle": [
+          341,
+          458
+        ],
+        "FrontFoot": [
+          355,
+          470
+        ],
+        "RearHip": [
+          222,
+          395
+        ],
+        "RearKnee": [
+          190,
+          438
+        ],
+        "RearAnkle": [
+          166,
+          460
+        ],
+        "RearFoot": [
+          152,
+          469
+        ],
+        "SwordGrip": [
+          372,
+          334
+        ],
+        "SwordBlade": [
+          388,
+          330
+        ]
+      },
+      "low_confidence": [
+        "FrontHip",
+        "FrontKnee",
+        "FrontAnkle",
+        "FrontFoot",
+        "RearHip",
+        "RearKnee",
+        "RearAnkle",
+        "RearFoot",
+        "SwordBlade"
+      ],
+      "remarks": "Original atlas has detached boot fragments above torso. Lower-limb landmarks are inferred, not artist-observable."
+    },
+    {
+      "name": "attack_8",
+      "source_frame": 8,
+      "kind": "attack",
+      "points": {
+        "head": [
+          271,
+          283
+        ],
+        "neck": [
+          258,
+          308
+        ],
+        "chest": [
+          239,
+          330
+        ],
+        "pelvis": [
+          240,
+          385
+        ],
+        "FrontShoulder": [
+          274,
+          323
+        ],
+        "FrontElbow": [
+          315,
+          331
+        ],
+        "FrontWrist": [
+          344,
+          343
+        ],
+        "FrontHand": [
+          351,
+          342
+        ],
+        "RearShoulder": [
+          220,
+          330
+        ],
+        "RearElbow": [
+          211,
+          346
+        ],
+        "RearWrist": [
+          213,
+          365
+        ],
+        "RearHand": [
+          222,
+          374
+        ],
+        "FrontHip": [
+          260,
+          397
+        ],
+        "FrontKnee": [
+          279,
+          432
+        ],
+        "FrontAnkle": [
+          316,
+          461
+        ],
+        "FrontFoot": [
+          331,
+          469
+        ],
+        "RearHip": [
+          218,
+          392
+        ],
+        "RearKnee": [
+          195,
+          438
+        ],
+        "RearAnkle": [
+          160,
+          463
+        ],
+        "RearFoot": [
+          150,
+          469
+        ],
+        "SwordGrip": [
+          352,
+          342
+        ],
+        "SwordBlade": [
+          83,
+          337
+        ]
+      },
+      "low_confidence": [
+        "FrontHip",
+        "FrontKnee",
+        "FrontAnkle",
+        "FrontFoot",
+        "RearHip",
+        "RearKnee",
+        "RearAnkle",
+        "RearFoot",
+        "SwordBlade"
+      ],
+      "remarks": "Original atlas has detached boot fragments above torso. Lower-limb landmarks are inferred, not artist-observable."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://prototypes/shen_rig_first/shen_skeleton_first.tscn" id="1"]
+
+[node name="ShenCandidateBoundAnimation" instance=ExtResource("1")]
+candidate_art_enabled = true
+show_skeleton = false
+show_attachment_guides = false
