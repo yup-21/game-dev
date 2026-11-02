@@ -174,7 +174,8 @@ func _build_rig() -> void:
     var belt_sprite := _add_rigid_piece("BeltPiece", hips, "belt", Vector2(310, 270) * ART_SCALE, 5)
     var front_arm_sprite := _add_rigid_piece("ArmFrontPiece", arm_front, "arm_front", Vector2(345, 185) * ART_SCALE, 7)
     var head_sprite := _add_rigid_piece("HeadPiece", head, "head", Vector2(325, 120) * ART_SCALE, 8)
-    # Head remains visible for attack/guard swaps; only the neutral torso/arms are replaced.\n    _neutral_upper.assign([back_arm_sprite, torso_sprite, pelvis_sprite, belt_sprite, front_arm_sprite])
+    # Head remains visible for attack/guard swaps; only the neutral torso/arms are replaced.
+    _neutral_upper.assign([back_arm_sprite, torso_sprite, pelvis_sprite, belt_sprite, front_arm_sprite])
 
     var tb := _add_rigid_piece("ThighBackPiece", leg_back, "thigh_back", Vector2(295, 340) * ART_SCALE, -5)
     var sb := _add_rigid_piece("ShinBackPiece", shin_back, "shin_back", Vector2(295, 410) * ART_SCALE, -5)
