@@ -11,6 +11,10 @@ const REQUIRED_ACTIONS := ["idle", "move", "attack", "guard", "hit",
 @export_range(1, 64) var columns: int = 6
 @export_range(1, 64) var rows: int = 4
 @export var feet_offset: Vector2 = Vector2(0, -102)
+## Final visual feet nudge in world pixels after alpha-based sizing.
+## Positive Y moves the visible sprite down; negative Y moves it up.
+## Useful when a sword/cape tip hangs lower than the actual boots.
+@export var feet_adjust: Vector2 = Vector2.ZERO
 @export var actor_scale: Vector2 = Vector2(0.53, 0.53)
 @export var faces_left_unflipped: bool = false
 @export var clips: Array[Resource] = []
