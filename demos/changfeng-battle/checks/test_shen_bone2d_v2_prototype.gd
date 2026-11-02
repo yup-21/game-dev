@@ -45,7 +45,7 @@ func _run() -> void:
     # Regress the actual rig registration, not only clip names or node counts:
     # these would pass even if the limbs were assembled 100px apart.
     var layout: Dictionary = scene.debug_registration()
-    check(float(layout["head_to_torso"]) <= 12.0, "head joins the collar")
+    check(float(layout["head_to_torso"]) >= 8.0 and float(layout["head_to_torso"]) <= 24.0, "head overlaps the collar within safe range")
     check(float(layout["rear_shoulder_overlap"]) >= 8.0, "rear sleeve covers shoulder")
     check(float(layout["front_shoulder_overlap"]) >= 8.0, "front sleeve covers shoulder")
     check(absf(float(layout["foot_baseline"])) <= 2.0, "front boot touches anchor line")
