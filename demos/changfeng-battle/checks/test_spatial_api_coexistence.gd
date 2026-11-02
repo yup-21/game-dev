@@ -36,10 +36,10 @@ func _run() -> void:
         check(clipped.size() == 2 and
             absf(clipped[-1].distance_to(start) - 5.0) < 0.01,
             "movement budget uses same geometry")
-    var river: Vector2 = space.bake.cell_center(Vector2i(7, 2))
+    var river: Vector2 = space.bake.cell_center(Vector2i(7, 9))
     check(not space.is_valid_position(river, 8.0)
         and space.find_path(start, river, 8.0).is_empty(),
-        "river cannot become a destination")
+        "outside painted ground cannot become a destination")
     space.set_actors({8:{"position":goal,"radius":10.0,"alive":true}})
     check(not space.is_valid_position(goal, 8.0)
         and space.is_valid_position(goal, 8.0, 8),
