@@ -7,9 +7,12 @@
 [sub_resource type="Resource" id="EastEntry"]
 script = ExtResource("4_marker")
 marker_id = "east_entry"
-marker_kind = "spawn"
+marker_kind = "zone_exit"
 position = Vector2(200, 790)
-radius = 24.0
+radius = 110.0
+exit_side = "west"
+target_zone_id = "pingjiang_long_street_qa"
+target_entry_id = "street_end"
 
 [sub_resource type="Resource" id="EastMid"]
 script = ExtResource("4_marker")

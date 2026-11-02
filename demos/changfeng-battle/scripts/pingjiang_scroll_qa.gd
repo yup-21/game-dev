@@ -1,29 +1,32 @@
 extends Node2D
-## Five-screen Pingjiang scrolling QA with two independently authored, stitched street regions.
-## Reach it from the Demo menu; Esc returns without modifying story/session state.
+## Independent Pingjiang map QA. Only the active map is mounted in the world;
+## zone_exit marker metadata changes the map at an explicit connection point.
 const ViewportShift = preload("res://scripts/world_viewport_offset.gd")
 const CombatScale = preload("res://scripts/combat_scale.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
 const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const ACTOR_PROFILE_PATH := "res://data/native/animations/shen_changfeng.tres"
-const WORLD_SIZE := Vector2(8000.0, 1000.0)
-const SEAM_X := 4800.0
 const MOVE_SPEED := 265.0
-const REGIONS := [
-    {"id": "pingjiang_long_street_qa", "title": "主干道·临河水市",
-        "map": "res://data/maps/pingjiang_long_street_qa.tres",
+const REGIONS := {
+    "pingjiang_long_street_qa": {
+        "title": "主干道·临河水市", "map": "res://data/maps/pingjiang_long_street_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_long_street_qa.tres",
-        "size": Vector2(4800.0, 1000.0), "start_x": 0.0},
-    {"id": "pingjiang_east_market_qa", "title": "东市·续接街区",
-        "map": "res://data/maps/pingjiang_east_market_qa.tres",
+        "size": Vector2(4800, 1000), "start": "player_start"},
+    "pingjiang_east_market_qa": {
+        "title": "东市·续接街区", "map": "res://data/maps/pingjiang_east_market_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_east_market_qa.tres",
-        "size": Vector2(3200.0, 1000.0), "start_x": 4800.0}
-]
+        "size": Vector2(3200, 1000), "start": "east_entry"},
+    "pingjiang_north_lane_qa": {
+        "title": "北街·南北长巷", "map": "res://data/maps/pingjiang_north_lane_qa.tres",
+        "art": "res://data/native/scene_art/pingjiang_north_lane_qa.tres",
+        "size": Vector2(1600, 4000), "start": "south_start"}
+}
+
+@export var initial_region_id: String = "pingjiang_long_street_qa"
 
 var bake
-var region_bakes: Array = []
-var region_debug_lines: Array[Line2D] = []
-var current_region_index: int = 0
+var region_node: Node2D
+var current_region_id: String = ""
 var crossing_count: int = 0
 var stage: Node2D
 var player: Node2D
@@ -31,6 +34,7 @@ var actor_sprite: Sprite2D
 var actor_profile: WuxiaActorAnimationProfile
 var status: Label
 var debug_line: Line2D
+var debug_visible: bool = false
 var goal: Vector2 = Vector2.INF
 var animation_time: float = 0.0
 var last_screen_click: Vector2 = Vector2.ZERO
@@ -40,40 +44,8 @@ func _ready() -> void:
     stage = Node2D.new()
     stage.name = "ScrollingWorld"
     add_child(stage)
-    for region_index in range(REGIONS.size()):
-        var region: Dictionary = REGIONS[region_index]
-        var region_size: Vector2 = region["size"]
-        var current_bake = MapBake.new(str(region["map"]))
-        if not current_bake.error.is_empty():
-            push_error("Pingjiang QA area %s: %s" % [region["id"], current_bake.error])
-            return
-        var art := load(str(region["art"])) as WuxiaSceneArtProfile
-        if art == null or not art.valid_for(Vector2i(region_size)):
-            push_error("Pingjiang QA art layers invalid for " + str(region["id"]))
-            return
-        region_bakes.append(current_bake)
-        var region_node := Node2D.new()
-        region_node.name = str(region["id"])
-        region_node.position = Vector2(float(region["start_x"]), 0.0)
-        stage.add_child(region_node)
-        _add_layer(region_node, "Background", art.background, region_size, -100)
-        _add_layer(region_node, "Ground", art.ground, region_size, -90)
-        _add_layer(region_node, "Foreground", art.foreground, region_size, 110)
-        var boundary := Line2D.new()
-        boundary.name = "WalkableBoundary"
-        boundary.points = current_bake.walkable_outline.duplicate()
-        boundary.add_point(current_bake.walkable_outline[0])
-        boundary.width = 5.0
-        boundary.default_color = Color(0.1, 0.87, 0.44, 0.84)
-        boundary.visible = false
-        boundary.z_index = 150
-        region_node.add_child(boundary)
-        region_debug_lines.append(boundary)
-    bake = region_bakes[0]
-    debug_line = region_debug_lines[0]
     player = Node2D.new()
     player.name = "ShenChangfeng"
-    player.position = Vector2(200.0, 790.0)
     stage.add_child(player)
     var foot := Polygon2D.new()
     foot.name = "Footprint24px"
@@ -102,7 +74,68 @@ func _ready() -> void:
     status.add_theme_constant_override("shadow_offset_x", 2)
     status.add_theme_constant_override("shadow_offset_y", 2)
     hud.add_child(status)
+    if not REGIONS.has(initial_region_id) or not _load_region(initial_region_id,
+            str(REGIONS[initial_region_id]["start"])):
+        push_error("Pingjiang QA cannot load initial map: " + initial_region_id)
+
+## Load and display ONE native map; release the previous region after the
+## destination Resource, layered art, polygon and entry point all validate.
+func _load_region(region_id: String, entry_id: String) -> bool:
+    if not REGIONS.has(region_id):
+        return false
+    var region: Dictionary = REGIONS[region_id]
+    var next_bake = MapBake.new(str(region["map"]))
+    if not next_bake.error.is_empty():
+        push_error("Pingjiang QA map %s: %s" % [region_id, next_bake.error])
+        return false
+    var art := load(str(region["art"])) as WuxiaSceneArtProfile
+    var region_size: Vector2 = region["size"]
+    if art == null or not art.valid_for(Vector2i(region_size)):
+        push_error("Pingjiang QA art layers invalid for " + region_id)
+        return false
+    var entry: Dictionary = next_bake.markers.get(entry_id, {})
+    var coords: Array = entry.get("position", [])
+    if coords.size() != 2:
+        push_error("Pingjiang QA entry missing: " + entry_id)
+        return false
+    var entry_point := Vector2(float(coords[0]), float(coords[1]))
+    if not next_bake.is_walkable_point(entry_point,
+            CombatScale.footprint_radius_pixels()):
+        push_error("Pingjiang QA entry is not walkable: " + entry_id)
+        return false
+
+    var next_node := Node2D.new()
+    next_node.name = region_id
+    stage.add_child(next_node)
+    _add_layer(next_node, "Background", art.background, region_size, -100)
+    _add_layer(next_node, "Ground", art.ground, region_size, -90)
+    _add_layer(next_node, "Foreground", art.foreground, region_size, 110)
+    var boundary := Line2D.new()
+    boundary.name = "WalkableBoundary"
+    boundary.points = next_bake.walkable_outline.duplicate()
+    if not next_bake.walkable_outline.is_empty():
+        boundary.add_point(next_bake.walkable_outline[0])
+    boundary.width = 5.0
+    boundary.default_color = Color(0.1, 0.87, 0.44, 0.84)
+    boundary.visible = debug_visible
+    boundary.z_index = 150
+    next_node.add_child(boundary)
+    for marker in next_bake.markers.values():
+        if str(marker.get("kind", "")) == "zone_exit":
+            _add_exit_sign(next_node, marker)
+    if region_node != null:
+        region_node.free()
+    region_node = next_node
+    bake = next_bake
+    debug_line = boundary
+    current_region_id = region_id
+    player.position = entry_point
+    player.z_index = clampi(roundi(player.position.y / 20.0), 0, 100)
+    goal = Vector2.INF
+    last_world_click = Vector2.ZERO
+    animation_time = 0.0
     _update_camera_and_status()
+    return true
 
 func _add_layer(parent: Node2D, name: String, texture: Texture2D,
         region_size: Vector2, order: int) -> void:
@@ -117,6 +150,37 @@ func _add_layer(parent: Node2D, name: String, texture: Texture2D,
     rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
     rect.z_index = order
     parent.add_child(rect)
+
+func _add_exit_sign(parent: Node2D, marker: Dictionary) -> void:
+    var coords: Array = marker["position"]
+    var center := Vector2(float(coords[0]), float(coords[1]))
+    var gate := Node2D.new()
+    gate.name = "Exit_" + str(marker["id"])
+    gate.position = center
+    parent.add_child(gate)
+    var ring := Line2D.new()
+    ring.name = "ConnectorRing"
+    for n in range(17):
+        var angle := TAU * float(n) / 16.0
+        ring.add_point(Vector2(cos(angle) * 58.0, sin(angle) * 24.0))
+    ring.width = 4.0
+    ring.default_color = Color(0.93, 0.74, 0.28, 0.86)
+    ring.z_index = 140
+    gate.add_child(ring)
+    var caption := Label.new()
+    caption.name = "ConnectorHint"
+    var target: Dictionary = REGIONS.get(str(marker["target_zone_id"]), {})
+    caption.text = "E · " + str(target.get("title", "连接点"))
+    caption.position = Vector2(-135, -105)
+    caption.size = Vector2(270, 38)
+    caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    caption.add_theme_font_size_override("font_size", 23)
+    caption.add_theme_color_override("font_color", Color(0.22, 0.30, 0.29))
+    caption.add_theme_color_override("font_shadow_color", Color(0.98, 0.96, 0.86))
+    caption.add_theme_constant_override("shadow_offset_x", 1)
+    caption.add_theme_constant_override("shadow_offset_y", 1)
+    caption.z_index = 141
+    gate.add_child(caption)
 
 func _load_actor_sprite() -> void:
     actor_profile = load(ACTOR_PROFILE_PATH) as WuxiaActorAnimationProfile
@@ -145,7 +209,7 @@ func _load_actor_sprite() -> void:
         CombatScale.actor_height_pixels(), actor_profile.feet_adjust, reference)
 
 func _process(delta: float) -> void:
-    if stage == null or player == null or region_bakes.size() != REGIONS.size():
+    if stage == null or player == null or bake == null:
         return
     var direction := Vector2(
         Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left"),
@@ -170,32 +234,40 @@ func _process(delta: float) -> void:
         player.position.x = candidate.x
     if _walkable_world_point(Vector2(player.position.x, candidate.y), radius):
         player.position.y = candidate.y
-    var reached_region := _region_index_at_x(player.position.x)
-    if reached_region != -1 and reached_region != current_region_index:
-        current_region_index = reached_region
-        crossing_count += 1
     player.z_index = clampi(roundi(player.position.y / 20.0), 0, 100)
     _animate_actor(direction, delta)
     _update_camera_and_status()
 
-func _region_index_at_x(world_x: float) -> int:
-    if world_x < 0.0 or world_x >= WORLD_SIZE.x:
-        return -1
-    return 0 if world_x < SEAM_X else 1
-
 func _walkable_world_point(world_point: Vector2, radius: float) -> bool:
-    var region_index := _region_index_at_x(world_point.x)
-    if region_index == -1 or region_bakes.size() != REGIONS.size():
+    return bake != null and bake.is_walkable_point(world_point, radius)
+
+func _nearby_exit() -> Dictionary:
+    if bake == null or player == null:
+        return {}
+    for marker in bake.markers.values():
+        if str(marker.get("kind", "")) != "zone_exit":
+            continue
+        var coords: Array = marker.get("position", [])
+        if coords.size() != 2:
+            continue
+        var point := Vector2(float(coords[0]), float(coords[1]))
+        if player.position.distance_to(point) <= float(marker.get("radius", 80.0)):
+            return marker
+    return {}
+
+func _activate_exit(marker_id: String) -> bool:
+    var marker: Dictionary = _nearby_exit()
+    if marker.is_empty() or str(marker.get("id", "")) != marker_id:
         return false
-    # Around the shared edge, a footprint overlaps both independently baked
-    # polygons. Sample safely inside BOTH street ends to avoid a false wall.
-    if absf(world_point.x - SEAM_X) <= radius + 3.0:
-        return region_bakes[0].is_walkable_point(Vector2(SEAM_X - radius - 5.0,
-            world_point.y), radius) and region_bakes[1].is_walkable_point(
-            Vector2(radius + 5.0, world_point.y), radius)
-    var region: Dictionary = REGIONS[region_index]
-    return region_bakes[region_index].is_walkable_point(
-        world_point - Vector2(float(region["start_x"]), 0.0), radius)
+    var target_id: String = str(marker.get("target_zone_id", ""))
+    var entry_id: String = str(marker.get("target_entry_id", ""))
+    if target_id == current_region_id or not REGIONS.has(target_id):
+        return false
+    if not _load_region(target_id, entry_id):
+        return false
+    crossing_count += 1
+    _update_camera_and_status()
+    return true
 
 func _animate_actor(direction: Vector2, delta: float) -> void:
     if actor_sprite == null or actor_profile == null:
@@ -210,11 +282,16 @@ func _animate_actor(direction: Vector2, delta: float) -> void:
         actor_sprite.flip_h = direction.x < 0.0
 
 func _update_camera_and_status() -> void:
-    stage.position = ViewportShift.world_offset(player.position, WORLD_SIZE)
-    var title: String = str(REGIONS[current_region_index]["title"])
-    status.text = "平江府双区长街 8000×1000  |  %s (%d/2)  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 X %.0f · 角色 200px / 80px=u" % [
-        title, current_region_index + 1, crossing_count,
-        player.position.x, player.position.y, stage.position.x]
+    if current_region_id.is_empty() or stage == null or player == null:
+        return
+    var region: Dictionary = REGIONS[current_region_id]
+    var size: Vector2 = region["size"]
+    stage.position = ViewportShift.world_offset(player.position, size)
+    var nearby: Dictionary = _nearby_exit()
+    var interaction: String = "靠近金色连接点按 E 换图" if nearby.is_empty() else "按 E 前往目标区域"
+    status.text = "平江地图测试  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 角色 200px / 80px=u" % [
+        str(region["title"]), int(size.x), int(size.y), crossing_count, interaction,
+        player.position.x, player.position.y, stage.position.x, stage.position.y]
 
 func _return_to_menu() -> void:
     get_tree().call_deferred("change_scene_to_file", "res://opening.tscn")
@@ -224,13 +301,20 @@ func _unhandled_input(event: InputEvent) -> void:
         _return_to_menu()
         get_viewport().set_input_as_handled()
         return
-    if stage == null or player == null:
+    if stage == null or player == null or bake == null:
         return
+    if event is InputEventKey and event.pressed and not event.echo:
+        if event.keycode == KEY_E:
+            var marker: Dictionary = _nearby_exit()
+            if not marker.is_empty():
+                _activate_exit(str(marker["id"]))
+                get_viewport().set_input_as_handled()
+        elif event.keycode == KEY_F3:
+            debug_visible = not debug_visible
+            if debug_line != null:
+                debug_line.visible = debug_visible
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         last_screen_click = event.position
         last_world_click = ViewportShift.screen_to_world(last_screen_click, stage.position)
         if _walkable_world_point(last_world_click, CombatScale.footprint_radius_pixels()):
             goal = last_world_click
-    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F3:
-        for boundary in region_debug_lines:
-            boundary.visible = not boundary.visible
