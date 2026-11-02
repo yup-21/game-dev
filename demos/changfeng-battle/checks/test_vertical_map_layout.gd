@@ -54,6 +54,22 @@ func _run() -> void:
     check(absf(space.path_length(route) - 680.0) < 0.01
         and absf(Scale.to_units(space.path_length(route)) - 8.5) < 0.01,
         "north-south travel costs the same world units as east-west")
+    var crossroads_path := "res://checks/fixtures/maps/qa_crossroads.tres"
+    var crossroads = MapBake.new(crossroads_path)
+    check(crossroads.error.is_empty() and crossroads.primary_axis == "mixed"
+        and crossroads.markers.size() == 4, "four-way crossroad native resource")
+    for side in ["north", "south", "east", "west"]:
+        check(crossroads.markers.has(side + "_gate")
+            and str(crossroads.markers.get(side + "_gate", {}).get("exit_side", "")) == side,
+            side + " connection metadata preserved")
+    var cross_space = Spatial.new(crossroads_path)
+    var west := Vector2(160, 500)
+    var east := Vector2(1440, 500)
+    check(cross_space.clear_segment(west, east, radius),
+        "west-to-east road passes through crossing center")
+    var cross_route: PackedVector2Array = cross_space.find_path(north, south, radius)
+    check(cross_route.size() == 2 and cross_route[0] == north
+        and cross_route[-1] == south, "north-to-south road passes through same junction")
     var mixed := resource.duplicate(true) as WuxiaMapDefinition
     mixed.primary_axis = "mixed"
     check(not mixed.to_record().is_empty(), "mixed/crossroad orientation accepted")
