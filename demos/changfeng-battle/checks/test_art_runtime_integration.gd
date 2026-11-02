@@ -64,12 +64,12 @@ func _run() -> void:
                 _fail("missing runtime action %s for %s" % [action, id])
                 return
 
-    # These 0/1 poses have different viewing angles in the real PNG atlas.
-    # A native idle must not flip between them while standing.
+    # Native 0 is a front-view portrait pose; 1 is the battle side-view.
+    # Idle must keep the same side-facing silhouette throughout playback.
     for id in ["shen_changfeng", "gu_qingshuang", "green_wanderer",
             "black_blade", "night_assassin", "pursuer_captain"]:
         var pose: WuxiaActorAnimationProfile = Art.animation_profile_for_character(id)
-        if pose == null or pose.clip_for("idle") == null or pose.clip_for("idle").frames != PackedInt32Array([0]):
+        if pose == null or pose.clip_for("idle") == null or pose.clip_for("idle").frames != PackedInt32Array([1]):
             _fail("standing animation still alternates authored viewpoints: " + id)
             return
         var sprite := Sprite2D.new()
@@ -77,11 +77,11 @@ func _run() -> void:
         sprite.hframes = pose.columns
         sprite.vframes = pose.rows
         var fitted: bool = VisualScale.fit(sprite, pose.actor_scale,
-            VisualScale.TARGET_HEIGHT, pose.feet_adjust)
+            VisualScale.TARGET_HEIGHT, pose.feet_adjust, 1)
         if not fitted:
             _fail("unable to find opaque idle silhouette for " + id)
             return
-        var ink: Rect2i = VisualScale._opaque_bounds(sprite.texture,sprite.hframes,sprite.vframes)
+        var ink: Rect2i = VisualScale._opaque_bounds(sprite.texture,sprite.hframes,sprite.vframes, 1)
         var frame_h: float = float(sprite.texture.get_height()) / float(sprite.vframes)
         var visible_foot: float = (float(ink.end.y) - frame_h*0.5
             + sprite.offset.y) * sprite.scale.y
@@ -91,7 +91,7 @@ func _run() -> void:
         root.add_child(sprite)
         var player: AnimationPlayer = NativeClips.attach(sprite,Timeline.new(),pose)
         player.advance(1.25)
-        if sprite.frame != 0 or absf(sprite.rotation) > 0.001:
+        if sprite.frame != 1 or absf(sprite.rotation) > 0.001:
             _fail("idle reintroduces a turn/sway: " + id)
             return
         sprite.queue_free()
@@ -136,6 +136,9 @@ func _run() -> void:
         var profile: WuxiaActorAnimationProfile = Art.animation_profile_for_character(pair[1])
         if sprite == null or sprite.texture != profile.atlas or sprite.scale.x <= 0.0 or not is_equal_approx(sprite.scale.x,sprite.scale.y):
             _fail("live battle sprite is not using candidate atlas: " + pair[1])
+            return
+        if sprite.frame != 1:
+            _fail("live battle did not display the authored side-facing idle: " + pair[1])
             return
     painted.set_weather_enabled(false)
     if painted.scene_root.get_node("WeatherOverlay").visible:
