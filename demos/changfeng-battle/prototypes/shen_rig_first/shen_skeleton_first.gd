@@ -4,6 +4,7 @@ extends Node2D
 ## skinned decoration rigs. No hair, coat or sword bones in the body skeleton.
 
 const CONTRACT_PATH := "res://prototypes/shen_rig_first/rig_contract.json"
+const MotionKeyposesV2 = preload("res://prototypes/humanoid_rig/motion_keyposes_v2.gd")
 const GROUND_POINT := Vector2(800, 730)
 
 @export var enable_hair := true
@@ -164,50 +165,27 @@ func _animation(length: float, looped: bool) -> Animation:
 
 
 func _idle() -> Animation:
-    var a := _animation(1.2, true)
-    _track(a, "Chest", [[0.0, -0.014], [0.6, 0.014], [1.2, -0.014]])
-    _track(a, "Head", [[0.0, 0.01], [0.6, -0.012], [1.2, 0.01]])
-    _track(a, "HairTip", [[0.0, 0.04], [0.6, -0.04], [1.2, 0.04]])
-    _track(a, "CoatFrontTip", [[0.0, 0.02], [0.6, -0.025], [1.2, 0.02]])
-    return a
+    return MotionKeyposesV2.idle(self, _bones, _accessory_bones)
 
 
 func _walk() -> Animation:
-    var a := _animation(0.8, true)
-    _track(a, "FrontHip", [[0.0, -0.20], [0.4, 0.20], [0.8, -0.20]])
-    _track(a, "RearHip", [[0.0, 0.20], [0.4, -0.20], [0.8, 0.20]])
-    _track(a, "FrontKnee", [[0.0, 0.08], [0.4, -0.19], [0.8, 0.08]])
-    _track(a, "RearKnee", [[0.0, -0.19], [0.4, 0.08], [0.8, -0.19]])
-    _track(a, "FrontShoulder", [[0.0, 0.14], [0.4, -0.14], [0.8, 0.14]])
-    _track(a, "RearShoulder", [[0.0, -0.14], [0.4, 0.14], [0.8, -0.14]])
-    _track(a, "Chest", [[0.0, 0.025], [0.4, -0.025], [0.8, 0.025]])
-    _track(a, "CoatFrontTip", [[0.0, 0.08], [0.4, -0.08], [0.8, 0.08]])
-    _track(a, "CoatBackTip", [[0.0, -0.08], [0.4, 0.08], [0.8, -0.08]])
-    return a
+    return MotionKeyposesV2.walk(self, _bones, _accessory_bones)
 
 
 func _attack() -> Animation:
-    var a := _animation(0.70, false)
-    _track(a, "Waist", [[0.0, 0.0], [0.18, -0.07], [0.38, 0.08], [0.70, 0.0]])
-    _track(a, "Chest", [[0.0, -0.02], [0.18, -0.15], [0.38, 0.16], [0.70, 0.0]])
-    _track(a, "FrontShoulder", [[0.0, -0.03], [0.18, -0.35], [0.38, 0.28], [0.70, 0.0]])
-    _track(a, "FrontElbow", [[0.0, 0.04], [0.18, 0.28], [0.38, -0.22], [0.70, 0.0]])
-    _track(a, "FrontWrist", [[0.0, 0.0], [0.18, -0.10], [0.38, 0.28], [0.70, 0.0]])
-    _rotation_track(a, _sockets["SwordGrip"], [[0.0, 0.0], [0.18, -0.18], [0.38, 0.38], [0.70, 0.0]])
-    _track(a, "RearShoulder", [[0.0, 0.0], [0.18, -0.10], [0.38, 0.13], [0.70, 0.0]])
-    _track(a, "FrontHip", [[0.0, 0.0], [0.18, -0.06], [0.38, 0.09], [0.70, 0.0]])
-    _track(a, "RearHip", [[0.0, 0.0], [0.18, 0.07], [0.38, -0.07], [0.70, 0.0]])
-    _track(a, "CoatFrontTip", [[0.0, 0.0], [0.18, 0.08], [0.38, -0.10], [0.70, 0.0]])
-    return a
+    return MotionKeyposesV2.attack(self, _bones, _accessory_bones, _sockets["SwordGrip"])
 
 
 func _reset_pose() -> void:
     if _player != null:
         _player.stop()
+    # Full rest transforms, not rotation-only: walk and attack animate the
+    # pelvis height to keep feet on the ground. That offset must never leak
+    # into a different clip or into the exported bind pose.
     for bone in _bones.values():
-        bone.rotation = 0.0
+        bone.transform = bone.rest
     for bone in _accessory_bones.values():
-        bone.rotation = 0.0
+        bone.transform = bone.rest
     _sockets["SwordGrip"].rotation = 0.0
 
 
