@@ -6,8 +6,12 @@ const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Facing = preload("res://scripts/actor_facing.gd")
 const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const CombatScale = preload("res://scripts/combat_scale.gd")
+const ViewportShift = preload("res://scripts/world_viewport_offset.gd")
 
 var camera: Camera2D
+var scroll_offset: Vector2 = Vector2.ZERO
+var map_world_size: Vector2 = ViewportShift.VIEWPORT_SIZE
+var follow_actor_id: int = -1
 var illustrated_map: CanvasLayer
 var actor_nodes: Dictionary = {}
 var visual_cells: Dictionary = {}
@@ -23,8 +27,13 @@ func build(host: Node2D, story_encounter: bool, map_path: String,
     camera.make_current()
     illustrated_map = IllustratedMap.new(story_encounter, map_path)
     host.add_child(illustrated_map)
+    if illustrated_map.bake != null and illustrated_map.bake.error.is_empty():
+        map_world_size = illustrated_map.bake.viewport_size
     for actor in actors:
+        if follow_actor_id < 0 and int(actor.get("team_id", 0)) == 0:
+            follow_actor_id = int(actor.id)
         add_actor(actor, animation_driver)
+    refresh_scroll()
 
 func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
     if illustrated_map == null:
@@ -134,7 +143,17 @@ func tick(delta: float, snapshot: Dictionary, animation_driver: Variant) -> Dict
         if role != null:
             role.visible = float(actor.hp) > 0
             role.z_index = clampi(roundi(role.position.y / 20.0), 0, 100)
+    refresh_scroll()
     return moving
+
+## The offset moves the entire painted CanvasLayer; the fixed HUD is untouched.
+## Horizontal and vertical oversized maps share exactly the same calculation.
+func refresh_scroll() -> void:
+    var followed: Node2D = actor_nodes.get(follow_actor_id, null)
+    if followed == null:
+        scroll_offset = Vector2.ZERO
+        return
+    scroll_offset = ViewportShift.world_offset(followed.position, map_world_size)
 
 func snap_to_authority(actors: Array, animation_driver: Variant) -> void:
     movement_paths.clear()
@@ -146,6 +165,7 @@ func snap_to_authority(actors: Array, animation_driver: Variant) -> void:
         actor_nodes[id].position = Vector2(actor.position)
         visual_cells[id] = Vector2i(actor.cell)
         animation_driver.set_facing(id, Vector2i(actor.facing))
+    refresh_scroll()
 
 func paths_pending() -> bool:
     return not movement_paths.is_empty() or not continuous_paths.is_empty()
