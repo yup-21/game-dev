@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="WuxiaActorAnimationProfile" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/actor_animation_profile.gd" id="1_profile"]
+[ext_resource type="Script" path="res://scripts/content/actor_animation_clip.gd" id="2_clip"]
+[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-02/shen_changfeng/sprite_shen_changfeng_atlas_8x6_v04.webp" id="3_preview"]
+
+[sub_resource type="Resource" id="Idle"]
+script = ExtResource("2_clip")
+action = "idle"
+frames = PackedInt32Array(0, 1, 2, 3, 4, 5, 6, 7)
+loop_fps = 12.0
+loop = true
+
+[sub_resource type="Resource" id="Move"]
+script = ExtResource("2_clip")
+action = "move"
+frames = PackedInt32Array(8, 9, 10, 11, 12, 13, 14, 15)
+loop_fps = 14.0
+loop = true
+
+[sub_resource type="Resource" id="Attack"]
+script = ExtResource("2_clip")
+action = "attack"
+frames = PackedInt32Array(16, 17, 18, 19, 20, 21, 22, 23)
+
+[sub_resource type="Resource" id="Guard"]
+script = ExtResource("2_clip")
+action = "guard"
+frames = PackedInt32Array(24, 25, 26, 27, 28, 29, 30, 31)
+
+[sub_resource type="Resource" id="Hit"]
+script = ExtResource("2_clip")
+action = "hit"
+frames = PackedInt32Array(32, 33)
+
+[sub_resource type="Resource" id="Evade"]
+script = ExtResource("2_clip")
+action = "evade"
+frames = PackedInt32Array(34, 35, 36)
+
+[sub_resource type="Resource" id="Skill"]
+script = ExtResource("2_clip")
+action = "skill"
+frames = PackedInt32Array(37, 38, 39)
+
+[sub_resource type="Resource" id="Combo"]
+script = ExtResource("2_clip")
+action = "combo"
+frames = PackedInt32Array(40, 41, 42)
+
+[sub_resource type="Resource" id="Defeat"]
+script = ExtResource("2_clip")
+action = "defeat"
+frames = PackedInt32Array(43, 44)
+
+[resource]
+script = ExtResource("1_profile")
+atlas = ExtResource("3_preview")
+columns = 8
+rows = 6
+feet_offset = Vector2(0, -102)
+actor_scale = Vector2(0.78, 0.78)
+clips = Array[Resource]([SubResource("Idle"), SubResource("Move"), SubResource("Attack"), SubResource("Guard"), SubResource("Hit"), SubResource("Evade"), SubResource("Skill"), SubResource("Combo"), SubResource("Defeat")])
