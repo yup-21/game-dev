@@ -172,15 +172,18 @@ def main() -> int:
     parser.add_argument("--lane-left", type=int, default=650)
     parser.add_argument("--lane-right", type=int, default=950)
     parser.add_argument("--lane-top", type=int, default=120)
-    parser.add_argument("--lane-bottom", type=int, default=920)
+    parser.add_argument("--lane-bottom", type=int, default=None)
     args=parser.parse_args()
     if args.check:
         unit, human, radius = read_scale()
         assert unit == 80.0 and human == 2.5 and radius == 0.30
         example = plan(1600,1000,540,780,600,920,1070)
         vertical = plan(1600,1000,800,780,600,920,1070, "vertical")
+        long_vertical = plan(1600,2400,800,1270,600,920,1070,
+                             "vertical",650,950,120,2320)
         mixed = plan(1600,1000,800,780,600,920,1070, "mixed")
         assert vertical["orientation"] == "vertical"
+        assert long_vertical["height"] == 2400 and long_vertical["actor_height_px"] == 200
         assert mixed["orientation"] == "mixed"
         assert vertical["actor_height_px"] == example["actor_height_px"]
         assert vertical["radius_px"] == example["radius_px"]
@@ -210,9 +213,12 @@ def main() -> int:
               args.lane_top,args.lane_bottom)
     print(f"Reference 1u={spec['pixels_per_unit']:g}px, actor={spec['actor_height_px']}px, "
           f"ground depth={(args.ground_bottom-args.ground_top)/spec['pixels_per_unit']:.2f}u")
-    if args.width != 1600 or args.height != 1000:
-        print("WARNING: current story and layer pipeline requires 1600x1000 per zone; "
-              "nonstandard canvas is guide-only until camera/streaming support ships.")
+    if args.width < 1600 or args.height < 1000:
+        print("WARNING: authored playable maps must cover the 1600x1000 landscape viewport.")
+    elif args.width > 1600 or args.height > 1000:
+        print("LARGE_MAP: long-world scroll supported; set matching native world_size or "
+              "viewport_size, build full-size art layers, and preserve 1:1 pixel scale. "
+              "Cross-zone transitions and streamed chunks are separate features.")
     if args.output:
         render(spec,args.output)
     else:
