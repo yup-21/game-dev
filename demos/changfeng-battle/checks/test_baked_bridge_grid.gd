@@ -40,6 +40,21 @@ func _run() -> void:
                 alpha_row += "#" if opacity >= 0.8 else ("+" if opacity >= 0.15 else ".")
             print(alpha_row)
         print("PAINTED_GROUND_ALPHA_END")
+        print("PAINTED_GROUND_BOUNDS_BEGIN (sample x, first/last solid y, pixels)")
+        for col in range(0, 32):
+            var x: int = mini(ground_image.get_width()-1, col*ground_image.get_width()/32 + ground_image.get_width()/64)
+            var first: int = -1
+            var last: int = -1
+            var count: int = 0
+            for y in range(ground_image.get_height()):
+                var opacity: float = ground_image.get_pixel(x,y).a
+                if opacity > 0.80:
+                    if first == -1:
+                        first = y
+                    last = y
+                    count += 1
+            print("%d %d %d %d" % [x,first,last,count])
+        print("PAINTED_GROUND_BOUNDS_END")
     _check(baked.tiles.size() == 150 and baked.terrain.size() == 150
         and baked.scene_art != null and baked.scene_art.valid_for(Vector2i(1600,1000)),
         "one 1600x1000 layered painting bakes the 15x10 tactical index")
