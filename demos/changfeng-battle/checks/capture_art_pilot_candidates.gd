@@ -74,6 +74,7 @@ func _run() -> void:
     if not await _capture(Vector2i(1440, 900), "pilot-1440x900"):
         quit(1)
         return
+    _save_idle_contact_sheet()
     print("ART_PILOT_VISUAL_EVIDENCE_OK")
     quit(0)
 
@@ -99,3 +100,30 @@ func _capture(size: Vector2i, name: String) -> bool:
 func _fail(message: String) -> void:
     push_error(message)
     quit(1)
+
+## Inspect the first two native idle poses at full atlas-cell resolution.
+## Column order: Shen, Gu, Green Wanderer, Black Blade, Assassin, Captain.
+## Green line is the production author's 227px feet baseline.
+func _save_idle_contact_sheet() -> void:
+    var ids := ["shen_changfeng", "gu_qingshuang", "green_wanderer",
+        "black_blade", "night_assassin", "pursuer_captain"]
+    var preview := Image.create(1536, 512, false, Image.FORMAT_RGBA8)
+    preview.fill(Color(0.10,0.12,0.16,1.0))
+    for col in range(ids.size()):
+        var profile: WuxiaActorAnimationProfile = load(
+            "res://data/native/animations/%s.tres" % ids[col])
+        if profile == null or profile.atlas == null:
+            continue
+        var source: Image = profile.atlas.get_image()
+        if source == null or source.is_empty():
+            continue
+        for frame in range(2):
+            preview.blend_rect(source, Rect2i(frame * 256, 0, 256, 256),
+                Vector2i(col * 256, frame * 256))
+            preview.fill_rect(Rect2i(col * 256, frame * 256 + 228, 256, 1),
+                Color(0.15,0.96,0.45,1.0))
+    var folder: String = ProjectSettings.globalize_path(OUTPUT)
+    DirAccess.make_dir_recursive_absolute(folder)
+    var target: String = folder.path_join("native-idle-0-vs-1.png")
+    if preview.save_png(target) == OK:
+        print("IDLE_FRAME_CONTACT_SHEET ", target)
