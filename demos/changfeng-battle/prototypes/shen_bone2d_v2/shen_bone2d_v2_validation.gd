@@ -57,8 +57,8 @@ const PLACEMENTS := {
     "torso_attack": Vector2(-25, -163),
     "torso": Vector2(-20, -163),
     "hair_motion": Vector2(-50, -199),
-    "leg_extend": Vector2(-57, -53),
-    "leg_crouch": Vector2(11, -70),
+    "leg_extend": Vector2(-57, -44),
+    "leg_crouch": Vector2(11, -42),
     "attack_swing": Vector2(-2, -134),
     "head": Vector2(-5, -184),
     "pelvis": Vector2(-20, -104),
@@ -495,6 +495,14 @@ func debug_root_tracks_are_safe() -> bool:
             if path == "RigV2:position" or path == "RigV2/Skeleton2D:position":
                 return false
     return true
+
+
+func debug_swap_foot_alignment() -> Dictionary:
+    # Regions are nonempty alpha cutouts; their bottom edge is the
+    # conservative ground contact for each detached action leg.
+    var rear_bottom: float = PLACEMENTS["leg_extend"].y + REGIONS["leg_extend"].size.y
+    var front_bottom: float = PLACEMENTS["leg_crouch"].y + REGIONS["leg_crouch"].size.y
+    return {"rear": rear_bottom, "front": front_bottom}
 
 
 func debug_rendered_height() -> float:
