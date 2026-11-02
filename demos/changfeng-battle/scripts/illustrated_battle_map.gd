@@ -51,6 +51,15 @@ func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH)
     debug_grid.visible = false
     debug_grid.z_index = 150
     scene_root.add_child(debug_grid)
+    if bake.polygon_mode and not bake.walkable_outline.is_empty():
+        var contour := Line2D.new()
+        contour.name = "PaintedWalkableBoundary"
+        contour.points = bake.walkable_outline.duplicate()
+        contour.add_point(bake.walkable_outline[0])
+        contour.width = 3.0
+        contour.default_color = Color(0.98, 0.90, 0.30, 0.94)
+        contour.antialiased = true
+        debug_grid.add_child(contour)
     for key in bake.tiles:
         var cell: Vector2i = key
         var tile: Dictionary = bake.tiles[cell]
