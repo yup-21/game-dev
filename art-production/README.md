@@ -31,9 +31,9 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 ## 城镇与大地图生成
 
-使用 [城镇分区与世界比例尺规范](standards/TOWN_MAP_SCALE_PRODUCTION.md) 制作城镇、街道和室内地图。**1 世界单位 = 80 世界像素；普通人物站立高度 200px**。运行时仍使用 Godot 原生地图和分层 Resource，城镇采用 1600×1000 单屏分区生产，不强制生成巨型一张图。
+使用 [城镇分区与世界比例尺规范](standards/TOWN_MAP_SCALE_PRODUCTION.md) 制作城镇、街道和室内地图。**1 世界单位 = 80 世界像素；普通人物站立高度 200px**。运行时仍使用 Godot 原生地图和分层 Resource，城镇采用 1600×1000 单屏分区生产，支持横向、纵向、十字交叉街区；纵向不旋转画布、不缩小角色，不强制生成巨型一张图。
 
-画面构图前用 `python art-production/tools/scene_scale_guide.py --output /tmp/town_scale.png` 生成透明角色、门洞和地面比例尺参照层。AI 的提示词只能约束方向，最终需在 Godot 中检验人物与建筑实际比例。
+画面构图前用 `python art-production/tools/scene_scale_guide.py --output /tmp/town_scale.png` 生成透明角色、门洞和地面比例尺参照层；纵向街道使用 `--orientation vertical`，十字街口使用 `--orientation mixed`。AI 的提示词只能约束方向，最终需在 Godot 中检验人物与建筑实际比例。
 
 ## 第一批生产试点
 
