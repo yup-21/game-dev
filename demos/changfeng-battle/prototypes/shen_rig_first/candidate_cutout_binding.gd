@@ -99,7 +99,7 @@ static func bind_parts(scene: Node2D, core: Dictionary, ornaments: Dictionary,
                 continue
             _make_mesh(entry,tex,rig)
         else:
-            var bone: Node2D = sockets.get(name=="sword" ? "SwordGrip" : "", null) if name=="sword" else core.get(str(entry["attach_to_bone"]),null)
+            var bone: Node2D = sockets.get("SwordGrip",null) if name=="sword" else core.get(str(entry["attach_to_bone"]),null)
             if bone == null:
                 missing.append(name + ":bone")
                 continue
