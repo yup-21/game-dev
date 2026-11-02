@@ -5,10 +5,13 @@ extends Node2D
 
 const CONTRACT_PATH := "res://prototypes/shen_rig_first/rig_contract.json"
 const MotionKeyposesV2 = preload("res://prototypes/humanoid_rig/motion_keyposes_v2.gd")
+const CandidateBinding = preload("res://prototypes/shen_rig_first/candidate_cutout_binding.gd")
 const GROUND_POINT := Vector2(800, 730)
 
 @export var enable_hair := true
 @export var enable_coat := true
+@export var candidate_art_enabled := false
+var _candidate_status: Dictionary = {}
 @export var show_skeleton := true
 @export var show_attachment_guides := true
 
@@ -51,6 +54,11 @@ func _ready() -> void:
         for accessory_bone in _accessory_bones.values():
             accessory_bone.rest = accessory_bone.transform
 
+    if candidate_art_enabled:
+        _candidate_status = CandidateBinding.bind_parts(
+            self, _bones, _accessory_bones, _sockets, _accessory_rigs)
+        if int(_candidate_status.get("count",0)) != 20:
+            push_error("SHEN_RIG_FIRST: candidate binding incomplete " + str(_candidate_status))
     if not Engine.is_editor_hint():
         _build_animation_player()
         _build_controls()
@@ -242,6 +250,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
         KEY_1: play_motion("idle")
         KEY_2: play_motion("walk")
         KEY_3: play_motion("attack_sword")
+
+
+func debug_candidate_binding() -> Dictionary:
+    return _candidate_status.duplicate(true)
 
 
 func debug_validation() -> Dictionary:
