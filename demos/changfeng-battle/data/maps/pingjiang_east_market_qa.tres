@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=11 format=3]
 [ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
 [ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-02/pingjiang_long_street/scene_pingjiang_east_market_background_v01.svg" id="2_bg"]
 [ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_east_market_qa.tres" id="3_art"]
@@ -25,6 +25,40 @@ marker_kind = "vfx_anchor"
 position = Vector2(3000, 790)
 radius = 24.0
 
+[sub_resource type="Resource" id="FromWest"]
+script = ExtResource("4_marker")
+marker_id = "from_west"
+marker_kind = "spawn"
+position = Vector2(400, 790)
+radius = 24.0
+
+[sub_resource type="Resource" id="ToWest"]
+script = ExtResource("4_marker")
+marker_id = "to_west"
+marker_kind = "zone_exit"
+position = Vector2(140, 790)
+radius = 75.0
+exit_side = "west"
+target_zone_id = "pingjiang_long_street_qa"
+target_entry_id = "from_east"
+
+[sub_resource type="Resource" id="FromNorth"]
+script = ExtResource("4_marker")
+marker_id = "from_north"
+marker_kind = "spawn"
+position = Vector2(1320, 835)
+radius = 24.0
+
+[sub_resource type="Resource" id="ToNorth"]
+script = ExtResource("4_marker")
+marker_id = "to_north"
+marker_kind = "zone_exit"
+position = Vector2(1305, 700)
+radius = 68.0
+exit_side = "north"
+target_zone_id = "pingjiang_north_lane_qa"
+target_entry_id = "from_south"
+
 [resource]
 script = ExtResource("1_map")
 content_id = "pingjiang_east_market_qa"
@@ -38,4 +72,4 @@ image_rotation_degrees = 0.0
 image_scale = 1.0
 walkable_outline = PackedVector2Array(0, 635, 3199, 635, 3199, 930, 0, 930)
 obstacles = Array[Resource]([])
-markers = Array[Resource]([SubResource("EastEntry"), SubResource("EastMid"), SubResource("EastExit")])
+markers = Array[Resource]([SubResource("EastEntry"), SubResource("EastMid"), SubResource("EastExit"), SubResource("FromWest"), SubResource("ToWest"), SubResource("FromNorth"), SubResource("ToNorth")])
