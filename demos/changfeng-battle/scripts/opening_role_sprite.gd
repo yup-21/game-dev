@@ -74,8 +74,14 @@ func configure(id: String) -> bool:
         var image_size: Vector2 = texture.get_size()
         body.offset = Vector2(0,-image_size.y*0.5)
         body.scale = Vector2.ONE * (200.0 / image_size.y)
+    var idle_frame: int = 0
+    if animation_profile != null:
+        var idle_clip: WuxiaActorAnimationClip = animation_profile.clip_for("idle")
+        if idle_clip != null and not idle_clip.frames.is_empty():
+            idle_frame = int(idle_clip.frames[0])
     VisualScale.fit(body, body.scale, VisualScale.TARGET_HEIGHT,
-        animation_profile.feet_adjust if animation_profile != null else Vector2.ZERO)
+        animation_profile.feet_adjust if animation_profile != null else Vector2.ZERO,
+        idle_frame)
     foot_shadow = Polygon2D.new()
     foot_shadow.name = "FootShadow"
     foot_shadow.color = Color(0.015,0.060,0.065,0.22)
