@@ -4,7 +4,7 @@
 
 正式 `data/maps/rainy_bridge.tres` 已改为 `WuxiaMapDefinition`，引用 `data/native/scene_art/rainy_bridge.tres` 的四张 1600×1000 分层贴图。
 
-* `walkable_outline` 是人物脚点可达区域，坐标直接取自贴图的原始像素。
+* `walkable_outline` 是人物脚点可达区域，坐标直接取自贴图的原始像素。Godot CI 对 Ground 层的透明度扫描显示：实地面主要位于 X=75–1525、Y=339–496；当前轮廓向内收约 8–12px，并通过每个顶点的 Ground alpha 检查。
 * `MapBake` 自动把轮廓烘焙为供 GRID 规则使用的 15×10 索引。轮廓外全部不可走；FREE 直接检查多边形边界。
 * 新版背景与地面、前景、天气图层保持相同原点，不做额外图片旋转、平移或拉伸。
 * 六名战斗角色从独立动画资源加载，由共同的可见高度和脚点算法校准。
@@ -19,7 +19,7 @@
 6. 检查 `data/native/encounters/escort_ambush.tres` 和 `r40_quick_duel.tres` 的角色出生点，都必须在绿区内。
 7. 在 GRID/FREE 两种模式分别测试桥面边缘点击、人物移动、自动接近攻击、多人占位与穿河阻挡。
 
-当前 PR 的轮廓和出生点为可运行的**第一轮布置**，仍需 Godot 实际截图对照后微调；不能将提交了点位视为美术最终验收通过。
+当前 PR 已通过 CI 的 Ground alpha 顶点校验，真实 HUD 截图中能看到人物脚点位于桥面石板区域，后续仍可按具体碰撞需求在编辑器细修轮廓。
 
 ## 后续场景
 
