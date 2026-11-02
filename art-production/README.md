@@ -10,8 +10,8 @@
 | [skills/](skills/) | 角色、场景、VFX、UI、审核导入的仓库级 Agent Skills；通过仓库根目录 `.agents/skills` 软连接自动发现 |
 | [candidates/](candidates/) | 后续生成的概念图和待审批图；按批次、类型存放 |
 | [reviews/](reviews/) | 人工验收、截图与批准记录 |
-| [inventory/](inventory/) | 当前素材清单、引用、来源与 SHA-256 |
-| [in-use/](in-use/) | 运行时直接引用素材的原字节副本 |
+| [inventory/](inventory/) | 按需生成的使用中 Resource 引用清单，不是第二套运行配置 |
+| [in-use/](in-use/) | 当前 Resource 绑定素材的原字节镜像 |
 | [tools/](tools/) | 离线库存工具与 Godot 导入导出指南 |
 
 Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontmatter 规范，详细工作规则由对应 Skill 在使用时按需加载；修改 Skill 只编辑本目录，不维护第二套副本。
@@ -19,11 +19,11 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 ## 核心约束
 
 1. 游戏方向为原创国风手绘、原生 2D 与具有纵深和遮挡的 HD-2D 构图；不强制低像素。
-2. 角色 identity、场景镜头、色板和材质必须先冻结参考，再出变体。所有 AI 候选保存模型版本、提示词、参考图、修改记录及权属。
-3. 候选放在 `candidates/YYYY-MM-DD/<asset-id>/`，源图和编辑母版保留。文件名建议 `<asset-type>_<asset-id>_<variant>_vNN.png`。可在待审核分支将 candidate 显式绑定到原生 `.tres` 进行技术试玩，**不得因此将其标记 approved**；旧版本留存以便回退。
-4. 角色 Atlas / 场景贴图通过预检后可先按 Godot 原生资源接口接入 `demos/changfeng-battle/assets/` 和相应 `.tres`，并加入正式 Content Manifest；正式美术批准是独立的后续门槛。**不要用这里的 JSON/YAML 工作单替代原生运行时定义**。
-5. 因为当前游戏已有资源引用，旧 `demos/changfeng-battle/assets/concepts/` 中的历史素材**暂不搬迁**；保持其路径和可追溯性。新批次统一进入本目录。
-6. `candidate` 表示待审核，`runtime` 表示可加载，不等于 `approved`；批准需技术、视觉、实机、授权共同通过。
+2. 素材生成与使用规格仍以既有分类美术 Skill 和技术合同为准，不因管理精简而降低要求。
+3. 管理只区分 `candidate`（可以有多个）和 `in_use`（每个 Resource 槽位只有一个当前绑定）。通过原生合同即可使用，技术接入不另设审批状态。
+4. 来源记录只维护**提示词及对应原生 Resource**，不要求模型版本、seed、审批链或重复 JSON 台账；未知历史提示词保持空白。
+5. 游戏美术统一从 `res://assets/imported/` 加载；原旧 `assets/` 目录已迁移或归档到 `art-production/archive/`，旧路径不再是运行时入口。
+6. `art-production/tools/inventory_assets.py --check` 检查已绑定的图片文件与路径；`--write` 可按需生成仅包含使用中图片的清单，原生 Resource 始终为唯一真值。
 
 ## 兼容说明
 
@@ -31,7 +31,7 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 ## 第一批生产试点
 
-沈长风（设定、立绘、九类动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。所有候选经过人工批准，才可以冻结 V2 规格。
+沈长风（设定、立绘、九类动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。素材通过原生合同即可投入使用；视觉精修是独立制作任务。
 
 - [2026-11-01 四项优先试点工作单](candidates/2026-11-01/README.md)：包含剧情场景分层与准确的原生资源目标。
 - [运行时代码与存量美术格式差异/验收状态](reviews/2026-11-01/FORMAT_UNIFICATION_STATUS.md)：明确代码已打通但历史图像尚不等于最终批准资产。
@@ -40,4 +40,4 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 Godot 4.7.2 编辑器内的 **Art Production** Dock 提供引用图像导出、角色动画与场景分层导入、批次预检、版本化替换和事务回退。运行时仍只读取 `.tres` Resource，离线清单不充当内容定义。
 
-参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。新导入资源默认 `candidate`，未经人工审查不得标记为 `approved`。本轮审核分支将候选资源接入原生角色卡及地图供试玩；历史资源保留在生产库存与过渡回退路径，后续经视觉/权属批准逐步淘汰。
+参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。新导入资源默认 `candidate`，未经人工审查不得标记为 `approved`。本轮审核分支将候选资源接入原生角色卡及地图供试玩；历史原图已按使用情况迁入 imported 或 archive；保留既有回退素材。

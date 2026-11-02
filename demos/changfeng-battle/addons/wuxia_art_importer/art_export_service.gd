@@ -108,24 +108,9 @@ static func _resource_graph(first: String) -> Dictionary:
 static func destination(source: String, is_resource: bool = false) -> String:
     if is_resource:
         return production_root().path_join("in-use/resources/" + source.trim_prefix("res://"))
+    # Production storage mirrors the single imported image root verbatim.
     var relative := source.trim_prefix("res://assets/")
-    var name := relative.get_file()
-    var prefix := production_root().path_join("in-use/")
-    if relative.begins_with("imported/"):
-        return prefix.path_join(relative)
-    if relative.begins_with("fallback/"):
-        return prefix.path_join("fallback/" + name)
-    if relative.begins_with("ui/") or relative.begins_with("scenes/"):
-        return prefix.path_join(relative)
-    if "/scenes/" in relative:
-        return prefix.path_join("scenes/concepts/" + name)
-    if "portrait" in name:
-        return prefix.path_join("characters/portraits/" + name)
-    if "injured" in name or "story_pose" in name:
-        return prefix.path_join("characters/story_poses/" + name)
-    if relative.begins_with("kenney/"):
-        return prefix.path_join("vfx/" + name)
-    return prefix.path_join("characters/animations/" + name)
+    return production_root().path_join("in-use/" + relative)
 
 
 static func plan(kind: String, resource_path: String = "", allow_replace: bool = false) -> Dictionary:

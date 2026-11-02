@@ -19,7 +19,7 @@ func _run() -> void:
         _fail("legacy portrait fixture missing")
         return
     var stale_record: Dictionary = old_record.duplicate(true)
-    stale_record["path"] = "res://assets/characters/concepts/escort_captain_portrait.png"
+    stale_record["path"] = "res://assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png"
     Art._asset_registry.definitions[old_id] = stale_record
     var shen_card: WuxiaCharacterDefinition = load("res://data/native/characters/shen_changfeng.tres")
     var canonical_wins: bool = Art.portrait_for_character("shen_changfeng") == shen_card.portrait
@@ -50,7 +50,7 @@ func _run() -> void:
         if not record.is_empty():
             var asset_id: String = str(record["id"])
             var stale: Dictionary = record.duplicate(true)
-            stale["path"] = "res://assets/fallback/default_portrait.svg"
+            stale["path"] = "res://assets/imported/in-use/legacy/fallback/default_portrait.svg"
             Art._asset_registry.definitions[asset_id] = stale
             if Art.portrait_for_character(id) != role.portrait:
                 _fail("legacy asset card masked the imported portrait: " + id)
@@ -72,7 +72,7 @@ func _run() -> void:
     var old_scenery: Dictionary = Art._asset_registry.record("r27_scenery_rainy_bridge")
     if not old_scenery.is_empty():
         var stale_scenery: Dictionary = old_scenery.duplicate(true)
-        stale_scenery["path"] = "res://assets/fallback/default_scene.svg"
+        stale_scenery["path"] = "res://assets/imported/in-use/legacy/fallback/default_scene.svg"
         Art._asset_registry.definitions["r27_scenery_rainy_bridge"] = stale_scenery
         if Art.scenery("rainy_bridge") != map.scene_art.story_preview:
             _fail("legacy scene registration masked imported story artwork")

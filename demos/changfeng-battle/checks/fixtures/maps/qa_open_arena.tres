@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/content/grid_map_definition.gd" id="1_grid"]
 [ext_resource type="Script" path="res://scripts/content/grid_terrain_key_definition.gd" id="2_key"]
-[ext_resource type="Texture2D" path="res://assets/scenes/battle/rainy_bridge_battle.webp" id="3_background"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp" id="3_background"]
 
 [sub_resource type="Resource" id="Key_0"]
 script = ExtResource("2_key")

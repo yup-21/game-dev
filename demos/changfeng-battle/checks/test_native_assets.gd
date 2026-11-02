@@ -40,7 +40,7 @@ func _run() -> void:
     var factory = Factory.new()
     var old_spec: Dictionary = factory.assets.record("r22_shen_portrait")
     var conflicting_spec: Dictionary = old_spec.duplicate(true)
-    conflicting_spec["path"] = "res://assets/characters/concepts/escort_captain_portrait.png"
+    conflicting_spec["path"] = "res://assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png"
     factory.assets.definitions["r22_shen_portrait"] = conflicting_spec
     var factory_uses_card: bool = factory.presentation_assets("shen_changfeng").get("portrait") == hero_card.portrait
     factory.assets.definitions["r22_shen_portrait"] = old_spec

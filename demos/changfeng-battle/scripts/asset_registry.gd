@@ -24,7 +24,7 @@ func _register(spec: Variant) -> bool:
     var path: String = str(spec.get("path",""))
     if definitions.has(id) or kind not in KINDS or str(spec.get("status","")) not in STATUSES or \
             not path.begins_with("res://") or path.contains("..") or \
-            not (path.begins_with("res://assets/") or (kind == "actor_scene" and path.begins_with("res://scenes/"))) or \
+            not (path.begins_with("res://assets/imported/") or (kind == "actor_scene" and path.begins_with("res://scenes/"))) or \
             not ResourceLoader.exists(path):
         return _fail("Invalid or missing asset: " + id)
     if str(spec.get("source","")).is_empty() or str(spec.get("rights","")).is_empty():
