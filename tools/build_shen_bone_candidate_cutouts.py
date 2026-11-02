@@ -155,6 +155,7 @@ def build():
             "attach_to_bone":info["attach_to_bone"],
             "canvas_px":list(size),
             "pivot_px":info["pivot_in_source_canvas_px"],
+            "z_index":info["z_index"],
             "sha_source":"shen_bone2d_v2_original_atlas + reconstructed overlap",
             "role":"candidate_not_final_art",
             "status":"candidate",
