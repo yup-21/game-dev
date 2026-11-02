@@ -296,6 +296,9 @@ func _change_scene(path: String) -> void:
 func _action(action: String) -> void:
 	match action:
 		"start": _enter_new_game()
+		"pingjiang_qa":
+			# Isolated scene preview: no chapter flags or session mutations.
+			call_deferred("_change_scene", "res://scenes/pingjiang_scroll_qa.tscn")
 		"hd2d":
 			var quick_session = _session()
 			if quick_session != null and quick_session.start_quick_battle():
@@ -329,6 +332,7 @@ func _input(event: InputEvent) -> void:
 		match story.phase:
 			"menu":
 				if event.keycode in [KEY_ENTER, KEY_SPACE]: _action("start")
+				elif event.keycode == KEY_P: _action("pingjiang_qa")
 			"cinematic":
 				if event.keycode in [KEY_ESCAPE, KEY_S]: _action("skip")
 				elif event.keycode in [KEY_ENTER,KEY_SPACE]: _action("continue")
@@ -543,11 +547,12 @@ func _draw_menu() -> void:
 	draw_line(Vector2(126,424),Vector2(618,424),GOLD,2)
 	_text(Vector2(132,482),"英雄无百岁，刀剑不饶人。",23,Color("e1dcc7"),true)
 	_text(Vector2(135,524),"由武入道 · 逆天改命",17,Color("bbcfc3"))
-	# A single HD-2D battle is exposed: prologue or quick battle.
+	# The scene QA entry is independent of the prologue and battle session.
 	# Old duel and party scenes are intentionally absent from player menus.
-	_button(Rect2(137,605,391,67),"初入江湖 · 新游戏","start",true)
-	_button(Rect2(137,689,391,61),"进入战斗 · HD-2D","hd2d",true)
-	_button(Rect2(137,774,391,56),"退出游戏","quit",true)
+	_button(Rect2(137,584,391,63),"初入江湖 · 新游戏","start",true)
+	_button(Rect2(137,665,391,59),"进入战斗 · HD-2D","hd2d",true)
+	_button(Rect2(137,742,391,59),"P · 平江双区滚屏测试","pingjiang_qa",true)
+	_button(Rect2(137,819,391,54),"退出游戏","quit",true)
 	_text(Vector2(138,960),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
