@@ -45,8 +45,8 @@ func _run() -> void:
         and left.x<bridge_point.x and bridge_point.x<right.x,
         "derived tactical centres remain horizontal within the painted world")
     var river: Vector2=painted.point_for_cell(Vector2i(7,9))
-    _check(model.state.terrain[Vector2i(7,8)]=="water"
-        and not model.state.passable(Vector2i(7,8)),
+    _check(model.state.terrain[Vector2i(7,9)]=="rock"
+        and not model.state.passable(Vector2i(7,9)),
         "painted image outside walking contour is blocked, not a fictional ford")
     _check(painted.cell_from_screen(bridge_point,model.state.terrain)==Vector2i(7,4),
         "map projection inverses the real traversable bridge")
