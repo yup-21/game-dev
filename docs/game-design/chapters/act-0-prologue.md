@@ -341,3 +341,4 @@ NextNode: ""
 ---
 
 *序幕详细设定与交互剧本已完成编制并归档于 [`docs/game-design/chapters/act-0-prologue.md`](act-0-prologue.md)。*
+
