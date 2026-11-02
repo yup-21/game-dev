@@ -54,8 +54,8 @@ func _run() -> void:
     var elder_ink := VisualScale._opaque_bounds(elder.body.texture,1,1)
     if hero_ink.size.y >= 16 and hero_ink.size.y < 245 and \
             elder_ink.size.y >= 16 and elder_ink.size.y < int(elder.body.texture.get_height()*0.96):
-        var hero_height := float(hero_ink.size.y) * hero.body.scale.y
-        var elder_height := float(elder_ink.size.y) * elder.body.scale.y
+        var hero_height: float = float(hero_ink.size.y) * float(hero.body.scale.y)
+        var elder_height: float = float(elder_ink.size.y) * float(elder.body.scale.y)
         _check(absf(hero_height - VisualScale.TARGET_HEIGHT) < 5.0
             and absf(elder_height - VisualScale.TARGET_HEIGHT) < 5.0,
             "hero and elder are normalized to the same visible world height")
