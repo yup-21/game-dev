@@ -266,6 +266,14 @@ jobs:
           for action in idle walk attack_sword; do
             test -s "demos/changfeng-battle/captures/shen-rig-first/$action.gif"
           done
+      - name: Visual retarget old Shen material onto universal body rig
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 120s xvfb-run -a -s "-screen 0 1600x1000x24" godot --path demos/changfeng-battle --script res://checks/capture_shen_old_asset_compatibility.gd
+          python3 tools/build_shen_old_asset_compatibility.py
+          test -s demos/changfeng-battle/captures/shen-rig-first/old-asset-compatibility/bind-with-new-core.png
+          test -s demos/changfeng-battle/captures/shen-rig-first/old-asset-compatibility/new-core-over-old-sprites.png
       - name: Upload screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4
