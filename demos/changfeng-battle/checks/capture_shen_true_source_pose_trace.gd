@@ -73,6 +73,8 @@ func _run() -> void:
             "max_error_px": outcome["max_error_px"],
             "scored_joints": outcome["scored_joints"],
             "errors": outcome["errors"],
+            "weapon_grip_error_px": outcome["weapon_grip_error_px"],
+            "weapon_tip_error_px": outcome["weapon_tip_error_px"],
             "low_confidence": outcome["low_confidence"],
             "root_still_fixed": outcome["root_still_fixed"],
             "source_quality": outcome["source_quality"],
