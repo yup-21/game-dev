@@ -111,7 +111,7 @@ static func apply(scene: Node2D, reference: Dictionary) -> Dictionary:
         var actual: Vector2 = skeleton.to_local(bones[name].global_position)
         var deviation := actual.distance_to(target[name])
         errors[name] = snappedf(deviation, 0.01)
-        if not low.has(name) and name != "Head":
+        if not low.has(name):
             scored.append(deviation)
     var total := 0.0
     var maximum := 0.0
