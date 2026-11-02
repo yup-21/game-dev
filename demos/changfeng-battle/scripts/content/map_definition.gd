@@ -30,6 +30,12 @@ func to_record() -> Dictionary:
             not CombatScale.valid_map_pixels_per_unit(pixels_per_unit) or \
             not CombatScale.valid_map_art_transform(image_scale, image_rotation_degrees):
         return {}
+    # Historic single-screen backgrounds retain their existing imports. Newly
+    # authored oversized scenes must have genuine world-sized artwork, not a
+    # 1600x1000 screenshot stretched over a vertical street.
+    if viewport_size != Vector2i(1600, 1000) and \
+            Vector2i(background.get_size()) != viewport_size:
+        return {}
     var ground_polygon: Array = []
     if not walkable_outline.is_empty():
         if walkable_outline.size() < 3 or walkable_outline.size() > 64 or \
