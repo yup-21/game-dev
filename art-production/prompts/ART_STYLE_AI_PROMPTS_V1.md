@@ -96,7 +96,7 @@ Allow 10% safety margin around the silhouette.
 
 **资源接口已定，最终帧尺寸与方向仍待试点冻结**：`WuxiaActorAnimationProfile.tres` 支持自定义 atlas `columns/rows`、`feet_offset`、`actor_scale`、动作帧索引。历史 6×4 是 fallback，不是新制作的强制标准。
 
-制作建议（未批准）：先生成单角色逐帧 RGBA，再由工具裁切组装 Atlas；画布可按完整人物动作所需尺寸选择，人物与武器不可触边；完整动作应有不同中间帧，不把 4×2/6×4 的“关键姿势稿”伪称逐帧动画。方向目标为前/后/左右；当前水平镜像只能作为过渡。
+制作建议（未批准）：先生成单角色逐帧 RGBA，再由程序在统一根点坐标系下无损装配 Atlas；画布可按完整人物动作所需尺寸选择，人物与武器不可触边；完整动作应有不同中间帧，不把 4×2/6×4 的“关键姿势稿”伪称逐帧动画。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯，所有格子等大、透明留白充分且零越界。方向目标为前/后/左右；当前水平镜像只能作为过渡。
 
 ```text
 [GLOBAL STYLE DNA]
@@ -115,18 +115,22 @@ Keep the torso and weapon trajectory continuous with the adjacent supplied frame
 [GLOBAL NEGATIVE]
 ```
 
-基础动作合同：`idle`, `move`, `attack`, `guard`, `hit`, `evade`, `skill`, `combo`, `defeat`。循环动作要真正循环；非循环动作要有起手/有效/收招。建议先用 `idle`、`move`、`attack` 三个动作验证脚点、比例、帧间连贯性，再制作九类全集。实际播放时长由 `BattleActionTimeline` 管理，不由动画修改战斗规则。
+**完整美术生产清单为 12 组**：`idle` 待机、`walk` 行走、`run` 跑步、`attack_thrust` 直刺、`attack_overhead` 下劈、`attack_sweep` 横斩、`attack_heavy` 蓄力重击、`skill` 技能、`evade` 闪避、`guard` 格挡、`hit` 受击、`defeat` 倒地。每组分别分镜与验收，**不要求一动作一张 Sprite Sheet**；允许多组在程序打包阶段组合成同一 Atlas。
+
+**当前运行时动作合同**：`idle`, `move`, `attack`, `guard`, `hit`, `evade`, `skill`, `combo`, `defeat`（仍须完整九动作）。**新美术生产合同**：将普通攻击与固定连携的制作需求合并为可扩展的攻击动画组，首批四套为直刺、下劈、横斩、蓄力重击；连携是对这些攻击的排序与衔接，不另生成固定 `combo` 图集。当前 Godot 尚未实现四变体选择；新 ID 只能作为离线候选，不可擅自改 `.tres` 枚举或把 `combo` 槽当作第二攻击。循环动作要首尾衔接；非循环动作要有起手/发力/收势。实际播放时长仍由 `BattleActionTimeline` 控制。
 
 ### 5.1 AI 优先生成：单帧、身份锁定、动作语义
 
 按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。**默认一次生成一个完整角色动作帧，不让 AI 直接绘制多格大图集**。不同帧的格子尺寸、排列与透明间距由后续程序计算，从源头避免角色/武器越格或互相重叠。视频转帧尚未完成真实验收，仅在用户要求试验时作为 candidate 路线；脚点编辑器不能识别真实支撑脚或动作阶段。
 
+**统一坐标约定**：以同一批准战斗待机帧为所有动作的 `pose_local`/比例/方向基准；O 是标准待机骨盆在地面投影的逻辑根点，+x 向右，+y 向下，地线与镜头固定。逐帧分镜记录从首帧起算的 `root_offset`；打包时必须用同一 O 锚点，禁止逐帧按不透明轮廓重新居中/缩放。**姿态复位不等于世界位置复位**：攻击、技能、闪避、格挡、受击收尾回到待机兼容姿势，但不抹掉真实前冲；倒地保持终止躺卧，待机/行走/跑步首尾循环。
+
 **生成顺序（尽量自动，无须每帧手工标点）**：
 
 1. 上传同一批准设定/立绘，让 AI 先生成一张固定 90° 侧视、全身、一柄正确武器的战斗基准帧；基准图需有充足四边空白。
-2. 逐动作描述起手→承重/蓄力→有效→收势，以相邻已生成帧和基准图作为参考，逐张生成关键姿势，再生成真实过渡帧。不按固定 6/8 帧生成，也不要求 AI 同时画多动作。
+2. 先完成 12 组动作各自的分镜，描述起手→承重/蓄力→有效→收势/恢复，以相邻已生成帧和基准图作为参考，逐张生成关键姿势，再生成真实过渡帧。不按固定 6/8 帧生成，也不要求 AI 同时画多动作。
 3. 先自动检查格式/Alpha/原始图像边界，并以视觉模型初筛双剑、正面、变形及明显姿势跳变；视觉模型不是可靠的真实支撑脚检测器。失败帧优先重新生成，仅异常和最终样片要求人工复核。
-4. 将独立 RGBA 帧交给确定性打包程序，以非透明轮廓自动确定统一格子，逐格断言四边透明边距 m>0（24px 试点推荐）、没有任何帧侵占邻格、空格透明。**零重叠是硬门槛**，不通过就增大格子重排或重新生成源帧。
+4. 将独立 RGBA 帧交给确定性打包程序，以统一 O 锚点下所有动作帧的非透明联合轮廓（含 root_offset）确定共同格子，逐格断言四边透明边距 m>0（24px 试点推荐）、没有任何帧侵占邻格、空格透明。**零重叠是硬门槛**，不通过就增大格子重排或重新生成源帧。
 
 **可复制的单帧生成母提示词**（每帧填入本帧的真实姿势描述，不将方括号说明绘制进图片）：
 
@@ -139,7 +143,12 @@ ground line, head-to-body ratio, outfit, colors, weapon and holding hand.
 Exactly {weapon_count} complete weapon(s) in {weapon_hand}; the free hand
 remains empty. Action: {action}, phase: {phase}. Precise pose: {pose_description}.
 Weight and planted foot: {support_description}. Sword path: {weapon_trajectory}.
+Shared coordinate system: origin O at the canonical idle ground-root projection,
++x screen-right, +y downward; same scale and ground line in every action.
+Local pose relative to O: {pose_local}. Root offset from first action frame: {root_offset}.
 Motion relative to previous accepted frame: {adjacent_frame_delta}.
+End contract: {idle_compatible_pose_or_loop_seam_or_defeat_terminal}.
+Do not independently recenter, rescale, or mirror this character across frames.
 Preserve correct anatomy, complete head/hair/sleeves/boots/weapon tip and
 generous empty margins on EVERY side. Readable simplified painterly silhouette.
 One character only. No second pose, no panels, no frame borders, no overlap,
@@ -152,11 +161,81 @@ no motion blur, no VFX, no background or text. Transparent RGBA if supported.
 | 动作 | 提示词必须说明的力学变化 |
 | --- | --- |
 | idle | 后脚承重，躯干轻微呼吸，支撑鞋底稳定，首尾近似闭环 |
-| move | 左右脚交替承重和离地，步幅、重心、腿摆对应，不做单脚滑行 |
-| attack | 后脚蹬地蓄力→重心前移→右手单剑直刺/斩击→前脚承重→自然收势，无突然向后弹 |
-| guard | 屈膝架剑→承重缓冲→短暂稳定→归位，持剑手和支撑脚不乱跳 |
+| walk | 蹬地、摆腿、落脚、换脚承重完整循环，步幅、重心、腿摆对应，不做脚滑 |
+| run | 快速蹬地、跨步、腾空/落脚、换脚及手臂摆动，循环速度与步幅明显不同于 walk |
+| attack variants | 按 §5.2 的直刺/下劈/横斩/蓄力重击分别分镜，明确承重、剑路、根位移及可衔接的收势；不混画成一组无序姿势 |
+| skill | 依具体武学设计蓄势、释放、接触与恢复，不用通用攻击动作冒充专属技能 |
+| evade | 蹬地、侧移/腾挪、落地、恢复平衡；合法根位移不被归零 |
+| guard | 屈膝架剑→承重缓冲→短暂稳定→撤架归位，持剑手和支撑脚不乱跳 |
+| hit | 受力反应、退让或缓冲、恢复待机，禁止突然无原因反弹 |
+| defeat | 失衡→膝/躯干接地→最终静止倒地；这是不恢复站姿的终止例外 |
 
 提示词中不要强制源图恰为 200px 人高或 24px 边距；这些是后续原生尺度归一和程序排布约束，AI 很难严格遵守像素数字。可以请求大留白与一致画布，但不能把生成模型承诺当成测量结果。
+
+### 5.2 AI 动作分镜：先规划帧数，再逐帧绘图
+
+**默认先运行下列分镜提示词（仅输出文本，不生图）**。依据 [分镜合同 §2.1](../standards/SPRITE_ANIMATION_QA.md)，每种动作单独规划；分镜确定 `total_frames` 后才填入 §5.1 的 `{frame_index}`/`{frame_count}` 单帧绘图提示词。不要预设 8 帧、2×4 或 6×4 网格，也不要为填满格子添加静止重复帧。
+
+```text
+你是2D横版动作游戏动画导演和武术动作设计师。仅设计分镜，不要绘制图片。
+
+角色设定与固定侧视参考：{approved_character_reference}
+身份、服装、体型、配色：{identity_lock}
+武器数量、形状与持手：{weapon_count_shape_hand}
+动作 ID（从12组清单选择）：{action_id}
+动作意图和发力方式：{action_description}
+统一待机模型与参考原点 O：{canonical_idle_pose_and_ground_root}
+实际运动模式（原地循环/位移动作）：{locomotion_or_root_motion_policy}
+已知动作时长：{known_duration_ms_or_unknown}
+镜头：严格90度侧视，角色朝{direction}，镜头和人物比例不变。
+同一角色所有帧统一逻辑坐标：O 为待机根点在地面投影，+x向右、+y向下，固定地线和比例；root_offset 相对该动作首帧（0,0）。
+游戏风格：简洁易读的2D手绘武侠动作，头发衣摆保留真实惯性。
+
+第一步：分析起势、蓄力/承重、发力、有效姿势、惯性、收势和恢复。
+不要求所有动作必须有七阶段；依据实际动作选择合适阶段。
+说明支撑脚如何换承重，身体重心如何变化，武器和剑尖如何运动，
+角色是否有整体根位移，动作是否循环及如何与下一动作衔接。
+必须说明动作结尾规则：idle/walk/run 循环首尾闭合；defeat 终止倒地；
+其余动作的局部姿势回到统一待机兼容状态，允许 root_offset 非零，不允许瞬移复位。
+
+第二步：先给少量关键姿势，再分析高速变化、剑路弯曲、落脚、
+转身和重心切换是否需要真实间帧；只在必要处补帧。
+自主选择合理总帧数，不默认 6 或 8，也不按图集网格倒推；
+不能复制无变化的静态姿势凑数；说明为什么选择此帧数。
+
+第三步：输出：
+A. action_id、动作目的、是否循环、建议时长、阶段与每阶段帧数、
+   total_frames 和帧数依据、根位移总体方向、首末衔接关系。
+B. 逐帧分镜表（每个实际帧必须独占一行，且每组独立编号）：
+   frame_index（从0连续递增）、time_ms（0起单调递增）、
+   phase、role（key/inbetween）、pose（头/躯干/骨盆/双臂/双腿）、
+   support_contact（真正承重脚/腾空/倒地接触部位）、
+   center_of_mass、weapon_trajectory（持手/剑尖/轨迹）、
+   pose_local（相对统一根点的完整姿势）、root_offset（相对首帧位置）、
+   contact_position（支撑/接触在同一坐标系的位置）、
+   transition（相对上帧的真实变化）。
+C. 动作连续性审查：检查相邻帧的人体、脚步接触、武器数量及握持手、
+   速度、根位移、循环接缝/待机复位/终止倒地、与上一动作的衔接；
+   必要时修改分镜及 total_frames 后重新输出。
+D. 只规划动作分镜，不决定 Atlas 按动作拆图还是多动作合图；
+   两种打包均合法，最终由程序保证统一锚点/格子/透明留白、零越界和动作索引正确。
+不要谎称图片已生成或脚点已被自动检测。
+```
+
+**首批攻击动画组：一套攻击一个独立分镜，连携不另画固定动作。**
+
+| 制作 ID | 独立动作描述（填入 `{action_description}`） | 分镜重点 |
+| --- | --- | --- |
+| `attack_thrust`（攻击1：直刺） | 侧身戒备→屈膝后脚蓄力→后脚蹬地、前脚踏出→右手单剑沿前方连续直线突刺→前脚承重→自然收剑 | 突刺的前向根位移、剑尖直线轨迹、无无故后弹 |
+| `attack_overhead`（攻击2：下劈） | 侧身戒备→重心调整、右手单剑上举→身体略上提蓄力→沉肩屈膝使剑自上向前下方劈落→缓冲并归位 | 上下重心变化、剑尖纵向弧线、不得只甩手臂 |
+| `attack_sweep`（攻击3：横斩） | 侧身戒备→向侧后方收剑、腰胯预旋→支撑脚发力、骨盆带动躯干转动→右手单剑水平横斩→惯性跟随并收势 | 横向剑路连续、腰胯带动、保持侧视不可突变正面 |
+| `attack_heavy`（攻击4：蓄力重击） | 屈膝沉重心、右手单剑后上方大幅蓄力→短暂蓄势→后脚强力蹬地、骨盆肩臂依次爆发→重击终点→自然惯性和踏步恢复 | 蓄力与爆发节奏对比、较大根位移、**仍是一柄右手单剑** |
+
+- 每种攻击分别规划自己的 `total_frames`、阶段时间和结束站姿；**禁止让 AI 一次在源图上混画多动作姿势**，但程序可将四种攻击无损合并到同一 Sprite Sheet，使用各自的动作帧索引。`combo` 仅记录诸如“直刺→横斩→重击”的**编排顺序和动作衔接需求**；先验证每套攻击可独立播放，之后再验证相邻攻击收势/起手的连接。
+- **补全其余动作**：`idle` 呼吸戒备循环、`walk` 蹬地换脚循环、`run` 快速跨步循环、`skill` 专属招式与复位、`evade` 蹬地落脚与合理位移、`guard` 架剑承压与撤架、`hit` 受力缓冲与恢复、`defeat` 倒地接触直至静止。每种均按 §2.2 的独立阶段和首尾合同生成，不能把 walk/run 混成 move 的一套动作，也不能让 defeat 自动站起。
+- **图集布局选择**：一张 Sheet 可包含多个动作，按程序实际格子从左到右、从上到下编号；必须输出 `action_id -> ordered absolute frame_indices` 映射、各自帧数、循环/复位标志、统一 O 锚点，严禁在相邻格中延伸武器/身体。图集容量不得反过来限制动作帧数。
+- **运行时边界**：制作 ID 不是现有 Godot `WuxiaActorAnimationClip.action` 可用的取值。运行时仍要求旧九动作、`combo` 槽依然存在；引擎没有攻击变体索引或连携重排机制前，四套分镜/图像保留 candidate，不把候选冒称已接入。
+- **审查分工**：机器核查分镜帧号/数量/时间/字段完整、PNG Alpha、格子边距和零重叠；AI 视觉只初筛身份、单剑、侧视及明显姿态跳变；真实支撑脚识别与动作合理性不能自动保证，疑难帧与最终少量样片再人工复核。分镜 `time_ms` 是离线节奏建议，不会自动转换成 Godot 非循环逐帧停留时间。
 
 ## 6. 场景设定与可运行地图贴图
 
