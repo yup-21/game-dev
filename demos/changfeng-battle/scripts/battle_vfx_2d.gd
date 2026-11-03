@@ -101,7 +101,8 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
         sprite.scale = Vector2.ONE * (100.0 * size / maxf(longest, 1.0))
         root.add_child(sprite)
     bursts.append({"node": root, "duration": duration, "left": duration,
-        "kind": kind, "path": path, "size": size, "vfx_frames": authored_frames})
+        "kind": kind, "path": path, "size": size, "vfx_frames": authored_frames,
+        "authored": authored != null})
     if bursts.size() > 32:
         var oldest: Dictionary = bursts.pop_front()
         if is_instance_valid(oldest.node):
@@ -179,7 +180,11 @@ func update(delta: float) -> void:
                 authored_sprite.frame = vfx_frames[mini(int(progress * vfx_frames.size()), vfx_frames.size() - 1)]
         var stroke: Line2D = painted.get_node("MartialStroke") as Line2D
         var glow: Line2D = painted.get_node("SoftGlow") as Line2D
-        if kind in ["slash", "combo"]:
+        if bool(burst.get("authored", false)):
+            # Production atlas owns its shape. Avoid drawing procedural arcs over it.
+            stroke.points = PackedVector2Array()
+            glow.points = PackedVector2Array()
+        elif kind in ["slash", "combo"]:
             # Sweep the tip quickly, then let the trail disperse.
             var sweep := clampf(progress / 0.56, 0.0, 1.0)
             var path: PackedVector2Array = burst.path
