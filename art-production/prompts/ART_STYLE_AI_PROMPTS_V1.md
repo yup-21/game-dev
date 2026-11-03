@@ -98,22 +98,7 @@ Allow 10% safety margin around the silhouette.
 
 制作建议（未批准）：先完成单个动作的逐帧分镜，再让 AI **每次输出一张包含连续多帧的 RGBA Sprite Sheet**，按分镜选择适当 C×R 等尺寸格和宽透明间距；程序机械拆格、逐格拒绝越界后，再按统一根点坐标系无损装配正式 Atlas。画布必须给完整人体/武器留白，不能把 4×2/6×4 的“关键姿势稿”伪称真实高帧率动画，也不能靠固定网格反推帧数。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯，所有格子等大、透明留白充分且零越界。方向目标为前/后/左右；当前水平镜像只能作为过渡。
 
-```text
-[GLOBAL STYLE DNA]
-2D game sprite animation frame for {asset_id}, reference the SAME approved
-character sheet and portrait. Exact same face, hair, costume, weapon, palette,
-body-to-head ratio and shoes. Action: {action}; phase: {startup_active_recovery};
-frame number: {frame_index} of {frame_count}; view direction: {direction}.
-Fixed strictly side-on orthographic camera for horizontal combat, full
-character and entire weapon visible with blank margins. Use a plausible
-planted support foot for this motion phase, same ground and character scale;
-do not add a drawn anchor marker or pin both feet during movement. Keep
-root translation separate from local pose; do not erase a legitimate lunge. Crisp readable silhouette at small in-game
-display size, simplified micro-detail without changing identity,
-transparent RGBA, no floor shadow, no background or UI.
-Keep the torso and weapon trajectory continuous with the adjacent supplied frames.
-[GLOBAL NEGATIVE]
-```
+**生图入口**：角色逐帧描述只作为分镜数据，不再单独使用单帧生图模板。实际调用下文 §5.1 的多帧 Sheet 简版提示词。
 
 **完整美术生产清单为 12 组**：`idle` 待机、`walk` 行走、`run` 跑步、**四套按当前角色武器契约定义的攻击变体**、`skill` 技能、`evade` 闪避、`guard` 格挡、`hit` 受击、`defeat` 倒地。单剑角色可用 `attack_thrust/attack_overhead/attack_sweep/attack_heavy` 作为示例，其他武器应选择适合其形制、握法和打击方式的攻击。每组分别分镜与验收；合图由程序自动完成。
 
@@ -133,40 +118,19 @@ Keep the torso and weapon trajectory continuous with the adjacent supplied frame
 4. **先机械拆格再判定是否可用**：按已声明 C/R 等尺寸切片，检查整张尺寸可整除、实际非空格数量与预期帧数匹配、空格完全透明、每个非空格四边 Alpha 边距 m>0（24px 仅试点建议），任何人体/武器越格、裁切或轮廓混格一律拒绝。AI 不能保证精确网格，也不能可靠识别动作阶段；不合格时重新生成该动作或有问题的**连续多帧片段**，而不是靠猜帧、紧裁切或补黑边放行。
 5. 几何通过后按行优先帧序预览连续性、循环/复位、承重与根位移；AI 视觉仅初筛明显异常。最后由程序按统一 O 对通过验收的格子无损打包为运行时 Atlas，并再次自动检查零重叠和索引；疑难与最终少量样片才人工复核。
 
-**可复制的多帧 Sheet 母提示词**（附完整分镜与基准图，每格对应分镜中的一帧；不要在图上绘制编号或说明文字）：
+**简版多帧 Sheet 母提示词**（仅传下面模板、角色基准图和选中分镜；完整检测合同不拼入生图请求）：
 
 ```text
-Create ONE transparent 2D hand-painted wuxia animation SPRITE SHEET,
-containing MULTIPLE consecutive poses of ONE character's {action_id} action.
-Do NOT output a single frame.
-
-Approved identity reference: {character_reference}
-Weapon or unarmed contract: {weapon_contract}
-Action, phases and complete frame-by-frame pose list: {frame_pose_list}
-Global action frames included in this sheet: {first_frame_index} to {last_frame_index}
-Total effective frames in this sheet: {sheet_frame_count}
-Grid: exactly {grid_columns} columns × {grid_rows} rows.
-Every tile has the SAME width {cell_width}, height {cell_height}, camera,
-source pixel scale, internal ground baseline and logical root anchor O.
-Overall sheet size: {sheet_width} × {sheet_height}.
-Arrange frames in chronological ROW-MAJOR order, left to right, then top to bottom.
-One complete, distinct character pose per used tile; leave unused tiles fully transparent.
-
-For each frame, follow its corresponding storyboard pose, planted support foot,
-center of mass, weapon or striking-limb path, local pose and root offset.
-Preserve the same face, outfit, body proportions and approved weapon contract
-in EVERY tile. Use a fixed strict 90-degree side-on camera with no zoom.
-Keep legitimate action movement; do not recenter each frame by its alpha bounds.
-Maintain natural motion transitions and the specified loop or recovery pose.
-
-CRITICAL CELL ISOLATION: Every complete character silhouette, equipped weapon,
-hair, clothing and foot MUST remain entirely INSIDE its own tile with a
-generous transparent gutter on all four sides. NO overlap, contact, cropping
-or spill into any neighboring tile. Increase tile space rather than shrink
-the character or cut off limbs/weapons.
-No frame borders, grid lines, text, numbers, scenery, motion blur, repeated
-filler poses, extra weapons, camera rotation or background.
-True transparent RGBA output if supported.
+Create ONE transparent hand-painted 2D wuxia SPRITE SHEET for {action_id};
+include {sheet_frame_count} consecutive poses (global frames {first_frame_index}–{last_frame_index}), NOT one frame.
+Character reference: {character_reference}. Equipment/unarmed: {weapon_contract}.
+Ordered frame poses: {frame_pose_list}.
+Layout: {grid_columns} × {grid_rows} equal cells, left-to-right then top-to-bottom; unused cells transparent.
+Keep the same character, scale, strict side view, ground line and root O in every cell.
+Follow natural motion, planted-foot changes and valid root movement; close loops or recover to idle (defeat stays down).
+Each entire character, limb and weapon MUST fit inside its own cell with wide transparent margins.
+NO touching, clipping, overlap or spill into other cells.
+Transparent background; no borders, labels or extra equipment.
 ```
 
 **注意**：图像模型可能画错格子、重复姿势或忽略精确像素尺寸；这些文本是**生成约束**，不是验收通过的证明。既有工具如无法可靠按预设网格切片和检测 Alpha 边距，必须保留 candidate，不得宣称已自动验收。
@@ -185,56 +149,26 @@ True transparent RGBA output if supported.
 | hit | 受力反应、退让或缓冲、恢复待机，禁止突然无原因反弹 |
 | defeat | 失衡→膝/躯干接地→最终静止倒地；这是不恢复站姿的终止例外 |
 
-提示词中不要强制源图恰为 200px 人高或 24px 边距；这些是后续原生尺度归一和程序排布约束，AI 很难严格遵守像素数字。可以请求大留白与一致画布，但不能把生成模型承诺当成测量结果。
+**提示词精简原则**：只传角色基准、武器契约、动作分镜、N、网格、统一 O、透明留白和零跨格；重复说明、机器可检查的像素阈值与验收清单留在规范，不逐条发给图像模型。失败重试仅增加针对性纠错描述。提示词中不要强制源图恰为 200px 人高或 24px 边距；这些是后续原生尺度归一和程序排布约束，AI 很难严格遵守像素数字。可以请求大留白与一致画布，但不能把生成模型承诺当成测量结果。
 
 ### 5.2 AI 动作分镜：先规划帧数，再逐帧绘图
 
-**默认先运行下列分镜提示词（仅输出文本，不生图）**。依据 [分镜合同 §2.1](../standards/SPRITE_ANIMATION_QA.md)，每种动作单独规划；分镜确定 `total_frames` 和逐帧姿势后，再按 §5.1 为每次多帧 Sheet 填入 `{frame_pose_list}`、`{sheet_frame_count}`、`{grid_columns}` 与 `{grid_rows}`。不要预设 8 帧、2×4 或 6×4 网格，也不要为填满格子添加静止重复帧。
+**默认先运行下列简版分镜提示词（仅输出文本，不生图）**。依据 [分镜合同 §2.1](../standards/SPRITE_ANIMATION_QA.md)，每种动作单独规划；分镜确定 `total_frames` 和逐帧姿势后，再按 §5.1 为每次多帧 Sheet 填入 `{frame_pose_list}`、`{sheet_frame_count}`、`{grid_columns}` 与 `{grid_rows}`。不要预设 8 帧、2×4 或 6×4 网格，也不要为填满格子添加静止重复帧。
 
 ```text
-你是2D横版动作游戏动画导演和武术动作设计师。仅设计分镜，不要绘制图片。
+请为2D横版武侠角色设计动作分镜，只输出文本。
+角色基准：{approved_character_reference}；武器/徒手契约：{weapon_contract}。
+动作：{action_id}，{action_description}；时长：{known_duration_ms_or_unknown}。
+固定侧视，统一待机根点 O：{canonical_idle_pose_and_ground_root}；
+运动方式：{locomotion_or_root_motion_policy}。
 
-角色设定与固定侧视参考：{approved_character_reference}
-身份、服装、体型、配色：{identity_lock}
-角色武器契约（可徒手、单持、双持、双手握持；明确类型/数量/长度/持手/拔收和允许转换）：{weapon_contract}
-动作 ID（从12组清单选择）：{action_id}
-动作意图和发力方式：{action_description}
-统一待机模型与参考原点 O：{canonical_idle_pose_and_ground_root}
-实际运动模式（原地循环/位移动作）：{locomotion_or_root_motion_policy}
-已知动作时长：{known_duration_ms_or_unknown}
-镜头：严格90度侧视，角色朝{direction}，镜头和人物比例不变。
-同一角色所有帧统一逻辑坐标：O 为待机根点在地面投影，+x向右、+y向下，固定地线和比例；root_offset 相对该动作首帧（0,0）。
-游戏风格：简洁易读的2D手绘武侠动作，头发衣摆保留真实惯性。
-
-第一步：分析起势、蓄力/承重、发力、有效姿势、惯性、收势和恢复。
-不要求所有动作必须有七阶段；依据实际动作选择合适阶段。
-说明支撑脚如何换承重、身体重心如何变化、武器或拳脚打击端如何运动，
-角色是否有整体根位移，动作是否循环及如何与下一动作衔接。
-必须说明动作结尾规则：idle/walk/run 循环首尾闭合；defeat 终止倒地；
-其余动作的局部姿势回到统一待机兼容状态，允许 root_offset 非零，不允许瞬移复位。
-
-第二步：先给少量关键姿势，再分析高速变化、武器或肢体打击轨迹弯曲、落脚、
-转身和重心切换是否需要真实间帧；只在必要处补帧。
-自主选择合理总帧数，不默认 6 或 8，也不按图集网格倒推；
-不能复制无变化的静态姿势凑数；说明为什么选择此帧数。
-
-第三步：输出：
-A. action_id、动作目的、是否循环、建议时长、阶段与每阶段帧数、
-   total_frames 和帧数依据、根位移总体方向、首末衔接关系。
-B. 逐帧分镜表（每个实际帧必须独占一行，且每组独立编号）：
-   frame_index（从0连续递增）、time_ms（0起单调递增）、
-   phase、role（key/inbetween）、pose（头/躯干/骨盆/双臂/双腿）、
-   support_contact（真正承重脚/腾空/倒地接触部位）、
-   center_of_mass、weapon_trajectory（武器/握法/轨迹；徒手注明出招肢体）、
-   pose_local（相对统一根点的完整姿势）、root_offset（相对首帧位置）、
-   contact_position（支撑/接触在同一坐标系的位置）、
-   transition（相对上帧的真实变化）。
-C. 动作连续性审查：检查相邻帧的人体、脚步接触、武器数量及握持手、
-   速度、根位移、循环接缝/待机复位/终止倒地、与上一动作的衔接；
-   必要时修改分镜及 total_frames 后重新输出。
-D. 只规划动作分镜，不决定 Atlas 按动作拆图还是多动作合图；
-   两种打包均合法，最终由程序保证统一锚点/格子/透明留白、零越界和动作索引正确。
-不要谎称图片已生成或脚点已被自动检测。
+先按起势、发力、有效动作、收势等实际变化确定关键姿势，再补必要间帧。
+自主选择总帧数 N，不默认 8 帧，不为填满网格重复姿势。
+逐帧按顺序列出：序号、时间、阶段、关键/间帧、全身姿势、真实支撑/重心、
+武器或徒手轨迹、相对 O 的姿态与 root_offset、相邻帧变化。
+检查身份与装备一致、发力连贯、位移不瞬移：
+idle/walk/run 首尾循环；defeat 停在倒地；其他动作收尾兼容待机姿势。
+发现跳帧则补帧并更新 N，最后输出分镜及 N。
 ```
 
 **攻击动画组：每名角色基于 `weapon_contract` 设计四套独立攻击，连携不另画固定动作。** 下表只是沈长风等**单剑角色的动作示例**，不作为所有武器的强制招式；其他角色可保留四个攻击槽位并使用适合该武器的语义 ID 和运动方式。
