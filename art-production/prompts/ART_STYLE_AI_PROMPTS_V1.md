@@ -189,7 +189,7 @@ True transparent RGBA output if supported.
 
 ### 5.2 AI 动作分镜：先规划帧数，再逐帧绘图
 
-**默认先运行下列分镜提示词（仅输出文本，不生图）**。依据 [分镜合同 §2.1](../standards/SPRITE_ANIMATION_QA.md)，每种动作单独规划；分镜确定 `total_frames` 后才填入 §5.1 的 `{frame_index}`/`{frame_count}` 单帧绘图提示词。不要预设 8 帧、2×4 或 6×4 网格，也不要为填满格子添加静止重复帧。
+**默认先运行下列分镜提示词（仅输出文本，不生图）**。依据 [分镜合同 §2.1](../standards/SPRITE_ANIMATION_QA.md)，每种动作单独规划；分镜确定 `total_frames` 和逐帧姿势后，再按 §5.1 为每次多帧 Sheet 填入 `{frame_pose_list}`、`{sheet_frame_count}`、`{grid_columns}` 与 `{grid_rows}`。不要预设 8 帧、2×4 或 6×4 网格，也不要为填满格子添加静止重复帧。
 
 ```text
 你是2D横版动作游戏动画导演和武术动作设计师。仅设计分镜，不要绘制图片。
