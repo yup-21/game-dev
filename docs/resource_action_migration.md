@@ -6,7 +6,7 @@
 
 ## 六份正式角色动画 Profile
 
-`data/native/animations/` 下沈长风、顾清霜、绿衣游侠、黑刃客、夜袭刺客、追兵首领六份 Profile 新增 `action_fallbacks`，将现代动作 `walk/run/attack1/attack2/attack3/attack4` **显式**映射到已有 `move/attack` 资源。引擎查找优先选择同名真实 Clip，再尝试各角色配置的回退，最后才使用历史兼容别名。
+`data/native/animations/` 下沈长风、顾清霜、绿衣游侠、黑刃客、夜袭刺客、追兵首领六份 Profile 新增 `action_fallbacks`，将现代动作 `walk/run/attack1/attack2/attack3/attack4` **显式**映射到已有 `move/attack` 资源。引擎查找优先选择同名真实 Clip；不存在时仅检查该角色配置的单级映射，映射目标必须是直接存在的 Clip。不存在的映射、无效 ID 或无目标的动作会报错，不再使用任何硬编码别名或自动回退至待机。
 
 原先的九个 Clip、图集引用、统一比例、脚点、帧列表都保留。既有 `attack`、`defeat` Clip 填写原有等节奏的 `frame_durations`，只是让资源拥有可编辑的逐帧节奏入口，不会凭空改变动作；无测量数据时 `root_offsets` 保持空数组。未来导入一套正式 `attack2` 时，在 `clips` 增加同名 Clip 即可覆盖该动作的回退，不改技能绑定。
 
@@ -29,6 +29,6 @@
 
 ## 验证
 
-`checks/test_resource_action_migration.gd` 遍历六份实际 Profile、53 个原生武学用法、5 个 SkillUsage 和 6 个可执行 TechniqueNode：确认现代动作解析真实存在、别名未篡改旧帧、逐帧节奏数组合法、已声明 VFX 槽可加载、cue 名与动作语义一致。接入 `.github/workflows/wuxia-modular-content.yml`。旧九动作测试和主角特效回归保留。
+`checks/test_resource_action_migration.gd` 遍历六份实际 Profile、53 个原生武学用法、5 个 SkillUsage 和 6 个可执行 TechniqueNode：确认现代动作通过直接 Clip 或显式单级映射解析、未配置的动作不能播放、逐帧节奏数组合法、已声明 VFX 槽可加载、cue 名与动作语义一致。接入 `.github/workflows/wuxia-modular-content.yml`。旧九动作测试和主角特效回归保留。
 
 此迁移不构成新的正式十二组美术资产制作或人工视觉验收。
