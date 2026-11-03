@@ -35,13 +35,14 @@ func _run() -> void:
         for state in ["idle", "move", "attack", "guard", "hit", "evade", "skill", "combo", "defeat"]:
             check(player.has_animation(state), "native animation exists: %s" % state)
         var attack: Animation = player.get_animation("attack")
-        check(attack.get_track_count() == 3 and
-            attack.track_get_path(0) == NodePath(".:frame") and
-            attack.value_track_get_update_mode(0) == Animation.UPDATE_DISCRETE,
+        var frame_track: int = attack.find_track(NodePath(".:frame"), Animation.TYPE_VALUE)
+        check(frame_track >= 0 and
+            attack.value_track_get_update_mode(frame_track) == Animation.UPDATE_DISCRETE,
             "frame is a discrete engine animation track")
-        check(attack.track_get_path(1) == NodePath(".:scale") and
-            attack.track_get_path(2) == NodePath(".:rotation"),
-            "pose accents use native transform tracks")
+        check(attack.find_track(NodePath(".:scale"), Animation.TYPE_VALUE) >= 0 and
+            attack.find_track(NodePath(".:rotation"), Animation.TYPE_VALUE) >= 0 and
+            attack.find_track(NodePath(".:position"), Animation.TYPE_VALUE) >= 0,
+            "pose accents and cosmetic root motion use native transform tracks")
         check(sprite.hframes == 6 and sprite.vframes == 4,
             "original and fallback art preserve the 6x4 atlas contract")
     driver.play(0, "attack")
