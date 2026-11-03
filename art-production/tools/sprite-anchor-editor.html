@@ -101,7 +101,7 @@ function alphaBounds(im,sx,sy,sw,sh){
  const c=document.createElement('canvas');c.width=sw;c.height=sh;
  const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,sx,sy,sw,sh,0,0,sw,sh);
  const a=x.getImageData(0,0,sw,sh).data;let x0=sw,y0=sh,x1=0,y1=0,touch=false,visible=0;
- for(let j=0;j<sh;j++)for(let i=0;i<sw;i++)if(a[(j*sw+i)*4+3]>16){visible++;x0=Math.min(x0,i);y0=Math.min(y0,j);x1=Math.max(x1,i+1);y1=Math.max(y1,j+1);if(!i||!j||i===sw-1||j===sh-1)touch=true}
+ for(let j=0;j<sh;j++)for(let i=0;i<sw;i++)if(a[(j*sw+i)*4+3]>0){visible++;x0=Math.min(x0,i);y0=Math.min(y0,j);x1=Math.max(x1,i+1);y1=Math.max(y1,j+1);if(!i||!j||i===sw-1||j===sh-1)touch=true}
  return visible?{x0,y0,x1,y1,touch,visible}:null;
 }
 function add(im,action,sx,sy,sw,sh,name){
