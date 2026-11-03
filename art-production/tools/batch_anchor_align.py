@@ -16,12 +16,12 @@ import csv
 import hashlib
 import json
 import math
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[2]
 ACTORS = (
@@ -78,6 +78,41 @@ def image_bbox(frame: Image.Image) -> tuple[int, int, int, int]:
     if result is None:
         raise ValueError("Blank source frame cannot be packed")
     return result
+
+
+def detached_alpha_islands(frame: Image.Image) -> int:
+    """Warn about sizable disconnected silhouettes. Never remove original pixels.
+
+    A small dilation can reconnect ordinary sleeve/weapon gaps without merging
+    fragments that are visibly detached. This is an advisory heuristic only.
+    """
+    mask = frame.getchannel("A").point(
+        lambda a: 255 if a >= 64 else 0
+    ).filter(ImageFilter.MaxFilter(9))
+    data = mask.tobytes()
+    width, height = mask.size
+    visited = bytearray(len(data))
+    sizes = []
+    for start, value in enumerate(data):
+        if not value or visited[start]:
+            continue
+        visited[start] = 1
+        queue = deque((start,))
+        size = 0
+        while queue:
+            at = queue.popleft()
+            size += 1
+            x, y = at % width, at // width
+            for other in (at - 1 if x else -1,
+                          at + 1 if x < width - 1 else -1,
+                          at - width if y else -1,
+                          at + width if y < height - 1 else -1):
+                if other >= 0 and data[other] and not visited[other]:
+                    visited[other] = 1
+                    queue.append(other)
+        sizes.append(size)
+    sizes.sort(reverse=True)
+    return sum(size >= max(24, sizes[0] // 30) for size in sizes[1:]) if sizes else 0
 
 
 def split_frames(atlas: Image.Image) -> list[Image.Image]:
@@ -159,6 +194,7 @@ def collect(frames: list[Image.Image], annotations: Mapping[int, Anchor]):
         items.append({
             "frame": index, "action": action, "phase": phase,
             "bbox": bbox, "anchor": anchor, "source_edge_warning": touches_edge,
+            "detached_islands": detached_alpha_islands(frame),
         })
     return items
 
@@ -206,6 +242,7 @@ def repack(frames: list[Image.Image], items: list[dict], padding: int):
             "anchor_type": anchor.kind, "reviewed": anchor.reviewed,
             "root_motion": [anchor.root_dx, anchor.root_dy],
             "min_margin": margin, "source_edge_warning": item["source_edge_warning"],
+            "detached_islands": item["detached_islands"],
         })
     return atlas, (width, height), placements
 
@@ -272,6 +309,8 @@ def process_actor(actor: str, output_root: Path, annotation_root: Path | None,
         "unreviewed_frames": outstanding,
         "source_edge_frames": [x["index"] for x in placements
                                if x["source_edge_warning"]],
+        "detached_fragment_frames": [x["index"] for x in placements
+                                     if x["detached_islands"] > 0],
         "actions": {name: list(indices) for name, indices in ACTIONS.items()},
         "frames": placements,
         "limitations": [
@@ -289,7 +328,8 @@ def process_actor(actor: str, output_root: Path, annotation_root: Path | None,
         write_gifs(atlas, cell, out, actor)
     print(f"{actor}: {len(placements)} original frames / 9 actions, "
           f"cell={cell}, unreviewed={len(outstanding)}, "
-          f"source-edge={len(report['source_edge_frames'])}; candidate only")
+          f"source-edge={len(report['source_edge_frames'])}, "
+          f"detached={len(report['detached_fragment_frames'])}; candidate only")
     return report
 
 
