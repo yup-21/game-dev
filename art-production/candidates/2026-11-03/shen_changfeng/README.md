@@ -48,6 +48,8 @@
 
 ## 操作方法
 
+**推荐可视化标注**：下载并打开 [`sprite-anchor-editor.html`](../../../tools/sprite-anchor-editor.html)，依次导入十组源母图；逐帧点击真实承重接点、检查红色源格贴边警告，然后设置边距并导出无逐帧缩放的 PNG Atlas 和 `foot_annotations.csv`。详见[工具指南](../../../tools/SPRITE_ANCHOR_EDITOR.md)。原有 Python 重排脚本仍会独立进行逐帧缩放；需要保证全动作人物比例一致时，应直接检查编辑器导出的 Atlas，而不是误以为 CSV 回灌后会自动保持原像素大小。
+
 ```sh
 python3 -m pip install pillow numpy opencv-python
 python3 art-production/tools/rebuild_shen_v05.py \
