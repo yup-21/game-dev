@@ -4,8 +4,11 @@ extends RefCounted
 const FRAME_RATE := 9.0
 const FRAMES_PER_ROW := 6
 const POSE_SAMPLES_PER_SECOND := 30.0
-const STATE_ROW := {"idle": 0, "move": 1, "attack": 2, "guard": 3,
-    "hit": 3, "evade": 3, "skill": 3, "combo": 3, "defeat": 3}
+## Fallback cells for legacy 6x4 sheets. Native authored clips may add any ID.
+const STATE_ROW := {"idle": 0, "walk": 1, "run": 1, "move": 1,
+    "attack1": 2, "attack2": 2, "attack3": 2, "attack4": 2,
+    "attack": 2, "guard": 3, "hit": 3, "evade": 3,
+    "skill": 3, "combo": 3, "defeat": 3}
 const SINGLE_FRAMES := {"guard": 0, "hit": 1, "evade": 2,
     "skill": 4, "combo": 4, "defeat": 1}
 
@@ -17,17 +20,25 @@ static func attach(sprite: Sprite2D, timeline: Variant,
     player.root_node = NodePath("..")
     sprite.add_child(player)
     var library := AnimationLibrary.new()
+    var states: Array[String] = []
     for state in STATE_ROW.keys():
+        states.append(str(state))
+    if profile != null:
+        for entry in profile.clips:
+            var clip: WuxiaActorAnimationClip = entry as WuxiaActorAnimationClip
+            if clip != null and not states.has(clip.action):
+                states.append(clip.action)
+    for state in states:
         var fallback_duration: float = 0.62
         match str(state):
             "idle": fallback_duration = 1.0
-            "move", "skill": fallback_duration = 0.55
+            "move", "walk", "run", "skill": fallback_duration = 0.55
             "guard", "evade": fallback_duration = 0.38
             "hit": fallback_duration = 0.46
             "combo": fallback_duration = 0.78
             "defeat": fallback_duration = 1.0
-        var duration: float = timeline.duration_for(str(state), fallback_duration)
-        var authored: WuxiaActorAnimationClip = profile.clip_for(str(state)) if profile != null else null
+        var duration: float = timeline.duration_for(_timeline_id(str(state)), fallback_duration)
+        var authored: WuxiaActorAnimationClip = _find_clip(profile, str(state))
         library.add_animation(str(state),
             _authored_clip(authored, duration) if authored != null
             else _clip(str(state), duration, sprite.scale))
@@ -35,6 +46,35 @@ static func attach(sprite: Sprite2D, timeline: Variant,
     player.play("idle")
     player.advance(0.0)
     return player
+
+## Resolve canonical action IDs to legacy art without mutating the source profile.
+static func _find_clip(profile: WuxiaActorAnimationProfile, state: String) -> WuxiaActorAnimationClip:
+    if profile == null:
+        return null
+    var authored: WuxiaActorAnimationClip = profile.clip_for(state)
+    if authored != null:
+        return authored
+    var aliases: Array[String] = []
+    match state:
+        "walk", "run": aliases = ["walk", "move"]
+        "move": aliases = ["walk"]
+        "attack", "attack1": aliases = ["attack1", "attack"]
+        "attack2", "attack3", "attack4": aliases = ["attack"]
+        "combo": aliases = ["attack4", "attack"]
+    for alias in aliases:
+        authored = profile.clip_for(alias)
+        if authored != null:
+            return authored
+    return null
+
+
+static func _timeline_id(state: String) -> String:
+    if state in ["walk", "run"]:
+        return "move"
+    if state in ["attack1", "attack2", "attack3", "attack4"]:
+        return "attack"
+    return state
+
 
 static func _value_track(animation: Animation, property_name: String,
         discrete: bool = false) -> int:
@@ -49,7 +89,7 @@ static func _value_track(animation: Animation, property_name: String,
 static func _clip(state: String, authored_duration: float,
         base_scale: Vector2) -> Animation:
     var animation := Animation.new()
-    var looping: bool = state in ["idle", "move"]
+    var looping: bool = state in ["idle", "move", "walk", "run"]
     # The walk/idle atlas cycles every six frames independent of event duration.
     var duration: float = float(FRAMES_PER_ROW) / FRAME_RATE if looping else maxf(0.01, authored_duration)
     animation.length = duration
@@ -75,10 +115,10 @@ static func _clip(state: String, authored_duration: float,
         var size := Vector2.ONE
         var tilt: float = 0.0
         match state:
-            "move":
+            "move", "walk", "run":
                 size.x = 1.0 + sin(at * 18.0) * 0.035
                 tilt = sin(at * 12.0) * 0.045
-            "attack", "combo", "skill":
+            "attack", "attack1", "attack2", "attack3", "attack4", "combo", "skill":
                 size = Vector2(1.0 + thrust * 0.14, 1.0 - thrust * 0.09)
                 tilt = -thrust * (0.18 if state == "combo" else 0.11)
             "guard":

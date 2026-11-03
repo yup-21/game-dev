@@ -10,6 +10,8 @@ extends Resource
 @export var has_once_per_action: bool = false
 @export var once_per_action: bool = false
 @export var effects: Array[Resource] = []
+@export var animation_id: String = ""
+@export var vfx_scene: PackedScene
 
 func to_record() -> Dictionary:
     if usage_id.is_empty() or cost == null or target == null: return {}
@@ -30,4 +32,10 @@ func to_record() -> Dictionary:
         if profile.is_empty(): return {}
         result["attack_profile"] = profile
     if has_once_per_action: result["once_per_action"] = once_per_action
+    if not animation_id.is_empty():
+        if not animation_id.is_valid_identifier(): return {}
+        result["animation_id"] = animation_id
+    if vfx_scene != null:
+        if not vfx_scene.resource_path.begins_with("res://"): return {}
+        result["vfx_path"] = vfx_scene.resource_path
     return result

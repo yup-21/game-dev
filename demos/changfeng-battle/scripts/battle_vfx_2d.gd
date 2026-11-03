@@ -3,6 +3,7 @@ extends RefCounted
 const Assets = preload("res://scripts/asset_registry.gd")
 var canvas: Node2D
 var bursts: Array = []
+var skill_scenes: Array = []
 var native_assets = Assets.new()
 
 func _init(painted_layer: Node2D) -> void:
@@ -105,11 +106,37 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
         if is_instance_valid(oldest.node):
             oldest.node.queue_free()
 
+## The optional skill slot loads a regular Godot PackedScene. A finite visual
+## lifetime is enforced even if the authored scene does not free itself.
+func _spawn_skill_scene(path: String, position: Vector2) -> bool:
+    if path.is_empty() or not path.begins_with("res://") or not ResourceLoader.exists(path):
+        return false
+    var packed: PackedScene = ResourceLoader.load(path) as PackedScene
+    if packed == null or canvas == null:
+        return false
+    var node: Node = packed.instantiate()
+    if not node is Node2D:
+        node.free()
+        return false
+    var visual := node as Node2D
+    visual.position = position
+    visual.z_index = 151
+    canvas.add_child(visual)
+    skill_scenes.append({"node": visual, "left": 1.5})
+    return true
+
+
 func handle_events(events: Array, actor_nodes: Dictionary) -> void:
     for event in events:
         var kind := str(event.get("type", ""))
         var source := int(event.get("actor_id", -1))
         var target := int(event.get("defender_id", event.get("target_id", -1)))
+        var authored_vfx: bool = false
+        if kind in ["ATTACK_DECLARED", "ACTION_PRESENTATION"] and actor_nodes.has(source):
+            authored_vfx = _spawn_skill_scene(str(event.get("vfx_path", "")),
+                actor_nodes[source].position)
+        if kind == "ACTION_PRESENTATION" or (kind == "ATTACK_DECLARED" and authored_vfx):
+            continue
         match kind:
             "ATTACK_DECLARED":
                 if actor_nodes.has(source):
@@ -144,6 +171,18 @@ func handle_events(events: Array, actor_nodes: Dictionary) -> void:
                         Color(0.65, 0.86, 1.0, 0.70), 0.40, 0.85, kind)
 
 func update(delta: float) -> void:
+    for i in range(skill_scenes.size() - 1, -1, -1):
+        var entry: Dictionary = skill_scenes[i]
+        var node: Node = entry.node
+        if not is_instance_valid(node):
+            skill_scenes.remove_at(i)
+            continue
+        entry.left = float(entry.left) - maxf(0.0, delta)
+        if float(entry.left) <= 0.0:
+            node.queue_free()
+            skill_scenes.remove_at(i)
+        else:
+            skill_scenes[i] = entry
     for i in range(bursts.size() - 1, -1, -1):
         var burst: Dictionary = bursts[i]
         var painted: Node2D = burst.node as Node2D
@@ -192,3 +231,7 @@ func clear() -> void:
         if is_instance_valid(burst.node):
             burst.node.queue_free()
     bursts.clear()
+    for entry in skill_scenes:
+        if is_instance_valid(entry.node):
+            entry.node.queue_free()
+    skill_scenes.clear()
