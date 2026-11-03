@@ -219,7 +219,7 @@ function csvValue(s){s=String(s);return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'"
 $('downloadCSV').onclick=()=>{
  if(!frames.length)return;const rows=[['action','frame','x','y','reviewed','source_edge_flag','anchor_type']];
  frames.forEach(f=>rows.push([f.action,f.index,f.anchor?f.anchor.x:'',f.anchor?f.anchor.y:'',f.reviewed?1:0,f.box&&f.box.touch?1:0,f.type]));
- downloadText('\uFEFF'+rows.map(r=>r.map(csvValue).join(',')).join('\r\n'),'foot_annotations.csv','text/csv;charset=utf-8')
+ downloadText(rows.map(r=>r.map(csvValue).join(',')).join('\r\n'),'foot_annotations.csv','text/csv;charset=utf-8')
 };
 $('downloadJSON').onclick=()=>{
  if(!layout)return;const actions={};frames.forEach((f,i)=>{if(!actions[f.action])actions[f.action]={frames:[],loop:['idle','move'].includes(f.action)};actions[f.action].frames.push(i)});
