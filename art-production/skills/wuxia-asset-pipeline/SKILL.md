@@ -16,7 +16,7 @@ description: "为《长风浮生录》检查美术素材规格、盘点在用资
 
 1. **发现与归档**：从实际游戏 Resource/scene/脚本读取当前绑定；仅使用中素材进入清单。执行 `python3 art-production/tools/inventory_assets.py --check` 检查旧路径与缺图，其他未用素材放入 `art-production/archive/`。
 2. **创建候选包**：在 art-production/candidates/YYYY-MM-DD/<asset-id>/ 保存候选图及提示词，标明要绑定的 Resource；按需要保留多个版本，不重复记录模型/seed/审批字段。
-3. **技术校验**：检查解码、真实 Alpha（角色和 VFX 必需）、纹理尺寸、Atlas 整除和帧索引、脚点、场景必需 ground 及同画布图层、透明边缘、文件名及资源依赖。对城镇/地图还须验证 `pixels_per_unit=80`、运行时贴图 1:1 不旋转、分层同画布和角色 200px 比例参照，参考 `standards/TOWN_MAP_SCALE_PRODUCTION.md`；按对应美术 Skill 补充类别特定检查；不要将建议像素尺寸或 FPS 强制标为 frozen。
+3. **技术校验**：检查解码、真实 Alpha（角色和 VFX 必需）、纹理尺寸、Atlas 整除和帧索引、脚点、场景必需 ground 及同画布图层、透明边缘、文件名及资源依赖。对动画候选先按 `standards/SPRITE_ANIMATION_QA.md` **自动拒绝任何格子重叠、越界、透明边距不足和索引错误**，优先独立帧的确定性装配；自动 Alpha/脚点猜测不能识别真实承重脚、动作阶段与根位移，视频提帧尚未真实验收。AI 视觉初筛仅标记疑难，少量人工复核；没有实际 Godot 播放证据不得报告动画视觉完成。对城镇/地图还须验证 `pixels_per_unit=80`、运行时贴图 1:1 不旋转、分层同画布和角色 200px 比例参照，参考 `standards/TOWN_MAP_SCALE_PRODUCTION.md`；按对应美术 Skill 补充类别特定检查；不要将建议像素尺寸或 FPS 强制标为 frozen。
 4. **原生导入**：角色由 WuxiaActorAnimationProfile/WuxiaCharacterDefinition.animation_profile 引用，场景由 WuxiaSceneArtProfile 和 WuxiaMapDefinition/WuxiaGridMapDefinition.scene_art 引用；素材放置在正式 assets 目录后仍由 .tres 显式挂载。Content Manifest 登记对应正式内容，不给 BattleModel 添加特殊分支。
 5. **验证**：可运行时执行 godot --headless --path demos/changfeng-battle --editor --import --quit，并运行相关项目检查；随后必须在 Godot Editor 实测动画、场景、遮挡、点击与导出，留存 1600×1000 和 1440×900 GUI 截图。headless 成功不等于美术验收。
 6. **切换使用版本**：通过原生 Resource 引用把唯一选中的候选改为 `in_use`；未使用的版本继续保留候选。导入前保存旧绑定以便撤销，切换后运行原有验证，不重绘合格素材。

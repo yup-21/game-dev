@@ -7,11 +7,11 @@
 - asset_id: `shen_changfeng`
 - asset_type: `character_design | portrait | sprite | environment | scene_layer | item_icon | card_art | ui | vfx`
 - target_usage: `story | battle | inventory | card | hud`
-- status: `concept`
+- status: `candidate`（工作区状态；正式使用后由原生 Resource 确认 `in_use`）
 - owner/reviewer: `待填写`
 - source / rights: `待填写`
 - prompt_template_version: `ART_STYLE_AI_PROMPTS_V1`
-- model/version/seed: `待填写`
+- model/version/seed: `可选；无需为补齐记录而猜测`
 
 ## 参考与身份锁定
 
@@ -26,7 +26,7 @@
 - 最终目标尺寸（非默认猜测）：
 - 文件格式与 Alpha：
 - Atlas 行列 / 帧索引（如适用）：
-- 脚点 / 方向 / 时间轴（如适用）：
+- 脚点 / 承重脚类型 / 复核状态 / 根位移 / 方向 / 时间轴（如适用）：
 - 场景图层及共享原点（如适用）：
 - Godot 目标 `.tres`：
 - 参考提示词全文及每次修订：
@@ -36,7 +36,7 @@
 
 - [ ] 造型、色板、材质与批准参考一致
 - [ ] 透明背景真实有效，边缘无色边（如要求）
-- [ ] 帧连续、脚点一致、无肢体/武器漂移（如动画）
+- [ ] 帧连续、身份/武器数量不漂移、脚点经真实接触复核、根位移独立审查、无源图截断（如动画）
 - [ ] 场景图层同尺寸、遮挡和可行走区一致（如场景）
 - [ ] UI / 图标小尺寸清晰、文字独立排版（如适用）
 - [ ] Godot Resource 加载与导出通过
@@ -46,6 +46,6 @@
 
 ## 结论
 
-- 审核状态：`pending | changes_requested | approved`
+- 视觉验收结论：`待复核 | 需返工 | 已通过`（不是第三种资产管理状态）
 - 反馈与修订：
 - 批准版本 SHA / 路径：

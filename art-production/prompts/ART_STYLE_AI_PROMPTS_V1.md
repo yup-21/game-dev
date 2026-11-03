@@ -1,6 +1,6 @@
 # 《长风浮生录》统一美术风格与 AI 生成提示词模板 V1
 
-> 状态：**制作模板 / candidate baseline**，供整个项目使用，不局限 Demo。继承 [ART_PRODUCTION_STANDARD.md](../standards/ART_PRODUCTION_STANDARD.md)；若有冲突，以运行时 Resource 合同及已批准素材为准。本文的建议尺寸、配色和帧数必须通过首个角色与场景试点后才能标记为 frozen。AI 生成图一律先进入 concept/candidate，不能自动视为 approved。
+> 状态：**制作模板 / candidate baseline**，供整个项目使用，不局限 Demo。继承 [ART_PRODUCTION_STANDARD.md](../standards/ART_PRODUCTION_STANDARD.md)；若有冲突，以运行时 Resource 合同及已批准素材为准。本文的建议尺寸、配色和帧数必须通过首个角色与场景试点后才能标记为 frozen。AI 生成图一律先作为 `candidate`；concept/preview 只是制作用途，不能自动替换 `in_use`。
 
 ## 1. 全项目共同视觉语言（Style DNA）
 
@@ -96,7 +96,7 @@ Allow 10% safety margin around the silhouette.
 
 **资源接口已定，最终帧尺寸与方向仍待试点冻结**：`WuxiaActorAnimationProfile.tres` 支持自定义 atlas `columns/rows`、`feet_offset`、`actor_scale`、动作帧索引。历史 6×4 是 fallback，不是新制作的强制标准。
 
-制作建议（未批准）：先生成单角色逐帧 RGBA，再由工具裁切组装 Atlas；每帧工作画布可从 **256×256** 起试验，格内脚点相同、武器全程不越界；完整动作应有不同中间帧，不把 4×2/6×4 的“关键姿势稿”伪称逐帧动画。方向目标为前/后/左右；当前水平镜像只能作为过渡。
+制作建议（未批准）：先生成单角色逐帧 RGBA，再由工具裁切组装 Atlas；画布可按完整人物动作所需尺寸选择，人物与武器不可触边；完整动作应有不同中间帧，不把 4×2/6×4 的“关键姿势稿”伪称逐帧动画。方向目标为前/后/左右；当前水平镜像只能作为过渡。
 
 ```text
 [GLOBAL STYLE DNA]
@@ -104,9 +104,11 @@ Allow 10% safety margin around the silhouette.
 character sheet and portrait. Exact same face, hair, costume, weapon, palette,
 body-to-head ratio and shoes. Action: {action}; phase: {startup_active_recovery};
 frame number: {frame_index} of {frame_count}; view direction: {direction}.
-Consistent fixed orthographic-ish 2.5D game camera, full character and
-entire weapon visible, identical feet contact point ({foot_anchor}) and
-character scale across frames. Crisp readable silhouette at small in-game
+Fixed strictly side-on orthographic camera for horizontal combat, full
+character and entire weapon visible with blank margins. Use a plausible
+planted support foot for this motion phase, same ground and character scale;
+do not add a drawn anchor marker or pin both feet during movement. Keep
+root translation separate from local pose; do not erase a legitimate lunge. Crisp readable silhouette at small in-game
 display size, simplified micro-detail without changing identity,
 transparent RGBA, no floor shadow, no background or UI.
 Keep the torso and weapon trajectory continuous with the adjacent supplied frames.
@@ -114,6 +116,47 @@ Keep the torso and weapon trajectory continuous with the adjacent supplied frame
 ```
 
 基础动作合同：`idle`, `move`, `attack`, `guard`, `hit`, `evade`, `skill`, `combo`, `defeat`。循环动作要真正循环；非循环动作要有起手/有效/收招。建议先用 `idle`、`move`、`attack` 三个动作验证脚点、比例、帧间连贯性，再制作九类全集。实际播放时长由 `BattleActionTimeline` 管理，不由动画修改战斗规则。
+
+### 5.1 AI 优先生成：单帧、身份锁定、动作语义
+
+按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。**默认一次生成一个完整角色动作帧，不让 AI 直接绘制多格大图集**。不同帧的格子尺寸、排列与透明间距由后续程序计算，从源头避免角色/武器越格或互相重叠。视频转帧尚未完成真实验收，仅在用户要求试验时作为 candidate 路线；脚点编辑器不能识别真实支撑脚或动作阶段。
+
+**生成顺序（尽量自动，无须每帧手工标点）**：
+
+1. 上传同一批准设定/立绘，让 AI 先生成一张固定 90° 侧视、全身、一柄正确武器的战斗基准帧；基准图需有充足四边空白。
+2. 逐动作描述起手→承重/蓄力→有效→收势，以相邻已生成帧和基准图作为参考，逐张生成关键姿势，再生成真实过渡帧。不按固定 6/8 帧生成，也不要求 AI 同时画多动作。
+3. 先自动检查格式/Alpha/原始图像边界，并以视觉模型初筛双剑、正面、变形及明显姿势跳变；视觉模型不是可靠的真实支撑脚检测器。失败帧优先重新生成，仅异常和最终样片要求人工复核。
+4. 将独立 RGBA 帧交给确定性打包程序，以非透明轮廓自动确定统一格子，逐格断言四边透明边距 m>0（24px 试点推荐）、没有任何帧侵占邻格、空格透明。**零重叠是硬门槛**，不通过就增大格子重排或重新生成源帧。
+
+**可复制的单帧生成母提示词**（每帧填入本帧的真实姿势描述，不将方括号说明绘制进图片）：
+
+```text
+Use the attached approved character design and accepted side-view base frame
+as strict identity and scale references. Generate ONE complete isolated
+original hand-painted 2D wuxia combat character frame, not a sprite sheet.
+Fixed 90-degree side view facing {direction}; stationary camera, unchanged
+ground line, head-to-body ratio, outfit, colors, weapon and holding hand.
+Exactly {weapon_count} complete weapon(s) in {weapon_hand}; the free hand
+remains empty. Action: {action}, phase: {phase}. Precise pose: {pose_description}.
+Weight and planted foot: {support_description}. Sword path: {weapon_trajectory}.
+Motion relative to previous accepted frame: {adjacent_frame_delta}.
+Preserve correct anatomy, complete head/hair/sleeves/boots/weapon tip and
+generous empty margins on EVERY side. Readable simplified painterly silhouette.
+One character only. No second pose, no panels, no frame borders, no overlap,
+no camera movement, no perspective change, no fake extra limbs or swords,
+no motion blur, no VFX, no background or text. Transparent RGBA if supported.
+```
+
+**动作描述检查示例**：
+
+| 动作 | 提示词必须说明的力学变化 |
+| --- | --- |
+| idle | 后脚承重，躯干轻微呼吸，支撑鞋底稳定，首尾近似闭环 |
+| move | 左右脚交替承重和离地，步幅、重心、腿摆对应，不做单脚滑行 |
+| attack | 后脚蹬地蓄力→重心前移→右手单剑直刺/斩击→前脚承重→自然收势，无突然向后弹 |
+| guard | 屈膝架剑→承重缓冲→短暂稳定→归位，持剑手和支撑脚不乱跳 |
+
+提示词中不要强制源图恰为 200px 人高或 24px 边距；这些是后续原生尺度归一和程序排布约束，AI 很难严格遵守像素数字。可以请求大留白与一致画布，但不能把生成模型承诺当成测量结果。
 
 ## 6. 场景设定与可运行地图贴图
 
