@@ -21,9 +21,12 @@ radius = 24.0
 [sub_resource type="Resource" id="StreetEnd"]
 script = ExtResource("4_marker")
 marker_id = "street_end"
-marker_kind = "vfx_anchor"
+marker_kind = "zone_exit"
 position = Vector2(4600, 790)
-radius = 24.0
+radius = 110.0
+exit_side = "east"
+target_zone_id = "pingjiang_east_market_qa"
+target_entry_id = "east_entry"
 
 [resource]
 script = ExtResource("1_map")
