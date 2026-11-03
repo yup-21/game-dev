@@ -100,6 +100,10 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
             float(authored.get_height()) / float(sprite.vframes))
         sprite.scale = Vector2.ONE * (100.0 * size / maxf(longest, 1.0))
         root.add_child(sprite)
+        # Authored textures replace, rather than stack on, geometric fallbacks.
+        for extra in root.get_children():
+            if extra != sprite and extra is CanvasItem:
+                extra.visible = false
     bursts.append({"node": root, "duration": duration, "left": duration,
         "kind": kind, "path": path, "size": size, "vfx_frames": authored_frames,
         "authored": authored != null})

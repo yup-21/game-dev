@@ -186,7 +186,7 @@ func _valid_form(item: Variant, school_ids: Dictionary) -> bool:
 	return true
 
 func _valid_usage(usage: Variant) -> bool:
-	if not _keys(usage,["id","name","timing","cost","target","effects","attack_profile","once_per_action"],["id","name","timing","cost","target","effects"]): return false
+	if not _keys(usage,["id","name","timing","cost","target","effects","attack_profile","once_per_action","animation_action","vfx_slot","vfx_trigger"],["id","name","timing","cost","target","effects"]): return false
 	if not _text(usage.id) or not _text(usage.name) or usage.timing not in ["ACTION","ATTACK_REACTION","DEFENSE_REACTION"]: return false
 	if not _keys(usage.cost,["qi","hp"],["qi"]): return false
 	for cost in usage.cost.values():
