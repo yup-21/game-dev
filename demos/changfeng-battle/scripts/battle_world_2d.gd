@@ -17,6 +17,7 @@ var actor_nodes: Dictionary = {}
 var visual_cells: Dictionary = {}
 var movement_paths: Dictionary = {}
 var continuous_paths: Dictionary = {}
+var defeated_actors: Dictionary = {}
 
 func build(host: Node2D, story_encounter: bool, map_path: String,
         actors: Array, animation_driver: Variant) -> void:
@@ -44,13 +45,13 @@ func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
     var character_id: String = str(actor.get("character_id",""))
     var enemy: bool = int(actor.get("team_id",0)) != 0
     var profile: WuxiaActorAnimationProfile = ArtCatalog.animation_profile_for_character(character_id)
-    var sheet: Texture2D = profile.atlas if profile != null else (
+    var sheet: Texture2D = profile.idle_atlas() if profile != null else (
         ArtCatalog.sheet_for_character(character_id, enemy) if not character_id.is_empty()
         else ArtCatalog.sheet_for_actor(id, enemy))
     var sprite: Sprite2D = illustrated_map.add_actor(actor, sheet)
     if profile != null:
-        sprite.hframes = profile.columns
-        sprite.vframes = profile.rows
+        sprite.hframes = profile.idle_columns()
+        sprite.vframes = profile.idle_rows()
         sprite.offset = profile.feet_offset
         sprite.scale = profile.actor_scale
     var idle_frame: int = 0
@@ -141,7 +142,11 @@ func tick(delta: float, snapshot: Dictionary, animation_driver: Variant) -> Dict
         var id := int(actor.id)
         var role: Node2D = actor_nodes.get(id, null)
         if role != null:
-            role.visible = float(actor.hp) > 0
+            if float(actor.hp) <= 0.0 and not defeated_actors.has(id):
+                defeated_actors[id] = true
+                animation_driver.enqueue_defeat(id)
+            # Keep the visible body: defeat holds its final pose until reset.
+            role.visible = true
             role.z_index = clampi(roundi(role.position.y / 20.0), 0, 100)
     refresh_scroll()
     return moving

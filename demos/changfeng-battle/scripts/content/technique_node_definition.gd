@@ -18,10 +18,15 @@ extends Resource
 @export_range(0, 128, 1) var target_max_distance: int = 0
 @export var attack_route: String = ""
 @export_range(0, 128, 1) var attack_range: int = 0
+@export var animation_action: String = ""
+@export var vfx_slot: String = ""
+@export var vfx_trigger: String = ""
 @export var effects: Array[Resource] = []
 @export var when: Resource
 
 func to_record() -> Dictionary:
+    if not animation_action.is_empty() and (not animation_action.is_valid_identifier() or animation_action != animation_action.to_lower()):
+        return {}
     var converted: Array = []
     for effect in effects:
         if not effect is WuxiaEffectDefinition and not effect is WuxiaTechniqueEffectDefinition:
@@ -41,6 +46,9 @@ func to_record() -> Dictionary:
         result["attack_profile"] = {"route":attack_route, "range":attack_range}
     if not stage.is_empty(): result["stage"] = stage
     if not display_name.is_empty(): result["name"] = display_name
+    if not animation_action.is_empty(): result["animation_action"] = animation_action
+    if not vfx_slot.is_empty(): result["vfx_slot"] = vfx_slot
+    if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
     if not available: result["available"] = false
     if unlock_rank != 1: result["unlock_rank"] = unlock_rank
     if same_action_extra_qi != 0: result["same_action_extra_qi"] = same_action_extra_qi

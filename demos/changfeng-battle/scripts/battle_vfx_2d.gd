@@ -82,9 +82,11 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
                 root.add_child(shard)
 
     # Authored transparent textures remain the preferred production art.
-    var lookup: String = source_event if not source_event.is_empty() and not native_assets.record_for_event(source_event).is_empty() else kind
-    var authored_spec: Dictionary = native_assets.record_for_event(lookup)
-    var authored: Texture2D = native_assets.texture_for_event(lookup)
+    var authored_spec: Dictionary = native_assets.record(source_event)
+    if str(authored_spec.get("kind", "")) != "vfx":
+        var lookup: String = source_event if not source_event.is_empty()             and not native_assets.record_for_event(source_event).is_empty() else kind
+        authored_spec = native_assets.record_for_event(lookup)
+    var authored: Texture2D = native_assets.texture(str(authored_spec.get("id", "")))         if not authored_spec.is_empty() else null
     var authored_frames: PackedInt32Array = authored_spec.get("frame_indices", PackedInt32Array())
     if authored != null:
         var sprite := Sprite2D.new()
@@ -111,14 +113,6 @@ func handle_events(events: Array, actor_nodes: Dictionary) -> void:
         var source := int(event.get("actor_id", -1))
         var target := int(event.get("defender_id", event.get("target_id", -1)))
         match kind:
-            "ATTACK_DECLARED":
-                if actor_nodes.has(source):
-                    _spawn_canvas(actor_nodes[source].position, "slash",
-                        Color(0.70, 0.97, 0.92, 0.78), 0.45, 1.15, kind)
-            "COMBO_TRIGGERED":
-                if actor_nodes.has(source):
-                    _spawn_canvas(actor_nodes[source].position, "combo",
-                        Color(1.00, 0.78, 0.38, 0.90), 0.70, 1.45, kind)
             "HP_DAMAGED", "DAMAGE", "SCORCH_TICK":
                 var victim: int = target if actor_nodes.has(target) else source
                 if actor_nodes.has(victim):
@@ -142,6 +136,31 @@ func handle_events(events: Array, actor_nodes: Dictionary) -> void:
                 if actor_nodes.has(source):
                     _spawn_canvas(actor_nodes[source].position, "guard",
                         Color(0.65, 0.86, 1.0, 0.70), 0.40, 0.85, kind)
+
+## Only the cue belonging to the queued animation may fire a skill VFX.
+## Slot lookup uses the imported native Asset ID first, then event_kind.
+func handle_action_cues(cues: Array, actor_nodes: Dictionary) -> void:
+    for cue in cues:
+        if str(cue.get("name", "")) != str(cue.get("vfx_trigger", "")):
+            continue
+        var id: int = int(cue.get("actor_id", -1))
+        if not actor_nodes.has(id):
+            continue
+        var event_kind: String = str(cue.get("event_type", ""))
+        var slot: String = str(cue.get("vfx_slot", ""))
+        if slot.is_empty() and event_kind not in ["ATTACK_DECLARED", "COMBO_TRIGGERED"]:
+            continue
+        var kind: String = "combo" if event_kind == "COMBO_TRIGGERED" else "slash"
+        if str(cue.get("profile", "")) == "guard":
+            kind = "guard"
+        elif str(cue.get("profile", "")) == "evade":
+            kind = "evade"
+        _spawn_canvas(actor_nodes[id].position, kind,
+            Color(1.0, 0.78, 0.38, 0.90) if kind == "combo" else
+            Color(0.70, 0.97, 0.92, 0.78),
+            0.70 if kind == "combo" else 0.45,
+            1.45 if kind == "combo" else 1.15,
+            slot if not slot.is_empty() else event_kind)
 
 func update(delta: float) -> void:
     for i in range(bursts.size() - 1, -1, -1):

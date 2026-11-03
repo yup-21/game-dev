@@ -6,6 +6,7 @@ var animator: Variant
 var coordinator: Variant
 var effects: Variant
 var action_cues: Array = []
+var actor_nodes_ref: Dictionary = {}
 
 func _init(animation_driver: Variant, presentation_coordinator: Variant) -> void:
     animator = animation_driver
@@ -15,6 +16,7 @@ func attach(painted_world: Node2D) -> void:
     effects = VFX.new(painted_world)
 
 func consume(events: Array, actor_nodes: Dictionary) -> void:
+    actor_nodes_ref = actor_nodes
     animator.events(events)
     if effects != null:
         effects.handle_events(events, actor_nodes)
@@ -27,7 +29,10 @@ func begin(ticket: int, pending: bool) -> void:
 
 func tick(delta: float, moving: Dictionary, paths_pending: bool) -> int:
     animator.update(delta, moving)
-    action_cues.append_array(animator.drain_action_cues())
+    var fired: Array = animator.drain_action_cues()
+    if effects != null:
+        effects.handle_action_cues(fired, actor_nodes_ref)
+    action_cues.append_array(fired)
     while action_cues.size() > 64:
         action_cues.pop_front()
     if effects != null:

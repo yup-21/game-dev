@@ -14,10 +14,15 @@ extends Resource
 @export_enum("thrust", "sweep", "crushing") var attack_route: String = "thrust"
 @export var attack_break_bonus: int = 0
 @export var once_per_action: bool = false
+@export var animation_action: String = ""
+@export var vfx_slot: String = ""
+@export var vfx_trigger: String = ""
 @export var effects: Array[Resource] = []
 @export var when: Resource
 
 func to_record() -> Dictionary:
+    if not animation_action.is_empty() and (not animation_action.is_valid_identifier() or animation_action != animation_action.to_lower()):
+        return {}
     var converted: Array = []
     for effect in effects:
         if not effect is WuxiaEffectDefinition:
@@ -39,6 +44,9 @@ func to_record() -> Dictionary:
             "route": attack_route, "break_bonus": attack_break_bonus,
             "range": target_max_distance
         }
+    if not animation_action.is_empty(): result["animation_action"] = animation_action
+    if not vfx_slot.is_empty(): result["vfx_slot"] = vfx_slot
+    if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
     if when != null:
         if not when is WuxiaConditionDefinition:
             return {}
