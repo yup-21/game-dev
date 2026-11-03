@@ -96,7 +96,7 @@ Allow 10% safety margin around the silhouette.
 
 **资源接口已定，最终帧尺寸与方向仍待试点冻结**：`WuxiaActorAnimationProfile.tres` 支持自定义 atlas `columns/rows`、`feet_offset`、`actor_scale`、动作帧索引。历史 6×4 是 fallback，不是新制作的强制标准。
 
-制作建议（未批准）：先生成单角色逐帧 RGBA，再由程序在统一根点坐标系下无损装配 Atlas；画布可按完整人物动作所需尺寸选择，人物与武器不可触边；完整动作应有不同中间帧，不把 4×2/6×4 的“关键姿势稿”伪称逐帧动画。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯，所有格子等大、透明留白充分且零越界。方向目标为前/后/左右；当前水平镜像只能作为过渡。
+制作建议（未批准）：先完成单个动作的逐帧分镜，再让 AI **每次输出一张包含连续多帧的 RGBA Sprite Sheet**，按分镜选择适当 C×R 等尺寸格和宽透明间距；程序机械拆格、逐格拒绝越界后，再按统一根点坐标系无损装配正式 Atlas。画布必须给完整人体/武器留白，不能把 4×2/6×4 的“关键姿势稿”伪称真实高帧率动画，也不能靠固定网格反推帧数。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯，所有格子等大、透明留白充分且零越界。方向目标为前/后/左右；当前水平镜像只能作为过渡。
 
 ```text
 [GLOBAL STYLE DNA]
@@ -119,45 +119,57 @@ Keep the torso and weapon trajectory continuous with the adjacent supplied frame
 
 **当前运行时动作合同**：`idle`, `move`, `attack`, `guard`, `hit`, `evade`, `skill`, `combo`, `defeat`（仍须完整九动作）。**新美术生产合同**：将普通攻击与固定连携的制作需求合并为可扩展的攻击动画组，每名角色先设计四套与其武器/徒手能力适配的动作；直刺、下劈、横斩、蓄力重击是单剑角色的首批示例；连携是对这些攻击的排序与衔接，不另生成固定 `combo` 图集。当前 Godot 尚未实现四变体选择；新 ID 只能作为离线候选，不可擅自改 `.tres` 枚举或把 `combo` 槽当作第二攻击。循环动作要首尾衔接；非循环动作要有起手/发力/收势。实际播放时长仍由 `BattleActionTimeline` 控制。
 
-### 5.1 AI 优先生成：单帧、身份锁定、动作语义
+### 5.1 AI 默认生成：一张多帧动作 Sprite Sheet
 
-按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。**默认一次生成一个完整角色动作帧，不让 AI 直接绘制多格大图集**。不同帧的格子尺寸、排列与透明间距由后续程序计算，从源头避免角色/武器越格或互相重叠。视频转帧尚未完成真实验收，仅在用户要求试验时作为 candidate 路线；脚点编辑器不能识别真实支撑脚或动作阶段。
+按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。**每次 AI 生图应输出一张包含多个连续动作姿势的透明 Sprite Sheet，不是每次只输出一个帧。** 先由 §5.2 的动作分镜决定有效帧数 N，再决定适合当前画布/动作幅度的列数 C、行数 R 和统一格子；不能为填满 2×4 或 6×4 网格反过来固定 N。单张容不下完整动作时，可拆成多个连续时间段，**每次仍输出包含多帧的 Sheet**。视频提帧尚未真实验收，脚点编辑器也不能自动识别动作帧语义或真实承重脚。
 
-**统一坐标约定**：以同一批准战斗待机帧为所有动作的 `pose_local`/比例/方向基准；O 是标准待机骨盆在地面投影的逻辑根点，+x 向右，+y 向下，地线与镜头固定。逐帧分镜记录从首帧起算的 `root_offset`；打包时必须用同一 O 锚点，禁止逐帧按不透明轮廓重新居中/缩放。**姿态复位不等于世界位置复位**：攻击、技能、闪避、格挡、受击收尾回到待机兼容姿势，但不抹掉真实前冲；倒地保持终止躺卧，待机/行走/跑步首尾循环。
+**统一坐标约定**：以批准的战斗待机帧作为所有动作的身份、`pose_local`、比例和朝向基准；逻辑 O 是待机骨盆地面投影（+x 右、+y 下），地线及镜头固定。一个 Sheet 内各格的 O 位于**相同格内相对坐标**，不能按每格不透明轮廓单独居中/缩放。保留分镜 `root_offset`，攻击/闪避等动作的局部姿态复位不代表世界位置回到起点；`defeat` 停留在倒地终止态，`idle/walk/run` 检查首尾循环。
 
-**生成顺序（尽量自动，无须每帧手工标点）**：
+**默认生成与验收顺序**：
 
-1. 上传同一角色的批准设定/立绘及 `weapon_contract`（武器类型/数量/尺寸/握持方式；徒手写 `none`），让 AI 先生成固定 90° 侧视的完整战斗基准帧；不能默认所有角色持单剑，基准图需保留充足四边空白。
-2. 先完成 12 组动作各自的分镜，描述起手→承重/蓄力→有效→收势/恢复，以相邻已生成帧和基准图作为参考，逐张生成关键姿势，再生成真实过渡帧。不按固定 6/8 帧生成，也不要求 AI 同时画多动作。
-3. 按 `action_id` 独立保存该动作分镜与从 `000.png` 连续编号的真实源帧；先逐动作自动核对帧数/Alpha/原始图像边界和人物完整性，并按该动作帧序预览姿势连续性、循环或复位。视觉模型可初筛超出角色武器契约的武器增减/握持突变、正面、变形及明显姿势跳变，但不是可靠的真实支撑脚检测器。失败帧优先重新生成；**该动作预检通过后**才提交后续自动打包，仅疑难及最终样片要求人工复核。
-4. 将各动作**通过独立预检**的 RGBA 帧交给确定性打包程序，以统一 O 锚点下所有动作帧的非透明联合轮廓（含 root_offset）确定共同格子，保留各动作真实帧数及有序绝对帧索引；逐格断言四边透明边距 m>0（24px 试点推荐）、没有任何帧侵占邻格、空格透明。**零重叠是硬门槛**，不通过就增大格子重排或重新生成源帧。
+1. 附角色获准设定和 `weapon_contract`（武器/徒手、数量、尺寸与握持方式），固定侧视基准与统一 O。不要从其他角色套用武器或镜头。
+2. 从 §5.2 的分镜得到真实 N、连续全局帧号、阶段与各帧姿势。选择让人物/武器有足够空间的 `grid_columns=C`、`grid_rows=R`、共同格宽/高与透明留白；`C×R` 仅承载所选帧，不决定帧数。每次一个 `action_id` 的一组连续帧，按行优先从左到右、从上到下排列；不足格全透明。
+3. 使用下方多帧母提示词一次生成整张 RGBA Sheet。要求各格同一角色/武器、固定 O/地线/比例，姿势随分镜连续变化，武器、头发、衣摆和四肢均不触格线；不要文字、边框、残影或跨格内容。
+4. **先机械拆格再判定是否可用**：按已声明 C/R 等尺寸切片，检查整张尺寸可整除、实际非空格数量与预期帧数匹配、空格完全透明、每个非空格四边 Alpha 边距 m>0（24px 仅试点建议），任何人体/武器越格、裁切或轮廓混格一律拒绝。AI 不能保证精确网格，也不能可靠识别动作阶段；不合格时重新生成该动作或有问题的**连续多帧片段**，而不是靠猜帧、紧裁切或补黑边放行。
+5. 几何通过后按行优先帧序预览连续性、循环/复位、承重与根位移；AI 视觉仅初筛明显异常。最后由程序按统一 O 对通过验收的格子无损打包为运行时 Atlas，并再次自动检查零重叠和索引；疑难与最终少量样片才人工复核。
 
-**可复制的单帧生成母提示词**（每帧填入本帧的真实姿势描述，不将方括号说明绘制进图片）：
+**可复制的多帧 Sheet 母提示词**（附完整分镜与基准图，每格对应分镜中的一帧；不要在图上绘制编号或说明文字）：
 
 ```text
-Use the attached approved character design and accepted side-view base frame
-as strict identity and scale references. Generate ONE complete isolated
-original hand-painted 2D wuxia combat character frame, not a sprite sheet.
-Fixed 90-degree side view facing {direction}; stationary camera, unchanged
-ground line, head-to-body ratio, outfit, colors and the approved weapon contract.
-Weapon contract: {weapon_contract}. Preserve the specified type, count, size,
-handedness and grip; for unarmed fighters use NONE. Change grip, draw or sheathe
-only when explicitly required by the storyboard, showing the transition.
-Action: {action}, phase: {phase}. Precise pose: {pose_description}.
-Weight and planted foot: {support_description}.
-Weapon or striking-limb trajectory: {weapon_trajectory}.
-Shared coordinate system: origin O at the canonical idle ground-root projection,
-+x screen-right, +y downward; same scale and ground line in every action.
-Local pose relative to O: {pose_local}. Root offset from first action frame: {root_offset}.
-Motion relative to previous accepted frame: {adjacent_frame_delta}.
-End contract: {idle_compatible_pose_or_loop_seam_or_defeat_terminal}.
-Do not independently recenter, rescale, or mirror this character across frames.
-Preserve correct anatomy, complete head/hair/sleeves/boots and any equipped
-weapons or striking limbs, with generous empty margins on EVERY side. Readable simplified painterly silhouette.
-One character only. No second pose, no panels, no frame borders, no overlap,
-no camera movement, no perspective change, no fake extra limbs or weapons,
-no motion blur, no VFX, no background or text. Transparent RGBA if supported.
+Create ONE transparent 2D hand-painted wuxia animation SPRITE SHEET,
+containing MULTIPLE consecutive poses of ONE character's {action_id} action.
+Do NOT output a single frame.
+
+Approved identity reference: {character_reference}
+Weapon or unarmed contract: {weapon_contract}
+Action, phases and complete frame-by-frame pose list: {frame_pose_list}
+Global action frames included in this sheet: {first_frame_index} to {last_frame_index}
+Total effective frames in this sheet: {sheet_frame_count}
+Grid: exactly {grid_columns} columns × {grid_rows} rows.
+Every tile has the SAME width {cell_width}, height {cell_height}, camera,
+source pixel scale, internal ground baseline and logical root anchor O.
+Overall sheet size: {sheet_width} × {sheet_height}.
+Arrange frames in chronological ROW-MAJOR order, left to right, then top to bottom.
+One complete, distinct character pose per used tile; leave unused tiles fully transparent.
+
+For each frame, follow its corresponding storyboard pose, planted support foot,
+center of mass, weapon or striking-limb path, local pose and root offset.
+Preserve the same face, outfit, body proportions and approved weapon contract
+in EVERY tile. Use a fixed strict 90-degree side-on camera with no zoom.
+Keep legitimate action movement; do not recenter each frame by its alpha bounds.
+Maintain natural motion transitions and the specified loop or recovery pose.
+
+CRITICAL CELL ISOLATION: Every complete character silhouette, equipped weapon,
+hair, clothing and foot MUST remain entirely INSIDE its own tile with a
+generous transparent gutter on all four sides. NO overlap, contact, cropping
+or spill into any neighboring tile. Increase tile space rather than shrink
+the character or cut off limbs/weapons.
+No frame borders, grid lines, text, numbers, scenery, motion blur, repeated
+filler poses, extra weapons, camera rotation or background.
+True transparent RGBA output if supported.
 ```
+
+**注意**：图像模型可能画错格子、重复姿势或忽略精确像素尺寸；这些文本是**生成约束**，不是验收通过的证明。既有工具如无法可靠按预设网格切片和检测 Alpha 边距，必须保留 candidate，不得宣称已自动验收。
 
 **动作描述检查示例**：
 
