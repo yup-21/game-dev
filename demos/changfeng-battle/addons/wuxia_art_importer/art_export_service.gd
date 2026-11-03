@@ -57,7 +57,7 @@ static func _read_text(path: String) -> String:
 static func _all_images() -> Array[String]:
     var files: Array[String] = []
     _collect("res://scripts", files, ["gd"])
-    _collect("res://data", files, ["tres"], ["res://data/templates", "res://data/native/assets"])
+    _collect("res://data", files, ["tres"], ["res://data/templates", "res://data/art_previews", "res://data/native/assets"])
     _collect("res://scenes", files, ["tscn"])
     var root := DirAccess.open("res://")
     if root != null:
