@@ -1,0 +1,49 @@
+name: Five actor v06/v07 sprite candidate export
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - 'art-production/tools/batch_anchor_align.py'
+      - 'art-production/tools/test_batch_anchor_align.py'
+      - 'art-production/tools/build_actor_inbetweens_v07.py'
+      - 'art-production/tools/test_build_actor_inbetweens_v07.py'
+      - '.github/workflows/five-actor-sprite-candidates.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  create-candidates:
+    # Only the dedicated same-repository review branch receives generated files.
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'codex/all-actors-anchor-repack-20261103'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install sprite authoring dependency
+        run: python -m pip install --disable-pip-version-check 'Pillow>=11,<13' 'numpy>=2,<3' 'opencv-python-headless>=4.10,<5'
+      - name: Verify pixel-preserving anchor layout
+        run: python art-production/tools/test_batch_anchor_align.py
+      - name: Verify optical-flow candidate frame mapping and margins
+        run: python art-production/tools/test_build_actor_inbetweens_v07.py
+      - name: Generate v06 geometry candidates
+        run: python art-production/tools/batch_anchor_align.py --all
+      - name: Generate v07 inbetween Atlases and GIF previews
+        run: python art-production/tools/build_actor_inbetweens_v07.py --all
+      - name: Commit generated candidates to PR branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add art-production/candidates/2026-11-03/pursuer_captain/ art-production/candidates/2026-11-03/gu_qingshuang/ art-production/candidates/2026-11-03/green_wanderer/ art-production/candidates/2026-11-03/black_blade/ art-production/candidates/2026-11-03/night_assassin/
+          if ! git diff --cached --quiet; then
+            git commit -m "art: generate five actor v06 anchor and v07 inbetween candidate atlases"
+            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          fi
