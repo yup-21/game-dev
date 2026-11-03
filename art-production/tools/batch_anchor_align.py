@@ -263,7 +263,8 @@ def process_actor(actor: str, output_root: Path, annotation_root: Path | None,
                              int(entry["reviewed"]), *entry["root_motion"],
                              int(entry["source_edge_warning"])))
     report = {
-        "actor": actor, "status": "candidate", "source": str(source.relative_to(ROOT)),
+        "actor": actor, "status": "candidate",
+        "source": str(source.relative_to(ROOT) if source.is_relative_to(ROOT) else source),
         "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "atlas": png_name, "atlas_columns": GRID_COLS, "atlas_rows": GRID_ROWS,
         "cell_size": cell, "target_anchor": list(geometry(items, padding)[2:]),
