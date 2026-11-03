@@ -86,6 +86,21 @@ class AlignTests(unittest.TestCase):
             result = path / "candidate/black_blade"
             self.assertTrue((result / "frame_review.json").exists())
             self.assertTrue((result / "black_blade.csv").exists())
+            with (result / "black_blade.csv").open(encoding="utf-8", newline="") as stream:
+                rows = list(csv.DictReader(stream))
+            # Exported CSV must be readable by the same script and by PR #103's
+            # anchor editor: local action frame, plus absolute atlas_index.
+            self.assertEqual(len(rows), 23)
+            self.assertEqual((rows[0]["action"], rows[0]["frame"],
+                              rows[0]["atlas_index"]), ("idle", "0", "1"))
+            self.assertEqual((rows[-1]["action"], rows[-1]["frame"],
+                              rows[-1]["atlas_index"]), ("defeat", "1", "23"))
+            restored = tool.read_annotations(path / "candidate", "black_blade")
+            self.assertEqual(len(restored), 23)
+            self.assertFalse(restored[1].reviewed)
+            with patch.object(tool, "source_path", return_value=original):
+                tool.process_actor("black_blade", path / "round_trip",
+                                   path / "candidate", 24, False, False)
             self.assertEqual(len(list(result.glob("preview_*.gif"))), 9)
             with Image.open(result / "sprite_black_blade_atlas_anchor_v06.png") as packed:
                 self.assertEqual(packed.mode, "RGBA")
