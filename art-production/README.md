@@ -16,6 +16,15 @@
 
 Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontmatter 规范，详细工作规则由对应 Skill 在使用时按需加载；修改 Skill 只编辑本目录，不维护第二套副本。
 
+## 视频转精灵图生产工作流
+
+角色基础设定图 → 视频模型单动作 MP4 → FFmpeg 提帧 → 可选 rembg 去背景 → 人工脚点 / 根位移复核 → 统一透明帧和 Atlas → Godot 原生 Resource。
+
+- [操作指南与已知限制](tools/VIDEO_TO_SPRITE.md)
+- [视频动作提示词模板](prompts/VIDEO_ACTION_PROMPTS.md)
+- [命令行工具](tools/video_to_sprite.py)：extract / pack / assemble，输出候选及离线审查报告，不自动覆盖 in-use。
+- 沿用 [脚点标注编辑器](tools/sprite-anchor-editor.html) 的逐帧 CSV；根位移另行标注，不因逐帧对齐抹掉攻击前冲信息。
+
 ## 精灵帧固定点标注与自动重排
 
 - [交互式离线编辑器](tools/sprite-anchor-editor.html)：导入 PNG/WebP 多格图或独立帧，逐帧点击支撑点，按统一坐标和可设定透明边距重排，播放动画并导出 Atlas PNG、脚点 CSV、离线索引 JSON。
