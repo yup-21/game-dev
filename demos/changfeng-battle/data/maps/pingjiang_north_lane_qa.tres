@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=9 format=3]
 [ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
 [ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-03/pingjiang_north_lane_qa/scene_pingjiang_north_lane_background_v01.svg" id="2_bg"]
 [ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_north_lane_qa.tres" id="3_art"]
@@ -25,6 +25,23 @@ marker_kind = "vfx_anchor"
 position = Vector2(800, 300)
 radius = 24.0
 
+[sub_resource type="Resource" id="FromSouth"]
+script = ExtResource("4_marker")
+marker_id = "from_south"
+marker_kind = "spawn"
+position = Vector2(800, 3500)
+radius = 24.0
+
+[sub_resource type="Resource" id="ToSouth"]
+script = ExtResource("4_marker")
+marker_id = "to_south"
+marker_kind = "zone_exit"
+position = Vector2(800, 3860)
+radius = 90.0
+exit_side = "south"
+target_zone_id = "pingjiang_east_market_qa"
+target_entry_id = "from_north"
+
 [resource]
 script = ExtResource("1_map")
 content_id = "pingjiang_north_lane_qa"
@@ -38,4 +55,4 @@ image_rotation_degrees = 0.0
 image_scale = 1.0
 walkable_outline = PackedVector2Array(620, 40, 980, 40, 980, 3960, 620, 3960)
 obstacles = Array[Resource]([])
-markers = Array[Resource]([SubResource("SouthStart"), SubResource("LaneMiddle"), SubResource("NorthEnd")])
+markers = Array[Resource]([SubResource("SouthStart"), SubResource("LaneMiddle"), SubResource("NorthEnd"), SubResource("FromSouth"), SubResource("ToSouth")])

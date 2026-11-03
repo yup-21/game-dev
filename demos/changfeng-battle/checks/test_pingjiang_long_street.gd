@@ -2,6 +2,7 @@ extends SceneTree
 ## Native map QA: load only one active zone and transfer through zone_exit markers.
 const Scale = preload("res://scripts/combat_scale.gd")
 const Bake = preload("res://scripts/map_bake.gd")
+const ZoneConnection = preload("res://scripts/map_zone_connection.gd")
 const Shift = preload("res://scripts/world_viewport_offset.gd")
 const Spatial = preload("res://scripts/battle_spatial_service.gd")
 const WEST := "res://data/maps/pingjiang_long_street_qa.tres"
@@ -66,17 +67,41 @@ func _run() -> void:
         "FREE movement spans each independent map")
     var west_gate: Dictionary = wb.markers.get("street_end", {})
     var east_gate: Dictionary = eb.markers.get("east_entry", {})
+    var north_gate: Dictionary = eb.markers.get("to_north", {})
+    var south_gate: Dictionary = nb.markers.get("to_south", {})
     check(west_gate.get("kind", "") == "zone_exit"
         and west_gate.get("exit_side", "") == "east"
         and west_gate.get("target_zone_id", "") == east.content_id
-        and west_gate.get("target_entry_id", "") == "east_entry"
+        and west_gate.get("target_entry_id", "") == "from_west"
         and east_gate.get("kind", "") == "zone_exit"
         and east_gate.get("exit_side", "") == "west"
         and east_gate.get("target_zone_id", "") == west.content_id
-        and east_gate.get("target_entry_id", "") == "street_end",
-        "reciprocal exits are described by MapDefinition markers")
+        and east_gate.get("target_entry_id", "") == "from_east",
+        "reciprocal horizontal exits use separate entry spawn markers")
+    check(north_gate.get("kind", "") == "zone_exit"
+        and north_gate.get("exit_side", "") == "north"
+        and north_gate.get("target_zone_id", "") == north.content_id
+        and north_gate.get("target_entry_id", "") == "from_south"
+        and south_gate.get("kind", "") == "zone_exit"
+        and south_gate.get("exit_side", "") == "south"
+        and south_gate.get("target_zone_id", "") == east.content_id
+        and south_gate.get("target_entry_id", "") == "from_north",
+        "east market north gate and vertical south gate form a returnable route")
+    for route in [
+        [wb, "street_end", eb, "from_west", Vector2(400, 790)],
+        [eb, "east_entry", wb, "from_east", Vector2(4380, 790)],
+        [eb, "to_north", nb, "from_south", Vector2(800, 3500)],
+        [nb, "to_south", eb, "from_north", Vector2(1320, 845)]]:
+        var resolved: Dictionary = ZoneConnection.resolve_exit(route[0], route[1], route[2], radius)
+        check(resolved.get("target_zone_id", "") == route[2].id
+            and resolved.get("target_entry_id", "") == route[3]
+            and resolved.get("spawn", Vector2.INF) == route[4],
+            "native exit resolves to a walkable spawn: " + str(route[1]))
+    check(ZoneConnection.resolve_exit(wb, "street_mid", eb, radius).is_empty()
+        and ZoneConnection.resolve_exit(wb, "street_end", nb, radius).is_empty(),
+        "non-exit markers and mismatched target zones reject routing")
     check(nb.markers.has("south_start") and nb.markers.has("lane_middle"),
-        "vertical map has independent local anchors")
+        "vertical map keeps its original direct-menu spawn and local anchors")
     check(Shift.world_offset(Vector2(4600, 790), Vector2(4800, 1000)) == Vector2(-3200, 0)
         and Shift.world_offset(Vector2(200, 790), Vector2(3200, 1000)) == Vector2.ZERO,
         "horizontal camera resets at the new map, not a stitched world seam")
@@ -114,8 +139,8 @@ func _run() -> void:
             check(bool(visual.call("_activate_exit", "street_end")), "E connector loads east")
             check(str(visual.get("current_region_id")) == east.content_id
                 and int(visual.get("crossing_count")) == 1
-                and player.position == Vector2(200, 790),
-                "east map uses its own target entry spawn")
+                and player.position == Vector2(400, 790),
+                "east map uses a dedicated spawn separate from its exit")
             check(stage.get_node_or_null(west.content_id) == null
                 and stage.get_node_or_null(east.content_id) != null
                 and stage.position == Vector2.ZERO,
@@ -137,8 +162,8 @@ func _run() -> void:
                 "east-to-west return via target marker succeeds")
             check(str(visual.get("current_region_id")) == west.content_id
                 and int(visual.get("crossing_count")) == 2
-                and player.position == Vector2(4600, 790),
-                "return spawn and transition count are correct")
+                and player.position == Vector2(4380, 790),
+                "return uses dedicated west-map spawn and transition count")
             check(stage.get_node_or_null(east.content_id) == null
                 and stage.get_node_or_null(west.content_id) != null,
                 "return again has exactly one mounted map")
@@ -173,6 +198,24 @@ func _run() -> void:
             player_v.position = Vector2(800, 100)
             visual_v.call("_update_camera_and_status")
             check(stage_v.position == Vector2.ZERO, "north camera clamps at zero")
+            player_v.position = Vector2(800, 3860)
+            check(bool(visual_v.call("_activate_exit", "to_south")),
+                "vertical south exit loads east-market map on E interaction")
+            check(str(visual_v.get("current_region_id")) == east.content_id
+                and player_v.position == Vector2(1320, 845)
+                and stage_v.get_node_or_null(north.content_id) == null
+                and stage_v.get_node_or_null(east.content_id) != null,
+                "vertical map unloads and enters east through a distinct north entry")
+            check(not bool(visual_v.call("_activate_exit", "to_north")),
+                "target spawn does not immediately activate the nearby north exit")
+            player_v.position = Vector2(1305, 700)
+            check(bool(visual_v.call("_activate_exit", "to_north")),
+                "east north gate returns to the vertical street")
+            check(str(visual_v.get("current_region_id")) == north.content_id
+                and player_v.position == Vector2(800, 3500)
+                and int(visual_v.get("crossing_count")) == 2
+                and stage_v.position == Vector2(0, -3000),
+                "vertical entry is named, walkable and camera-clamped correctly")
         visual_v.queue_free()
         await process_frame
     print("PINGJIANG_SCROLL_PASS failures=%d" % failures)

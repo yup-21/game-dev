@@ -4,6 +4,7 @@ extends Node2D
 const ViewportShift = preload("res://scripts/world_viewport_offset.gd")
 const CombatScale = preload("res://scripts/combat_scale.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
+const ZoneConnection = preload("res://scripts/map_zone_connection.gd")
 const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const ACTOR_PROFILE_PATH := "res://data/native/animations/shen_changfeng.tres"
 const MOVE_SPEED := 265.0
@@ -15,7 +16,7 @@ const REGIONS := {
     "pingjiang_east_market_qa": {
         "title": "东市·续接街区", "map": "res://data/maps/pingjiang_east_market_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_east_market_qa.tres",
-        "size": Vector2(3200, 1000), "start": "east_entry"},
+        "size": Vector2(3200, 1000), "start": "from_west"},
     "pingjiang_north_lane_qa": {
         "title": "北街·南北长巷", "map": "res://data/maps/pingjiang_north_lane_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_north_lane_qa.tres",
@@ -80,12 +81,14 @@ func _ready() -> void:
 
 ## Load and display ONE native map; release the previous region after the
 ## destination Resource, layered art, polygon and entry point all validate.
-func _load_region(region_id: String, entry_id: String) -> bool:
+func _load_region(region_id: String, entry_id: String, prepared_bake = null) -> bool:
     if not REGIONS.has(region_id):
         return false
     var region: Dictionary = REGIONS[region_id]
-    var next_bake = MapBake.new(str(region["map"]))
-    if not next_bake.error.is_empty():
+    var next_bake = prepared_bake
+    if next_bake == null:
+        next_bake = MapBake.new(str(region["map"]))
+    if not next_bake.error.is_empty() or next_bake.id != region_id:
         push_error("Pingjiang QA map %s: %s" % [region_id, next_bake.error])
         return false
     var art := load(str(region["art"])) as WuxiaSceneArtProfile
@@ -94,14 +97,10 @@ func _load_region(region_id: String, entry_id: String) -> bool:
         push_error("Pingjiang QA art layers invalid for " + region_id)
         return false
     var entry: Dictionary = next_bake.markers.get(entry_id, {})
-    var coords: Array = entry.get("position", [])
-    if coords.size() != 2:
-        push_error("Pingjiang QA entry missing: " + entry_id)
-        return false
-    var entry_point := Vector2(float(coords[0]), float(coords[1]))
-    if not next_bake.is_walkable_point(entry_point,
-            CombatScale.footprint_radius_pixels()):
-        push_error("Pingjiang QA entry is not walkable: " + entry_id)
+    var entry_point: Vector2 = next_bake.marker_position(entry_id)
+    if str(entry.get("kind", "")) != "spawn" or entry_point == Vector2.INF or \
+            not next_bake.is_walkable_point(entry_point, CombatScale.footprint_radius_pixels()):
+        push_error("Pingjiang QA requires a walkable spawn marker: " + entry_id)
         return false
 
     var next_node := Node2D.new()
@@ -260,10 +259,12 @@ func _activate_exit(marker_id: String) -> bool:
     if marker.is_empty() or str(marker.get("id", "")) != marker_id:
         return false
     var target_id: String = str(marker.get("target_zone_id", ""))
-    var entry_id: String = str(marker.get("target_entry_id", ""))
     if target_id == current_region_id or not REGIONS.has(target_id):
         return false
-    if not _load_region(target_id, entry_id):
+    var target_bake = MapBake.new(str(REGIONS[target_id]["map"]))
+    var route: Dictionary = ZoneConnection.resolve_exit(bake, marker_id, target_bake,
+        CombatScale.footprint_radius_pixels())
+    if route.is_empty() or not _load_region(target_id, str(route["target_entry_id"]), target_bake):
         return false
     crossing_count += 1
     _update_camera_and_status()

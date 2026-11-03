@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=8 format=3]
 [ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
 [ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-02/pingjiang_long_street/scene_pingjiang_long_background_v01.svg" id="2_bg"]
 [ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_long_street_qa.tres" id="3_art"]
@@ -26,7 +26,14 @@ position = Vector2(4600, 790)
 radius = 110.0
 exit_side = "east"
 target_zone_id = "pingjiang_east_market_qa"
-target_entry_id = "east_entry"
+target_entry_id = "from_west"
+
+[sub_resource type="Resource" id="FromEast"]
+script = ExtResource("4_marker")
+marker_id = "from_east"
+marker_kind = "spawn"
+position = Vector2(4380, 790)
+radius = 24.0
 
 [resource]
 script = ExtResource("1_map")
@@ -41,4 +48,4 @@ image_rotation_degrees = 0.0
 image_scale = 1.0
 walkable_outline = PackedVector2Array(50, 635, 4799, 635, 4799, 930, 50, 930)
 obstacles = Array[Resource]([])
-markers = Array[Resource]([SubResource("PlayerStart"), SubResource("StreetMid"), SubResource("StreetEnd")])
+markers = Array[Resource]([SubResource("PlayerStart"), SubResource("StreetMid"), SubResource("StreetEnd"), SubResource("FromEast")])
