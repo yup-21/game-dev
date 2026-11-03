@@ -30,7 +30,7 @@ jobs:
       - name: Verify pixel-preserving anchor layout
         run: python art-production/tools/test_batch_anchor_align.py
       - name: Generate candidate Atlases and animation GIFs
-        run: python art-production/tools/batch_anchor_align.py
+        run: python art-production/tools/batch_anchor_align.py --all
       - name: Commit generated candidates to PR branch
         shell: bash
         run: |
