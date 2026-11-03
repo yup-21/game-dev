@@ -82,11 +82,10 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
                 root.add_child(shard)
 
     # Authored transparent textures remain the preferred production art.
-    var authored_spec: Dictionary = native_assets.record(source_event)
-    if str(authored_spec.get("kind", "")) != "vfx":
-        var lookup: String = source_event if not source_event.is_empty()             and not native_assets.record_for_event(source_event).is_empty() else kind
-        authored_spec = native_assets.record_for_event(lookup)
-    var authored: Texture2D = native_assets.texture(str(authored_spec.get("id", "")))         if not authored_spec.is_empty() else null
+    var authored_spec: Dictionary = native_assets.vfx_spec(source_event)
+    if authored_spec.is_empty():
+        authored_spec = native_assets.vfx_spec(kind)
+    var authored: Texture2D = native_assets.texture(str(authored_spec.get("id", ""))) if not authored_spec.is_empty() else null
     var authored_frames: PackedInt32Array = authored_spec.get("frame_indices", PackedInt32Array())
     if authored != null:
         var sprite := Sprite2D.new()
@@ -155,6 +154,11 @@ func handle_action_cues(cues: Array, actor_nodes: Dictionary) -> void:
         var slot: String = str(cue.get("vfx_slot", ""))
         if slot.is_empty() and event_kind not in ["ATTACK_DECLARED", "COMBO_TRIGGERED"]:
             continue
+        if not slot.is_empty():
+            var explicit_spec: Dictionary = native_assets.vfx_spec(slot)
+            if explicit_spec.is_empty() or native_assets.texture(str(explicit_spec.get("id", ""))) == null:
+                push_error("Configured VFX slot missing: " + slot)
+                continue
         var kind: String = "combo" if event_kind == "COMBO_TRIGGERED" else "slash"
         if str(cue.get("profile", "")) == "guard":
             kind = "guard"

@@ -5,7 +5,6 @@ const Story = preload("res://scripts/opening_story.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const RoleSprite = preload("res://scripts/opening_role_sprite.gd")
 const WorldViewport = preload("res://scripts/world_viewport_offset.gd")
-const Fallback = preload("res://scripts/fallback_assets.gd")
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
 const JADE = Color("3a8178")
@@ -102,6 +101,8 @@ func _ready() -> void:
 	_load_chapter_content()
 	_load_temple_background()
 	_build_temple_picture()
+	if temple_backdrop == null:
+		return
 	ui_font = SystemFont.new()
 	ui_font.font_names = PackedStringArray(["Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI"])
 	title_font = SystemFont.new()
@@ -123,7 +124,7 @@ func _ready() -> void:
 	for entry in _npcs():
 		var npc_sprite: Node2D = RoleSprite.new()
 		if not npc_sprite.configure(str(entry.get("character_id",""))):
-			push_warning("Cannot load story NPC sprite: " + str(entry.get("character_id","")))
+			push_error("Cannot load story NPC sprite: " + str(entry.get("character_id","")))
 			npc_sprite.free()
 			continue
 		characters_layer.add_child(npc_sprite)
@@ -622,24 +623,22 @@ func _load_temple_background() -> void:
 	temple_uses_fallback = false
 	temple_backdrop = null
 	story_art_profile = null
-	if scene_art_path.begins_with("res://data/") and not scene_art_path.contains("..") and ResourceLoader.exists(scene_art_path):
+	if not scene_art_path.is_empty():
+		if not scene_art_path.begins_with("res://data/") or scene_art_path.contains("..") or not ResourceLoader.exists(scene_art_path):
+			push_error("Authored chapter scene layers missing: " + scene_art_path)
+			return
 		var authored: WuxiaSceneArtProfile = ResourceLoader.load(scene_art_path) as WuxiaSceneArtProfile
-		if authored != null and authored.valid_for(story_world_size):
-			story_art_profile = authored
-			temple_backdrop = authored.background
-	if temple_backdrop == null and ResourceLoader.exists(background_path):
-		var original: Texture2D = load(background_path) as Texture2D
+		if authored == null or not authored.valid_for(story_world_size):
+			push_error("Invalid authored chapter scene layers: " + scene_art_path)
+			return
+		story_art_profile = authored
+		temple_backdrop = authored.background
+	elif ResourceLoader.exists(background_path):
+		var original: Texture2D = ResourceLoader.load(background_path, "Texture2D") as Texture2D
 		if _painted_content(original):
 			temple_backdrop = original
-	if temple_backdrop == null:
-		# Missing or blank artwork uses the dedicated original placeholder.
-		# Never substitute another chapter's painting.
-		temple_backdrop = Fallback.SCENE
-		temple_uses_fallback = true
-		push_warning("First-act painting is empty or unavailable: " + background_path
-			+ "; using dedicated default scene.")
 	if not _painted_content(temple_backdrop):
-		push_error("No nonblank illustrated background is available for the first act")
+		push_error("Required chapter background is missing or blank: " + background_path)
 
 ## WebP was loaded but the previous draw_texture_rect_region() path rendered
 ## white in the opening viewport. Use the same native TextureRect presentation

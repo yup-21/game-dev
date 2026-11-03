@@ -4,6 +4,7 @@ extends RefCounted
 
 const Manifest = preload("res://scripts/content/content_manifest.gd")
 const Definition = preload("res://scripts/content/content_definition.gd")
+const PresentationRefs = preload("res://scripts/content/presentation_reference_validator.gd")
 const DEFAULT_MANIFEST = "res://data/content_manifest.tres"
 # Production manifests are immutable for the lifetime of one running game.
 # Returning deep copies keeps battle-owned catalogs independent.
@@ -15,8 +16,11 @@ static var _default_resource_cache: Dictionary = {}
 var definitions: Dictionary = {"school": {}, "character": {}, "buff": {}, "item": {}, "affix": {}, "rule_catalog": {}, "action_timeline": {}, "skill": {}, "technique": {}, "effect_handler": {}, "story": {}, "chapter": {}, "quest": {}, "encounter": {}, "asset": {}, "map": {}}
 var definition_resources: Dictionary = {}
 var load_error: String = ""
+var _strict_presentation_graph: bool = true
 
 func _init(path: String = DEFAULT_MANIFEST) -> void:
+    # Non-default fixtures may intentionally import a subset of shared content.
+    _strict_presentation_graph = path == DEFAULT_MANIFEST
     if path == DEFAULT_MANIFEST and _default_cache_ready:
         definitions = _default_cache.duplicate(true)
         definition_resources = _default_resource_cache.duplicate()
@@ -54,6 +58,9 @@ func import_manifest(manifest: Resource) -> bool:
             staged[kind][id] = record.duplicate(true)
             staged_resources[kind][id] = definition
             ids[id] = true
+    var reference_error: String = PresentationRefs.validate(staged, staged_resources, _strict_presentation_graph)
+    if not reference_error.is_empty():
+        return _fail(reference_error)
     definitions = staged
     definition_resources = staged_resources
     return true

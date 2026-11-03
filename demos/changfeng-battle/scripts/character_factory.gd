@@ -6,7 +6,6 @@ const Runtime = preload("res://scripts/character_runtime.gd")
 const ItemCatalog = preload("res://scripts/item_catalog.gd")
 const Loadout = preload("res://scripts/content/character_loadout.gd")
 const Assets = preload("res://scripts/asset_registry.gd")
-const Fallback = preload("res://scripts/fallback_assets.gd")
 var registry
 var items
 var assets = Assets.new()
@@ -38,6 +37,7 @@ func create_runtime(character_id: String):
 func presentation_assets(character_id: String) -> Dictionary:
     var profile: Dictionary = registry.get_profile(character_id)
     if profile.is_empty():
+        push_error("Unknown character presentation Resource: " + character_id)
         return {}
     var output: Dictionary = {}
     var card: WuxiaCharacterDefinition = registry.definition_for(character_id)
@@ -48,7 +48,8 @@ func presentation_assets(character_id: String) -> Dictionary:
         # Read live Resource fields, not CharacterRegistry's immutable record
         # snapshot or the historical AssetRegistry. Editor imports take effect
         # even if this factory was constructed before the import.
-        output[key] = authored if authored != null else (Fallback.ACTOR_SHEET if key == "sprite_sheet" else Fallback.PORTRAIT)
+        # Absence remains explicit. Story-only cards may omit a battle sheet or portrait.
+        output[key] = authored
     var scene: PackedScene = card.battle_scene if card != null else null
     # Actor-scene registrations remain available for cards without one.
     output["battle_scene"] = scene if scene != null else assets.scene_for_character(character_id)

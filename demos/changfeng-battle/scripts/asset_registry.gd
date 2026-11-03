@@ -90,6 +90,14 @@ func texture_for_character(character_id: String, kind: String) -> Texture2D:
 func record_for_event(event_kind: String) -> Dictionary:
     return record(str(event_index.get(event_kind, "")))
 
+## A VFX binding may name a native asset ID or an authored event_kind.
+func vfx_spec(slot: String) -> Dictionary:
+    var direct: Dictionary = record(slot)
+    if str(direct.get("kind", "")) == "vfx":
+        return direct
+    var event: Dictionary = record_for_event(slot)
+    return event if str(event.get("kind", "")) == "vfx" else {}
+
 func texture_for_event(event_kind: String) -> Texture2D:
     return texture(str(event_index.get(event_kind,"")))
 

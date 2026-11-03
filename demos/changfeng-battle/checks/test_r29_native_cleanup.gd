@@ -49,10 +49,10 @@ func _run() -> void:
         and Fallback.STORY_POSE.get_height() >= 256
         and Fallback.SCENE.get_width() == 1600,
         "all four neutral fallback assets import at expected dimensions")
-    check(Art.sheet_for_character("unbound_test_actor") == Fallback.ACTOR_SHEET
-        and Art.portrait_for_character("unbound_test_actor") == Fallback.PORTRAIT
-        and Art.story_pose_for_character("unbound_test_actor") == Fallback.STORY_POSE,
-        "missing bindings resolve to dedicated placeholders")
+    check(Art.sheet_for_character("unbound_test_actor") == null
+        and Art.portrait_for_character("unbound_test_actor") == null
+        and Art.story_pose_for_character("unbound_test_actor") == null,
+        "missing formal bindings do not silently resolve to placeholders")
     check(Art.portrait_for_character("shen_changfeng") != Fallback.PORTRAIT
         and Art.uses_supplied_sheet_for_character("gu_qingshuang"),
         "valid original artwork is never downgraded")

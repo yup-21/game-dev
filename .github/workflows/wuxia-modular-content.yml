@@ -21,6 +21,7 @@ on:
       - 'demos/changfeng-battle/checks/test_native_content_resources.gd'
       - 'demos/changfeng-battle/checks/test_content_templates.gd'
       - 'demos/changfeng-battle/checks/test_actor_animation_profile.gd'
+      - 'demos/changfeng-battle/checks/test_presentation_references.gd'
       - 'demos/changfeng-battle/checks/test_scene_art_profile.gd'
       - 'demos/changfeng-battle/checks/test_art_importer.gd'
       - 'demos/changfeng-battle/checks/test_art_pilot_candidates.gd'
@@ -76,6 +77,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_shen_martial_vfx.gd
       - name: Migrate live Resource action bindings and validate fallbacks
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_resource_action_migration.gd
+      - name: Required art and animation/timeline/VFX reference validation
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_presentation_references.gd
       - name: Native layered scene art profile
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_scene_art_profile.gd
       - name: Pingjiang long-street scrolling scene and map contract
@@ -130,7 +133,7 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r27_authoring_pipeline.gd
       - name: R28 safe legacy presentation cleanup and entry contracts
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r28_legacy_cleanup.gd
-      - name: R29 declarative prologue, canonical battle and neutral art fallback
+      - name: R29 declarative prologue, canonical battle and opt-in placeholders
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r29_native_cleanup.gd
       - name: R32 typed action windows, clips and event bindings
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_r32_native_action_timeline.gd
