@@ -144,7 +144,7 @@ Transparent background; no borders, labels or extra equipment.
 | run | 快速蹬地、跨步、腾空/落脚、换脚及手臂摆动，循环速度与步幅明显不同于 walk |
 | attack variants | 每名角色按 `weapon_contract` 制作四套适用攻击；单剑角色可采用 §5.2 的直刺/下劈/横斩/蓄力重击示例，明确承重、打击轨迹、根位移与收势 |
 | skill | 依具体武学设计蓄势、释放、接触与恢复，不用通用攻击动作冒充专属技能 |
-| evade | 蹬地、侧移/腾挪、落地、恢复平衡；合法根位移不被归零 |
+| evade | 相对面朝方向向后闪避；`evade_style` 可选后撤步、后滑步、后翻滚、后跃；蹬地、落地、复位，不抹掉向后位移 |
 | guard | 按角色武器或徒手防御方式架挡/卸力→承重缓冲→短暂稳定→撤架归位，接触和支撑不乱跳 |
 | hit | 受力反应、退让或缓冲、恢复待机，禁止突然无原因反弹 |
 | defeat | 失衡→膝/躯干接地→最终静止倒地；这是不恢复站姿的终止例外 |
@@ -153,7 +153,7 @@ Transparent background; no borders, labels or extra equipment.
 
 ### 5.2 AI 动作分镜：先规划帧数，再逐帧绘图
 
-**默认先运行下列简版分镜提示词（仅输出文本，不生图）**。依据 [分镜合同 §2.1](../standards/SPRITE_ANIMATION_QA.md)，每种动作单独规划；分镜确定 `total_frames` 和逐帧姿势后，再按 §5.1 为每次多帧 Sheet 填入 `{frame_pose_list}`、`{sheet_frame_count}`、`{grid_columns}` 与 `{grid_rows}`。不要预设 8 帧、2×4 或 6×4 网格，也不要为填满格子添加静止重复帧。
+**默认先运行下列简版分镜提示词（仅输出文本，不生图）**。`evade` 的 `{action_description}` 必须写明“向后闪避”，并附 `evade_style`（默认 `backstep`；可选 `slide`、`roll`、`leap`，均向后）；其他动作不用添加该参数。依据 [分镜合同 §2.1](../standards/SPRITE_ANIMATION_QA.md)，每种动作单独规划；分镜确定 `total_frames` 和逐帧姿势后，再按 §5.1 为每次多帧 Sheet 填入 `{frame_pose_list}`、`{sheet_frame_count}`、`{grid_columns}` 与 `{grid_rows}`。不要预设 8 帧、2×4 或 6×4 网格，也不要为填满格子添加静止重复帧。
 
 ```text
 请为2D横版武侠角色设计动作分镜，只输出文本。
