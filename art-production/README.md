@@ -16,6 +16,11 @@
 
 Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontmatter 规范，详细工作规则由对应 Skill 在使用时按需加载；修改 Skill 只编辑本目录，不维护第二套副本。
 
+## 精灵帧固定点标注与自动重排
+
+- [交互式离线编辑器](tools/sprite-anchor-editor.html)：导入 PNG/WebP 多格图或独立帧，逐帧点击支撑点，按统一坐标和可设定透明边距重排，播放动画并导出 Atlas PNG、脚点 CSV、离线索引 JSON。
+- [使用指南与限制](tools/SPRITE_ANCHOR_EDITOR.md)：包含沈长风 v05 多图导入方式、逐帧人工复核、与旧脚本的 CSV 接口区别。工具仅用于 candidate 美术制作，不改变正式 Godot 原生绑定。
+
 ## 核心约束
 
 1. 游戏方向为原创国风手绘、原生 2D 与具有纵深和遮挡的 HD-2D 构图；不强制低像素。
