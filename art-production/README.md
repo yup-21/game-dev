@@ -21,6 +21,12 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 - [交互式离线编辑器](tools/sprite-anchor-editor.html)：导入 PNG/WebP 多格图或独立帧，逐帧点击支撑点，按统一坐标和可设定透明边距重排，播放动画并导出 Atlas PNG、脚点 CSV、离线索引 JSON。
 - [使用指南与限制](tools/SPRITE_ANCHOR_EDITOR.md)：包含沈长风 v05 多图导入方式、逐帧人工复核、与旧脚本的 CSV 接口区别。工具仅用于 candidate 美术制作，不改变正式 Godot 原生绑定。
 
+## 精灵动作生产与失败返工
+
+- [逐帧/视频/3D 渲染统一质量合同](standards/SPRITE_ANIMATION_QA.md)：集中列出身份变形、侧视角、承重脚、根位移、断剑/越格、Alpha 闪烁、真实补帧、Atlas 装配及 Godot 实速验收的返工闸门。
+- 角色生成时调用 `skills/wuxia-character-art`，审核和原生资源接入调用 `skills/wuxia-asset-pipeline`；已有脚点编辑器仍负责候选标注与无损打包。
+- 新的视频生产工具若已合入，可按 `tools/VIDEO_TO_SPRITE.md` 提取、打包、合并，输出的离线根运动与 JSON 不能自动驱动 Godot。
+
 ## 核心约束
 
 1. 游戏方向为原创国风手绘、原生 2D 与具有纵深和遮挡的 HD-2D 构图；不强制低像素。
