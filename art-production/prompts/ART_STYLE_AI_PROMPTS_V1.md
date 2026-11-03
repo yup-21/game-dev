@@ -1,6 +1,6 @@
 # 《长风浮生录》统一美术风格与 AI 生成提示词模板 V1
 
-> 状态：**制作模板 / candidate baseline**，供整个项目使用，不局限 Demo。继承 [ART_PRODUCTION_STANDARD.md](../standards/ART_PRODUCTION_STANDARD.md)；若有冲突，以运行时 Resource 合同及已批准素材为准。本文的建议尺寸、配色和帧数必须通过首个角色与场景试点后才能标记为 frozen。AI 生成图一律先进入 concept/candidate，不能自动视为 approved。
+> 状态：**制作模板 / candidate baseline**，供整个项目使用，不局限 Demo。继承 [ART_PRODUCTION_STANDARD.md](../standards/ART_PRODUCTION_STANDARD.md)；若有冲突，以运行时 Resource 合同及已批准素材为准。本文的建议尺寸、配色和帧数必须通过首个角色与场景试点后才能标记为 frozen。AI 生成图一律先作为 `candidate`；concept/preview 只是制作用途，不能自动替换 `in_use`。
 
 ## 1. 全项目共同视觉语言（Style DNA）
 
@@ -105,8 +105,9 @@ character sheet and portrait. Exact same face, hair, costume, weapon, palette,
 body-to-head ratio and shoes. Action: {action}; phase: {startup_active_recovery};
 frame number: {frame_index} of {frame_count}; view direction: {direction}.
 Consistent fixed orthographic-ish 2.5D game camera, full character and
-entire weapon visible, identical feet contact point ({foot_anchor}) and
-character scale across frames. Crisp readable silhouette at small in-game
+entire weapon visible, phase-correct planted contact marker ({foot_anchor}) and consistent
+character scale across frames. Keep root translation separate from local pose;
+do not pin both feet or erase a legitimate lunge. Crisp readable silhouette at small in-game
 display size, simplified micro-detail without changing identity,
 transparent RGBA, no floor shadow, no background or UI.
 Keep the torso and weapon trajectory continuous with the adjacent supplied frames.
@@ -114,6 +115,26 @@ Keep the torso and weapon trajectory continuous with the adjacent supplied frame
 ```
 
 基础动作合同：`idle`, `move`, `attack`, `guard`, `hit`, `evade`, `skill`, `combo`, `defeat`。循环动作要真正循环；非循环动作要有起手/有效/收招。建议先用 `idle`、`move`、`attack` 三个动作验证脚点、比例、帧间连贯性，再制作九类全集。实际播放时长由 `BattleActionTimeline` 管理，不由动画修改战斗规则。
+
+### 5.1 精灵动作生成失败规避提示（逐帧 / 视频共用）
+
+所有新候选先按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 设计 `起手→承重/蓄力→有效→收势`。一次只生成一个动作，帧数按动作复杂度决定，不固定 6/8 帧。附同一批准设定图和前后相邻姿势；横向战斗动作锁定严格 90° 侧视、地面和镜头。沈长风始终一柄右手直剑，左手空手，禁止变成双剑或正面姿势。战斗小人简化细节但保持手绘武侠辨识度。
+
+```text
+Use the attached approved character reference for every frame. One original
+hand-painted wuxia game character, strict fixed 90-degree side view, unchanged
+camera, ground, size, costume, face and palette. Exactly {weapon_count} weapon(s),
+held only in {weapon_hand}; no extra blades or changed grip. Action {action},
+phase {startup_active_recovery}, planted contact {support_foot}, intended
+character root motion {root_motion_description}. Full silhouette and weapon
+with generous blank safety margin. Continuous weight shift, readable force,
+coherent hands, boots and clothing. No camera pan/zoom/cut, no duplicate limbs,
+no cropped tip, no motion-blur trails, no animation VFX baked onto the actor.
+```
+
+- **逐帧路线**：用真实透明 PNG 先完成关键帧与实际间帧，再装图集；不得用拉伸单帧、重复帧或简单提高播放 FPS 冒充流畅动作。
+- **视频路线**：每个动作单独生成稳定镜头视频，再按真实抽样 FPS 提帧、逐帧去背景、标注真实脚点与根位移。视频模型无法保证原样持剑、时序及透明度，抽帧后逐帧检查身份闪变、脚滑、剑尖、残影。
+- **装配路线**：先检查源帧是否完整，再用脚点编辑器无损对齐与打包，透明边距 24px 仅为试点建议，不逐帧缩放。先审查动作 GIF/视频，再在 Godot 按 `WuxiaActorAnimationProfile` + `BattleActionTimeline` 实速验收。
 
 ## 6. 场景设定与可运行地图贴图
 
