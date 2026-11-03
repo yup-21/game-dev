@@ -4,10 +4,12 @@ extends Resource
 const CombatScale = preload("res://scripts/combat_scale.gd")
 ## A character-owned visual action library. Legacy nine-action resources stay valid.
 
-const REQUIRED_ACTIONS := ["idle", "walk", "run", "attack1", "attack2",
-    "attack3", "attack4", "skill", "evade", "guard", "hit", "defeat"]
-const LEGACY_REQUIRED_ACTIONS := ["idle", "move", "attack", "guard", "hit",
+## Keep the historical constant stable for existing art contracts and tests.
+const REQUIRED_ACTIONS := ["idle", "move", "attack", "guard", "hit",
     "evade", "skill", "combo", "defeat"]
+const LEGACY_REQUIRED_ACTIONS := REQUIRED_ACTIONS
+const MODERN_REQUIRED_ACTIONS := ["idle", "walk", "run", "attack1", "attack2",
+    "attack3", "attack4", "skill", "evade", "guard", "hit", "defeat"]
 const LEGACY_ALIASES := {
     "walk": "move", "run": "move",
     "attack1": "attack", "attack2": "attack",
@@ -56,7 +58,7 @@ func valid_profile() -> bool:
             return false
         seen[clip.action] = true
     var modern := true
-    for action in REQUIRED_ACTIONS:
+    for action in MODERN_REQUIRED_ACTIONS:
         if not seen.has(action):
             modern = false
             break

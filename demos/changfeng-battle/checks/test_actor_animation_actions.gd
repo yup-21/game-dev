@@ -32,7 +32,7 @@ func _run() -> void:
     var timeline = ActionTimeline.new()
     _check(timeline.load_error.is_empty(), "semantic timeline loads")
     var player: AnimationPlayer = NativeClips.attach(sprite, timeline, profile)
-    for action in Profile.REQUIRED_ACTIONS:
+    for action in Profile.MODERN_REQUIRED_ACTIONS:
         _check(player.has_animation(action), "registered " + action)
     _check(player.get_animation("walk").loop_mode != Animation.LOOP_NONE and
         player.get_animation("run").loop_mode != Animation.LOOP_NONE,
