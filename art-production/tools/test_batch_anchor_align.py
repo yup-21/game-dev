@@ -64,6 +64,15 @@ class AlignTests(unittest.TestCase):
                          reports[6]["anchor_target"][0], 8)
         self.assertTrue(reports[7]["source_edge_warning"])
 
+    def test_detached_fragment_warning_is_non_destructive(self):
+        frame = Image.new("RGBA", (100, 100))
+        draw = ImageDraw.Draw(frame)
+        draw.rectangle((7, 30, 38, 84), fill=(80, 70, 65, 255))
+        draw.rectangle((68, 3, 87, 20), fill=(80, 70, 65, 255))
+        original = frame.tobytes()
+        self.assertGreaterEqual(tool.detached_alpha_islands(frame), 1)
+        self.assertEqual(frame.tobytes(), original)
+
     def test_reject_unreviewed_root_motion(self):
         atlas, marks = synthetic_atlas()
         frames = tool.split_frames(atlas)
