@@ -25,6 +25,9 @@ parameters = {"card_id": "r24_mist_follow", "count": 1, "destination": "hand"}
 [sub_resource type="Resource" id="Usage"]
 script = ExtResource("2_usage")
 usage_id = "veil"
+animation_action = "skill"
+vfx_slot = "r24_status_vfx"
+vfx_trigger = "skill_visual_active"
 display_name = "敛雾"
 timing = "ACTION"
 cost_qi = 0

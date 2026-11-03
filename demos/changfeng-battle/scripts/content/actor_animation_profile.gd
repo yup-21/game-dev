@@ -24,6 +24,9 @@ const LEGACY_ALIASES := {
 @export var feet_adjust: Vector2 = Vector2.ZERO
 @export var actor_scale: Vector2 = Vector2(0.53, 0.53)
 @export var faces_left_unflipped: bool = false
+## Explicit resource-owned fallbacks. Exact authored actions always win; this
+## table never fabricates frames or turns one atlas into twelve drawings.
+@export var action_fallbacks: Dictionary = {}
 @export var clips: Array[Resource] = []
 
 func valid_profile() -> bool:
@@ -57,6 +60,19 @@ func valid_profile() -> bool:
             # must use the same reference cell to prevent visual size jumps.
             return false
         seen[clip.action] = true
+    # Migrated legacy profiles advertise the modern action API with explicit
+    # mappings to their existing, actually authored nine-clip library.
+    for action in action_fallbacks:
+        if not action is String or not action.is_valid_identifier() or action != action.to_lower():
+            return false
+        var target: Variant = action_fallbacks[action]
+        if not target is String or not target.is_valid_identifier() or target != target.to_lower() \
+                or str(action) == str(target) or not seen.has(str(target)):
+            return false
+    if not action_fallbacks.is_empty():
+        for required in MODERN_REQUIRED_ACTIONS:
+            if not seen.has(required) and not action_fallbacks.has(required):
+                return false
     var modern := true
     for action in MODERN_REQUIRED_ACTIONS:
         if not seen.has(action):
@@ -80,7 +96,7 @@ func resolved_clip_for(action: String) -> WuxiaActorAnimationClip:
     var exact: WuxiaActorAnimationClip = clip_for(action)
     if exact != null:
         return exact
-    return clip_for(str(LEGACY_ALIASES.get(action, "")))
+    return clip_for(str(action_fallbacks.get(action, LEGACY_ALIASES.get(action, ""))))
 
 func idle_atlas() -> Texture2D:
     var idle: WuxiaActorAnimationClip = clip_for("idle")

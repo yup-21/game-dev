@@ -26,6 +26,9 @@ text_value = "r24_mist_edge"
 [sub_resource type="Resource" id="Stage_one"]
 script = ExtResource("2_node")
 node_id = "start"
+animation_action = "skill"
+vfx_slot = "r24_status_vfx"
+vfx_trigger = "skill_visual_active"
 stage = "雾起"
 next_node = "finish"
 timing = "ACTION"
@@ -36,6 +39,9 @@ effects = Array[Resource]([SubResource("Qi")])
 [sub_resource type="Resource" id="Stage_two"]
 script = ExtResource("2_node")
 node_id = "finish"
+animation_action = "guard"
+vfx_slot = "r24_status_vfx"
+vfx_trigger = "guard_active"
 stage = "云开"
 next_node = "finish"
 timing = "ACTION"

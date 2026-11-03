@@ -74,6 +74,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_actor_animation_actions.gd
       - name: Shen Changfeng martial VFX atlas and usage bindings
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_shen_martial_vfx.gd
+      - name: Migrate live Resource action bindings and validate fallbacks
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_resource_action_migration.gd
       - name: Native layered scene art profile
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_scene_art_profile.gd
       - name: Pingjiang long-street scrolling scene and map contract
