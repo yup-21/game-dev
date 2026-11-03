@@ -169,7 +169,7 @@ $('prevFrame').onclick=()=>select(selected-1);$('nextFrame').onclick=()=>select(
 $('copyAnchor').onclick=()=>{
  const f=frames[selected];if(!f)return;const from=[...frames].slice(0,selected).reverse().find(x=>x.action===f.action&&x.anchor);
  if(!from){message('此动作前面没有已标注的帧。',true);return}
- f.anchor={...from.anchor};f.type=from.type;f.reviewed=false;invalidate();select(selected);message('已复制上一支点。位置仅作初稿，请手动点击复核。')
+ f.anchor={x:limit(from.anchor.x,0,f.sw-1),y:limit(from.anchor.y,0,f.sh-1)};f.type=from.type;f.reviewed=false;invalidate();select(selected);message('已复制上一支点。位置仅作初稿，请手动点击复核。')
 };
 $('clearAnchor').onclick=()=>{const f=frames[selected];if(f){f.anchor=null;f.reviewed=false;invalidate();select(selected)}};
 document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;if(e.key==='ArrowLeft')select(selected-1);if(e.key==='ArrowRight')select(selected+1)});
