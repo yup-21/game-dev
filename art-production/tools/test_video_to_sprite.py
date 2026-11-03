@@ -113,7 +113,8 @@ class CandidateWorkflowTests(unittest.TestCase):
         self.assertEqual(data["actions"]["idle"]["frames"], [0, 1, 2, 3])
         self.assertEqual(data["actions"]["attack"]["frames"], [4, 5, 6, 7])
         self.assertIn("guard", data["missing_runtime_actions"])
-        self.assertEqual(Image.open(out / "atlas.png").size[0], data["cell_size"][0] * 4)
+        with Image.open(out / "atlas.png") as combined_atlas:
+            self.assertEqual(combined_atlas.size[0], data["cell_size"][0] * 4)
         with self.assertRaisesRegex(ValueError, "Nine runtime actions"):
             pipeline.assemble(Namespace(inputs=[str(idle)], output=str(self.root / "not_created"),
                                         columns=4, margin=24, require_complete=True))
