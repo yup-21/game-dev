@@ -7,8 +7,8 @@
 - 中国武侠手绘、精细但简洁的轮廓、克制的水墨肌理和真实材质；HD-2D 描述固定镜头、纵深、前后景及遮挡，不强制像素画，也不使用 3D 棋盘叠图。
 - 角色立绘与战斗小人属于同一身份设计：发型、服装配色、武器及标志性配件不得无故变化。
 - 地图使用可阅读的地面空间，中央可行走区域与场景装饰分离；效果不得遮住重要站位、交锋目标或 CTB。
-- `concept`/ `preview`：方向探索；`candidate`：技术检查通过但未人工批准；`runtime`：当前能被加载，不代表美术质量合格；`approved`：图像、动作、脚点、授权、GUI 全通过。
-- 新候选必须保留来源、生成说明、修改记录与权属；**未经批准不可覆盖正式运行图**。`assets/production_manifest.json` 只属于离线审核，不是游戏内容入口。
+- 素材版本管理只区分 `candidate` 与 `in_use`，前者可有多份，后者由当前原生 Resource 绑定决定。`concept`/`preview` 是制作用途描述，视觉审核结果记录在工作单中，**不另建管理状态**；运行可加载不等于图像和动作质量已通过。
+- 候选记录至少保留实际提示词和目标原生 Resource；可另保留来源/权属等已知信息，不强制补造模型、seed 或审批链。**未完成目标素材的人工验收不可替换当前运行绑定**；离线工作单不是游戏内容入口。
 
 ## 2. 场景制作合同
 
@@ -48,14 +48,20 @@
 - 朝向要求最终实现前、后、左、右一致的轮廓与脚点。目前播放器对左右使用镜像，上下仍沿用最后水平朝向；在完整方向动作接入前，不能把角色标为四方向最终批准。
 - 游戏规则时序由 `BattleActionTimeline` 记录语义窗口；动画帧只负责表现，不能写 HP、Qi、CTB、背包或响应权。
 
+### 3.1 精灵图逐帧质量闸门（强制执行）
+
+角色动画无论来自单帧 AI、视频提帧还是 3D 渲染，均按 [精灵动画生产与验收合同](SPRITE_ANIMATION_QA.md) 检查身份/单手武器、固定方向、发力姿势、逐帧承重接触点、根位移、真实 Alpha、无损留白、帧序与 Godot 实播。脚点对齐不能代替根运动；补帧与提高 FPS 不能替代动作修正。旧 6×4 只是兼容方案，单动作帧数应按复杂度选择。
+
+**失败必须返工原帧**：断剑/断袖/越格、额外武器、镜头改变、关键姿势错误及视频抠图闪烁不能靠重新排版“修好”。人工脚点未复核或没有 Godot 实测，只能保留 `candidate`，不能宣称 `in_use` 已完成视觉验收。
+
 ## 4. Godot 原生导入方式
 
-1. 在 `assets/characters/` 放置最终 Atlas、立绘；概念版本保持在 `assets/concepts/`，并记录制作来源。
+1. 候选原始帧/Atlas 留在 `art-production/candidates/`；经过 Godot Art Production 导入工具后，游戏图像统一从 `res://assets/imported/` 受原生 Resource 显式引用。不得将候选目录作为运行时自动扫描入口。
 2. 复制 `data/templates/actor_animation_profile.tres`，设定 Atlas、列/行、脚点偏移、缩放和每个动作的实际帧索引。循环动作按 `loop_fps` 播放；非循环动作由既有 `BattleActionTimeline` 控制完成时长。
 3. 在对应 `WuxiaCharacterDefinition` 的 `animation_profile` 属性引用该 Resource。正式角色仍需在 `data/content_manifest.tres` 注册；**无需修改 `BattleModel` 或按角色 ID 添加脚本分支**。
 4. 场景制作使用 `WuxiaSceneArtProfile` 引用同画布 `background`、`ground`、`foreground` 和可选 `weather`，并挂到战斗地图 `WuxiaMapDefinition` / `WuxiaGridMapDefinition.scene_art`，或剧情章节 `WuxiaChapterSceneDefinition.scene_art`。地图几何仍由原 Map Resource 决定；未挂 Profile 的旧地图和旧章节继续显示单张背景。正式场景须同时交付可编辑分层母版。
 5. 导入后预览完整动作；检查角色移动脚点不漂移、攻击方向正确、VFX 与有效帧对齐。未配置 Profile 的老角色保持旧 6×4 兼容播放。
-6. 成品通过材质边缘、动作连续、成本/性能、资源依赖与授权审查之后，才进入 `approved`。
+6. 成品经过材质边缘、动作连续、资源依赖、视觉效果与权属审查后，才能选择替换当前 `in_use` 绑定；审核结论保存在工作单，不新增 `approved` 管理状态。
 
 ## 5. 各类素材的原生交付合同
 
