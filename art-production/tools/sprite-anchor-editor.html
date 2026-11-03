@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>精灵帧固定点标注与重排工具</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Microsoft YaHei",sans-serif;background:#111821;color:#e5edf5}
+*{box-sizing:border-box}body{margin:0}header{padding:16px 22px;background:#1b2835;border-bottom:1px solid #354659;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:20px;margin:0}h2{font-size:15px;margin:0 0 10px}small,.muted{color:#9eb0c2}.tag{font-size:12px;color:#a6d8ca;background:#244a45;border-radius:16px;padding:4px 10px}
+main{display:grid;grid-template-columns:minmax(290px,350px) minmax(450px,1fr);min-height:calc(100vh - 68px)}
+aside{border-right:1px solid #344459;padding:16px;max-height:calc(100vh - 68px);overflow:auto}
+section{padding:15px;background:#1a2532;border:1px solid #35465a;border-radius:12px;margin-bottom:14px}
+label{display:block;font-size:12px;color:#bdccd9;margin:10px 0 5px}input,select,button{font:inherit}input[type=text],input[type=number],input[type=file],select{background:#111a25;color:#eef5fc;border:1px solid #45576e;border-radius:7px;padding:7px;width:100%;min-width:0}
+input[type=file]{font-size:12px}input[type=checkbox]{vertical-align:middle}.inline{display:grid;grid-template-columns:1fr 1fr;gap:9px}.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+button{cursor:pointer;background:#304459;color:#ecf5ff;border:1px solid #4b617a;border-radius:7px;padding:8px 11px}
+button:hover{background:#395570}button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:#2e766c;border-color:#4c998a}.primary:hover{background:#358b7f}.warn{color:#efc486}.danger{color:#f4abab}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.actions button{padding:6px 9px}
+.actions button.active,.thumb.active{border-color:#8fdbc8;background:#24554d}
+.workspace{padding:18px 20px;min-width:0}.topline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+canvas{background-color:#d3d8dc;background-image:linear-gradient(45deg,#b5c0c7 25%,transparent 25%),linear-gradient(-45deg,#b5c0c7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#b5c0c7 75%),linear-gradient(-45deg,transparent 75%,#b5c0c7 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;display:block;max-width:100%;border-radius:8px}
+#editor{width:760px;height:auto;touch-action:manipulation;cursor:crosshair}#preview{width:760px;height:auto}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:7px;max-height:280px;overflow:auto;padding:4px}
+.thumb{text-align:center;padding:5px;min-width:0;font-size:11px}.thumb canvas{width:100%;margin-bottom:4px}.thumb .ok{color:#87d8aa}.thumb .missing{color:#ecb48a}
+#message{white-space:pre-wrap;line-height:1.6;font-size:13px;background:#13202b;padding:12px;border-radius:8px;min-height:48px}
+.toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.toolbar>div{min-width:90px;flex:1}
+.callout{border-left:3px solid #d19b5a;padding:8px 11px;background:#342d27;border-radius:5px;font-size:12px;line-height:1.5}
+@media(max-width:850px){main{display:block}aside{max-height:none;border-right:0;border-bottom:1px solid #344459}.workspace{padding:12px}}
+</style>
+</head>
+<body>
+<header><h1>精灵帧固定点标注 / Atlas 重排</h1><span class="tag">离线运行 · 原像素 · 无逐帧缩放</span><small>用于美术候选制作，不修改 Godot 正式资源</small></header>
+<main>
+<aside>
+<section>
+<h2>① 导入多格图集</h2>
+<label>动作名（与现有 CSV 的 action 对应）</label>
+<input id="actionName" type="text" value="idle" placeholder="idle / move / attack / ...">
+<label>PNG / WebP 源图</label><input id="sheetFile" type="file" accept="image/png,image/webp">
+<div class="three">
+<div><label>列数</label><input id="sourceCols" type="number" min="1" max="128" value="2"></div>
+<div><label>行数</label><input id="sourceRows" type="number" min="1" max="128" value="4"></div>
+<div><label>只取行（-1 全部）</label><input id="onlyRow" type="number" min="-1" value="-1"></div>
+</div>
+<button id="importSheet" class="primary" style="margin-top:12px;width:100%">拆格并加入动作</button>
+<label>也可导入多个独立动作帧（沿用上方动作名）</label>
+<input id="frameFiles" type="file" accept="image/png,image/webp" multiple>
+<button id="importFrames" style="margin-top:7px;width:100%">添加独立帧</button>
+<p class="muted" style="font-size:12px;margin-bottom:0">可依次导入不同动作；同名动作会追加帧。源图网格按真实宽高取整切割，不自动去背或补绘。</p>
+</section>
+<section>
+<h2>② 标注与复核</h2>
+<label>选择当前帧的支点类型</label>
+<select id="anchorType"><option value="rear_foot">后脚承重</option><option value="front_foot">前脚承重</option><option value="ground">地面接点</option><option value="torso_ground">躯干触地（倒地）</option><option value="other">其他固定点</option></select>
+<div class="inline" style="margin-top:9px"><button id="prevFrame">上一帧 ←</button><button id="nextFrame">下一帧 →</button></div>
+<div class="inline" style="margin-top:7px"><button id="copyAnchor">复制上帧点（待复核）</button><button id="clearAnchor">清除本帧点</button></div>
+<label>导入既有脚点 CSV（含 action/frame/x/y）</label>
+<input id="csvFile" type="file" accept=".csv,text/csv">
+<div class="actions" id="actionButtons"></div>
+<div id="frames" class="frames"></div>
+<p id="selectionNote" class="muted" style="font-size:12px"></p>
+</section>
+<section>
+<h2>③ 自动排布与导出</h2>
+<div class="inline">
+<div><label>每格透明边距（px）</label><input id="padding" type="number" min="0" max="512" value="24"></div>
+<div><label>Atlas 列数</label><input id="atlasCols" type="number" min="1" max="64" value="8"></div>
+</div>
+<button id="align" class="primary" style="margin-top:11px;width:100%">计算统一支点并重新排布</button>
+<p id="layoutInfo" class="muted" style="font-size:12px"></p>
+<div class="inline"><button id="downloadAtlas" disabled>导出 Atlas PNG</button><button id="downloadCSV" disabled>导出脚点 CSV</button></div>
+<button id="downloadJSON" style="margin-top:7px;width:100%" disabled>导出离线 frame_contract.json</button>
+</section>
+<div class="callout">注意：同一动作中更换承重脚，会改变参考点的物理含义；这里实现的是各帧图像坐标对齐，行走时的世界位移 / 根运动仍由游戏动画系统控制。源格本身已裁断的剑尖、衣摆不会被自动修复。</div>
+</aside>
+<div class="workspace">
+<section>
+<div class="topline"><h2>帧编辑器：点击图像标记本帧的固定点</h2><div class="toolbar"><label>缩放 <input id="zoom" type="range" min="50" max="300" value="100"></label></div></div>
+<canvas id="editor" width="760" height="520" aria-label="点击标记精灵图固定点"></canvas>
+<p class="muted" style="font-size:12px">青色十字 = 已标固定点；黄色框 = Alpha 主体边界；红色外框 = 源格边缘存在可见像素，可能已截断。</p>
+</section>
+<section>
+<div class="topline"><h2>动画对齐预览</h2><div class="toolbar"><div><label>预览 FPS</label><input id="fps" type="number" min="1" max="60" value="12"></div><button id="togglePlay">▶ 播放</button></div></div>
+<canvas id="preview" width="760" height="260"></canvas>
+<p class="muted" style="font-size:12px">黄色十字表示目标固定点。这里只播放当前动作，切换动作请点击左侧动作标签。</p>
+</section>
+<section><h2>检查报告</h2><div id="message">请先导入源图。</div></section>
+</div>
+</main>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id),frames=[],editor=$('editor'),preview=$('preview');
+let selected=0,layout=null,view=null,playing=false,timer=0,lastTick=0,playIndex=0;
+const limit=(x,a,b)=>Math.max(a,Math.min(b,x));
+const number=(id,min,max)=>{const n=Number($(id).value);if(!Number.isInteger(n)||n<min||n>max)throw Error(id+' 必须为 '+min+'–'+max+' 的整数');return n};
+function message(t,isError){$('message').textContent=t;$('message').style.color=isError?'#f4b5b5':'#d8e7f2'}
+function loadImage(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),im=new Image();im.onload=()=>{URL.revokeObjectURL(url);resolve(im)};im.onerror=()=>{URL.revokeObjectURL(url);reject(Error('图像解码失败: '+file.name))};im.src=url})}
+function alphaBounds(im,sx,sy,sw,sh){
+ const c=document.createElement('canvas');c.width=sw;c.height=sh;
+ const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,sx,sy,sw,sh,0,0,sw,sh);
+ const a=x.getImageData(0,0,sw,sh).data;let x0=sw,y0=sh,x1=0,y1=0,touch=false,visible=0;
+ for(let j=0;j<sh;j++)for(let i=0;i<sw;i++)if(a[(j*sw+i)*4+3]>16){visible++;x0=Math.min(x0,i);y0=Math.min(y0,j);x1=Math.max(x1,i+1);y1=Math.max(y1,j+1);if(!i||!j||i===sw-1||j===sh-1)touch=true}
+ return visible?{x0,y0,x1,y1,touch,visible}:null;
+}
+function add(im,action,sx,sy,sw,sh,name){
+ if(sw<1||sh<1)throw Error('切分出的格子尺寸无效');
+ const index=frames.filter(f=>f.action===action).length;
+ frames.push({im,action,index,sx,sy,sw,sh,name,box:alphaBounds(im,sx,sy,sw,sh),anchor:null,reviewed:false,type:'rear_foot'});
+}
+function ensureName(){const s=$('actionName').value.trim();if(!/^[a-z][a-z0-9_-]{0,39}$/i.test(s))throw Error('动作名须为字母开头、由英文/数字/下划线/连字符组成');return s}
+function invalidate(){layout=null;$('layoutInfo').textContent='已修改输入或标注，需要重新计算。';$('downloadAtlas').disabled=true;$('downloadJSON').disabled=true;$('downloadCSV').disabled=!frames.length;renderPreview()}
+function drawFrame(ctx,f,x,y,s){ctx.drawImage(f.im,f.sx,f.sy,f.sw,f.sh,x,y,f.sw*s,f.sh*s)}
+function cross(ctx,x,y,color,size){
+ ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-size,y);ctx.lineTo(x+size,y);ctx.moveTo(x,y-size);ctx.lineTo(x,y+size);ctx.stroke();ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.stroke();ctx.restore();
+}
+function renderEditor(){
+ const ctx=editor.getContext('2d');ctx.clearRect(0,0,editor.width,editor.height);
+ const f=frames[selected];if(!f){view=null;return}
+ const scale=Math.min((editor.width-56)/f.sw,(editor.height-56)/f.sh)*number('zoom',50,300)/100;
+ const x=(editor.width-f.sw*scale)/2,y=(editor.height-f.sh*scale)/2;view={x,y,scale};
+ drawFrame(ctx,f,x,y,scale);ctx.save();ctx.lineWidth=2;ctx.strokeStyle=f.box&&f.box.touch?'#f06d6d':'#8296aa';ctx.strokeRect(x,y,f.sw*scale,f.sh*scale);
+ if(f.box){ctx.strokeStyle='#ecbf67';ctx.setLineDash([5,5]);ctx.strokeRect(x+f.box.x0*scale,y+f.box.y0*scale,(f.box.x1-f.box.x0)*scale,(f.box.y1-f.box.y0)*scale);ctx.setLineDash([])}
+ if(f.anchor){const ax=x+f.anchor.x*scale,ay=y+f.anchor.y*scale;ctx.strokeStyle='#64d2bc';ctx.globalAlpha=.5;ctx.beginPath();ctx.moveTo(x,ay);ctx.lineTo(x+f.sw*scale,ay);ctx.stroke();ctx.globalAlpha=1;cross(ctx,ax,ay,'#0aebc1',11)}
+ ctx.restore();
+ $('selectionNote').textContent=f.action+' #'+(f.index+1)+' / '+f.sw+'×'+f.sh+' / '+(f.anchor?'固定点 ('+f.anchor.x+', '+f.anchor.y+') '+(f.reviewed?'已人工标注':'待复核'):'未标注')+(f.box&&f.box.touch?' / 源格边缘触碰警告':'');
+ $('anchorType').value=f.type;
+}
+function renderThumbs(){
+ const box=$('frames');box.replaceChildren();const current=frames[selected];
+ const actions=[...new Set(frames.map(f=>f.action))],ab=$('actionButtons');ab.replaceChildren();
+ for(const action of actions){const b=document.createElement('button');b.textContent=action+' ('+frames.filter(f=>f.action===action).length+')';if(current&&action===current.action)b.className='active';b.onclick=()=>select(frames.findIndex(f=>f.action===action));ab.append(b)}
+ frames.forEach((f,i)=>{
+ const b=document.createElement('button');b.className='thumb'+(i===selected?' active':'');
+ const c=document.createElement('canvas');c.width=90;c.height=70;const ctx=c.getContext('2d'),s=Math.min(82/f.sw,58/f.sh),x=(90-f.sw*s)/2,y=(70-f.sh*s)/2;
+ drawFrame(ctx,f,x,y,s);if(f.anchor)cross(ctx,x+f.anchor.x*s,y+f.anchor.y*s,f.reviewed?'#00c9a8':'#e6a653',5);
+ b.append(c);const span=document.createElement('span');span.className=f.reviewed?'ok':'missing';span.textContent=f.action+' '+(f.index+1)+' '+(f.reviewed?'✓':f.anchor?'?':'○');b.append(span);
+ if(f.box&&f.box.touch){const e=document.createElement('span');e.textContent=' ⚠';e.className='danger';b.append(e)}
+ b.onclick=()=>select(i);box.append(b);
+ });
+ $('downloadCSV').disabled=!frames.length;
+}
+function select(i){if(!frames.length)return;selected=limit(i,0,frames.length-1);renderEditor();renderThumbs();playIndex=0;lastTick=0;renderPreview()}
+function afterImport(){selected=frames.length?frames.length-1:0;invalidate();select(selected);message('已导入 '+frames.length+' 帧；逐帧点击鞋底/支撑接触点。标注齐全后可自动排布。')}
+function reindex(){const counts={};for(const f of frames){f.index=counts[f.action]||0;counts[f.action]=f.index+1}}
+$('importSheet').onclick=async()=>{
+ try{const file=$('sheetFile').files[0];if(!file)throw Error('请选择源图');const action=ensureName(),cols=number('sourceCols',1,128),rows=number('sourceRows',1,128),only=number('onlyRow',-1,127);
+ if(only>=rows)throw Error('指定行号必须小于行数');const im=await loadImage(file);if(im.width<cols||im.height<rows)throw Error('行列多于图像尺寸');
+ const begin=only===-1?0:only,end=only===-1?rows:only+1;
+ for(let r=begin;r<end;r++)for(let c=0;c<cols;c++){const sx=Math.round(c*im.width/cols),ex=Math.round((c+1)*im.width/cols),sy=Math.round(r*im.height/rows),ey=Math.round((r+1)*im.height/rows);add(im,action,sx,sy,ex-sx,ey-sy,file.name)}
+ afterImport();
+ }catch(e){message(e.message,true)}
+};
+$('importFrames').onclick=async()=>{
+ try{const files=[...$('frameFiles').files];if(!files.length)throw Error('请选择独立帧');const action=ensureName();for(const file of files){const im=await loadImage(file);add(im,action,0,0,im.width,im.height,file.name)}afterImport()}catch(e){message(e.message,true)}
+};
+editor.addEventListener('click',e=>{
+ const f=frames[selected];if(!f||!view)return;
+ const r=editor.getBoundingClientRect(),x=(e.clientX-r.left)*editor.width/r.width,y=(e.clientY-r.top)*editor.height/r.height;
+ const px=(x-view.x)/view.scale,py=(y-view.y)/view.scale;
+ if(px<0||py<0||px>=f.sw||py>=f.sh)return;
+ f.anchor={x:limit(Math.round(px),0,f.sw-1),y:limit(Math.round(py),0,f.sh-1)};f.reviewed=true;f.type=$('anchorType').value;
+ invalidate();select(selected);message('已确认 '+f.action+' 第 '+(f.index+1)+' 帧固定点。')
+});
+$('anchorType').onchange=()=>{const f=frames[selected];if(f){f.type=$('anchorType').value;invalidate();select(selected)}};
+$('zoom').oninput=renderEditor;
+$('prevFrame').onclick=()=>select(selected-1);$('nextFrame').onclick=()=>select(selected+1);
+$('copyAnchor').onclick=()=>{
+ const f=frames[selected];if(!f)return;const from=[...frames].slice(0,selected).reverse().find(x=>x.action===f.action&&x.anchor);
+ if(!from){message('此动作前面没有已标注的帧。',true);return}
+ f.anchor={...from.anchor};f.type=from.type;f.reviewed=false;invalidate();select(selected);message('已复制上一支点。位置仅作初稿，请手动点击复核。')
+};
+$('clearAnchor').onclick=()=>{const f=frames[selected];if(f){f.anchor=null;f.reviewed=false;invalidate();select(selected)}};
+document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;if(e.key==='ArrowLeft')select(selected-1);if(e.key==='ArrowRight')select(selected+1)});
+function parseCSV(text){
+ const rows=[];let row=[],field='',quoted=false;
+ for(let i=0;i<text.length;i++){const ch=text[i];if(quoted){if(ch==='"'&&text[i+1]==='"'){field+='"';i++}else if(ch==='"')quoted=false;else field+=ch}
+ else if(ch==='"')quoted=true;else if(ch===','){row.push(field);field=''}else if(ch==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field=''}else field+=ch}
+ if(field||row.length){row.push(field);rows.push(row)}if(!rows.length)return[];
+ const heads=rows.shift().map(s=>s.trim().replace(/^\uFEFF/,''));return rows.filter(r=>r.some(x=>x!=='')).map(r=>Object.fromEntries(heads.map((h,i)=>[h,r[i]||''])))
+}
+$('csvFile').onchange=async()=>{
+ try{const f=$('csvFile').files[0];if(!f)return;const rows=parseCSV(await f.text());let ok=0,skip=0;
+ for(const row of rows){const frame=frames.find(f=>f.action===row.action&&f.index===Number(row.frame)),x=Number(row.x),y=Number(row.y);
+ if(!frame||!Number.isInteger(x)||!Number.isInteger(y)||x<0||y<0||x>=frame.sw||y>=frame.sh){skip++;continue}
+ frame.anchor={x,y};frame.reviewed=row.reviewed==='1';frame.type=row.anchor_type||frame.type;ok++}
+ invalidate();select(selected);message('CSV 导入 '+ok+' 帧，跳过 '+skip+' 行；reviewed=0 的帧仍需人工复核。')}catch(e){message(e.message,true)}
+};
+function calculate(){
+ if(!frames.length)throw Error('请先导入素材');
+ const pad=number('padding',0,512),cols=number('atlasCols',1,64);let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,unmarked=[],empty=[];
+ frames.forEach(f=>{if(!f.box)empty.push(f.action+'#'+f.index);if(!f.anchor)unmarked.push(f.action+'#'+f.index);
+ if(f.box&&f.anchor){minX=Math.min(minX,f.box.x0-f.anchor.x);maxX=Math.max(maxX,f.box.x1-f.anchor.x);minY=Math.min(minY,f.box.y0-f.anchor.y);maxY=Math.max(maxY,f.box.y1-f.anchor.y)}});
+ if(empty.length)throw Error('存在全透明帧，先修正源图：'+empty.slice(0,8).join(', '));
+ if(unmarked.length)throw Error('尚有 '+unmarked.length+' 帧未标注：'+unmarked.slice(0,8).join(', '));
+ const target={x:pad-minX,y:pad-minY},cw=maxX-minX+pad*2,ch=maxY-minY+pad*2,rows=Math.ceil(frames.length/cols);
+ const w=cw*cols,h=ch*rows;
+ if(w>16384||h>16384||w*h>90000000)throw Error('Atlas '+w+'×'+h+' 超出安全导出限制；请减小列数或分批按动作导出。');
+ return {pad,cols,rows,cw,ch,w,h,target};
+}
+$('align').onclick=()=>{
+ try{layout=calculate();$('layoutInfo').textContent='每格 '+layout.cw+'×'+layout.ch+' · '+layout.cols+'×'+layout.rows+' · 统一固定点 ('+layout.target.x+','+layout.target.y+') · PNG '+layout.w+'×'+layout.h;
+ $('downloadAtlas').disabled=false;$('downloadJSON').disabled=false;renderPreview();
+ const warnings=frames.filter(f=>f.box.touch),pending=frames.filter(f=>!f.reviewed);
+ message('计算成功：'+frames.length+' 帧，锚点数值偏差 0px，无缩放、无画面裁切；每格主体最小留白 '+layout.pad+'px。\n未人工复核：'+pending.length+' 帧；源格边缘触碰：'+warnings.length+' 帧。'+(warnings.length?'\n贴边帧：'+warnings.slice(0,12).map(f=>f.action+'#'+f.index).join(', '):'')+'\n提示：技术几何通过不等于动画和美术验收通过。');
+ }catch(e){layout=null;$('downloadAtlas').disabled=true;$('downloadJSON').disabled=true;message(e.message,true)}
+};
+$('padding').oninput=invalidate;$('atlasCols').oninput=invalidate;
+function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
+function downloadText(text,name,type){downloadBlob(new Blob([text],{type:type||'application/json;charset=utf-8'}),name)}
+$('downloadAtlas').onclick=()=>{
+ if(!layout)return;const c=document.createElement('canvas');c.width=layout.w;c.height=layout.h;const ctx=c.getContext('2d');
+ if(!ctx){message('浏览器未能建立导出画布。',true);return}
+ for(let i=0;i<frames.length;i++){const f=frames[i],x=(i%layout.cols)*layout.cw+layout.target.x-f.anchor.x,y=Math.floor(i/layout.cols)*layout.ch+layout.target.y-f.anchor.y;ctx.drawImage(f.im,f.sx,f.sy,f.sw,f.sh,x,y,f.sw,f.sh)}
+ c.toBlob(blob=>{if(blob)downloadBlob(blob,'sprite_aligned_atlas.png');else message('PNG 编码失败，请减小图集尺寸。',true)},'image/png');
+};
+function csvValue(s){s=String(s);return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+$('downloadCSV').onclick=()=>{
+ if(!frames.length)return;const rows=[['action','frame','x','y','reviewed','source_edge_flag','anchor_type']];
+ frames.forEach(f=>rows.push([f.action,f.index,f.anchor?f.anchor.x:'',f.anchor?f.anchor.y:'',f.reviewed?1:0,f.box&&f.box.touch?1:0,f.type]));
+ downloadText('\uFEFF'+rows.map(r=>r.map(csvValue).join(',')).join('\r\n'),'foot_annotations.csv','text/csv;charset=utf-8')
+};
+$('downloadJSON').onclick=()=>{
+ if(!layout)return;const actions={};frames.forEach((f,i)=>{if(!actions[f.action])actions[f.action]={frames:[],loop:['idle','move'].includes(f.action)};actions[f.action].frames.push(i)});
+ const obj={status:'candidate',kind:'offline_annotation_export',size:[layout.w,layout.h],cell_size:[layout.cw,layout.ch],atlas_columns:layout.cols,atlas_rows:layout.rows,contact_target:[layout.target.x,layout.target.y],padding:layout.pad,actions,frames:frames.map((f,i)=>({action:f.action,frame:f.index,atlas_index:i,source:f.name,contact_xy:[layout.target.x,layout.target.y],source_contact_xy:[f.anchor.x,f.anchor.y],anchor_type:f.type,contact_reviewed:f.reviewed,source_touches_cell_edge:!!f.box.touch}))};
+ downloadText(JSON.stringify(obj,null,2),'frame_contract.json');
+};
+function currentSequence(){const f=frames[selected];return f?frames.filter(x=>x.action===f.action):[]}
+function renderPreview(){
+ const ctx=preview.getContext('2d');ctx.clearRect(0,0,preview.width,preview.height);const seq=currentSequence();if(!seq.length)return;
+ const f=playing?seq[playIndex%seq.length]:frames[selected],bbox=layout||null;
+ const cw=bbox?bbox.cw:Math.max(...seq.map(x=>x.sw)),ch=bbox?bbox.ch:Math.max(...seq.map(x=>x.sh));
+ const scale=Math.min((preview.width-36)/cw,(preview.height-30)/ch,1.6);
+ const target=bbox?bbox.target:{x:cw/2,y:ch*.83};
+ const ox=(preview.width-cw*scale)/2,oy=(preview.height-ch*scale)/2;
+ ctx.save();ctx.strokeStyle='#cfaa51';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,oy+target.y*scale);ctx.lineTo(preview.width,oy+target.y*scale);ctx.stroke();
+ const anchor=f.anchor||{x:f.sw/2,y:f.sh*.83};
+ drawFrame(ctx,f,ox+(target.x-anchor.x)*scale,oy+(target.y-anchor.y)*scale,scale);
+ cross(ctx,ox+target.x*scale,oy+target.y*scale,'#e0ac37',9);
+ ctx.fillStyle='#192d3d';ctx.fillRect(12,10,160,27);ctx.fillStyle='#ffffff';ctx.font='14px system-ui';ctx.fillText(f.action+'  '+(f.index+1)+' / '+seq.length,20,28);ctx.restore();
+}
+function tick(ts){
+ if(!playing)return;
+ let fps=Number($('fps').value);if(!Number.isFinite(fps)||fps<1||fps>60)fps=12;
+ if(!lastTick)lastTick=ts;if(ts-lastTick>=1000/fps){playIndex=(playIndex+1)%Math.max(1,currentSequence().length);lastTick=ts;renderPreview()}
+ timer=requestAnimationFrame(tick);
+}
+$('togglePlay').onclick=()=>{
+ playing=!playing;$('togglePlay').textContent=playing?'Ⅱ 暂停':'▶ 播放';playIndex=0;lastTick=0;
+ if(playing)timer=requestAnimationFrame(tick);else{cancelAnimationFrame(timer);renderPreview()}
+};
+renderEditor();renderPreview();
+})();
+</script>
+</body>
+</html>
