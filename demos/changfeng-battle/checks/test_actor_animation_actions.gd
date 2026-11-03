@@ -107,17 +107,17 @@ func _run() -> void:
     var skill := WuxiaSkillUsageDefinition.new()
     skill.usage_id = "test_skill"
     skill.animation_action = "attack3"
-    skill.vfx_slot = "sword_a"
+    skill.vfx_slot = "shen_sword_thrust"
     skill.vfx_trigger = "strike_active"
     _check(skill.to_record().get("animation_action", "") == "attack3" and
-        skill.to_record().get("vfx_slot", "") == "sword_a",
+        skill.to_record().get("vfx_slot", "") == "shen_sword_thrust",
         "skill usage exports one action and independent VFX slot")
     var node := WuxiaTechniqueNodeDefinition.new()
     node.node_id = "test_stage"
     node.animation_action = "attack3"
-    node.vfx_slot = "sword_b"
+    node.vfx_slot = "shen_sword_sweep"
     _check(node.to_record().get("animation_action", "") == "attack3" and
-        node.to_record().get("vfx_slot", "") == "sword_b",
+        node.to_record().get("vfx_slot", "") == "shen_sword_sweep",
         "technique stage can share action but change VFX")
 
     var animator = Animator.new()
@@ -133,7 +133,7 @@ func _run() -> void:
     root.add_child(painted)
     var effects = VFX.new(painted)
     var nodes := {7: source_node}
-    for slot in ["sword_a", "sword_b"]:
+    for slot in ["shen_sword_thrust", "shen_sword_sweep"]:
         var event := {"type": "ATTACK_DECLARED", "actor_id": 7,
             "definition_id": slot, "usage_id": "thrust",
             "animation_action": "attack3", "vfx_slot": slot,
