@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_def"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png" id="2_portrait"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png" id="3_static_pose"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/characters/escort_elder/portraits/portrait_escort_elder_fullbody_v01.png" id="2_portrait"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/characters/escort_elder/story-poses/pose_escort_elder_injured_v01.png" id="3_static_pose"]
 
 [resource]
 script = ExtResource("1_def")

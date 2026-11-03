@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
 [ext_resource type="Script" path="res://scripts/content/map_polygon_definition.gd" id="2_poly"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp" id="3_background"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/scenes/rainy_bridge/legacy/rainy_bridge_battle.webp" id="3_background"]
 
 [sub_resource type="Resource" id="Obstacle"]
 script = ExtResource("2_poly")

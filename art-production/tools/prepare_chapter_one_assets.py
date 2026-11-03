@@ -12,7 +12,7 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
-BATCH = ROOT / "art-production/candidates/2026-11-01"
+BATCH = ROOT / "art-production/candidates"
 CHARACTERS = ("gu_qingshuang", "green_wanderer", "black_blade",
               "night_assassin")
 STORY_NPC = "escort_elder"
@@ -86,7 +86,7 @@ def source_cell_edge_risks(path: Path) -> list[str]:
 def audit_sources() -> int:
     problems = []
     for identity in CHARACTERS:
-        base = BATCH / identity
+        base = BATCH / "characters" / identity / "baseline"
         problems.extend(f"{identity} portrait: {x}" for x in alpha_observations(
             base / f"portrait_{identity}_fullbody_v01.png", (1024, 1536)))
         source_atlas = base / f"sprite_{identity}_atlas_source_v01.png"
@@ -99,17 +99,17 @@ def audit_sources() -> int:
                 f"{identity} source-cell clipping risk in "
                 f"{len(edge_risks)}/24 frames ({examples}); "
                 "repaint complete isolated frames before re-atlasing")
-    base = BATCH / STORY_NPC
+    base = BATCH / "characters" / STORY_NPC / "baseline"
     problems.extend(f"{STORY_NPC} portrait: {x}" for x in alpha_observations(
         base / "portrait_escort_elder_fullbody_v01.png", (1024, 1536)))
     problems.extend(f"{STORY_NPC} pose: {x}" for x in alpha_observations(
         base / "pose_escort_elder_injured_v01.png", (1536, 1024)))
-    master = BATCH / "ruined_temple/environment_ruined_temple_master_v01.png"
+    master = BATCH / "scenes/ruined_temple/baseline/environment_ruined_temple_master_v01.png"
     with Image.open(master) as image:
         if image.size != (1586, 992):
             problems.append(f"ruined_temple master: unexpected dimensions {image.size}")
     for identity in (*CHARACTERS, STORY_NPC):
-        base = BATCH / identity
+        base = BATCH / "characters" / identity / "baseline"
         for p in base.glob("*.png"):
             print(f"SOURCE {p.relative_to(ROOT)} SHA256 {file_digest(p)}")
     print(f"SOURCE {master.relative_to(ROOT)} SHA256 {file_digest(master)}")
@@ -232,11 +232,11 @@ def main() -> None:
     if args.replace and not args.write:
         parser.error("--replace requires --write")
     issues = audit_sources()
-    scene_dir = BATCH / "ruined_temple"
+    scene_dir = BATCH / "scenes/ruined_temple/baseline"
     layers = prepare_temple(scene_dir / "environment_ruined_temple_master_v01.png")
     verify_or_write(layers, scene_dir, args.write, args.replace)
     for identity in CHARACTERS:
-        actor_dir = BATCH / identity
+        actor_dir = BATCH / "characters" / identity / "baseline"
         target = actor_dir / f"sprite_{identity}_atlas_normalized_v01.png"
         expected = normalized_atlas(
             actor_dir / f"sprite_{identity}_atlas_source_v01.png")

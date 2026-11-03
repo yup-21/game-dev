@@ -1,6 +1,6 @@
 # 美术素材制作工作单模板
 
-复制本文件至 `art-production/candidates/YYYY-MM-DD/<asset-id>/WORK_ORDER.md` 并填写。文中的值只是示例。
+复制本文件至 `art-production/candidates/<asset-type>/<asset-id>/WORK_ORDER.md` 并填写。文中的值只是示例。
 
 ## 基本信息
 

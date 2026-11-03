@@ -1,7 +1,7 @@
 extends SceneTree
 ## Art and geometry regression. This test must never change combat state.
 const SCENE_PATH := "res://battle_hd2d.tscn"
-const ART_DIR := "res://assets/imported/in-use/legacy/ui/ornaments/"
+const ART_DIR := "res://assets/imported/in-use/ui/ornaments/"
 var checks := 0
 var failures := 0
 

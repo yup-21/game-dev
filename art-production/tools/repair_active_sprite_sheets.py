@@ -14,7 +14,7 @@ from PIL import Image, ImageChops, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "demos/changfeng-battle"
-BATCH = Path("candidates/2026-11-01")
+BATCH = Path("candidates/characters")
 ACTORS = ("shen_changfeng", "pursuer_captain", "gu_qingshuang",
           "green_wanderer", "black_blade", "night_assassin")
 V2 = {"shen_changfeng", "pursuer_captain"}
@@ -104,7 +104,7 @@ def repair_cell(frame: Image.Image, index: int) -> tuple[Image.Image, str]:
 def run(write: bool) -> None:
     for actor in ACTORS:
         version = "v02" if actor in V2 else "v01"
-        original = (ROOT / "art-production" / BATCH / actor /
+        original = (ROOT / "art-production" / BATCH / actor / "baseline" /
                     f"sprite_{actor}_atlas_normalized_{version}.png")
         if not original.is_file():
             raise FileNotFoundError(original)
@@ -119,10 +119,10 @@ def run(write: bool) -> None:
             print(f"{actor}: {report}")
             atlas.paste(cell, (x,y))
         filename = f"sprite_{actor}_atlas_aligned_v03.png"
-        relative = BATCH / actor / filename
+        relative = BATCH / actor / "baseline" / filename
         destinations = (ROOT / "art-production" / relative,
-                        ROOT / "art-production/in-use/imported" / relative,
-                        GAME / "assets/imported" / relative)
+                        ROOT / "art-production/in-use/characters" / actor / "sprites" / filename,
+                        GAME / "assets/imported/in-use/characters" / actor / "sprites" / filename)
         if write:
             for dest in destinations:
                 dest.parent.mkdir(parents=True, exist_ok=True)
@@ -131,9 +131,9 @@ def run(write: bool) -> None:
             resource = GAME / "data/native" / kind / f"{actor}.tres"
             current = resource.read_text(encoding="utf-8")
             old = f"sprite_{actor}_atlas_normalized_{version}.png"
-            if old not in current:
-                raise ValueError(f"{resource}: missing active sheet {old}")
-            if write:
+            if old not in current and filename not in current:
+                raise ValueError(f"{resource}: neither old nor current sheet is bound")
+            if write and old in current:
                 resource.write_text(current.replace(old, filename), encoding="utf-8")
         print(f"{actor}: {'WROTE' if write else 'PREVIEW'} 24 isolated frames, native profile + card")
     if write:

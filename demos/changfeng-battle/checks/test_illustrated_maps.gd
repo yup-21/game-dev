@@ -17,7 +17,7 @@ func _initialize() -> void:
 func _run() -> void:
     var painted_map: WuxiaMapDefinition = load(MapBake.DEFAULT_PATH)
     var bridge_path: String = painted_map.background.resource_path
-    var temple_path := "res://assets/imported/in-use/legacy/scenes/story/ruined_temple_story.webp"
+    var temple_path := "res://assets/imported/in-use/scenes/ruined_temple/legacy/ruined_temple_story.webp"
     _check(ResourceLoader.exists(bridge_path) and ResourceLoader.exists(temple_path),
         "both user-supplied paintings must be bundled in this Git tree")
     var bridge: Texture2D = load(bridge_path) as Texture2D
@@ -85,7 +85,7 @@ func _run() -> void:
     root.add_child(opening)
     await process_frame
     _check(opening.story.load_error.is_empty(),"opening story loads unchanged")
-    var temple_painting := load("res://assets/imported/in-use/legacy/scenes/story/ruined_temple_story.webp") as Texture2D
+    var temple_painting := load("res://assets/imported/in-use/scenes/ruined_temple/legacy/ruined_temple_story.webp") as Texture2D
     _check(temple_painting!=null,"real painted temple loads for exploration and dialogue")
     opening.call("_enter_new_game")
     opening.story.skip_cinematic()

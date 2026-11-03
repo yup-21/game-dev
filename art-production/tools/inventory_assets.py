@@ -2,6 +2,7 @@
 """Inspect the actual Godot art bindings; no second runtime asset registry."""
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -32,11 +33,38 @@ def current_bindings() -> dict[str, list[str]]:
 
 def validate(bindings: dict[str, list[str]]) -> list[str]:
     errors = []
+    mirror_root = ROOT / "art-production/in-use"
+    expected_mirrors = set()
     for path in bindings:
-        if not path.startswith("res://assets/imported/"):
-            errors.append("Legacy art path still referenced: " + path)
-        if ".." in path or not (GAME / path.removeprefix("res://")).is_file():
-            errors.append("Missing / unsafe imported art: " + path)
+        prefix = "res://assets/imported/in-use/"
+        if not path.startswith(prefix):
+            errors.append("Bound artwork must be under imported/in-use/: " + path)
+            continue
+        if ".." in path:
+            errors.append("Unsafe imported art: " + path)
+            continue
+        source = GAME / path.removeprefix("res://")
+        mirror = mirror_root / path.removeprefix(prefix)
+        expected_mirrors.add(mirror)
+        if not source.is_file():
+            errors.append("Missing imported art: " + path)
+        if not mirror.is_file():
+            errors.append("Missing in-use mirror: " + mirror.relative_to(ROOT).as_posix())
+        if source.is_file() and mirror.is_file():
+            source_sha = hashlib.sha256(source.read_bytes()).digest()
+            mirror_sha = hashlib.sha256(mirror.read_bytes()).digest()
+            if source_sha != mirror_sha:
+                errors.append("In-use mirror differs: " + path)
+    for path in mirror_root.rglob("*"):
+        if path.is_file() and path.suffix.lower() in IMAGE_EXTS and path not in expected_mirrors:
+            errors.append("Unbound image in in-use mirror: " + path.relative_to(ROOT).as_posix())
+    # Date is metadata, not a directory classification key.
+    for root in (ROOT / "art-production/candidates", mirror_root,
+                 GAME / "assets/imported"):
+        if root.is_dir():
+            for folder in root.rglob("*"):
+                if folder.is_dir() and re.fullmatch(r"\d{4}-\d{2}-\d{2}", folder.name):
+                    errors.append("Date-based asset folder: " + folder.relative_to(ROOT).as_posix())
     return errors
 
 

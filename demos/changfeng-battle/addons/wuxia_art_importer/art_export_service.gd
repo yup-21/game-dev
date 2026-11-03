@@ -108,8 +108,10 @@ static func _resource_graph(first: String) -> Dictionary:
 static func destination(source: String, is_resource: bool = false) -> String:
     if is_resource:
         return production_root().path_join("in-use/resources/" + source.trim_prefix("res://"))
-    # Production storage mirrors the single imported image root verbatim.
-    var relative := source.trim_prefix("res://assets/")
+    # In-use copies are grouped by type/owner; no date or imported/ nesting.
+    var relative := source.trim_prefix("res://assets/imported/")
+    if relative.begins_with("in-use/"):
+        relative = relative.trim_prefix("in-use/")
     return production_root().path_join("in-use/" + relative)
 
 

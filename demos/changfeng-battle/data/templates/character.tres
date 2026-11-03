@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_character"]
 [ext_resource type="Script" path="res://scripts/content/starting_item_definition.gd" id="2_start"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/fallback/default_portrait.svg" id="3_portrait"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/fallback/default_actor_6x4.svg" id="4_sheet"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/placeholders/portraits/default_portrait.svg" id="3_portrait"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/placeholders/characters/default_actor_6x4.svg" id="4_sheet"]
 
 [sub_resource type="Resource" id="Starting_medicine"]
 script = ExtResource("2_start")

@@ -21,7 +21,7 @@ description: "为《长风浮生录》制作或审核战斗 HUD、CTB 跑轴、�
 
 ## 交付与审核
 
-- 每个资产复制 art-production/templates/asset-work-order.md 到 art-production/candidates/YYYY-MM-DD/<asset-id>/WORK_ORDER.md；保存来源、权限、原图、可编辑母版、版本及生成记录。
+- 每个资产复制 art-production/templates/asset-work-order.md 到 art-production/candidates/<asset-type>/<asset-id>/WORK_ORDER.md；保存来源、权限、原图、可编辑母版、版本及生成记录。
 - 在 Godot 内以 1600×1000 和 1440×900 检查实际点击区域、CTB 运行、手牌扇形展开、鼠标反馈、头像/状态可读性和不同背景下的对比度。
 - 检查 Alpha、尺寸、九宫格伸缩边界、图标缩放和资源引用；技术合格但未经人工视觉/授权批准时仍为 candidate。
 - 交付可独立复用的透明分件、预览截图、工作单与审核结论；不得用概念完整 UI 图代替可交互组件。

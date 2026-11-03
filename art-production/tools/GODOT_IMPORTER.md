@@ -11,7 +11,7 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 2. 按角色、地图或剧情章节导出时选择已有 Resource；指定资源输入 `res://data/...`。
 3. 点击“预检导出差异”，检查新建、相同、不同的副本。
 4. 如生产区已有不同内容副本，必须手动勾选“允许覆盖”并重新检查。
-5. 确认后原字节复制到 `art-production/in-use/`；单个资源范围还会将 .tres 依赖副本保存于 `in-use/resources/`，仅供离线审计。
+5. 确认后按类型与资产 ID 原字节复制到 `art-production/in-use/`；单个资源范围还会将 .tres 依赖副本保存于 `in-use/resources/`，仅供离线审计。
 6. 日志保存在 `art-production/reviews/export-transactions/<id>/export-log.json`，替换前的副本存于 `before/`。可以点“撤销上次导出”；新增副本移到 `recovered-new/`，不会直接删除。
 
 “全部实际使用”按 P0 的口径扫描：仅游戏脚本、场景和正式 Resource 中 `res://assets/` 图像的静态直接引用，排除模板、测试和纯登记。
@@ -35,7 +35,7 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 
 ## 数据保护与限制
 
-- 导出不修改 `res://assets/`；导入不覆盖旧图片。导入撤销只恢复 .tres，保留新图片供检查。
+- 导出不修改 `res://assets/`；导入不覆盖旧图片。路径按 `assets/imported/{in-use,candidates}/<type>/<owner>/` 分类，`in-use/` 导出副本不再包含 `imported/` 或日期层级。导入撤销只恢复 .tres，保留新图片供检查。
 - 导出有 SHA 核验与备份；失败时尽量自动回退，若已有后续改动则拒绝静默覆盖。
 - 角色与 VFX 必须有真实 Alpha；VFX 帧号、Atlas 网格/帧号、地图必需透明 ground 的同尺寸画布做技术预检；美术连续性和授权仍需人工验收。
 - 编辑器工具不做持续双向同步。完成手动调整后执行 `python3 art-production/tools/inventory_assets.py --write` 更新离线库存；该脚本对不同 SHA 的旧副本会拒绝覆盖。

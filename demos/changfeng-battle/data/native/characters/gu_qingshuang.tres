@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_def"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/gu_qingshuang/portrait_gu_qingshuang_fullbody_v01.png" id="2_portrait"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/gu_qingshuang/sprite_gu_qingshuang_atlas_aligned_v03.png" id="3_sprite_sheet"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/characters/gu_qingshuang/portraits/portrait_gu_qingshuang_fullbody_v01.png" id="2_portrait"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/characters/gu_qingshuang/sprites/sprite_gu_qingshuang_atlas_aligned_v03.png" id="3_sprite_sheet"]
 
 [ext_resource type="Resource" path="res://data/native/animations/gu_qingshuang.tres" id="4_anim"]
 

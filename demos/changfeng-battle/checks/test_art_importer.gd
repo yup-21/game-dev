@@ -15,7 +15,7 @@ func _initialize() -> void:
     if sources.size() < 39:
         _fail("P0 in-use artwork is absent")
         return
-    var source: String = production_dir.path_join("in-use/imported/in-use/legacy/fallback/default_actor_6x4.svg")
+    var source: String = production_dir.path_join("in-use/placeholders/characters/default_actor_6x4.svg")
     var image: Dictionary = Importer.inspect(source)
     if not str(image.get("error", "")).is_empty() or int(image["width"]) <= 0:
         _fail("SVG preview failed: " + str(image.get("error", "")))
@@ -47,13 +47,13 @@ func _initialize() -> void:
     if str(invalid_vfx.get("error", "")).is_empty():
         _fail("Out-of-range VFX animation index accepted")
         return
-    var opaque_jpg: String = production_dir.path_join("in-use/imported/in-use/legacy/concepts/2026-10-30/scenes/mountain_herbal_workshop_day.jpg")
+    var opaque_jpg: String = production_dir.path_join("in-use/scenes/mountain_herbal_workshop/mountain_herbal_workshop_day.jpg")
     var opaque_vfx: Dictionary = Importer.plan("vfx", opaque_jpg, "",
         {"asset_id": "art.opaque_vfx", "event_kind": "ATTACK_DECLARED"})
     if str(opaque_vfx.get("error", "")).is_empty():
         _fail("Opaque JPEG accepted as production VFX")
         return
-    var ui_source: String = production_dir.path_join("in-use/imported/in-use/legacy/ui/original/card_probe.svg")
+    var ui_source: String = production_dir.path_join("in-use/ui/cards/card_probe.svg")
     var ui: Dictionary = Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
     if not str(ui.get("error", "")).is_empty():
         _fail("Valid UI registration plan rejected: " + str(ui.get("error", "")))
@@ -78,7 +78,7 @@ func _initialize() -> void:
         _fail("Chapter story scenes are missing from the scene import selector")
         return
     dock.queue_free()
-    var bridge_dir: String = production_dir.path_join("candidates/2026-11-01/rainy_bridge")
+    var bridge_dir: String = production_dir.path_join("candidates/scenes/rainy_bridge/baseline")
     var bridge_plan: Dictionary = Importer.plan("scene",
         bridge_dir.path_join("scene_rainy_bridge_background_v01.png"),
         "res://data/maps/rainy_bridge.tres", {

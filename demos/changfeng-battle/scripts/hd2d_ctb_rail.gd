@@ -10,8 +10,8 @@ const GLIDE_SECONDS := 0.32
 const ALLY := Color("83d6bc")
 const ENEMY := Color("d28c80")
 const GOLD := Color("e8c989")
-const RAIL_ART: Texture2D = preload("res://assets/imported/in-use/legacy/ui/ornaments/ctb_rail.svg")
-const MARKER_FRAME: Texture2D = preload("res://assets/imported/in-use/legacy/ui/ornaments/ctb_marker_frame.svg")
+const RAIL_ART: Texture2D = preload("res://assets/imported/in-use/ui/ornaments/ctb_rail.svg")
+const MARKER_FRAME: Texture2D = preload("res://assets/imported/in-use/ui/ornaments/ctb_marker_frame.svg")
 
 var _actors: Array = []
 var _priority_id := -1

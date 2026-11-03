@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="WuxiaSceneArtProfile" load_steps=5 format=3]
 [ext_resource type="Script" path="res://scripts/content/scene_art_profile.gd" id="1_art"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-03/pingjiang_north_lane_qa/scene_pingjiang_north_lane_background_v01.svg" id="2_bg"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-03/pingjiang_north_lane_qa/scene_pingjiang_north_lane_ground_v01.svg" id="3_ground"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-03/pingjiang_north_lane_qa/scene_pingjiang_north_lane_foreground_v01.svg" id="4_fore"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/scenes/pingjiang_north_lane_qa/scene_pingjiang_north_lane_background_v01.svg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/scenes/pingjiang_north_lane_qa/scene_pingjiang_north_lane_ground_v01.svg" id="3_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/scenes/pingjiang_north_lane_qa/scene_pingjiang_north_lane_foreground_v01.svg" id="4_fore"]
 
 [resource]
 script = ExtResource("1_art")

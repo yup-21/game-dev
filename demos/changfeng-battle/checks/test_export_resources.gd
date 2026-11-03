@@ -14,7 +14,7 @@ const REQUIRED_FIXTURES := [
     "res://data/affixes/index.json",
     "res://data/buffs/index.json",
     "res://data/school_forms.json",
-    "res://assets/imported/in-use/legacy/production_manifest.json"
+    "res://assets/imported/in-use/production_manifest.json"
 ]
 const REQUIRED_SCENES := [
     "res://opening.tscn",
@@ -22,9 +22,9 @@ const REQUIRED_SCENES := [
     "res://demo_result.tscn"
 ]
 const REQUIRED_ART := [
-    "res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp",
-    "res://assets/imported/in-use/legacy/scenes/story/ruined_temple_story.webp",
-    "res://assets/imported/in-use/legacy/ui/technique_art_atlas_v1.png"
+    "res://assets/imported/in-use/scenes/rainy_bridge/legacy/rainy_bridge_battle.webp",
+    "res://assets/imported/in-use/scenes/ruined_temple/legacy/ruined_temple_story.webp",
+    "res://assets/imported/in-use/ui/card-art/technique_art_atlas_v1.png"
 ]
 
 func _initialize() -> void:

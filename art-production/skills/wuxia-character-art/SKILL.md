@@ -8,7 +8,7 @@ description: "为《长风浮生录》制作待机、行走、跑步、四套攻
 ## 必读合同与素材边界
 
 - 开始前读取 `art-production/standards/ART_PRODUCTION_STANDARD.md` 与 `art-production/standards/SPRITE_ANIMATION_QA.md`；设计分镜或 AI 生图时读取 `art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md` 第 1、3、5 节，使用 **§5.1/§5.2 简版母提示词与武器适配的攻击分镜**。优先保证 AI 输出完整正确的角色画面，**不默认依赖视频、脚点自动识别或自动动作分帧**。
-- 读取 `art-production/templates/asset-work-order.md`，在 `art-production/candidates/YYYY-MM-DD/<asset-id>/` 留候选工作单、真实提示词与目标原生 Resource。来源可记录对应提示词/Resource，不强制额外模型、seed 或审批字段。
+- 读取 `art-production/templates/asset-work-order.md`，在 `art-production/candidates/<asset-type>/<asset-id>/` 留候选工作单、真实提示词与目标原生 Resource。来源可记录对应提示词/Resource，不强制额外模型、seed 或审批字段。
 - 资产管理只有 `candidate` 与 `in_use`：技术预检不会批准画面；未完成视觉验收不覆盖当前绑定。Godot 运行内容仍仅来自 `.tres` 与 Content Manifest，离线 CSV/JSON 不成为运行时源数据。
 
 ## 执行流程（每一阶段可返工，不跳闸）

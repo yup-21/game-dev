@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="WuxiaAssetDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/asset_definition.gd" id="1_def"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/ruined_temple/scene_ruined_temple_composite_preview_v01.png" id="2_image"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_composite_preview_v01.png" id="2_image"]
 
 [resource]
 script = ExtResource("1_def")

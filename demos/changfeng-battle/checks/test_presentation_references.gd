@@ -57,7 +57,7 @@ func _run() -> void:
         "formal combatant missing portrait fails")
 
     var explicit_placeholder: Texture2D = load(
-        "res://assets/imported/in-use/legacy/fallback/default_portrait.svg") as Texture2D
+        "res://assets/imported/in-use/placeholders/portraits/default_portrait.svg") as Texture2D
     check(explicit_placeholder != null, "declared neutral placeholder imports")
     if explicit_placeholder != null:
         portrait_card.portrait = explicit_placeholder

@@ -3,10 +3,10 @@
 此次仅为主角当前装备/习得的 **wind_sword、tingfeng、step** 及 `tf_change_stage` 绑定特效；烟岚剑属于其他角色，不在本批。普通技能、听风原生 RuleUsage 与武学节点均直接修改原有 `.tres`，不创建第二套映射表。
 
 ## 美术
-- 资源：`res://assets/imported/in-use/shen_changfeng/vfx_shen_martial_5x4.svg`（透明 SVG，Godot 导入为 Texture2D）。
+- 资源：`res://assets/imported/in-use/vfx/shen_changfeng/martial-forms/vfx_shen_martial_5x4.svg`（透明 SVG，Godot 导入为 Texture2D）。
 - 5 行 × 4 列，每格 256px，左至右依次为蓄势、出现、峰值、消散；整图 1024×1280，无背景，无文字、人物或跨格内容。
 - 行 0 剑刺（冰蓝凝光），行 1 横斩（浅青弧光），行 2 断岳重击（白金剑气），行 3 护体（青碧环刃），行 4 身法（雾白残影）。
-- 同源素材镜像：`art-production/in-use/imported/in-use/shen_changfeng/`。此版本是原创可编辑矢量表现；正式美术可替换成透明 PNG/WebP，保持帧顺序、单格尺寸及 Asset ID 即可，无需修改技能逻辑。
+- 同源素材镜像：`art-production/in-use/vfx/shen_changfeng/martial-forms/`。此版本是原创可编辑矢量表现；正式美术可替换成透明 PNG/WebP，保持帧顺序、单格尺寸及 Asset ID 即可，无需修改技能逻辑。
 - 使用状态：runtime；并非人工视觉验收通过的最终手绘特效。
 
 ## 绑定资源

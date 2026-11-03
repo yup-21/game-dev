@@ -47,7 +47,7 @@ func _initialize() -> void:
     if str(Export.plan("resource", "res://../outside.tres").get("error", "")).is_empty():
         _fail("Escaping res:// was accepted")
         return
-    var source: String = Importer.production_root().path_join("in-use/imported/in-use/legacy/fallback/default_actor_6x4.svg")
+    var source: String = Importer.production_root().path_join("in-use/placeholders/characters/default_actor_6x4.svg")
     var atlas: Dictionary = Importer.plan("atlas", source,
         "res://data/native/characters/shen_changfeng.tres",
         {"columns": 6, "rows": 4, "versioned_replace": true})

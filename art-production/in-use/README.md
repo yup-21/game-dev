@@ -1,7 +1,13 @@
-# 使用中素材原字节镜像
+# 使用中美术素材
 
-只存储当前游戏原生 Resource 绑定的图片副本，源路径按 `demos/changfeng-battle/assets/imported/` 镜像到 `in-use/imported/`。每个 Resource 槽位仅有一个使用中版本；未绑定的候选保留在 `art-production/candidates/`。
+这里按素材类型与稳定 ID 组织，只保存 Godot 正式脚本、场景或 Resource 当前引用的图片原字节；真正的绑定仍以 `.tres` 为准。
 
-历史旧目录已经归档到 `art-production/archive/legacy-2026-11-02/`，不再维护 `in-use/characters/`、`in-use/fallback/`、`in-use/scenes/` 或 `in-use/ui/` 第二套路径。
+- `characters/<actor-id>/portraits|sprites|story-poses|concepts/`
+- `scenes/<scene-id>/`（同一场景各图层相邻）
+- `vfx/<actor-id>/<skill-id-or-shared-atlas>/`（一张图集可供多个技能引用，无需复制）
+- `ui/cards|card-art|ornaments|overlays|common/`
+- `placeholders/<asset-type>/`（明确使用中的旧测试占位；并非正式素材的隐式回退）
 
-导出当前绑定通过 Godot **Art Production** Dock；重新导入时保持与原先相同的 `res://assets/imported/` 路径。素材生成与正式使用合同不变。
+游戏运行图片存放在 `demos/changfeng-battle/assets/imported/in-use/` 同一分类层级，导出工具按相对路径镜像。只有不被游戏引用的预览图才放在 `assets/imported/candidates/`。不按生成日期建立目录。
+
+`art-production/candidates/` 可以有多个版本，`in-use` 同一原生 Resource 槽位只有当前绑定。旧归档保留于 `art-production/archive/`，不自动参与游戏加载。

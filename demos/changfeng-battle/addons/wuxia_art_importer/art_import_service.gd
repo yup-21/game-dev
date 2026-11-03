@@ -111,9 +111,7 @@ static func destination(path: String) -> String:
     if not _source_allowed(path):
         return ""
     var relative := path.simplify_path().trim_prefix(production_root() + "/")
-    # Reimporting the exported in-use mirror must not nest imported/ again.
-    if relative.begins_with("in-use/imported/"):
-        return "res://assets/" + relative.trim_prefix("in-use/")
+    # Production folders already follow the imported/{in-use,candidates}/ type/owner layout.
     return "res://assets/imported/" + relative
 
 

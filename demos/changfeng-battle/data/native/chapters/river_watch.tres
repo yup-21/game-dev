@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="req"]
 [ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="event"]
 [ext_resource type="Resource" path="res://data/native/stories/river_watch.tres" id="story"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp" id="bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/scenes/rainy_bridge/legacy/rainy_bridge_battle.webp" id="bg"]
 
 [sub_resource type="Resource" id="c0"]
 script = ExtResource("npc")
