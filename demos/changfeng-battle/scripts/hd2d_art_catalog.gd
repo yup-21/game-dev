@@ -26,7 +26,7 @@ static func animation_profile_for_character(character_id: String) -> WuxiaActorA
         return null
     if card.animation_profile.valid_profile():
         return card.animation_profile
-    push_warning("Invalid actor animation profile for " + character_id)
+    push_error("Invalid actor animation profile Resource for " + character_id)
     return null
 
 

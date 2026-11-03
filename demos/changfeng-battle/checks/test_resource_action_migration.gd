@@ -53,6 +53,8 @@ func _run() -> void:
         _check(profile != null, "profile exists: " + name)
         if profile == null: continue
         _check(profile.valid_profile(), "profile valid: " + name)
+        _check(profile.resolved_clip_for("not_authored") == null,
+            "unknown action never silently falls back: " + name)
         for action in COMPAT_MAP:
             _check(str(profile.action_fallbacks.get(action, "")) == str(COMPAT_MAP[action]),
                 "explicit legacy fallback " + name + ":" + action)

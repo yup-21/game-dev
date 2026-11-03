@@ -10,11 +10,6 @@ const REQUIRED_ACTIONS := ["idle", "move", "attack", "guard", "hit",
 const LEGACY_REQUIRED_ACTIONS := REQUIRED_ACTIONS
 const MODERN_REQUIRED_ACTIONS := ["idle", "walk", "run", "attack1", "attack2",
     "attack3", "attack4", "skill", "evade", "guard", "hit", "defeat"]
-const LEGACY_ALIASES := {
-    "walk": "move", "run": "move",
-    "attack1": "attack", "attack2": "attack",
-    "attack3": "attack", "attack4": "attack"
-}
 
 @export var atlas: Texture2D
 @export_range(1, 64) var columns: int = 6
@@ -24,8 +19,8 @@ const LEGACY_ALIASES := {
 @export var feet_adjust: Vector2 = Vector2.ZERO
 @export var actor_scale: Vector2 = Vector2(0.53, 0.53)
 @export var faces_left_unflipped: bool = false
-## Explicit resource-owned fallbacks. Exact authored actions always win; this
-## table never fabricates frames or turns one atlas into twelve drawings.
+## Optional, single-step resource mappings. Only a direct existing Clip may be
+## selected as a target. Missing mappings never use an engine-defined alias.
 @export var action_fallbacks: Dictionary = {}
 @export var clips: Array[Resource] = []
 
@@ -60,8 +55,8 @@ func valid_profile() -> bool:
             # must use the same reference cell to prevent visual size jumps.
             return false
         seen[clip.action] = true
-    # Migrated legacy profiles advertise the modern action API with explicit
-    # mappings to their existing, actually authored nine-clip library.
+    # Reject invalid mappings immediately, even if a direct action is present.
+    # A target must exist as a physical Clip, so chained mappings cannot occur.
     for action in action_fallbacks:
         if not action is String or not action.is_valid_identifier() or action != action.to_lower():
             return false
@@ -96,7 +91,10 @@ func resolved_clip_for(action: String) -> WuxiaActorAnimationClip:
     var exact: WuxiaActorAnimationClip = clip_for(action)
     if exact != null:
         return exact
-    return clip_for(str(action_fallbacks.get(action, LEGACY_ALIASES.get(action, ""))))
+    if not action_fallbacks.has(action):
+        return null
+    # One level only: look up a real clip, never follow another mapping.
+    return clip_for(str(action_fallbacks[action]))
 
 func idle_atlas() -> Texture2D:
     var idle: WuxiaActorAnimationClip = clip_for("idle")

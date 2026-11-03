@@ -22,22 +22,38 @@ static func attach(sprite: Sprite2D, timeline: Variant,
     player.root_node = NodePath("..")
     sprite.add_child(player)
     var library := AnimationLibrary.new()
-    var actions: Array = BASE_ACTIONS.duplicate()
+    var actions: Array = BASE_ACTIONS.duplicate() if profile == null else []
     if profile != null:
+        if not profile.valid_profile():
+            push_error("Invalid animation profile Resource: " + str(profile.resource_path))
+            return player
+        # Register only authored actions and explicitly configured aliases.
         for entry in profile.clips:
             var clip: WuxiaActorAnimationClip = entry as WuxiaActorAnimationClip
             if clip != null and not actions.has(clip.action):
                 actions.append(clip.action)
+        for action in profile.action_fallbacks:
+            if not actions.has(str(action)):
+                actions.append(str(action))
     for state in actions:
         var semantic: String = semantic_for(str(state))
         var duration: float = timeline.duration_for(semantic, fallback_duration_for(semantic))
-        var authored: WuxiaActorAnimationClip = profile.resolved_clip_for(str(state)) if profile != null else null
-        library.add_animation(str(state),
-            _authored_clip(authored, duration, sprite.scale, profile) if authored != null
-            else _clip(str(state), duration, sprite.scale))
+        if profile != null:
+            var authored: WuxiaActorAnimationClip = profile.resolved_clip_for(str(state))
+            if authored == null:
+                push_error("Unresolved configured action: " + str(state) + " (" + str(profile.resource_path) + ")")
+                continue
+            library.add_animation(str(state), _authored_clip(authored, duration, sprite.scale, profile))
+        else:
+            # Characters with no animation profile retain their generic demo pose.
+            # This is not an implicit remapping for any provided Resource.
+            library.add_animation(str(state), _clip(str(state), duration, sprite.scale))
     player.add_animation_library("", library)
-    player.play("idle")
-    player.advance(0.0)
+    if player.has_animation("idle"):
+        player.play("idle")
+        player.advance(0.0)
+    else:
+        push_error("Missing idle animation in profile: " + str(profile.resource_path))
     return player
 
 static func _value_track(animation: Animation, property_name: String,

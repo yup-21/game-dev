@@ -1,5 +1,5 @@
 extends SceneTree
-## Twelve-action library, legacy aliases, skill cue/VFX routing and visual defeat.
+## Twelve-action library, explicit single-level remaps, skill cues and defeat.
 
 const Clip = preload("res://scripts/content/actor_animation_clip.gd")
 const Profile = preload("res://scripts/content/actor_animation_profile.gd")
@@ -81,7 +81,29 @@ func _run() -> void:
     _check(legacy.valid_profile() and
         legacy.resolved_clip_for("attack3") == legacy.clip_for("attack") and
         legacy.resolved_clip_for("run") == legacy.clip_for("move"),
-        "legacy nine-action profiles remain usable")
+        "legacy Resource remaps are explicit")
+    var unconfigured: WuxiaActorAnimationProfile = legacy.duplicate(true) as WuxiaActorAnimationProfile
+    unconfigured.action_fallbacks = {}
+    _check(unconfigured.valid_profile() and
+        unconfigured.resolved_clip_for("attack3") == null and
+        unconfigured.resolved_clip_for("run") == null,
+        "unconfigured actions do not silently map to legacy frames")
+    var bare_sprite := Sprite2D.new()
+    bare_sprite.texture = unconfigured.idle_atlas()
+    root.add_child(bare_sprite)
+    var bare_player: AnimationPlayer = NativeClips.attach(bare_sprite, timeline, unconfigured)
+    _check(not bare_player.has_animation("attack3") and
+        not bare_player.has_animation("run") and bare_player.has_animation("attack"),
+        "player never synthesizes actions missing from Resource")
+    var broken: WuxiaActorAnimationProfile = legacy.duplicate(true) as WuxiaActorAnimationProfile
+    broken.action_fallbacks["attack3"] = "missing_action"
+    _check(not broken.valid_profile(), "missing fallback target is a configuration error")
+    broken.action_fallbacks["attack3"] = "attack4"
+    _check(not broken.valid_profile(), "fallback chains are invalid")
+    var direct: WuxiaActorAnimationProfile = profile.duplicate(true) as WuxiaActorAnimationProfile
+    _check(direct.resolved_clip_for("attack") == direct.clip_for("attack1") and
+        direct.resolved_clip_for("combo") == direct.clip_for("attack4"),
+        "semantic defaults are Resource mappings, not player hardcoding")
     var skill := WuxiaSkillUsageDefinition.new()
     skill.usage_id = "test_skill"
     skill.animation_action = "attack3"

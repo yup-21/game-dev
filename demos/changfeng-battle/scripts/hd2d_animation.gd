@@ -27,8 +27,7 @@ func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector
     tracks[id] = {"sprite": sprite, "player": player, "state": "idle", "elapsed": 0.0,
         "duration": 1.0, "loop": true, "facing": initial,
         "horizontal": horizontal, "artwork_left": artwork_left,
-        "base_scale": sprite.scale, "defeated": false,
-        "legacy_combo": profile != null and profile.clip_for("combo") != null}
+        "base_scale": sprite.scale, "defeated": false}
     sprite.flip_h = (horizontal == Facing.EAST) if artwork_left else (horizontal == Facing.WEST)
 
 func set_facing(id: int, facing: Vector2i) -> void:
@@ -57,6 +56,7 @@ func play(id: int, state: String, duration: float = -1.0) -> void:
         return
     var player: AnimationPlayer = track.player
     if not is_instance_valid(player) or not player.has_animation(state):
+        push_error("Actor %d requested an undefined animation: %s" % [id, state])
         return
     track.state = state
     track.elapsed = 0.0
@@ -97,10 +97,8 @@ func _chosen_action(event: Dictionary, semantic: String, id: int,
             for index in range(1, path.size()):
                 distance += path[index - 1].distance_to(path[index])
         return "run" if distance >= 180.0 else "walk"
-    if kind == "COMBO_TRIGGERED":
-        return "combo" if bool(tracks[id].legacy_combo) else "attack4"
-    if semantic == "attack":
-        return "attack1"
+    # All semantic actions (including basic attack and combo) resolve through
+    # this actor's Profile. There is no implicit attack1/attack4 selection.
     return semantic
 
 func _default_trigger(semantic: String) -> String:
@@ -148,7 +146,9 @@ func events(emitted: Array) -> void:
         if not is_instance_valid(player):
             continue
         if not player.has_animation(action):
-            action = semantic if player.has_animation(semantic) else "idle"
+            push_error("Actor %d has no configured animation '%s' for event '%s'" %
+                [id, action, kind])
+            continue
         var duration: float = action_timeline.duration_for(
             semantic, NativeClips.fallback_duration_for(semantic))
         var presentation_facing: Vector2i = Vector2i(event.get("facing", facing_for(id)))
