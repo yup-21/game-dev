@@ -253,7 +253,12 @@ def process_actor(actor: str, output_root: Path, annotation_root: Path | None,
         writer.writerow(("action", "frame", "atlas_index", "x", "y", "anchor_type",
                          "reviewed", "root_dx", "root_dy", "source_edge_warning"))
         for entry in placements:
-            writer.writerow((entry["action"], entry["index"],
+            # Keep source slot 0 intact but omit it from the review CSV:
+            # the native idle clip starts at atlas index 1. Frame is local to
+            # its action, atlas_index is the absolute 6x4 source slot.
+            if entry["action"] == "unused":
+                continue
+            writer.writerow((entry["action"], entry["phase"], entry["index"],
                              *entry["anchor_source"], entry["anchor_type"],
                              int(entry["reviewed"]), *entry["root_motion"],
                              int(entry["source_edge_warning"])))
