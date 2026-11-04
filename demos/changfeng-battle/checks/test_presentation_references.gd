@@ -48,6 +48,21 @@ func _run() -> void:
         _definitions_with("vfx_slot", "r22_shen_portrait"), resources)
     check(incorrect_kind.contains("unknown VFX slot"), "a portrait is not a VFX slot")
 
+    var missing_trigger: String = Validation.validate(
+        _definitions_with("vfx_trigger", ""), resources)
+    check(missing_trigger.contains("VFX Resource without a cue trigger"),
+        "configured VFX must declare an explicit cue: " + missing_trigger)
+
+    var registered_vfx: WuxiaVFXDefinition = load(
+        "res://data/native/assets/shen_sword_thrust.tres") as WuxiaVFXDefinition
+    check(registered_vfx != null and not registered_vfx.to_record().is_empty(),
+        "native texture VFX is a loadable typed Resource")
+    if registered_vfx != null:
+        var unusable_vfx: WuxiaVFXDefinition = registered_vfx.duplicate() as WuxiaVFXDefinition
+        unusable_vfx.resource = null
+        check(unusable_vfx.to_record().is_empty(),
+            "missing required texture fails typed VFX validation")
+
     var no_portrait: Dictionary = resources.duplicate(true)
     var portrait_card: WuxiaCharacterDefinition = native.resource_for(
         "character", "shen_changfeng").duplicate() as WuxiaCharacterDefinition

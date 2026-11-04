@@ -168,6 +168,11 @@ static func destination(path: String, mode: String = "") -> String:
 
 ## Both production roots use the same stable type/owner prefix.
 ## Source batch names and dates are deliberately ignored.
+## A VFX has its own validated native Resource type; UI remains a generic asset.
+static func _new_asset_card(mode: String) -> WuxiaAssetDefinition:
+    return WuxiaVFXDefinition.new() if mode == "vfx" else WuxiaAssetDefinition.new()
+
+
 static func _source_identity(path: String) -> PackedStringArray:
     if not _source_allowed(path):
         return PackedStringArray()
@@ -250,8 +255,11 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             return {"error": "UI/VFX 登记 ID 只允许小写字母、数字、点、横线、下划线"}
         result["target"] = "res://data/native/assets/" + id + ".tres"
         var existing := ResourceLoader.load(result["target"]) if ResourceLoader.exists(result["target"]) else null
-        if existing != null and not existing is WuxiaAssetDefinition:
-            return {"error": "登记路径已有非 WuxiaAssetDefinition Resource"}
+        if existing != null:
+            if mode == "vfx" and not existing is WuxiaVFXDefinition:
+                return {"error": "VFX 必须使用 WuxiaVFXDefinition"}
+            if mode == "ui_atlas" and (not existing is WuxiaAssetDefinition or existing is WuxiaVFXDefinition):
+                return {"error": "UI 目标不是通用 Asset Resource"}
         if existing == null:
             var manifest := ResourceLoader.load(MANIFEST) as WuxiaContentManifest
             if manifest == null:
@@ -272,7 +280,8 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 (owner is WuxiaMapDefinition or owner is WuxiaGridMapDefinition) and \
                 source_parts[1] != str(owner.get("content_id")):
             return {"error": "场景素材 ID 与目标地图 Resource 不一致：" + str(source_parts[1])}
-        if mode == "vfx" and source_parts[0] == "vfx" and _valid_id(str(source_parts[1])):
+        if mode == "vfx" and source_parts[0] == "vfx" and source_parts[1] != "shared" and \
+                _valid_id(str(source_parts[1])):
             result["owner_character_id"] = str(source_parts[1])
     var alpha_required := mode in ["portrait", "atlas", "vfx"]
     var versioned := bool(fields.get("versioned_replace", false))
@@ -512,9 +521,14 @@ static func save_bindings(plan_data: Dictionary) -> String:
         return map_error
 
     var card := ResourceLoader.load(target) as WuxiaAssetDefinition if ResourceLoader.exists(target) else null
+    if card != null:
+        if mode == "vfx" and not card is WuxiaVFXDefinition:
+            return "现有 VFX Resource 不是 WuxiaVFXDefinition"
+        if mode == "ui_atlas" and card is WuxiaVFXDefinition:
+            return "不能将 VFX Resource 当作 UI 资源覆盖"
     var creating := card == null
     if creating:
-        card = WuxiaAssetDefinition.new()
+        card = _new_asset_card(mode)
         card.content_id = target.get_file().get_basename()
     card.asset_kind = mode
     # Importing and binding makes this the active runtime selection, not a candidate.

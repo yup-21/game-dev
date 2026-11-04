@@ -139,14 +139,6 @@ func handle_events(events: Array, actor_nodes: Dictionary) -> void:
         var kind := str(event.get("type", ""))
         var source := int(event.get("actor_id", -1))
         var target := int(event.get("defender_id", event.get("target_id", -1)))
-        var scene_path: String = str(event.get("vfx_path", ""))
-        if not scene_path.is_empty() and kind in ["ATTACK_DECLARED", "ACTION_PRESENTATION"]:
-            if actor_nodes.has(source):
-                _spawn_skill_scene(scene_path, actor_nodes[source].position)
-            else:
-                push_error("Configured VFX scene has no actor: " + scene_path)
-        if kind == "ACTION_PRESENTATION":
-            continue
         match kind:
             "HP_DAMAGED", "DAMAGE", "SCORCH_TICK":
                 var victim: int = target if actor_nodes.has(target) else source
@@ -172,8 +164,8 @@ func handle_events(events: Array, actor_nodes: Dictionary) -> void:
                     _spawn_canvas(actor_nodes[source].position, "guard",
                         Color(0.65, 0.86, 1.0, 0.70), 0.40, 0.85, kind)
 
-## Only the cue belonging to the queued animation may fire a skill VFX.
-## Slot lookup uses the imported native Asset ID first, then event_kind.
+## Both authored texture and PackedScene skill VFX fire on their queued action cue.
+## Slots resolve to one registered native VFX Resource, never a legacy scene path.
 func handle_action_cues(cues: Array, actor_nodes: Dictionary) -> void:
     for cue in cues:
         if str(cue.get("name", "")) != str(cue.get("vfx_trigger", "")):
@@ -187,8 +179,15 @@ func handle_action_cues(cues: Array, actor_nodes: Dictionary) -> void:
             continue
         if not slot.is_empty():
             var explicit_spec: Dictionary = native_assets.vfx_spec(slot)
-            if explicit_spec.is_empty() or native_assets.texture(str(explicit_spec.get("id", ""))) == null:
+            if explicit_spec.is_empty():
                 push_error("Configured VFX slot missing: " + slot)
+                continue
+            var scene: PackedScene = native_assets.vfx_scene(slot)
+            if scene != null:
+                _spawn_skill_scene(str(explicit_spec.path), actor_nodes[id].position)
+                continue
+            if native_assets.texture(str(explicit_spec.id)) == null:
+                push_error("Configured VFX texture missing: " + slot)
                 continue
         var kind: String = "combo" if event_kind == "COMBO_TRIGGERED" else "slash"
         if str(cue.get("profile", "")) == "guard":

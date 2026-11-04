@@ -10,11 +10,8 @@ extends Resource
 @export var has_once_per_action: bool = false
 @export var once_per_action: bool = false
 @export var animation_action: String = ""
-@export var vfx_slot: String = ""
+@export var vfx_slot: WuxiaVFXDefinition
 @export var vfx_trigger: String = ""
-## Legacy explicit PackedScene binding; distinct from the native VFX atlas slot.
-@export var animation_id: String = ""
-@export var vfx_scene: PackedScene
 @export var effects: Array[Resource] = []
 
 func to_record() -> Dictionary:
@@ -38,18 +35,15 @@ func to_record() -> Dictionary:
         if profile.is_empty(): return {}
         result["attack_profile"] = profile
     if not animation_action.is_empty(): result["animation_action"] = animation_action
-    if not vfx_slot.is_empty(): result["vfx_slot"] = vfx_slot
+    if vfx_slot != null:
+        var slot_record: Dictionary = vfx_slot.to_record()
+        if vfx_trigger.is_empty() or slot_record.is_empty() or \
+                not vfx_slot.resource_path.begins_with("res://") or \
+                not ResourceLoader.exists(vfx_slot.resource_path):
+            push_error("Rule usage %s has an invalid VFX Resource %s (path=%s, record=%s, trigger=%s)" % \
+                [usage_id, vfx_slot.content_id, vfx_slot.resource_path, str(slot_record), vfx_trigger])
+            return {}
+        result["vfx_slot"] = vfx_slot.content_id
     if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
-    # Both action fields are explicit; mismatched duplicates are a configuration error.
-    if not animation_id.is_empty():
-        if not animation_id.is_valid_identifier() or animation_id != animation_id.to_lower() \
-                or (not animation_action.is_empty() and animation_id != animation_action):
-            return {}
-        result["animation_id"] = animation_id
-    if vfx_scene != null:
-        if not vfx_slot.is_empty() or not vfx_scene.resource_path.begins_with("res://") \
-                or not ResourceLoader.exists(vfx_scene.resource_path):
-            return {}
-        result["vfx_path"] = vfx_scene.resource_path
     if has_once_per_action: result["once_per_action"] = once_per_action
     return result

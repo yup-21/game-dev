@@ -2,6 +2,7 @@ extends SceneTree
 ## P1 offline import contract. No file is copied or modified by this test.
 const Importer = preload("res://addons/wuxia_art_importer/art_import_service.gd")
 const Dock = preload("res://addons/wuxia_art_importer/art_import_dock.gd")
+const Assets = preload("res://scripts/asset_registry.gd")
 
 func _initialize() -> void:
     var production_dir: String = Importer.production_root()
@@ -81,6 +82,26 @@ func _initialize() -> void:
             "owner_character_id", "")) != "shen_changfeng" or not str(vfx_owner.get(
             "next_binding", "")).ends_with("/vfx/shen_changfeng/martial-forms/atlas.svg"):
         _fail("VFX owner or canonical filename was not inferred: " + str(vfx_owner.get("error", "")))
+        return
+    if not Importer._new_asset_card("vfx") is WuxiaVFXDefinition or \
+            Importer._new_asset_card("ui_atlas") is WuxiaVFXDefinition:
+        _fail("Importer creates the wrong native VFX/UI Resource type")
+        return
+    var live_vfx: WuxiaVFXDefinition = load(
+        "res://data/native/assets/shen_sword_thrust.tres") as WuxiaVFXDefinition
+    if live_vfx == null or live_vfx.owner_character_id != "shen_changfeng" or \
+            not live_vfx.resource.resource_path.ends_with("/vfx/shen_changfeng/martial-forms/atlas.svg"):
+        _fail("Shen martial VFX Resource was not migrated to the typed canonical binding")
+        return
+    var asset_registry = Assets.new()
+    if not asset_registry.load_error.is_empty():
+        _fail("Character-owned multi-skill VFX rejected: " + asset_registry.load_error)
+        return
+    var extra_vfx: Dictionary = asset_registry.record("shen_sword_thrust")
+    extra_vfx["id"] = "art.vfx_second_skill_probe"
+    extra_vfx["event_kind"] = ""
+    if not asset_registry._register(extra_vfx):
+        _fail("Multiple VFX for one actor were treated as duplicate character art")
         return
     var opaque_jpg: String = production_dir.path_join("in-use/scenes/mountain_herbal_workshop/background.jpg")
     var opaque_vfx: Dictionary = Importer.plan("vfx", opaque_jpg, "",

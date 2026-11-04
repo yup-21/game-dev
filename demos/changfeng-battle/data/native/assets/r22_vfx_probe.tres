@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="WuxiaAssetDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="WuxiaVFXDefinition" load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scripts/content/asset_definition.gd" id="1_def"]
+[ext_resource type="Script" path="res://scripts/content/vfx_definition.gd" id="1_def"]
 [ext_resource type="Texture2D" path="res://assets/imported/vfx/shared/tile_0082.png" id="2_image"]
 
 [resource]

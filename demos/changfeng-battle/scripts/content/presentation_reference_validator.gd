@@ -87,20 +87,10 @@ static func validate(definitions: Dictionary, resources: Dictionary, strict_bind
                 var binding: Dictionary = entry.data
                 var location: String = kind + " " + str(definition_id) + ":" + str(binding.get("id", ""))
                 var action: String = str(binding.get("animation_action", ""))
-                var legacy_action: String = str(binding.get("animation_id", ""))
-                if not action.is_empty() and not legacy_action.is_empty() and action != legacy_action:
-                    return location + " has conflicting animation action references"
-                if action.is_empty():
-                    action = legacy_action
                 var slot: String = str(binding.get("vfx_slot", ""))
-                var scene_path: String = str(binding.get("vfx_path", ""))
-                if not slot.is_empty() and not scene_path.is_empty():
-                    return location + " declares two VFX slots"
-                if not scene_path.is_empty() and (not scene_path.begins_with("res://")
-                        or not ResourceLoader.exists(scene_path)
-                        or not ResourceLoader.load(scene_path) is PackedScene):
-                    return location + " references unknown VFX scene: " + scene_path
                 var trigger: String = str(binding.get("vfx_trigger", ""))
+                if not slot.is_empty() and trigger.is_empty():
+                    return location + " has a VFX Resource without a cue trigger"
                 if not action.is_empty() and timeline_cues.is_empty():
                     return location + " requires a missing action timeline Resource"
                 if not action.is_empty() and not _action_exists(action, str(entry.school), active_profiles):

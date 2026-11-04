@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WuxiaVFXDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/vfx_definition.gd" id="1_vfx"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/skill_vfx_marker.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_vfx")
+content_id = "r117_scene_marker"
+asset_kind = "vfx"
+status = "candidate"
+resource = ExtResource("2_scene")
+source = "mechanical_test_fixture"
+rights = "verified"

@@ -81,7 +81,7 @@
 | 角色立绘 | 透明 PNG / WebP | 真实 Alpha、单人、身份一致、边缘完整 | `WuxiaCharacterDefinition.portrait` |
 | 角色动画 | 透明 RGBA Atlas（PNG / WebP），可单动作或多动作合图 | 等尺寸格、列行可整除、逐动作有序帧索引、零越界、统一逻辑根点；运行时 12 组动作 ID 与显式 Clip 映射 | `WuxiaActorAnimationProfile` |
 | 场景分层 | 同画布背景与透明图层 | 1600×1000 同原点；背景、独立 ground 必需，前景和天气按需 | `WuxiaSceneArtProfile` → Map 或 ChapterScene |
-| 战斗 VFX | 透明 RGBA 图集或单图 | 真实 Alpha；列行可整除；`frame_indices` 不越界，按事件持续时间非循环播放 | `WuxiaAssetDefinition` 的 VFX 事件绑定 |
+| 战斗 VFX | 透明 RGBA 图集或单图 | 真实 Alpha；列行可整除；`frame_indices` 不越界，按事件持续时间非循环播放 | `WuxiaVFXDefinition` 的 VFX/动作 Cue 绑定（亦支持原生 PackedScene） |
 | UI / 卡画 | SVG / PNG / WebP 分件 | 文字与交互不烘焙进贴图；九宫格、裁切与小尺寸可读性人工验证 | Godot `Control` / 原生资产引用 |
 
 - **兼容边界**：旧 6×4/256×256 和单张背景仅是过渡格式，不作为新资产合同或 AssetRegistry 全局限制。新 Atlas 的行列和帧号由动画 Profile 唯一解释。

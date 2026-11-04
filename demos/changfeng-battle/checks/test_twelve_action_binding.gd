@@ -36,15 +36,15 @@ func _run() -> void:
         driver.play(1, action)
         check(sprite.frame == 12 + i, "independent frame for " + action)
     driver.events([{"type": "ATTACK_DECLARED", "actor_id": 1,
-        "target_id": 2, "animation_id": "attack4"}])
+        "target_id": 2, "animation_action": "attack4"}])
     check(driver.tracks[1].state == "attack4" and sprite.frame == 15,
         "attack usage can select attack4")
-    driver.events([{"type": "ACTION_PRESENTATION", "actor_id": 1,
-        "animation_id": "skill_mist"}])
+    driver.events([{"type": "CARD_PLAYED", "actor_id": 1,
+        "animation_action": "skill_mist"}])
     check(driver.tracks[1].state == "skill_mist" and sprite.frame == 16,
         "nonattack skill can select a custom action")
-    driver.events([{"type": "ACTION_PRESENTATION", "actor_id": 1,
-        "animation_id": "missing_action"}])
+    driver.events([{"type": "CARD_PLAYED", "actor_id": 1,
+        "animation_action": "missing_action"}])
     check(driver.tracks[1].state == "skill_mist",
         "invalid explicit animation logs an error without silently playing a fallback")
     driver.play(1, "run")
@@ -55,17 +55,19 @@ func _run() -> void:
 
     var usage := WuxiaSkillUsageDefinition.new()
     usage.usage_id = "cut"
-    usage.animation_id = "attack3"
-    usage.vfx_scene = load("res://checks/fixtures/skill_vfx_marker.tscn")
+    usage.animation_action = "attack3"
+    usage.vfx_slot = load("res://checks/fixtures/scene_vfx_definition.tres") as WuxiaVFXDefinition
+    usage.vfx_trigger = "strike_active"
     var record: Dictionary = usage.to_record()
-    check(str(record.get("animation_id", "")) == "attack3",
+    check(str(record.get("animation_action", "")) == "attack3",
         "skill usage serializes exactly one action ID")
-    check(str(record.get("vfx_path", "")) == "res://checks/fixtures/skill_vfx_marker.tscn",
-        "skill usage serializes one optional PackedScene path")
+    check(str(record.get("vfx_slot", "")) == "r117_scene_marker" and
+        str(record.get("vfx_trigger", "")) == "strike_active",
+        "scene VFX binds through one typed Resource and cue")
     var stage := WuxiaTechniqueNodeDefinition.new()
     stage.node_id = "stage"
-    stage.animation_id = "attack2"
-    check(str(stage.to_record().get("animation_id", "")) == "attack2",
+    stage.animation_action = "attack2"
+    check(str(stage.to_record().get("animation_action", "")) == "attack2",
         "technique stage can select an action")
 
     var painted := Node2D.new()
@@ -74,10 +76,20 @@ func _run() -> void:
     actor.position = Vector2(47, 82)
     painted.add_child(actor)
     var effects = VFX.new(painted)
-    effects.handle_events([{"type": "ACTION_PRESENTATION", "actor_id": 1,
-        "vfx_path": "res://checks/fixtures/skill_vfx_marker.tscn"}], {1: actor})
-    check(effects.skill_scenes.size() == 1,
-        "configured VFX scene instantiates from the visual event")
+    check(effects.native_assets._register(usage.vfx_slot.to_record()),
+        "scene VFX registers as an authored native asset")
+    effects.handle_events([{"type": "ATTACK_DECLARED", "actor_id": 1,
+        "vfx_slot": "r117_scene_marker"}], {1: actor})
+    check(effects.skill_scenes.is_empty(),
+        "scene VFX does not instantiate on attack declaration")
+    effects.handle_action_cues([{"name": "preparation", "vfx_trigger": "strike_active",
+        "actor_id": 1, "vfx_slot": "r117_scene_marker"}], {1: actor})
+    check(effects.skill_scenes.is_empty(), "unmatched scene VFX cue is ignored")
+    effects.handle_action_cues([{"name": "strike_active", "vfx_trigger": "strike_active",
+        "actor_id": 1, "vfx_slot": "r117_scene_marker", "profile": "attack",
+        "event_type": "ATTACK_DECLARED"}], {1: actor})
+    check(effects.skill_scenes.size() == 1 and effects.bursts.is_empty(),
+        "configured PackedScene instantiates only at the authored cue")
     effects.update(2.0)
     check(effects.skill_scenes.is_empty(), "custom effect is cleaned up")
     effects.clear()
