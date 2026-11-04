@@ -86,6 +86,8 @@ func enqueue_defeat(id: int) -> void:
 func _chosen_action(event: Dictionary, semantic: String, id: int,
         kind: String) -> String:
     var requested: String = str(event.get("animation_action", ""))
+    if requested.is_empty():
+        requested = str(event.get("animation_id", ""))
     if not requested.is_empty():
         return requested
     if kind in ["MOVE", "MOVE_FREE"]:
@@ -117,11 +119,15 @@ func events(emitted: Array) -> void:
     stage_left = 0.0
     pending_cues.clear()
     var attacks: Dictionary = {}
+    var presentation_actors: Dictionary = {}
     for event in emitted:
         if str(event.get("type", "")) == "ATTACK_DECLARED":
             var attack_key := str(event.get("actor_id", -1)) + ":" + str(
                 event.get("definition_id", "")) + ":" + str(event.get("usage_id", ""))
             attacks[attack_key] = true
+    for event in emitted:
+        if str(event.get("type", "")) == "ACTION_PRESENTATION":
+            presentation_actors[int(event.get("actor_id", -1))] = true
     for event in emitted:
         var kind: String = str(event.get("type", ""))
         var actor_id: int = int(event.get("actor_id", -1))
@@ -129,6 +135,11 @@ func events(emitted: Array) -> void:
         if kind == "CHAIN_LINK_ADDED" and tracks.has(actor_id):
             set_facing(actor_id, Vector2i(event.get("facing", facing_for(actor_id))))
         var semantic: String = action_timeline.animation_for_event(kind)
+        if kind in ["SHIELD", "INTERCEPT_JUDGED", "ATTACK_INTERRUPTED",
+                "CHAIN_LINK_CANCELED"] and presentation_actors.has(actor_id):
+            continue
+        if kind == "ACTION_PRESENTATION":
+            semantic = "skill"
         if kind in ["CARD_PLAYED", "ABILITY_USED"]:
             var key := str(actor_id) + ":" + str(event.get("definition_id", event.get(
             "technique_id", ""))) + ":" + str(event.get("usage_id", event.get("node_id", "")))

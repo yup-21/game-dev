@@ -10,6 +10,8 @@ const REQUIRED_ACTIONS := ["idle", "move", "attack", "guard", "hit",
 const LEGACY_REQUIRED_ACTIONS := REQUIRED_ACTIONS
 const MODERN_REQUIRED_ACTIONS := ["idle", "walk", "run", "attack1", "attack2",
     "attack3", "attack4", "skill", "evade", "guard", "hit", "defeat"]
+# Stable public name consumed by earlier twelve-action fixtures.
+const BASE_ACTIONS := MODERN_REQUIRED_ACTIONS
 
 @export var atlas: Texture2D
 @export_range(1, 64) var columns: int = 6

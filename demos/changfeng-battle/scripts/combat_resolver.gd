@@ -175,9 +175,12 @@ func play_card(actor,choice: Dictionary) -> void:
         "animation_action":str(u.get("animation_action","")),
         "vfx_slot":str(u.get("vfx_slot","")),
         "vfx_trigger":str(u.get("vfx_trigger","")),
+        "animation_id":str(u.get("animation_id","")),
+        "vfx_path":str(u.get("vfx_path","")),
         "text":"%s · %s" % [actor.name,u.get("name",d.name)]})
 	if state.mode=="CLASH":
 		reactions.add(actor.id,uid,str(d.id),u,choice)
+		_emit_presentation(actor.id,u)
 		return
 	var damage: int=-1
 	for e in u.get("effects",[]):
@@ -187,6 +190,7 @@ func play_card(actor,choice: Dictionary) -> void:
 		declare_attack(actor.id,uid,str(d.id),str(u.id),int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.get("effects",[]),"","",u)
 	else:
 		apply_effects(actor.id,u.get("effects",[]),choice)
+		_emit_presentation(actor.id,u)
 		finish_card(actor.id,uid)
 
 func play_ability(actor,choice: Dictionary) -> void:
@@ -197,10 +201,13 @@ func play_ability(actor,choice: Dictionary) -> void:
 	emit("ABILITY_USED",{"actor_id":actor.id,"technique_id":id,"node_id":stage,
         "animation_action":str(u.get("animation_action","")),
         "vfx_slot":str(u.get("vfx_slot","")),
-        "vfx_trigger":str(u.get("vfx_trigger",""))})
+        "vfx_trigger":str(u.get("vfx_trigger","")),
+        "animation_id":str(u.get("animation_id","")),
+        "vfx_path":str(u.get("vfx_path",""))})
 	if state.mode=="CLASH":
 		techniques.advance(actor,id,stage)
 		reactions.add(actor.id,"",id,u,choice)
+		_emit_presentation(actor.id,u)
 		return
 	var damage: int=-1
 	for effect in u.effects:
@@ -210,7 +217,17 @@ func play_ability(actor,choice: Dictionary) -> void:
 		declare_attack(actor.id,"",id,stage,int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.effects,id,stage,u)
 	else:
 		apply_effects(actor.id,u.effects,choice)
+		_emit_presentation(actor.id,u)
 		techniques.advance(actor,id,stage)
+
+## An explicit scene-based skill visual does not affect combat rules.
+func _emit_presentation(actor_id: int, usage: Dictionary) -> void:
+	var action: String=str(usage.get("animation_id",""))
+	var scene_path: String=str(usage.get("vfx_path",""))
+	if action.is_empty() and scene_path.is_empty():
+		return
+	emit("ACTION_PRESENTATION",{"actor_id":actor_id,
+		"animation_id":action,"vfx_path":scene_path})
 
 func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: String,target_id: int,damage: int,route: String,break_bonus: int,effects: Array,technique_id: String="",node_id: String="",presentation: Dictionary={}) -> void:
 	var actor=state.get_actor(actor_id)
@@ -350,7 +367,7 @@ func deal_damage(source_id: int,target_id: int,amount: float) -> void:
 	var lost: int=mini(target.hp_u,raw_u-absorbed)
 	target.hp_u-=lost
 	emit("DAMAGE",{"actor_id":source_id,"defender_id":target_id,"hp_damage":float(lost)/UNIT,"absorbed":float(absorbed)/UNIT,"damage":amount,"text":"%s 受伤 %s · 护体吸收 %s" % [target.name,str(float(lost)/UNIT),str(float(absorbed)/UNIT)]})
-	if lost>0: emit("HP_DAMAGED",{"actor_id":target_id,"source_actor_id":source_id,"amount":float(lost)/UNIT,"damage_kind":"attack"})
+	if lost>0: emit("HP_DAMAGED",{"actor_id":target_id,"source_actor_id":source_id,"amount":float(lost)/UNIT,"damage_kind":"attack","defeated":target.hp_u<=0})
 	check_death()
 
 func apply_attack_effects(trigger: String,source_id: int) -> void:
@@ -589,4 +606,4 @@ func deal_status_damage(actor_id: int,amount: int,status_id: String) -> void:
 	var lost: int=mini(actor.hp_u,maxi(0,amount)*UNIT)
 	actor.hp_u-=lost
 	emit("SCORCH_TICK",{"actor_id":actor_id,"stacks":amount,"damage":float(lost)/UNIT,"text":"%s 灼痕 −%s" % [actor.name,str(float(lost)/UNIT)]})
-	if lost>0: emit("HP_DAMAGED",{"actor_id":actor_id,"amount":float(lost)/UNIT,"damage_kind":"status","status_id":status_id})
+	if lost>0: emit("HP_DAMAGED",{"actor_id":actor_id,"amount":float(lost)/UNIT,"damage_kind":"status","status_id":status_id,"defeated":actor.hp_u<=0})

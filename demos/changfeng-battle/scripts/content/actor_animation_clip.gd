@@ -27,7 +27,7 @@ func effective_rows(fallback: int) -> int:
     return rows if atlas != null else fallback
 
 func valid_for(fallback_capacity: int) -> bool:
-    if action.is_empty() or not action.is_valid_identifier() or action != action.to_lower():
+    if action.is_empty() or action.length() > 64 or not action.is_valid_identifier() or action != action.to_lower():
         return false
     if frames.is_empty() or frames.size() > 256 or not is_finite(loop_fps) \
             or loop_fps <= 0.0 or loop_fps > 60.0 or (action == "defeat" and loop):
