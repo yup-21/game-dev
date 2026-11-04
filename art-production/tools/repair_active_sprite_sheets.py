@@ -122,7 +122,7 @@ def run(write: bool) -> None:
         relative = BATCH / actor / "baseline" / filename
         destinations = (ROOT / "art-production" / relative,
                         ROOT / "art-production/in-use/characters" / actor / "sprites" / filename,
-                        GAME / "assets/imported/in-use/characters" / actor / "sprites" / filename)
+                        GAME / "assets/imported/characters" / actor / "sprites" / filename)
         if write:
             for dest in destinations:
                 dest.parent.mkdir(parents=True, exist_ok=True)

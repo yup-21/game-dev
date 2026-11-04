@@ -237,8 +237,8 @@
   ],
   "review_runtime_copies": [
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/black_blade/portraits/portrait_black_blade_fullbody_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/black_blade/portraits/portrait_black_blade_fullbody_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/black_blade/portraits/portrait_black_blade_fullbody_v01.png",
+      "res_path": "res://assets/imported/characters/black_blade/portraits/portrait_black_blade_fullbody_v01.png",
       "production_path": "art-production/in-use/characters/black_blade/portraits/portrait_black_blade_fullbody_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -246,8 +246,8 @@
       "git_blob_sha1": "7b0d5321ac10e2d88a1bbabde78e817726dc2621"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/black_blade/sprites/sprite_black_blade_atlas_normalized_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/black_blade/sprites/sprite_black_blade_atlas_normalized_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/black_blade/sprites/sprite_black_blade_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/characters/black_blade/sprites/sprite_black_blade_atlas_normalized_v01.png",
       "production_path": "art-production/in-use/characters/black_blade/sprites/sprite_black_blade_atlas_normalized_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -255,8 +255,8 @@
       "git_blob_sha1": "4df15d1ae43e16583e76d8539a79db985625fc10"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/escort_elder/portraits/portrait_escort_elder_fullbody_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/escort_elder/portraits/portrait_escort_elder_fullbody_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/escort_elder/portraits/portrait_escort_elder_fullbody_v01.png",
+      "res_path": "res://assets/imported/characters/escort_elder/portraits/portrait_escort_elder_fullbody_v01.png",
       "production_path": "art-production/in-use/characters/escort_elder/portraits/portrait_escort_elder_fullbody_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -264,8 +264,8 @@
       "git_blob_sha1": "9e4a9a5803fc5c5742717f0e35c923bdbc869470"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/escort_elder/story-poses/pose_escort_elder_injured_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/escort_elder/story-poses/pose_escort_elder_injured_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/escort_elder/story-poses/pose_escort_elder_injured_v01.png",
+      "res_path": "res://assets/imported/characters/escort_elder/story-poses/pose_escort_elder_injured_v01.png",
       "production_path": "art-production/in-use/characters/escort_elder/story-poses/pose_escort_elder_injured_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -273,8 +273,8 @@
       "git_blob_sha1": "8a92f9074fe0204854f5f303c0bae369cee093d1"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/green_wanderer/portraits/portrait_green_wanderer_fullbody_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/green_wanderer/portraits/portrait_green_wanderer_fullbody_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/green_wanderer/portraits/portrait_green_wanderer_fullbody_v01.png",
+      "res_path": "res://assets/imported/characters/green_wanderer/portraits/portrait_green_wanderer_fullbody_v01.png",
       "production_path": "art-production/in-use/characters/green_wanderer/portraits/portrait_green_wanderer_fullbody_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -282,8 +282,8 @@
       "git_blob_sha1": "3902be4e25793546af4c83ee1d7695393e92162c"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/green_wanderer/sprites/sprite_green_wanderer_atlas_normalized_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/green_wanderer/sprites/sprite_green_wanderer_atlas_normalized_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/green_wanderer/sprites/sprite_green_wanderer_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/characters/green_wanderer/sprites/sprite_green_wanderer_atlas_normalized_v01.png",
       "production_path": "art-production/in-use/characters/green_wanderer/sprites/sprite_green_wanderer_atlas_normalized_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -291,8 +291,8 @@
       "git_blob_sha1": "b020f123dc15a36d0f8052fed7eb05dc2ad1ab16"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/gu_qingshuang/portraits/portrait_gu_qingshuang_fullbody_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/gu_qingshuang/portraits/portrait_gu_qingshuang_fullbody_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/gu_qingshuang/portraits/portrait_gu_qingshuang_fullbody_v01.png",
+      "res_path": "res://assets/imported/characters/gu_qingshuang/portraits/portrait_gu_qingshuang_fullbody_v01.png",
       "production_path": "art-production/in-use/characters/gu_qingshuang/portraits/portrait_gu_qingshuang_fullbody_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -300,8 +300,8 @@
       "git_blob_sha1": "a8657880eea49c7d20c1a54a7612e17a4f78279a"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/gu_qingshuang/sprites/sprite_gu_qingshuang_atlas_normalized_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/gu_qingshuang/sprites/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/gu_qingshuang/sprites/sprite_gu_qingshuang_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/characters/gu_qingshuang/sprites/sprite_gu_qingshuang_atlas_normalized_v01.png",
       "production_path": "art-production/in-use/characters/gu_qingshuang/sprites/sprite_gu_qingshuang_atlas_normalized_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -309,8 +309,8 @@
       "git_blob_sha1": "3c38877175ad1e4ba8157275bf2afb13e12133b5"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/night_assassin/portraits/portrait_night_assassin_fullbody_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/night_assassin/portraits/portrait_night_assassin_fullbody_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/night_assassin/portraits/portrait_night_assassin_fullbody_v01.png",
+      "res_path": "res://assets/imported/characters/night_assassin/portraits/portrait_night_assassin_fullbody_v01.png",
       "production_path": "art-production/in-use/characters/night_assassin/portraits/portrait_night_assassin_fullbody_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -318,8 +318,8 @@
       "git_blob_sha1": "ce6a278583eb20bd7be0fb8ba4d02ef86099d2ca"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/characters/night_assassin/sprites/sprite_night_assassin_atlas_normalized_v01.png",
-      "res_path": "res://assets/imported/in-use/characters/night_assassin/sprites/sprite_night_assassin_atlas_normalized_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/characters/night_assassin/sprites/sprite_night_assassin_atlas_normalized_v01.png",
+      "res_path": "res://assets/imported/characters/night_assassin/sprites/sprite_night_assassin_atlas_normalized_v01.png",
       "production_path": "art-production/in-use/characters/night_assassin/sprites/sprite_night_assassin_atlas_normalized_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -327,8 +327,8 @@
       "git_blob_sha1": "6a66d12f004bae7695c7b555b7feb16f1ebcee36"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_background_v01.png",
-      "res_path": "res://assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_background_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/scenes/ruined_temple/scene_ruined_temple_background_v01.png",
+      "res_path": "res://assets/imported/scenes/ruined_temple/scene_ruined_temple_background_v01.png",
       "production_path": "art-production/in-use/scenes/ruined_temple/scene_ruined_temple_background_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -336,8 +336,8 @@
       "git_blob_sha1": "f537dd6fcbab5614e5794553186cc4fc6ed2d961"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
-      "res_path": "res://assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/scenes/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
+      "res_path": "res://assets/imported/scenes/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
       "production_path": "art-production/in-use/scenes/ruined_temple/scene_ruined_temple_composite_preview_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -345,8 +345,8 @@
       "git_blob_sha1": "c11b7519e71d985b4269873dd80bf9a0170a70ee"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_foreground_v01.png",
-      "res_path": "res://assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/scenes/ruined_temple/scene_ruined_temple_foreground_v01.png",
+      "res_path": "res://assets/imported/scenes/ruined_temple/scene_ruined_temple_foreground_v01.png",
       "production_path": "art-production/in-use/scenes/ruined_temple/scene_ruined_temple_foreground_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -354,8 +354,8 @@
       "git_blob_sha1": "658bf873a3da52832ba1cd42cd2d0eda8e824fb8"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_ground_v01.png",
-      "res_path": "res://assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/scenes/ruined_temple/scene_ruined_temple_ground_v01.png",
+      "res_path": "res://assets/imported/scenes/ruined_temple/scene_ruined_temple_ground_v01.png",
       "production_path": "art-production/in-use/scenes/ruined_temple/scene_ruined_temple_ground_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",
@@ -363,8 +363,8 @@
       "git_blob_sha1": "95af5e7d68aad001b1db8fbfad6581ff8bbc2b3b"
     },
     {
-      "path": "demos/changfeng-battle/assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_weather_v01.png",
-      "res_path": "res://assets/imported/in-use/scenes/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "path": "demos/changfeng-battle/assets/imported/scenes/ruined_temple/scene_ruined_temple_weather_v01.png",
+      "res_path": "res://assets/imported/scenes/ruined_temple/scene_ruined_temple_weather_v01.png",
       "production_path": "art-production/in-use/scenes/ruined_temple/scene_ruined_temple_weather_v01.png",
       "usage_state": "in_use",
       "review_state": "review_required",

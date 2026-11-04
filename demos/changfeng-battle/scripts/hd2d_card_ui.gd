@@ -3,9 +3,9 @@ extends RefCounted
 ## Eight distinct illustrations are stored in one 4x2 PNG atlas.
 const WuxiaTheme = preload("res://scripts/hd2d_ui_theme.gd")
 const OptionalPaintings = preload("res://scripts/hd2d_card_art.gd")
-const ATLAS: Texture2D = preload("res://assets/imported/in-use/ui/card-art/technique_art_atlas_v1.png")
-const FRAME: Texture2D = preload("res://assets/imported/in-use/ui/ornaments/card_frame.svg")
-const SEAL: Texture2D = preload("res://assets/imported/in-use/ui/common/jade_seal.svg")
+const ATLAS: Texture2D = preload("res://assets/imported/ui/card-art/technique_art_atlas_v1.png")
+const FRAME: Texture2D = preload("res://assets/imported/ui/ornaments/card_frame.svg")
+const SEAL: Texture2D = preload("res://assets/imported/ui/common/jade_seal.svg")
 const ATLAS_COLUMNS := 4
 const ATLAS_ROWS := 2
 const CARD_SIZE := Vector2(148, 186)

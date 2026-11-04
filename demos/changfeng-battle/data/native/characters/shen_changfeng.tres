@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="1_character"]
 [ext_resource type="Script" path="res://scripts/content/starting_item_definition.gd" id="2_starting"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/characters/shen_changfeng/portraits/portrait_shen_changfeng_fullbody_v01.png" id="3_portrait"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/characters/shen_changfeng/sprites/sprite_shen_changfeng_atlas_aligned_v03.png" id="4_sheet"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/shen_changfeng/portraits/portrait_shen_changfeng_fullbody_v01.png" id="3_portrait"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/shen_changfeng/sprites/sprite_shen_changfeng_atlas_aligned_v03.png" id="4_sheet"]
 
 [ext_resource type="Resource" path="res://data/native/animations/shen_changfeng.tres" id="5_anim"]
 

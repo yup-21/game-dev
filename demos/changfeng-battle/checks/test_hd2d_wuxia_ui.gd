@@ -11,14 +11,14 @@ func _fail(reason: String) -> void:
     quit(1)
 
 func _run() -> void:
-    var atlas: Texture2D = load("res://assets/imported/in-use/ui/card-art/technique_art_atlas_v1.png")
+    var atlas: Texture2D = load("res://assets/imported/ui/card-art/technique_art_atlas_v1.png")
     if atlas == null or atlas.get_size() != Vector2(1536, 1024):
         _fail("card art atlas must be 1536x1024 (4x2)")
         return
     for asset_path in [
-        "res://assets/imported/in-use/ui/ornaments/portrait_frame.svg",
-        "res://assets/imported/in-use/ui/ornaments/card_frame.svg",
-        "res://assets/imported/in-use/ui/common/jade_seal.svg"]:
+        "res://assets/imported/ui/ornaments/portrait_frame.svg",
+        "res://assets/imported/ui/ornaments/card_frame.svg",
+        "res://assets/imported/ui/common/jade_seal.svg"]:
         var art: Texture2D = load(asset_path)
         if art == null or art.get_width() == 0:
             _fail("cannot import UI vector " + asset_path)

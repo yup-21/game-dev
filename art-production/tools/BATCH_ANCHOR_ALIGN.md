@@ -35,4 +35,4 @@ python art-production/tools/batch_anchor_align.py --all --annotations art-produc
 
 ## 与 Godot 接口
 
-需要经批准后将 Atlas 导入 `assets/imported/candidates/characters/<actor>/sprites` 并建立独立 `WuxiaActorAnimationProfile` 预览资源，其 `columns=6, rows=4`、帧号沿用旧资源。新格宽高是可变的，必须校准 `feet_offset` 和 `actor_scale`，保持普通角色 200 世界像素视觉高度。不要直接把旧版 `feet_offset=(0,-102)` 当成新图集正确值；也不要改 BattleModel / 技能结算。
+需要经批准后将 Atlas 导入 `assets/imported/characters/<actor>/sprites` 并建立独立 `WuxiaActorAnimationProfile` 预览资源，其 `columns=6, rows=4`、帧号沿用旧资源。新格宽高是可变的，必须校准 `feet_offset` 和 `actor_scale`，保持普通角色 200 世界像素视觉高度。不要直接把旧版 `feet_offset=(0,-102)` 当成新图集正确值；也不要改 BattleModel / 技能结算。

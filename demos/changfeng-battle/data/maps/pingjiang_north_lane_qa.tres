@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=9 format=3]
 [ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/scenes/pingjiang_north_lane_qa/scene_pingjiang_north_lane_background_v01.svg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_north_lane_qa/scene_pingjiang_north_lane_background_v01.svg" id="2_bg"]
 [ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_north_lane_qa.tres" id="3_art"]
 [ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
 

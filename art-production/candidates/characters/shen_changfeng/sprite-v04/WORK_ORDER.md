@@ -16,7 +16,7 @@
 - 核心动作 AI 源图：`sprite_shen_changfeng_core_8x4_source_v04.png`。生成提示词要点：墨青蓝外袍、米白里衣、束冠黑发、直剑；固定朝右侧身，同尺寸、同脚点，每行分别待机/行走/出剑/格挡各八帧，透明背景，无环境及格线，姿势连续、简化细节。
 - 出剑 AI 源图：`sprite_shen_changfeng_attack_2x4_source_v04.png`。生成提示词要点：沿用同一角色身份；8 帧起手→收剑，只有 2 列、每格更宽，确保整柄长剑与服饰都位于自身格内，固定侧视、透明背景。均由内置图像生成工具生成，未使用公开 seed。
 - 处理方式：Pillow RGBA 阈值轮廓测量、统一纵向基线、等比尺寸和安全边距修正，导出透明 WebP。
-- 候选 Resource：`demos/changfeng-battle/data/art_previews/shen_changfeng_sprite_v04.tres`。预览 Atlas 同步到 `demos/changfeng-battle/assets/imported/candidates/characters/shen_changfeng/sprites/`，没有修改 `data/native/animations/shen_changfeng.tres` 或正式角色卡。
+- 候选 Resource：`demos/changfeng-battle/data/art_previews/shen_changfeng_sprite_v04.tres`。预览 Atlas 同步到 `demos/changfeng-battle/assets/imported/characters/shen_changfeng/sprites/`，没有修改 `data/native/animations/shen_changfeng.tres` 或正式角色卡。
 - 动态对照：`preview_shen_changfeng_core_v04.gif`（2×2 同步播放四组动作，底边参考线仅用于预览）。
 
 ## 帧索引 / 待验收

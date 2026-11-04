@@ -60,4 +60,4 @@ python3 art-production/tools/rebuild_shen_v05.py \
   --output path/to/candidate
 ```
 
-完整二进制候选包与脚点动态预览在当前 ChatGPT 回答中交付；**本 PR 的文本提交不代表这些新二进制图集已经上传仓库**。若后续上传二进制，放入 art-production/candidates/characters/shen_changfeng/ 与项目 assets/imported/candidates 对应路径，并保持现有 in_use 不变。
+完整二进制候选包与脚点动态预览在当前 ChatGPT 回答中交付；**本 PR 的文本提交不代表这些新二进制图集已经上传仓库**。若后续上传二进制，放入 art-production/candidates/characters/shen_changfeng/ 与项目 assets/imported 对应路径，并保持现有 in_use 不变。

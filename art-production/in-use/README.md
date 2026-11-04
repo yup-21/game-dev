@@ -8,6 +8,6 @@
 - `ui/cards|card-art|ornaments|overlays|common/`
 - `placeholders/<asset-type>/`（明确使用中的旧测试占位；并非正式素材的隐式回退）
 
-游戏运行图片存放在 `demos/changfeng-battle/assets/imported/in-use/` 同一分类层级，导出工具按相对路径镜像。只有不被游戏引用的预览图才放在 `assets/imported/candidates/`。不按生成日期建立目录。
+游戏已导入的图片统一存放在 `demos/changfeng-battle/assets/imported/<type>/<owner>/`，不再附加候选/使用中状态目录。导出工具按相对路径镜像**正式 Resource 当前引用**的图片；仅用于编辑器预览的旧图虽然也在导入目录，其制作原稿仍属于 `art-production/candidates/`，不额外写入本镜像。不按生成日期建立目录。
 
 `art-production/candidates/` 可以有多个版本，`in-use` 同一原生 Resource 槽位只有当前绑定。旧归档保留于 `art-production/archive/`，不自动参与游戏加载。

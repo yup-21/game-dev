@@ -112,12 +112,13 @@ static func destination(path: String, mode: String = "") -> String:
         return ""
     var relative := path.simplify_path().trim_prefix(production_root() + "/")
     if relative.begins_with("in-use/"):
-        # Active copies already have canonical type/owner folders.
-        return "res://assets/imported/" + relative
+        # Production status is not part of the Godot path.
+        return "res://assets/imported/" + relative.trim_prefix("in-use/")
     if not relative.begins_with("candidates/"):
         return ""
+    # A selected candidate becomes a Godot asset; keep production status only
+    # in art-production, never in the res:// directory structure.
     # Drop candidate production batches (baseline, sprite-v04, qa-layout).
-    # Imported files are grouped by usage type and owner, never by batch or date.
     var parts := relative.trim_prefix("candidates/").split("/")
     if parts.size() < 3 or not _valid_id(parts[1]):
         return ""
@@ -134,7 +135,7 @@ static func destination(path: String, mode: String = "") -> String:
         folder = "ui/" + owner
     if folder.is_empty():
         return ""
-    return "res://assets/imported/candidates/" + folder + "/" + path.get_file()
+    return "res://assets/imported/" + folder + "/" + path.get_file()
 
 
 static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO,

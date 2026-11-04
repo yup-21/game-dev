@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="WuxiaAssetDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/asset_definition.gd" id="1_asset"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/vfx/shen_changfeng/martial-forms/vfx_shen_martial_5x4.svg" id="2_sheet"]
+[ext_resource type="Texture2D" path="res://assets/imported/vfx/shen_changfeng/martial-forms/vfx_shen_martial_5x4.svg" id="2_sheet"]
 
 [resource]
 script = ExtResource("1_asset")

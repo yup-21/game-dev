@@ -33,7 +33,7 @@ func _run() -> void:
         if Art.portrait_for_character(id) != role.portrait:
             _fail("asset registry still overrides new portrait: " + id)
             return
-        if not role.sprite_sheet.resource_path.contains("/assets/imported/in-use/characters/"):
+        if not role.sprite_sheet.resource_path.contains("/assets/imported/characters/"):
             _fail("role still reads legacy art: " + id)
             return
         for action in WuxiaActorAnimationProfile.REQUIRED_ACTIONS:

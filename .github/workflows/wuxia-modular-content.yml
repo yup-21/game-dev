@@ -61,24 +61,7 @@ jobs:
         with:
           version: '4.7.2'
           use-dotnet: false
-      # The editor dock waits for Godot to import newly copied image files.
-      # Pre-stage the nine pilot fixtures so the headless roundtrip tests the
-      # same already-imported Texture2D bindings without an editor mid-script.
-      - name: Stage pilot candidate fixtures for headless import test
-        run: |
-          for actor in shen_changfeng pursuer_captain; do
-            source_dir="art-production/candidates/characters/$actor/baseline"
-            target_root="demos/changfeng-battle/assets/imported/candidates/characters/$actor"
-            mkdir -p "$target_root/portraits" "$target_root/sprites"
-            cp "$source_dir/portrait_${actor}_fullbody_v01.png" "$target_root/portraits/"
-            cp "$source_dir/sprite_${actor}_atlas_normalized_v02.png" "$target_root/sprites/"
-          done
-          source_dir="art-production/candidates/scenes/rainy_bridge/baseline"
-          target_dir="demos/changfeng-battle/assets/imported/candidates/scenes/rainy_bridge"
-          mkdir -p "$target_dir"
-          for layer in background ground foreground weather composite_preview; do
-            cp "$source_dir/scene_rainy_bridge_${layer}_v01.png" "$target_dir/"
-          done
+      # All pilot images are already committed under assets/imported/.
       - name: Import project art and scripts
         run: godot --headless --path demos/changfeng-battle --editor --import --quit
       - name: Verify categorized art paths and in-use mirrors

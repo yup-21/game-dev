@@ -73,10 +73,10 @@ func build(host: Node2D, story_encounter: bool, snapshot: Dictionary) -> Diction
     hud.add_child(ribbon)
     ribbon.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
     ribbon.offset_bottom = 61.0
-    _veil(ribbon, preload("res://assets/imported/in-use/ui/overlays/veil_top.svg"))
+    _veil(ribbon, preload("res://assets/imported/ui/overlays/veil_top.svg"))
     # Standalone filigree keeps the central chapter label readable.
     var title_filagree := _veil(ribbon,
-        preload("res://assets/imported/in-use/ui/ornaments/chapter_filagree.svg"))
+        preload("res://assets/imported/ui/ornaments/chapter_filagree.svg"))
     title_filagree.anchor_left = 0.5
     title_filagree.anchor_right = 0.5
     title_filagree.anchor_top = 0.0
@@ -155,7 +155,7 @@ func build(host: Node2D, story_encounter: bool, snapshot: Dictionary) -> Diction
     party.offset_right = 214.0
     party.offset_top = 75.0
     party.offset_bottom = 459.0
-    _veil(party, preload("res://assets/imported/in-use/ui/overlays/veil_left.svg"))
+    _veil(party, preload("res://assets/imported/ui/overlays/veil_left.svg"))
     var roster_heading := Label.new()
     roster_heading.text = "江湖同行"
     roster_heading.position = Vector2(13, 10)
@@ -208,7 +208,7 @@ func build(host: Node2D, story_encounter: bool, snapshot: Dictionary) -> Diction
         avatar.offset_right = -5.0
         avatar.offset_bottom = -5.0
         var portrait_border := _veil(avatar_slot,
-            preload("res://assets/imported/in-use/ui/ornaments/portrait_frame.svg"))
+            preload("res://assets/imported/ui/ornaments/portrait_frame.svg"))
         portrait_border.name = "PortraitFrame"
         var detail := VBoxContainer.new()
         detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -243,7 +243,7 @@ func build(host: Node2D, story_encounter: bool, snapshot: Dictionary) -> Diction
     context.offset_right = -126.0
     context.offset_top = -538.0
     context.offset_bottom = -265.0
-    context_veil = _veil(context, preload("res://assets/imported/in-use/ui/overlays/veil_right.svg"))
+    context_veil = _veil(context, preload("res://assets/imported/ui/overlays/veil_right.svg"))
     clash_label = Label.new()
     clash_label.name = "ClashDetails"
     clash_label.position = Vector2(11, 10)
@@ -278,7 +278,7 @@ func build(host: Node2D, story_encounter: bool, snapshot: Dictionary) -> Diction
     hand_stage.offset_right = 0.0
     hand_stage.offset_top = -255.0
     hand_stage.offset_bottom = 0.0
-    _veil(hand_stage, preload("res://assets/imported/in-use/ui/ornaments/hand_fan_tray.svg"))
+    _veil(hand_stage, preload("res://assets/imported/ui/ornaments/hand_fan_tray.svg"))
     var hand_title := Label.new()
     hand_title.text = "武 学"
     hand_title.add_theme_font_size_override("font_size", 15)

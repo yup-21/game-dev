@@ -20,25 +20,25 @@ func _initialize() -> void:
     if not str(image.get("error", "")).is_empty() or int(image["width"]) <= 0:
         _fail("SVG preview failed: " + str(image.get("error", "")))
         return
-    if not Importer.destination(source).begins_with("res://assets/imported/in-use/"):
+    if not Importer.destination(source).begins_with("res://assets/imported/"):
         _fail("Source destination has incorrect root")
         return
     var candidate_actor: String = production_dir.path_join(
         "candidates/characters/shen_changfeng/baseline/portrait_shen_changfeng_fullbody_v01.png")
     if Importer.destination(candidate_actor, "portrait") != \
-            "res://assets/imported/candidates/characters/shen_changfeng/portraits/portrait_shen_changfeng_fullbody_v01.png":
+            "res://assets/imported/characters/shen_changfeng/portraits/portrait_shen_changfeng_fullbody_v01.png":
         _fail("Candidate portrait was not grouped by character and type")
         return
     var candidate_sprite: String = production_dir.path_join(
         "candidates/characters/shen_changfeng/baseline/sprite_shen_changfeng_atlas_normalized_v02.png")
     if Importer.destination(candidate_sprite, "atlas") != \
-            "res://assets/imported/candidates/characters/shen_changfeng/sprites/sprite_shen_changfeng_atlas_normalized_v02.png":
+            "res://assets/imported/characters/shen_changfeng/sprites/sprite_shen_changfeng_atlas_normalized_v02.png":
         _fail("Candidate atlas was not grouped with the character sprites")
         return
     var candidate_scene: String = production_dir.path_join(
         "candidates/scenes/rainy_bridge/baseline/scene_rainy_bridge_ground_v01.png")
     if Importer.destination(candidate_scene, "scene") != \
-            "res://assets/imported/candidates/scenes/rainy_bridge/scene_rainy_bridge_ground_v01.png":
+            "res://assets/imported/scenes/rainy_bridge/scene_rainy_bridge_ground_v01.png":
         _fail("Candidate scene layer retained a production batch directory")
         return
     if not Importer.destination(candidate_actor).is_empty():

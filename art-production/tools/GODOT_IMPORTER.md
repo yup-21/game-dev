@@ -35,7 +35,7 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 
 ## 数据保护与限制
 
-- 导出不修改 `res://assets/`；导入不覆盖旧图片。已有 `in-use/` 素材按相同的类型/拥有者路径复制，候选图导入时按模式归入 `assets/imported/candidates/characters/<actor-id>/portraits|sprites/`、`scenes/<scene-id>/`、`vfx/<actor-id>/<skill-id>/` 或 `ui/<component-id>/`，不会把 `baseline`、`sprite-vNN` 等制作批次目录带进游戏。名称冲突仍需显式版本化替换。
+- 导出不修改 `res://assets/`；导入不覆盖旧图片。不论素材原稿来自 `art-production/candidates/` 还是 `art-production/in-use/`，Godot 均只写入 `assets/imported/characters/<actor-id>/portraits|sprites/`、`scenes/<scene-id>/`、`vfx/<actor-id>/<skill-id>/`、`ui/<component-id>/` 等分类路径；不在导入目录保留 candidate/in-use 或 `baseline`、`sprite-vNN` 制作批次层级。名称冲突仍需显式版本化替换。
 - `in-use/` 导出副本不再包含 `imported/` 或日期层级。导入撤销只恢复 .tres，保留新图片供检查。Godot 自动生成的 `.godot/imported/` 是缓存，不应手动整理或提交。
 - 导出有 SHA 核验与备份；失败时尽量自动回退，若已有后续改动则拒绝静默覆盖。
 - 角色与 VFX 必须有真实 Alpha；VFX 帧号、Atlas 网格/帧号、地图必需透明 ground 的同尺寸画布做技术预检；美术连续性和授权仍需人工验收。

@@ -33,7 +33,7 @@
 | `scene_pingjiang_long_ground_v01.svg` | 全程连续、透明外缘的青石街面 |
 | `scene_pingjiang_long_foreground_v01.svg` | 少量近景柳枝（真实透明） |
 
-三层保存在 `demos/changfeng-battle/assets/imported/in-use/scenes/pingjiang_long_street/`，是可被 Godot SVG Importer 导入的技术测试占位素材，不等于正式高清美术，也不应直接替换主线剧情地图。
+三层保存在 `demos/changfeng-battle/assets/imported/scenes/pingjiang_long_street/`，是可被 Godot SVG Importer 导入的技术测试占位素材，不等于正式高清美术，也不应直接替换主线剧情地图。
 
 ## 视觉验收点
 

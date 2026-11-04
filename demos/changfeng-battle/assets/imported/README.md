@@ -1,11 +1,23 @@
 # Godot 导入素材目录
 
-这里保存实际纳入游戏项目的**原始图片**，由 Godot `Resource` 显式引用；不是引擎自动生成的 `.godot/imported/` 缓存。
+游戏内已导入的原始图片统一按**资产类型 → 角色/场景/技能 ID**归档，不按候选和使用中状态建立目录，也不按制作日期或批次建目录。
 
-- `in-use/`：当前游戏使用的图片，按 `characters/<actor-id>/portraits|sprites|story-poses|concepts`、`scenes/<scene-id>`、`vfx/<actor-id>/<skill-id>`、`ui/<component-id>`、`placeholders/<kind>` 分类。原字节副本存于仓库的 `art-production/in-use/`。
-- `candidates/`：已导入供预览、对比或继续制作的候选图片，同样按角色和素材类型、场景、技能、UI 组件归类；原稿仍保存在 `art-production/candidates/`。
-- 候选原稿的 `baseline/`、`sprite-vNN/`、`qa-layout/` 等生产批次目录只属于制作区，**不复制到导入目录**；不同版本靠文件名或显式 SHA 版本化区分。
+```text
+assets/imported/
+├── characters/<actor-id>/
+│   ├── portraits/
+│   ├── sprites/
+│   ├── story-poses/
+│   └── concepts/
+├── scenes/<scene-id>/
+├── vfx/<actor-id>/<skill-id-or-shared-atlas>/
+├── ui/<component-id>/
+└── placeholders/<asset-type>/
+```
 
-新素材使用编辑器的 **Art Production** Dock 导入，不要手工修改 `Resource` 引用或移动已绑定图片。导入器负责按类型生成路径并等待 Godot 完成纹理导入。更改绑定后运行 `python3 art-production/tools/inventory_assets.py --check` 验证结构和镜像。
+- `art-production/candidates/` 仍保存多版本制作候选，`art-production/in-use/` 仅镜像正式 Resource 当前引用的图片，**两种生产状态不映射成 Godot 文件夹**。
+- 现在的 73 张导入图片中，70 张由正式脚本或 Resource 引用；另 3 张旧动画预览图由 `data/art_previews/` 使用，保留原稿在制作候选区。它们不会因为文件位置而自动成为正式角色动作。
+- 导入器按照素材类型和所属 ID 直接写入本目录；新版本采用不同文件名或显式哈希版本后缀，修改 .tres 绑定后才生效。
+- 不要手工移动已被引用的图；修改后运行 `python3 art-production/tools/inventory_assets.py --check` 核对图片、正式镜像和编辑器预览来源。
 
-`.godot/imported/` 是 Godot 自动重建的导入缓存，不能作为资产来源，也无需纳入 Git。
+`.godot/imported/` 是 Godot 自动重建的缓存，**不是**需要整理或提交的素材目录。
