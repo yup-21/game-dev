@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=12 format=3]
 [ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_riverside_market/background.svg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_riverside_market/background_v02.webp" id="2_bg"]
 [ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_riverside_market.tres" id="3_art"]
 [ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
 
@@ -87,6 +87,6 @@ primary_axis = "horizontal"
 area_bounds = Rect2(24, 605, 4752, 326)
 image_rotation_degrees = 0.0
 image_scale = 1.0
-walkable_outline = PackedVector2Array(32, 612, 4768, 612, 4768, 925, 32, 925)
+walkable_outline = PackedVector2Array(32, 612, 4768, 612, 4768, 780, 2540, 780, 2540, 925, 2260, 925, 2260, 780, 32, 780)
 obstacles = Array[Resource]([])
 markers = Array[Resource]([SubResource("Start"), SubResource("FromEast"), SubResource("FromWest"), SubResource("FromSouth"), SubResource("WestExit"), SubResource("EastExit"), SubResource("SouthExit"), SubResource("Blacksmith"), SubResource("Herbalist")])

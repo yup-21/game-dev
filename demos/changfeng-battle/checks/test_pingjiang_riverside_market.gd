@@ -44,6 +44,8 @@ func _run() -> void:
         for exit_id in ["east", "west", "south"]:
             check(str(bake.markers.get(exit_id, {}).get("kind", "")) == "zone_exit",
                 "explicit exit metadata: " + exit_id)
+    check(not bake.is_walkable_point(Vector2(1500, 890), 24.0), "foreground building footprint blocked")
+    check(bake.is_walkable_point(Vector2(2400, 865), 24.0), "southern alley accessible")
     var scene := load(SCENE) as PackedScene
     check(scene != null, "QA scene loads")
     if scene != null:
