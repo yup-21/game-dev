@@ -100,9 +100,9 @@ Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
 ```text
 Transparent hand-painted 2D wuxia sprite sheet: {action_id}, {sheet_frame_count} frames.
 Match attached approved character reference; equipment: {weapon_contract}.
-Ordered poses (row-major): {frame_pose_list}.
+Ordered poses and root offsets (row-major): {frame_pose_list}.
 Canvas {sheet_width_px}×{sheet_height_px}px; grid {grid_columns}×{grid_rows}; cell {cell_width_px}×{cell_height_px}px.
-Figure height {character_height_px}px; strict 90° side view; ground root ({root_x_px},{root_y_px})px in every cell.
+Figure height {character_height_px}px; strict 90° side view; reference root O=({root_x_px},{root_y_px})px per cell.
 One complete pose per cell; unused cells transparent; no clipping, spill, borders or text.
 ```
 
