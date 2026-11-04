@@ -27,7 +27,7 @@ marker_kind = "zone_exit"
 position = Vector2(800, 80)
 radius = 90.0
 exit_side = "north"
-target_zone_id = "pingjiang_crossroads_connector_qa"
+target_zone_id = "pingjiang_crossroads"
 target_entry_id = "from_south"
 
 [sub_resource type="Resource" id="SouthExit"]

@@ -36,9 +36,16 @@ func _run() -> void:
     await process_frame
     var menu_actions := _actions(view)
     _check(menu_actions == ["start", "hd2d", "pingjiang_qa", "pingjiang_vertical_qa",
-        "pingjiang_25d_qa", "pingjiang_south_gate_qa", "shen_house_qa", "quit"]
+        "pingjiang_25d_qa", "pingjiang_south_gate_qa", "shen_house_qa", "pingjiang_exploration", "quit"]
         and menu_actions.count("hd2d") == 1,
-        "main menu keeps one HD-2D battle and five isolated map QA entries, without duel/party variants")
+        "main menu keeps one HD-2D battle and five isolated map QA entries plus four-area exploration, without duel/party variants")
+    var menu_buttons: Array = view.get("buttons")
+    for i in range(menu_buttons.size()):
+        var rect: Rect2 = menu_buttons[i]["rect"]
+        _check(Rect2(0, 0, 1600, 1000).encloses(rect), "menu button stays within viewport")
+        for j in range(i + 1, menu_buttons.size()):
+            _check(not rect.intersects(menu_buttons[j]["rect"]),
+                "menu hit areas do not overlap: %s / %s" % [menu_buttons[i]["action"], menu_buttons[j]["action"]])
     view.get("story").set("phase", "complete")
     view.queue_redraw()
     await process_frame
@@ -55,7 +62,8 @@ func _run() -> void:
         "T shortcut and independent 2.5D test scene are reachable from title")
     for qa in [
         ["pingjiang_south_gate_qa", "KEY_G", "res://scenes/pingjiang_south_gate_qa.tscn"],
-        ["shen_house_qa", "KEY_H", "res://scenes/pingjiang_shen_house_qa.tscn"]]:
+        ["shen_house_qa", "KEY_H", "res://scenes/pingjiang_shen_house_qa.tscn"],
+        ["pingjiang_exploration", "KEY_J", "res://scenes/pingjiang_exploration.tscn"]]:
         _check(load(qa[2]) is PackedScene and opening_code.contains('"' + qa[0] + '"')
             and opening_code.contains(qa[1]) and opening_code.contains(qa[2]),
             "title retains isolated map QA shortcut for " + qa[0])

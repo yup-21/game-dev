@@ -1,0 +1,109 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=16 format=3]
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_crossroads/background.png" id="2_bg"]
+[ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_crossroads.tres" id="3_art"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
+
+[sub_resource type="Resource" id="Start"]
+script = ExtResource("4_marker")
+marker_id = "player_start"
+marker_kind = "spawn"
+position = Vector2(800, 780)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromSouth"]
+script = ExtResource("4_marker")
+marker_id = "from_south"
+marker_kind = "spawn"
+position = Vector2(800, 800)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromNorth"]
+script = ExtResource("4_marker")
+marker_id = "from_north"
+marker_kind = "spawn"
+position = Vector2(780, 290)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromWest"]
+script = ExtResource("4_marker")
+marker_id = "from_west"
+marker_kind = "spawn"
+position = Vector2(250, 680)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromEast"]
+script = ExtResource("4_marker")
+marker_id = "from_east"
+marker_kind = "spawn"
+position = Vector2(1350, 680)
+radius = 24.0
+
+[sub_resource type="Resource" id="South"]
+script = ExtResource("4_marker")
+marker_id = "south"
+marker_kind = "zone_exit"
+position = Vector2(800, 930)
+radius = 65.0
+exit_side = "south"
+target_zone_id = "pingjiang_south_gate_qa"
+target_entry_id = "from_north"
+
+[sub_resource type="Resource" id="North"]
+script = ExtResource("4_marker")
+marker_id = "north"
+marker_kind = "zone_exit"
+position = Vector2(780, 220)
+radius = 50.0
+exit_side = "north"
+target_zone_id = "pingjiang_yamen_street"
+target_entry_id = "from_south"
+
+[sub_resource type="Resource" id="West"]
+script = ExtResource("4_marker")
+marker_id = "west"
+marker_kind = "zone_exit"
+position = Vector2(80, 680)
+radius = 65.0
+exit_side = "west"
+target_zone_id = "pingjiang_riverside_market"
+target_entry_id = "from_east"
+
+[sub_resource type="Resource" id="East"]
+script = ExtResource("4_marker")
+marker_id = "east"
+marker_kind = "zone_exit"
+position = Vector2(1520, 680)
+radius = 65.0
+exit_side = "east"
+target_zone_id = "pingjiang_su_estate"
+target_entry_id = "from_west"
+
+[sub_resource type="Resource" id="Clothier"]
+script = ExtResource("4_marker")
+marker_id = "shop_clothier"
+marker_kind = "story_trigger"
+position = Vector2(250, 600)
+radius = 50.0
+
+[sub_resource type="Resource" id="Pawnshop"]
+script = ExtResource("4_marker")
+marker_id = "shop_pawnshop"
+marker_kind = "story_trigger"
+position = Vector2(1390, 600)
+radius = 50.0
+
+[resource]
+script = ExtResource("1_map")
+content_id = "pingjiang_crossroads"
+background = ExtResource("2_bg")
+scene_art = ExtResource("3_art")
+viewport_size = Vector2i(1600, 1000)
+pixels_per_unit = 80.0
+primary_axis = "mixed"
+area_bounds = Rect2(0, 0, 1600, 1000)
+image_rotation_degrees = 0.0
+image_scale = 1.0
+walkable_outline = PackedVector2Array(680, 180, 875, 180, 925, 570, 1568, 570, 1568, 770, 980, 770, 980, 968, 620, 968, 620, 770, 32, 770, 32, 570, 640, 570)
+obstacles = Array[Resource]([])
+markers = Array[Resource]([SubResource("Start"), SubResource("FromSouth"), SubResource("FromNorth"), SubResource("FromWest"), SubResource("FromEast"), SubResource("South"), SubResource("North"), SubResource("West"), SubResource("East"), SubResource("Clothier"), SubResource("Pawnshop")])

@@ -71,9 +71,9 @@ Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
 
 ## 5. 游戏内 2D 角色：Sprite / Animation Atlas
 
-**新战斗角色精灵图已定稿**：普通角色每格 **328×256 源像素**，高个档 **384×288 源像素**；从角色设定读取身高 `height_m`，自然站姿人物高度为 `round(height_m × 100)` 源像素，常规范围 **100–220px**（例如 1.8m→180px）。一张 C×R Sheet 的目标尺寸为 `W×C` 宽、`H×R` 高；只固定单格，不固定动作帧数或行列数。`WuxiaActorAnimationProfile.tres` 支持独立 Clip Atlas、`columns/rows`、脚点、逐帧时长和根偏移；旧图集保持原 Resource 兼容，不暗中按新格切分。
+**新战斗角色精灵图已定稿**：普通档单格 **328×256px**，高个档例外 **384×288px**；源人物自然站姿高度 `round(height_m×100)`，100–220px。**AI 每张生成固定 5×5、25 格**；标准化后普通档整图 **1640×1280**，高个档 **1920×1440**。这些是后处理成品规格，生图模型并不能可靠强制输出精确宽高。运行时 `.tres` 支持独立 Clip Atlas、任意合法列行、脚点/帧序/时长；旧图保留。
 
-制作方法：Agent 先完成单个动作的逐帧分镜，依据角色身高、武器长度和各动作伸展范围在制图前**为整角色确定唯一格子档位**，再让 AI **每次输出一张包含连续多帧的 RGBA Sprite Sheet**。生图请求中只出现已选格宽高、固定格内根点坐标、已选 C×R 及由此计算的整张尺寸，**不询问生图模型角色是否高个、应该用哪档或应画几帧**。程序机械拆格、逐格拒绝越界后，再按统一根点坐标系无损装配正式 Atlas。画布必须给完整人体/武器留白，不能把 4×2/6×4 的“关键姿势稿”伪称真实高帧率动画，也不能靠固定网格反推帧数。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯、零越界即可。方向目标为前/后/左右；当前水平镜像只能作为过渡。
+制作方法：Agent 对 12 组动作分别分镜、按角色身高/武器选择整角色唯一 W×H 格档，再把动作的实际帧序持续填入每张 5×5 AI Sheet。**一张图可以跨多个动作，也可在第 25 格结束后让当前动作从下一张第 1 格继续**；普通档后处理为 1640×1280。提示词只提供角色参考、5×5 布局、格位动作/帧号、已选身份武器和局部姿势，不把精确像素当作生图设置。先核对 AI 输出的等格布局，再统一等比变换与透明补边，逐格机械切分、验收；失败不靠强制拉伸/裁切掩盖。
 
 **生图入口**：角色逐帧描述只作为分镜数据，不再单独使用单帧生图模板。实际调用下文 §5.1 的多帧 Sheet 简版提示词。
 
@@ -83,30 +83,29 @@ Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
 
 ### 5.1 AI 默认生成：一张多帧动作 Sprite Sheet
 
-按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。**每次 AI 生图应输出一张包含多个连续动作姿势的透明 Sprite Sheet，不是每次只输出一个帧。** 先由 §5.2 动作分镜决定有效帧数 N，再决定列数 C、行数 R；**格子按角色固定为 328×256 或 384×288**，不为填满 2×4 或 6×4 网格反过来固定 N。单张放不下完整动作时拆成多个连续多帧 Sheet；人物/武器超出单格须返工，高个角色须在制作前选择高个档；已选格仍装不下则返工或申报专用例外。视频提帧尚未真实验收，脚点工具不能自动识别真实承重脚。
+按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。AI **每次生成一张固定 5 列×5 行的多动作 Sprite Sheet**，25 个行优先格位分别对应一个确定的 `action_id + action_frame_index`；各动作 N 由 §5.2 分镜决定，不能用 25 反推动作长度。原图允许模型自身分辨率，普通档经程序标准化后单格 328×256、整图 1640×1280（高个档保留 384×288 / 1920×1440）。末批不足 25 时尾部保持透明，不为凑格重复帧。
 
 **统一坐标约定**：以批准的战斗待机帧作为所有动作的身份、`pose_local`、比例和朝向基准；逻辑 O 是待机骨盆地面投影（+x 右、+y 下），地线及镜头固定。一个 Sheet 内各格的 O 位于**相同格内相对坐标**，不能按每格不透明轮廓单独居中/缩放。分镜单独保存世界移动计划；**生图只画相对于 O 的局部姿态，不把整个人的世界前冲/后退位移烘焙进帧图**。当前 `WuxiaActorAnimationClip.root_offsets` 仅移动 Sprite2D 的局部显示位置，不能作为战斗角色的世界位移；普通非循环 Clip 的末帧视觉偏移必须归零。`defeat` 停留在倒地终止态，`idle/walk/run` 检查首尾循环。
 
 **默认生成与验收顺序**：
 
 1. 附角色获准设定和 `weapon_contract`（武器/徒手、数量、尺寸与握持方式），固定侧视基准与统一 O。不要从其他角色套用武器或镜头。
-2. 从 §5.2 的分镜得到真实 N、连续全局帧号、阶段与各帧姿势。Agent 选定本角色唯一 **W×H** 格，选 `grid_columns=C`、`grid_rows=R`，算出 `sheet_width_px=W×C`、`sheet_height_px=H×R` 和 `character_height_px=round(height_m×100)`；根据待机参考姿势与整套动作幅度锁定格内根点 `(root_x_px, root_y_px)`。`C×R` 只承载所选帧，不决定帧数；每次一个 `action_id` 的连续帧，行优先排列，不足格全透明。格数是**本次单张 Sheet 的布局**，不是生图次数或最终动作总帧数。
-3. Agent 将下方模板的每个占位符替换为**确定值**再调用生图，禁止出现尺寸备选项、自动判断语句或未展开变量。要求各格同一角色/武器、固定根点/地线/比例，姿势随分镜连续变化，武器、头发、衣摆和四肢均不触格线；不要文字、边框、残影或跨格内容。
-4. **先机械拆格再判定是否可用**：按 **已选 W×H** 切片，核对图片尺寸恰为 `W×C` 宽、`H×R` 高、非空格数量=N、未用格透明、人物身高与设定一致、每格四边至少 **8px** 真透明边距。人体/武器越格、裁切或混格直接拒绝。AI 不保证精确像素格，也不能可靠识别动作阶段；不合格时返工对应连续多帧片段，不靠猜帧、紧裁切或强行缩放放行。
-5. 几何通过后按行优先帧序预览连续性、循环/复位、承重与根位移；AI 视觉仅初筛明显异常。最后由程序按统一 O 对通过验收的格子无损打包为运行时 Atlas，并再次自动检查零重叠和索引；疑难与最终少量样片才人工复核。
+2. 从 §5.2 取得各动作独立真实 N、逐帧姿势。Agent 固定整角色 W×H、`character_height_px=round(height_m×100)` 与共同 O，按动作既定顺序持续填入每张 5×5 的 25 个格位；生成 `batch_id/cell_index(0..24)/action_id/action_frame_index/pose`，跨批接续同一动作的下一帧。示例：`walk` 1–8、`run` 1–8、`attack1` 1–9；若 `attack1` 只有 8 帧，第 25 格应填下一动作 1 帧。最后一批尾格可透明。
+3. Agent 将下方模板中的角色、装备、五行格位映射与局部姿势全部填成确定值，附已批准参考图；不让生图模型再判断动作数或格位，亦不要求强制生成 1640×1280。禁止文字、边框、残影和跨格。
+4. **先按原始 5×5 验证布局，再标准化**：模型返回尺寸并不可靠，必须检查 25 格是否可按五列五行分离，不能用自动图像理解“猜”帧顺序。只对全批做共同的等比变换和透明补边，保持 O、人物比例及武器完整，普通档输出 1640×1280、高个档输出 1920×1440，禁止非等比拉伸、逐格单独缩放、紧裁切。若无法保持人物源身高或边距、无法可靠定位格子/出现截断，拒绝重生成。标准化后按 W×H 机械拆 25 格，校验真 Alpha、每格至少 8px 透明边距、有效帧映射、最后批次空格透明。
+5. 按 `batch_id/cell_index -> action_id/action_frame_index` 聚合跨批片段，检查每动作第 1..N 帧全部且无重复/错序，逐动作预览连续性、循环/复位、承重与根位移；最后程序按统一 O 装配为运行时 Atlas 与原生有序绝对帧索引。Godot 不直接按原始混合动作源图自动分组。
 
 **简版多帧 Sheet 母提示词**（仅传下面模板、角色基准图和选中分镜；完整检测合同不拼入生图请求）：
 
 ```text
-Transparent hand-painted 2D wuxia sprite sheet: {action_id}, {sheet_frame_count} frames.
-Match attached approved character reference; equipment: {weapon_contract}.
-Ordered local poses (row-major): {frame_pose_list}.
-Canvas {sheet_width_px}×{sheet_height_px}px; grid {grid_columns}×{grid_rows}; cell {cell_width_px}×{cell_height_px}px.
-Figure height {character_height_px}px; strict 90° side view; reference root O=({root_x_px},{root_y_px})px per cell.
-One complete pose per cell, no baked world translation; unused cells transparent; no clipping, spill, borders or text.
+Transparent hand-painted 2D wuxia sprite sheet: exactly 5 columns × 5 rows, row-major.
+Match approved character reference; equipment: {weapon_contract}; fixed right-facing side view.
+Cell assignments and local poses: {batch_25_cell_action_frame_pose_list}.
+One complete same-sized figure per cell, same foot baseline/root, no baked world translation.
+Only final unused cells transparent; no clipping, neighboring-cell spill, borders or text.
 ```
 
-**格数如何生效**：Agent 将 `N`（本张有效帧数）、`C`（列）、`R`（行）及 `W×H`（单格）填入提示词；当前生图工具没有独立的格数/精确像素尺寸参数，**提示词是生成目标，不是程序化网格设置**。生成一张 Sheet 后，将 C/R 另填入候选 `WuxiaArtCandidateDefinition.columns/rows` 和导入器，按实际图片尺寸、帧数与边距验收，再写入正式动画 Profile/Clip。`C×R` 必须不小于 N。模型可能画错格子、重复姿势或忽略尺寸；不合格则保留 candidate，不得宣称自动验收通过。
+**格数如何生效**：新 AI Sheet 的 **5×5 是绘图布局指令，不是接口参数**；提示词中不靠 `1640×1280` 保证分辨率。工具先识别并核对布局，再按统一等比缩放/透明补边实现最终 W×H/5×5，填入候选 Resource 的真实尺寸与 `columns=5/rows=5`，生成混合动作帧映射后才能拆格装配。模型画错 5×5 或内容溢出即保留 candidate 返工。
 
 **动作分镜检查示例**（下表的位移只记录在分镜，不发送为生图像素偏移）：
 
@@ -122,11 +121,11 @@ One complete pose per cell, no baked world translation; unused cells transparent
 | hit | 受力反应、退让或缓冲、恢复待机，禁止突然无原因反弹 |
 | defeat | 失衡→膝/躯干接地→最终静止倒地；这是不恢复站姿的终止例外 |
 
-**提示词精简原则**：选档、身高换算、根点、分镜 N 和网格布局均由 Agent 在调用前计算并锁定；发给生图模型的文本只含一个格子尺寸、一个站姿像素高、一个根点、一个画布尺寸与确定的局部姿势，**不传世界位移或运行时 `root_offsets` 数值**。上传获准参考图，无需重复完整风格、反向词和 QA；失败由 Agent 针对性调整并再次发送确定版。像素、Alpha 与帧序由工具测量；**源图 100px/米不等于当前运行时 200 世界像素的显示高度**。
+**提示词精简原则**：Agent 先锁角色尺寸档、逐动作真实 N、逐格序列、统一 O；实际绘图文本只写已定 5×5 行优先五行格位、参考角色/装备和姿势，**不向生图模型要求精确像素或发送世界位移/运行时 `root_offsets`**。导出程序承担 328×256/1640×1280 标准化和客观 QA；源图 100px/米不是现行运行时 200 世界像素。
 
 ### 5.2 AI 动作分镜：先规划帧数，再逐帧绘图
 
-**默认先运行下列简版分镜提示词（仅输出文本，不生图）**。`evade` 的 `{action_description}` 必须写明“向后闪避”，并附 `evade_style`（默认 `backstep`；可选 `slide`、`roll`、`leap`，均向后）；其他动作不用添加该参数。依据 [分镜合同 §2.1](../standards/SPRITE_ANIMATION_QA.md)，每种动作单独规划；分镜确定 `total_frames` 和逐帧姿势后，再按 §5.1 为每次多帧 Sheet 填入 `{frame_pose_list}`、`{sheet_frame_count}`、`{grid_columns}` 与 `{grid_rows}`。不要预设 8 帧、2×4 或 6×4 网格，也不要为填满格子添加静止重复帧。
+**默认先运行下列简版分镜提示词（仅输出文本，不生图）**。每个动作分镜单独确定真实 N，再按动作顺序跨动作/跨批组装成固定 5×5 的 25 格；不为了填满格子修改动作帧数。`evade` 的动作描述必须为“向后闪避”，并按角色确定方式。
 
 ```text
 为2D侧视武侠角色规划动作分镜，仅输出文本。
@@ -148,9 +147,9 @@ One complete pose per cell, no baked world translation; unused cells transparent
 | `attack_sweep`（攻击3：横斩） | 侧身戒备→向侧后方收剑、腰胯预旋→支撑脚发力、骨盆带动躯干转动→右手单剑水平横斩→惯性跟随并收势 | 横向剑路连续、腰胯带动、保持侧视不可突变正面 |
 | `attack_heavy`（攻击4：蓄力重击） | 屈膝沉重心、右手单剑后上方大幅蓄力→短暂蓄势→后脚强力蹬地、骨盆肩臂依次爆发→重击终点→自然惯性和踏步恢复 | 蓄力与爆发节奏对比、较大根位移、**仍是一柄右手单剑** |
 
-- 每名角色依据自己的武器/空手设定规划四套攻击的帧数、阶段、握持与结束站姿；一次优先生成一组连续帧，也允许多动作共用 Sheet，但必须按 `action_id` 明确帧序与索引。`combo` 仅表示已配置攻击的编排与衔接，不额外绘制固定连携动作。
+- 每名角色依据自己的武器/徒手契约规划四套攻击的真实帧数、阶段与复位；制作 ID 和运行时 `attack1-4` 对应。相邻动作允许同一张 5×5 源 Sheet 混排，但每格必须保存动作内帧号；`combo` 仅编排现有攻击，不额外生成固定动作。
 - **补全其余动作**：`idle` 呼吸戒备循环、`walk` 蹬地换脚循环、`run` 快速跨步循环、`skill` 专属招式与复位、`evade` 蹬地落脚与合理位移、`guard` 架剑承压与撤架、`hit` 受力缓冲与恢复、`defeat` 倒地接触直至静止。每种均按 §2.2 的独立阶段和首尾合同生成，不能把 walk/run 混成 move 的一套动作，也不能让 defeat 自动站起。
-- **图集布局选择**：一张 Sheet 可包含多个动作，按程序实际格子从左到右、从上到下编号；必须输出 `action_id -> ordered absolute frame_indices` 映射、各自帧数、循环/复位标志、统一 O 锚点，严禁在相邻格中延伸武器/身体。图集容量不得反过来限制动作帧数。
+- **图集布局选择**：每张新 AI Sheet 固定 5×5，按从左到右、自上而下编号 0..24，格位连续排入多种动作，动作可以跨批次。记录 `batch_id+cell_index -> action_id+action_frame_index`，装配时还原为各动作真实 N 与有序绝对帧索引、循环/复位标记。运行时 Atlas 可重打包，不强制 5×5。
 - **运行时边界**：`attack_thrust/attack_overhead/attack_sweep/attack_heavy` 等是示例分镜标签，正式 `clip.action` 统一写 `attack1-4`；Skill 或武学 Resource 仅绑定一个已存在的动作 ID，VFX 通过 Cue 或事件绑定。没有实际 Godot 播放与时序验证的素材仍只算未验收候选，不宣称完整接入。
 - **审查分工**：机器核查分镜帧号/数量/时间/字段完整、PNG Alpha、格子边距和零重叠；AI 视觉只初筛身份、与角色武器契约不符的武器增减/握持、侧视及明显姿态跳变；真实支撑脚识别与动作合理性不能自动保证，疑难帧与最终少量样片再人工复核。分镜 `time_ms` 仅是离线节奏建议；必须映射到 `WuxiaActorAnimationClip.frame_durations` 才会影响 Godot 逐帧停留时间。
 

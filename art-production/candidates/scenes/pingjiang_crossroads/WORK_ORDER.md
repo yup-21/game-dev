@@ -52,3 +52,9 @@
 **视觉验收：待复核；图层拆分：需返工。**
 
 下一步优先精修独立 background/ground 的透明边缘及前景屋檐，再用本工作单锚点接入真实 `WuxiaSceneArtProfile`、原生地图与相邻区双向 `zone_exit`；在通过技术和人工验收前，不覆盖任何当前使用中的资源。
+
+## 2026-11-05 四区探索测试接入（更新）
+
+v02 已通过具名多边形蒙版无损拆为三张同原点 RGBA PNG，见 `layers-v02/README.md`。新增 `WuxiaSceneArtProfile` / `WuxiaMapDefinition` 与四向出生/出口，south 与 PJ-01、west 与 PJ-03 双向联通。导入采用 `assets/imported/scenes/pingjiang_crossroads/{background,ground,foreground}.png`，上文“尚未创建/导入”是前轮记录，由本节更新。
+
+真实几何：纵向道路 X=680–875（北端）至 X=640–925（街口），横向主要脚点带 Y=570–770，南向 X=620–980；出生点均留有24px脚点净距。北出口设在牌坊内侧 (780,220)，并非穿越画面顶部远景；东/北邻区尚未开放。技术回拼与全程移动通过，GUI、透视、门洞比例、动态遮挡与美术/权属人工审核仍待完成，不替换主线内容绑定。

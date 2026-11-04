@@ -7,9 +7,18 @@ const ActorProfile = preload("res://data/native/animations/shen_changfeng.tres")
 const RoadTexture = preload("res://prototypes/pingjiang_25d/stone_road.svg")
 const FacadeTexture = preload("res://prototypes/pingjiang_25d/house_facade.svg")
 
+const MAP_SIZE_PIXELS := Vector2(1600.0, 2000.0)
+const MAP_WIDTH := MAP_SIZE_PIXELS.x / CombatScale.PIXELS_PER_UNIT
+const ROAD_LENGTH := MAP_SIZE_PIXELS.y / CombatScale.PIXELS_PER_UNIT
 const ROAD_WIDTH := 5.0
-const ROAD_LENGTH := 25.0
 const WALK_SPEED := 4.0
+const PLAYER_START_Z := ROAD_LENGTH * 0.5 - 5.0
+const PLAYER_LIMIT_Z := ROAD_LENGTH * 0.5 - 1.2
+const REFERENCE_Z := ROAD_LENGTH * 0.3
+const CAMERA_OFFSET_Z := 19.0
+const CAMERA_Z_MIN := -ROAD_LENGTH * 0.5 + 24.0
+const CAMERA_Z_MAX := ROAD_LENGTH * 0.5 + 14.0
+const CAMERA_FOLLOW_SPEED := 5.0
 const FOOTPRINT_RADIUS := CombatScale.FOOTPRINT_RADIUS_UNITS
 const ACTOR_HEIGHT := CombatScale.ACTOR_HEIGHT_UNITS
 
@@ -21,7 +30,8 @@ var actor_elapsed := 0.0
 var status: Label
 
 func _ready() -> void:
-    camera.look_at(Vector3(0.0, 0.0, -1.0), Vector3.UP)
+    camera.position = Vector3(0.0, 14.0, PLAYER_START_Z + CAMERA_OFFSET_Z)
+    camera.look_at(Vector3(0.0, 0.0, PLAYER_START_Z - 4.0), Vector3.UP)
     camera.projection = Camera3D.PROJECTION_PERSPECTIVE
     _build_street()
     _build_character()
@@ -41,6 +51,17 @@ func _build_street() -> void:
     street.name = "Street"
     add_child(street)
 
+    # Full 1600×2000 world-pixel footprint; the stone road occupies only its
+    # central 5u lane, with actual 3D ground extending beneath the houses.
+    var terrain := MeshInstance3D.new()
+    terrain.name = "MapGround"
+    var terrain_mesh := PlaneMesh.new()
+    terrain_mesh.size = Vector2(MAP_WIDTH, ROAD_LENGTH)
+    terrain.mesh = terrain_mesh
+    terrain.position.y = -0.025
+    terrain.material_override = _material(null, Color(0.36, 0.43, 0.36))
+    street.add_child(terrain)
+
     var ground := MeshInstance3D.new()
     ground.name = "TexturedRoad"
     var road_mesh := PlaneMesh.new()
@@ -48,30 +69,34 @@ func _build_street() -> void:
     ground.mesh = road_mesh
     var road_material := _material(RoadTexture)
     # UVs repeat on the real 3D plane; this is not a perspective-baked image.
-    road_material.uv1_scale = Vector3(1.0, 5.0, 1.0)
+    road_material.uv1_scale = Vector3(1.0, ROAD_LENGTH / 5.0, 1.0)
     ground.material_override = road_material
     street.add_child(ground)
-    _add_solid_box(street, "RoadCollider", Vector3(ROAD_WIDTH, 0.12, ROAD_LENGTH),
+    _add_solid_box(street, "RoadCollider", Vector3(MAP_WIDTH, 0.12, ROAD_LENGTH),
         Vector3(0.0, -0.10, 0.0), _material(null, Color(0.30, 0.35, 0.33)), false)
 
     var facade_material := _material(FacadeTexture)
+    var house_count := int(floorf((ROAD_LENGTH - 5.7) / 6.1)) + 1
     for side in [-1, 1]:
-        for index in range(4):
-            var z: float = -9.15 + float(index) * 6.1
-            var x: float = float(side) * 3.65
-            _add_solid_box(street, "House_%s_%d" % ["L" if side == -1 else "R", index],
-                Vector3(2.2, 3.3, 5.7), Vector3(x, 1.65, z), facade_material)
-            _add_solid_box(street, "Roof_%s_%d" % ["L" if side == -1 else "R", index],
-                Vector3(2.8, 0.35, 6.0), Vector3(x, 3.47, z),
-                _material(null, Color(0.19, 0.24, 0.24)))
+        for row in range(2):
+            for index in range(house_count):
+                var z: float = -ROAD_LENGTH * 0.5 + 2.85 + float(index) * 6.1
+                var x: float = float(side) * (3.65 + float(row) * 3.5)
+                var prefix := "House" if row == 0 else "OuterHouse"
+                _add_solid_box(street, "%s_%s_%d" % [prefix, "L" if side == -1 else "R", index],
+                    Vector3(2.2, 3.3, 5.7), Vector3(x, 1.65, z), facade_material)
+                _add_solid_box(street, "Roof_%d_%s_%d" % [row, "L" if side == -1 else "R", index],
+                    Vector3(2.8, 0.35, 6.0), Vector3(x, 3.47, z),
+                    _material(null, Color(0.19, 0.24, 0.24)))
 
     # A tangible gate at the far end provides an unambiguous perspective ruler.
     var pillar_material := _material(null, Color(0.50, 0.52, 0.48))
     for side in [-1, 1]:
         _add_solid_box(street, "GatePillar_%s" % side, Vector3(0.65, 3.6, 0.8),
-            Vector3(float(side) * 2.15, 1.8, -10.8), pillar_material)
+            Vector3(float(side) * 2.15, 1.8, -ROAD_LENGTH * 0.5 + 1.7), pillar_material)
     _add_solid_box(street, "GateLintel", Vector3(5.0, 0.55, 1.1),
-        Vector3(0.0, 3.85, -10.8), _material(null, Color(0.24, 0.31, 0.30)))
+        Vector3(0.0, 3.85, -ROAD_LENGTH * 0.5 + 1.7),
+        _material(null, Color(0.24, 0.31, 0.30)))
 
 func _add_solid_box(parent: Node3D, node_name: String, size: Vector3,
         location: Vector3, material: StandardMaterial3D, visible_mesh: bool = true) -> StaticBody3D:
@@ -103,7 +128,7 @@ func _build_character() -> void:
 
     player = CharacterBody3D.new()
     player.name = "Player"
-    player.position = Vector3(0.0, 0.5, 3.0)
+    player.position = Vector3(0.0, 0.5, PLAYER_START_Z)
     add_child(player)
     var collider := CollisionShape3D.new()
     collider.name = "FootprintCollider"
@@ -118,7 +143,7 @@ func _build_character() -> void:
     player.add_child(actor_sprite)
 
     # Same sprite, same world height, two depths: perspective changes pixels.
-    for z in [-8.0, 8.0]:
+    for z in [-REFERENCE_Z, REFERENCE_Z]:
         var witness := Node3D.new()
         witness.name = "FarReference" if z < 0.0 else "NearReference"
         witness.position = Vector3(-1.3, 0.0, z)
@@ -172,9 +197,22 @@ func _physics_process(delta: float) -> void:
     movement = movement.limit_length(1.0)
     player.velocity = Vector3(movement.x, 0.0, movement.y) * WALK_SPEED
     player.move_and_slide()
-    player.position.z = clampf(player.position.z, -11.8, 11.8)
+    player.position.x = clampf(player.position.x, -MAP_WIDTH * 0.5 + FOOTPRINT_RADIUS,
+        MAP_WIDTH * 0.5 - FOOTPRINT_RADIUS)
+    player.position.z = clampf(player.position.z, -PLAYER_LIMIT_Z, PLAYER_LIMIT_Z)
+    _update_camera_follow(delta)
     _play_actor(movement.length_squared() > 0.01, delta)
     _update_status()
+
+func _camera_target_position() -> Vector3:
+    return Vector3(clampf(player.position.x * 0.6, -MAP_WIDTH * 0.25, MAP_WIDTH * 0.25), 14.0,
+        clampf(player.position.z + CAMERA_OFFSET_Z, CAMERA_Z_MIN, CAMERA_Z_MAX))
+
+func _update_camera_follow(delta: float) -> void:
+    var target := _camera_target_position()
+    var weight := 1.0 - exp(-CAMERA_FOLLOW_SPEED * delta)
+    camera.position.x = lerpf(camera.position.x, target.x, weight)
+    camera.position.z = lerpf(camera.position.z, target.z, weight)
 
 func _play_actor(moving: bool, delta: float) -> void:
     var profile: WuxiaActorAnimationProfile = ActorProfile
@@ -194,8 +232,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
             else Camera3D.PROJECTION_PERSPECTIVE
         camera.size = 28.0
     elif event.keycode == KEY_R:
-        player.position = Vector3(0.0, 0.5, 3.0)
+        player.position = Vector3(0.0, 0.5, PLAYER_START_Z)
         player.velocity = Vector3.ZERO
+        camera.position = _camera_target_position()
     elif event.keycode == KEY_ESCAPE:
         # Restore the existing title screen; QA never changes GameSession.
         get_tree().change_scene_to_file("res://opening.tscn")
@@ -215,6 +254,7 @@ func _update_status() -> void:
     if status == null or player == null:
         return
     var mode := "透视" if camera.projection == Camera3D.PROJECTION_PERSPECTIVE else "正交"
-    status.text = "平江府 2.5D 独立验证 · %s\nWASD / 方向键移动 · P 对比投影 · R 复位 · Esc 返回\n位置 Z: %.1f u  可见高: %.0f px\n同尺寸参照：远 %.0f px / 近 %.0f px" % [
-        mode, player.position.z, projected_actor_height(player.position.z),
-        projected_actor_height(-8.0), projected_actor_height(8.0)]
+    status.text = "平江府 2.5D 验证 · %s · 地图 %.0f×%.0f px\nWASD / 方向键移动 · 镜头平滑跟随 · P 对比投影 · R 复位 · Esc 返回\n位置 Z: %.1f u  镜头 Z: %.1f u  可见高: %.0f px\n同尺寸参照：远 %.0f px / 近 %.0f px" % [
+        mode, MAP_SIZE_PIXELS.x, MAP_SIZE_PIXELS.y, player.position.z, camera.position.z,
+        projected_actor_height(player.position.z),
+        projected_actor_height(-REFERENCE_Z), projected_actor_height(REFERENCE_Z)]

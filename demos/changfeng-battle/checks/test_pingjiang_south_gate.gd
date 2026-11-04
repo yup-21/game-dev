@@ -5,7 +5,7 @@ const Bake = preload("res://scripts/map_bake.gd")
 const ZoneConnection = preload("res://scripts/map_zone_connection.gd")
 const Shift = preload("res://scripts/world_viewport_offset.gd")
 const P1 = "res://data/maps/pingjiang_south_gate_qa.tres"
-const NORTH = "res://data/maps/pingjiang_crossroads_connector_qa.tres"
+const NORTH = "res://data/maps/pingjiang_crossroads.tres"
 const SOUTH = "res://data/maps/pingjiang_wild_road_connector_qa.tres"
 var failures := 0
 
@@ -64,8 +64,8 @@ func _run() -> void:
         and not b.is_walkable_point(Vector2(1300, 1300), radius),
         "moat and river dock are impassable")
     var pairs: Array = [
-        [b, "north", n, "from_south", Vector2(800, 750)],
-        [n, "to_south", b, "from_north", Vector2(800, 250)],
+        [b, "north", n, "from_south", Vector2(800, 800)],
+        [n, "south", b, "from_north", Vector2(800, 250)],
         [b, "south", s, "from_north", Vector2(800, 250)],
         [s, "to_north", b, "from_south", Vector2(800, 1750)]]
     for pair in pairs:
@@ -101,9 +101,9 @@ func _run() -> void:
             player.position = Vector2(800, 80)
             check(bool(visual.call("_activate_exit", "north"))
                 and str(visual.get("current_region_id")) == n.id
-                and player.position == Vector2(800, 750), "north transfers to PJ02 QA connector")
-            player.position = Vector2(800, 920)
-            check(bool(visual.call("_activate_exit", "to_south"))
+                and player.position == Vector2(800, 800), "north transfers to real PJ02 crossroads")
+            player.position = Vector2(800, 930)
+            check(bool(visual.call("_activate_exit", "south"))
                 and str(visual.get("current_region_id")) == b.id
                 and player.position == Vector2(800, 250), "north reciprocal return")
             player.position = Vector2(800, 1920)

@@ -297,6 +297,8 @@ func _change_scene(path: String) -> void:
 func _action(action: String) -> void:
 	match action:
 		"start": _enter_new_game()
+		"pingjiang_exploration":
+			call_deferred("_change_scene", "res://scenes/pingjiang_exploration.tscn")
 		"pingjiang_qa":
 			# Isolated scene preview: no chapter flags or session mutations.
 			call_deferred("_change_scene", "res://scenes/pingjiang_scroll_qa.tscn")
@@ -346,6 +348,7 @@ func _input(event: InputEvent) -> void:
 				elif event.keycode == KEY_V: _action("pingjiang_vertical_qa")
 				elif event.keycode == KEY_T: _action("pingjiang_25d_qa")
 				elif event.keycode == KEY_G: _action("pingjiang_south_gate_qa")
+				elif event.keycode == KEY_J: _action("pingjiang_exploration")
 				elif event.keycode == KEY_H: _action("shen_house_qa")
 			"cinematic":
 				if event.keycode in [KEY_ESCAPE, KEY_S]: _action("skip")
@@ -570,8 +573,9 @@ func _draw_menu() -> void:
 	_button(Rect2(137,812,190,57),"T · 2.5D 透视","pingjiang_25d_qa",true)
 	_button(Rect2(338,812,190,57),"G · PJ-01 南门","pingjiang_south_gate_qa",true)
 	_button(Rect2(137,875,190,50),"H · 沈家旧宅","shen_house_qa",true)
-	_button(Rect2(338,875,190,50),"退出游戏","quit",true)
-	_text(Vector2(138,960),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
+	_button(Rect2(338,875,190,50),"J · 平江四区","pingjiang_exploration",true)
+	_button(Rect2(137,933,391,38),"退出游戏","quit",true)
+	_text(Vector2(138,990),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
 	# First beat is a memory of the destroyed school; the later rain
