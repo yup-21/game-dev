@@ -27,6 +27,13 @@ python art-production/tools/scene_scale_guide.py --orientation vertical \
 
 完成 1–6 后再提交正式运行时接入 PR；当前 PR 只记录候选美术与设计契约。
 
+### 分层 QA 联调交付（非正式替换）
+
+- 测试场景：`res://scenes/pingjiang_south_gate_qa.tscn`（菜单 G）；运行时联调 Resource：`res://data/maps/pingjiang_south_gate_qa.tres` 与 `res://data/native/scene_art/pingjiang_south_gate_qa.tres`。
+- 分层产物：`res://assets/imported/scenes/pingjiang_south_gate_qa/{background,ground,foreground}.png`。脚本 `art-production/tools/build_pj01_layers.py` 从 v03 逐像素拆层，无 AI 二次绘制；正式艺术资产仍保留在候选。
+- 临时联调邻区：`pingjiang_crossroads_connector_qa`（PJ-02 南侧接口）和 `pingjiang_wild_road_connector_qa`（城外官道北侧接口），用于验证 `zone_exit → spawn` 双向合同，绝非最终邻区地图。
+- 可自动验收项：真实尺寸、Alpha 互补、原始像素合成、原生碰撞、两端出入口、固定 200px 人物、Y 轴卷屏。原始 QA 记录中的视觉与负责人批准检查项继续保留为未完成。
+
 ### 审核清单
 
 - [x] 同城手绘色板与基本地标在 v03 保持一致（初筛）

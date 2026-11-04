@@ -22,3 +22,14 @@
 | Godot 画面滚屏与 NPC 互动 | 未完成 | 候选 Resource 仅用于导入器/编辑器管理 |
 
 **验收结论：** 选 v03 作为正交风格与构图试点，可进入几何精修、视觉复核和分层制作；**尚未完成严格等宽验证，亦不可声明正式地图可玩或可直接合入正式素材清单**。下次生产优先以几何图决定路面，手绘只负责材质与景物，不能以美术感知替代碰撞检查。
+
+## 2026-11-04：独立 Godot 分层联调（QA 原型）
+
+已建立 `res://scenes/pingjiang_south_gate_qa.tscn`，主菜单 **G** 进入。该场景**不在 Content Manifest 内，不是正式美术获批或 PJ-02 已交付**。
+
+- 从 v03 母版制作 `background.png` / `ground.png` / `foreground.png`，均为 1600×2000 真 Alpha、同原点；`build_pj01_layers.py --check` 确认三层逐像素合成与母版完全相等。前景提取了城门拱券／铁闸、桥栏与旗幡的遮挡，后期仍需美术手工描边和门洞走图验收。技术提取不等于正式独立重绘。
+- 原生 `WuxiaMapDefinition`：x=620–980 的 360px 连续地面多边形、两处护城河禁入多边形、守卫盘查／告示板剧情锚点、两端 `zone_exit` 与独立 `spawn`。地图世界坐标 1600×2000、`80px/u`、角色 200px 高、脚点半径 24px。角色可走净中心范围因碰撞半径为 x=644–956。
+- 北侧 PJ-02 与南侧城外官道只有 **1600×1000 联调连接占位区**；双向 E 交互已验证，未来需替换为真实目标地图和对应脚点，不将占位图冒充邻区正式美术。
+- 运行 `godot --headless --path demos/changfeng-battle --script res://checks/test_pingjiang_south_gate.gd`：`PJ01_LAYERED_PASS failures=0`。原 `test_pingjiang_long_street.gd` 与 `test_scene_art_profile.gd` 继续通过。
+
+**仍未满足正式验收**：逐 400px 量测 v03 的可见铺石/门洞净宽与目标 360px 的完全贴合；拱券与桥栏前景边缘的人工精修、真实 PJ-02 接缝、NPC 的正式角色表现、1600×1000 与 1440×900 GUI 截图、负责人视觉和权属审核。这里的几何可走测试只保证碰撞标尺，不等于可见铺石已达到 360px。
