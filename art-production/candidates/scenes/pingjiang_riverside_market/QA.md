@@ -17,3 +17,11 @@
 ## 下一步
 
 局部修复接缝及与 PJ-02 v02 的道路高度 → 生成同画布分层并验证 Alpha → 原生 Resource 明确记录世界边界、出入口与几何 → Godot 真实 GUI 双分辨率验收。未达门槛时只保留 candidate。
+
+## 第二轮：可运行分层原型（不覆盖原候选图）
+
+- 使用 `art-production/tools/build_pj03_layers.py` 生成原创矢量 `background.svg`、`ground.svg`、`foreground.svg`，各 **4800×1000**、原点一致，地面与前景画布之外为真实透明区域；它们是重新绘制的独立图层，**不是**从母版 WebP 假拆出的透明图。
+- `data/native/scene_art/pingjiang_riverside_market.tres` 绑定三层，`data/maps/pingjiang_riverside_market.tres` 绑定可走多边形及 east/west/south 出口元数据；`scenes/pingjiang_riverside_market_qa.tscn` 为单独验证入口。
+- 路面 `Y=612..925`，为 200px 人物/24px 脚点提供连续横向通行区；淬锋堂/百草堂的触发锚点另列。此处是便于玩法验证的**示意重绘**，非最终手绘品质。
+- 东端 PJ-02、西端暗渠、南向 PJ-04 均先保存显式目标 ID；未提供目标区的正式原生地图与双向 spawn 前，QA 不允许实际切换，也不会隐式跳转到其它测试场景。
+- 手绘精修仍需参照 WebP 母图重新绘制并校准三层：建筑密度/临水栏杆、画舫、接缝连续、角色遮挡、出入口和两分辨率 GUI 视效尚待人工验收，不能把原候选宣称已批准。
