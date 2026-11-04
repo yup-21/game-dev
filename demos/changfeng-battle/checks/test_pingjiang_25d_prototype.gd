@@ -26,13 +26,18 @@ func _run() -> void:
     _check(camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "real perspective projection")
     _check(road.mesh is PlaneMesh and road.material_override.albedo_texture != null,
         "real 3D plane with independently loaded paving texture")
+    _check(is_equal_approx(road.mesh.size.y, scene.ROAD_LENGTH)
+        and scene.ROAD_LENGTH >= 50.0
+        and scene.get_node_or_null("Street/House_L_7") != null
+        and scene.get_node_or_null("Street/House_R_7") != null,
+        "50u road and both rows of houses extend across the long street")
     _check(wall.get_node("CollisionShape3D").shape is BoxShape3D,
         "side buildings own real 3D obstacle shapes")
     _check(player.get_node("FootprintCollider").shape is CapsuleShape3D,
         "actor has native 3D collision")
     # The right building sits at x=3.65 with half width=1.1. A 0.3u
     # character should stop before its inner face at x=2.55.
-    player.position = Vector3(0.0, 0.5, 3.0)
+    player.position = Vector3(0.0, 0.5, scene.PLAYER_START_Z)
     for step in range(35):
         player.move_and_collide(Vector3(0.15, 0.0, 0.0))
     _check(player.position.x <= 2.26 and player.position.x > 1.5,
@@ -43,18 +48,37 @@ func _run() -> void:
         and is_equal_approx(Scale.actor_height_pixels(), 200.0)
         and is_equal_approx(scene.FOOTPRINT_RADIUS, 0.3),
         "existing combat scale stays authoritative")
-    var far_height: float = scene.projected_actor_height(-8.0)
-    var near_height: float = scene.projected_actor_height(8.0)
+    var far_height: float = scene.projected_actor_height(-scene.REFERENCE_Z)
+    var near_height: float = scene.projected_actor_height(scene.REFERENCE_Z)
     _check(near_height > far_height * 1.3 and far_height > 0.0,
         "two equally tall world sprites have measurably different screen heights")
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    var ortho_far: float = scene.projected_actor_height(-8.0)
-    var ortho_near: float = scene.projected_actor_height(8.0)
+    var ortho_far: float = scene.projected_actor_height(-scene.REFERENCE_Z)
+    var ortho_near: float = scene.projected_actor_height(scene.REFERENCE_Z)
     _check(absf(ortho_far - ortho_near) < 0.5,
         "orthographic comparison removes depth scaling")
     _check(scene.get_node("NearReference").get_child_count() == 1
         and scene.get_node("FarReference").get_child_count() == 1,
         "near/far identical sprite references are present")
+    camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+    var initial_camera_z: float = camera.position.z
+    player.position = Vector3(2.0, 0.5, -20.0)
+    scene._update_camera_follow(0.1)
+    _check(camera.position.z < initial_camera_z - 1.0
+        and camera.position.z > scene._camera_target_position().z,
+        "camera follows player smoothly, rather than teleporting")
+    scene._update_camera_follow(2.0)
+    _check(absf(camera.position.z - scene._camera_target_position().z) < 0.01
+        and camera.position.x > 0.7,
+        "camera reaches the distant player and follows sideways")
+    player.position.z = -scene.PLAYER_LIMIT_Z
+    scene._update_camera_follow(2.0)
+    _check(absf(camera.position.z - scene.CAMERA_Z_MIN) < 0.01,
+        "camera stops scrolling at the far edge")
+    player.position.z = scene.PLAYER_LIMIT_Z
+    scene._update_camera_follow(2.0)
+    _check(absf(camera.position.z - scene.CAMERA_Z_MAX) < 0.01,
+        "camera stops scrolling at the near edge")
     print("PINGJIANG_25D_PASS failures=%d near=%.1fpx far=%.1fpx" % [
         failures, near_height, far_height])
     scene.queue_free()
