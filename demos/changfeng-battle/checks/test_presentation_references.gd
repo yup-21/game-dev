@@ -50,7 +50,7 @@ func _run() -> void:
 
     var missing_trigger: String = Validation.validate(
         _definitions_with("vfx_trigger", ""), resources)
-    check(missing_trigger.contains("both VFX Resource and cue trigger"),
+    check(missing_trigger.contains("VFX Resource without a cue trigger"),
         "configured VFX must declare an explicit cue: " + missing_trigger)
 
     var registered_vfx: WuxiaVFXDefinition = load(

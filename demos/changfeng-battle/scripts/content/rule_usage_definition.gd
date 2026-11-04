@@ -44,10 +44,6 @@ func to_record() -> Dictionary:
                 [usage_id, vfx_slot.content_id, vfx_slot.resource_path, str(slot_record), vfx_trigger])
             return {}
         result["vfx_slot"] = vfx_slot.content_id
-    if not vfx_trigger.is_empty():
-        if vfx_slot == null:
-            push_error("Rule usage %s declares a VFX cue without an asset" % usage_id)
-            return {}
-        result["vfx_trigger"] = vfx_trigger
+    if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
     if has_once_per_action: result["once_per_action"] = once_per_action
     return result

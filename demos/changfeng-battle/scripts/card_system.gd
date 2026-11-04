@@ -230,7 +230,7 @@ func valid_definition(d: Dictionary) -> bool:
 		for field in ["animation_action", "vfx_slot", "vfx_trigger"]:
 			if u.has(field) and (not u[field] is String or str(u[field]).is_empty()):
 				return false
-		if u.has("vfx_slot") != u.has("vfx_trigger"):
+		if u.has("vfx_slot") and not u.has("vfx_trigger"):
 			return false
 		for effect in u.get("effects",[]):
 			if not valid_effect(effect): return false

@@ -19,7 +19,7 @@ A skill usage, rule usage or technique stage has exactly three presentation fiel
   **Do not** type an asset ID, file path or PackedScene on the usage.
 - `vfx_trigger: String` — the named semantic action-timeline cue (for
   example `strike_active`). Required whenever `vfx_slot` is bound;
-  a trigger without a VFX Resource is invalid.
+  a trigger without an explicit VFX Resource may still time ordinary\n  procedural event visuals.
 
 There is no second `animation_id` or `vfx_scene` authoring field,
 no `vfx_path` runtime shortcut and no `ACTION_PRESENTATION` event.

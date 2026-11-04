@@ -53,10 +53,7 @@ func to_record() -> Dictionary:
                 not ResourceLoader.exists(vfx_slot.resource_path):
             return {}
         result["vfx_slot"] = vfx_slot.content_id
-    if not vfx_trigger.is_empty():
-        if vfx_slot == null:
-            return {}
-        result["vfx_trigger"] = vfx_trigger
+    if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
     if not available: result["available"] = false
     if unlock_rank != 1: result["unlock_rank"] = unlock_rank
     if same_action_extra_qi != 0: result["same_action_extra_qi"] = same_action_extra_qi

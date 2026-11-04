@@ -89,8 +89,8 @@ static func validate(definitions: Dictionary, resources: Dictionary, strict_bind
                 var action: String = str(binding.get("animation_action", ""))
                 var slot: String = str(binding.get("vfx_slot", ""))
                 var trigger: String = str(binding.get("vfx_trigger", ""))
-                if slot.is_empty() != trigger.is_empty():
-                    return location + " must configure both VFX Resource and cue trigger"
+                if not slot.is_empty() and trigger.is_empty():
+                    return location + " has a VFX Resource without a cue trigger"
                 if not action.is_empty() and timeline_cues.is_empty():
                     return location + " requires a missing action timeline Resource"
                 if not action.is_empty() and not _action_exists(action, str(entry.school), active_profiles):

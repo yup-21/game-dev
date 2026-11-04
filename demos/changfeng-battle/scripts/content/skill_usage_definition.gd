@@ -51,10 +51,7 @@ func to_record() -> Dictionary:
                 not ResourceLoader.exists(vfx_slot.resource_path):
             return {}
         result["vfx_slot"] = vfx_slot.content_id
-    if not vfx_trigger.is_empty():
-        if vfx_slot == null:
-            return {}
-        result["vfx_trigger"] = vfx_trigger
+    if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
     if when != null:
         if not when is WuxiaConditionDefinition:
             return {}

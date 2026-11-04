@@ -195,7 +195,7 @@ func _valid_usage(usage: Variant) -> bool:
 	for field in ["animation_action", "vfx_slot", "vfx_trigger"]:
 		if usage.has(field) and (not usage[field] is String or str(usage[field]).is_empty()):
 			return false
-	if usage.has("vfx_slot") != usage.has("vfx_trigger"):
+	if usage.has("vfx_slot") and not usage.has("vfx_trigger"):
 		return false
 	if not _keys(usage.target,["kind","min_distance","max_distance","line_of_sight"],["kind"]) or usage.target.kind not in TARGETS: return false
 	for key in ["min_distance","max_distance"]:
