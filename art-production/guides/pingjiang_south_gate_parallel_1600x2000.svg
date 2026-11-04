@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2000" viewBox="0 0 1600 2000">
+  <rect width="1600" height="2000" fill="#d9d1c0"/>
+  <path d="M0 0H620V560H0Z M980 0H1600V560H980Z" fill="#929d87"/>
+  <path d="M0 1580H620V2000H0Z M980 1580H1600V2000H980Z" fill="#9a9980"/>
+  <rect x="620" y="0" width="360" height="2000" fill="#a6a8a2"/>
+  <path d="M660 0V2000 M940 0V2000" stroke="#dedcd1" stroke-width="12" fill="none"/>
+  <path d="M800 0V2000" stroke="#8c918c" stroke-width="5" stroke-dasharray="22 52" fill="none" opacity="0.45"/>
+  <g fill="#f3e8d2" stroke="#747d73" stroke-width="14">
+    <rect x="80" y="65" width="410" height="300"/>
+    <rect x="1100" y="70" width="410" height="290"/>
+    <rect x="110" y="360" width="360" height="180"/>
+    <rect x="1100" y="360" width="350" height="180"/>
+  </g>
+  <g fill="#454d54" stroke="#242d33" stroke-width="11">
+    <path d="M60 110L300 12L540 110Z"/>
+    <path d="M1060 115L1300 15L1540 115Z"/>
+    <path d="M80 400L290 330L500 400Z"/>
+    <path d="M1080 400L1290 330L1500 400Z"/>
+  </g>
+  <g fill="#687176" stroke="#48515a" stroke-width="15">
+    <rect x="0" y="590" width="620" height="440"/>
+    <rect x="980" y="590" width="620" height="440"/>
+    <rect x="120" y="450" width="370" height="150"/>
+    <rect x="1110" y="450" width="370" height="150"/>
+    <rect x="450" y="525" width="170" height="190"/>
+    <rect x="980" y="525" width="170" height="190"/>
+  </g>
+  <g fill="#39464f" stroke="#222d38" stroke-width="12">
+    <path d="M40 590L300 505L600 590Z"/>
+    <path d="M1000 590L1300 505L1560 590Z"/>
+  </g>
+  <path d="M620 660H980 M620 1020H980" stroke="#e8cf9a" stroke-width="17"/>
+  <path d="M0 1050H620V1570H0Z M980 1050H1600V1570H980Z" fill="#5f8791"/>
+  <g stroke="#7cadb5" stroke-width="13" fill="none" opacity=".6">
+    <path d="M25 1200H570 M1050 1200H1575 M60 1430H600 M1030 1430H1540"/>
+  </g>
+  <rect x="620" y="1050" width="360" height="520" fill="#a09c91" stroke="#e9d9c1" stroke-width="22"/>
+  <g stroke="#4f5554" stroke-width="24" fill="none">
+    <path d="M620 1050V1570 M980 1050V1570"/>
+  </g>
+  <g fill="#917d5f" stroke="#564838" stroke-width="10">
+    <rect x="150" y="1170" width="250" height="165"/>
+    <rect x="1150" y="1165" width="260" height="160"/>
+    <rect x="165" y="1665" width="280" height="235"/>
+    <rect x="1150" y="1655" width="290" height="235"/>
+  </g>
+  <g fill="#ba763f" opacity=".65">
+    <circle cx="85" cy="185" r="105"/><circle cx="1470" cy="295" r="115"/>
+    <circle cx="135" cy="1810" r="120"/><circle cx="1525" cy="1860" r="95"/>
+  </g>
+</svg>
