@@ -192,6 +192,8 @@ idle/walk/run 首尾循环；defeat 停在倒地；其他动作收尾兼容待�
 
 **重要：此比例尺是构图和后期校准合同，不是仅凭 AI 提示词就能保证的像素精度。**
 
+**全城统一镜头（平江府首轮视角比选）**：固定 2.5D 轻俯视、近似正交的弱透视，画面保留中式建筑立面与真实屋顶，但实际可走路面不得向远处消失点快速收缩。横向可走带连通左右图边，纵向可走廊道连通上下图边；桥、水、屋檐不能阻塞已配置出口。远景的城楼、河岸、山体可使用较强纵深感，但这些不是角色可进入的真实地面。同一城市所有区域使用同一人物高度、门洞比例、石板尺度和视角；详细要求见 `TOWN_MAP_SCALE_PRODUCTION.md` 的“全游戏统一视角”。
+
 技术合同：**1600×1000 / 16:10** 逻辑画面，另验 1440×900。正式交付同尺寸、同原点的 `background`、`ground`、`foreground`、可选 `weather`，用 `WuxiaSceneArtProfile` 引用；碰撞、出生点、可走地面仍来自 Map Resource。**生成一张漂亮的整图不等于完成可玩地图。**
 
 ### 场景设定图
@@ -205,6 +207,8 @@ walkable midground, distant background. Architecture and terrain:
 {landmarks}. Keep the playable center {playable_polygon_description}
 visually clear for six combatants; place high-detail clutter outside
 navigation lanes. Match the approved character scale and foot contact plane.
+Near-orthographic gentle elevated 2.5D gameplay camera: constant character
+scale and ground-lane width across playable Y; no vanishing-point walkways.
 No characters, no UI, no text, no chess grid, no fake 3D terrain.
 [GLOBAL NEGATIVE]
 ```
