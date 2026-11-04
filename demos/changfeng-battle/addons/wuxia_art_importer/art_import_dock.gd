@@ -6,8 +6,8 @@ const Service = preload("res://addons/wuxia_art_importer/art_import_service.gd")
 const Preview = preload("res://addons/wuxia_art_importer/art_preview.gd")
 const Export = preload("res://addons/wuxia_art_importer/art_export_service.gd")
 const Transaction = preload("res://addons/wuxia_art_importer/art_transaction_service.gd")
-const LABELS := ["角色立绘", "角色动作 Atlas", "分层场景", "UI Atlas", "战斗 VFX"]
-const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx"]
+const LABELS := ["角色立绘", "角色动作 Atlas", "分层场景", "UI Atlas", "战斗 VFX", "整个角色目录"]
+const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx", "character_folder"]
 
 var body: VBoxContainer
 var source_list: ItemList
@@ -38,6 +38,9 @@ var info: Label
 var apply_button: Button
 var confirm: ConfirmationDialog
 var picker: FileDialog
+var folder_picker: FileDialog
+var character_folder: LineEdit
+var folder_row: Control
 var picker_target: LineEdit
 var timer: Timer
 var versioned: CheckBox
@@ -101,6 +104,17 @@ func _ready() -> void:
     targets = OptionButton.new()
     target_row = _labeled("角色 / 地图 / 章节 Resource", targets)
     targets.item_selected.connect(func(_index: int): _refresh_preview())
+    character_folder = LineEdit.new()
+    character_folder.placeholder_text = "art-production/.../characters/<id> 或 res://assets/imported/characters/<id>"
+    character_folder.text_changed.connect(_folder_changed)
+    var folder_controls := HBoxContainer.new()
+    character_folder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    folder_controls.add_child(character_folder)
+    var choose_folder := Button.new()
+    choose_folder.text = "选择目录"
+    choose_folder.pressed.connect(func(): folder_picker.popup_centered_ratio(0.7))
+    folder_controls.add_child(choose_folder)
+    folder_row = _labeled("按角色目录整体导入（已整理目录可直接绑定）", folder_controls)
     asset_id = LineEdit.new()
     asset_id.placeholder_text = "例如 ui.sword_cards"
     id_row = _labeled("WuxiaAssetDefinition ID", asset_id)
@@ -131,7 +145,7 @@ func _ready() -> void:
     body.add_child(facing)
     atlas_rows.append(facing)
     clip_profile = LineEdit.new()
-    clip_profile.placeholder_text = "res://data/art_previews/<character>_pilot_clip_profile.tres (可选)"
+    clip_profile.placeholder_text = "res://data/.../animation_profile.tres（动作帧配置可选）"
     clip_profile.text_changed.connect(func(_value: String): _refresh_preview())
     atlas_rows.append(_labeled("原生动作帧 Profile 模板（可选）", clip_profile))
     action_select = OptionButton.new()
@@ -239,6 +253,13 @@ func _ready() -> void:
     picker.add_filter("*.png,*.webp,*.jpg,*.jpeg,*.svg", "图像文件")
     picker.file_selected.connect(_on_picked)
     add_child(picker)
+    folder_picker = FileDialog.new()
+    folder_picker.access = FileDialog.ACCESS_FILESYSTEM
+    folder_picker.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+    folder_picker.dir_selected.connect(func(path: String):
+        character_folder.text = path
+        _folder_changed(path))
+    add_child(folder_picker)
     timer = Timer.new()
     timer.wait_time = 0.12
     timer.timeout.connect(_next_frame)
@@ -324,16 +345,29 @@ func _refresh_sources() -> void:
 
 func _mode_changed() -> void:
     var mode := _mode()
-    target_row.visible = mode in ["portrait", "atlas", "scene"]
+    target_row.visible = mode in ["portrait", "atlas", "scene", "character_folder"]
+    folder_row.visible = mode == "character_folder"
+    source_list.visible = mode != "character_folder"
+    search.visible = mode != "character_folder"
     id_row.visible = mode in ["ui_atlas", "vfx"]
     event_row.visible = mode == "vfx"
     for layer in extra_rows:
         extra_rows[layer].visible = mode == "scene"
     for control in atlas_rows:
-        control.visible = mode == "atlas"
+        control.visible = mode == "atlas" or (mode == "character_folder" and control == atlas_rows[-2])
     for control in vfx_controls:
         control.visible = mode == "vfx"
     _load_targets()
+    _refresh_preview()
+
+
+func _folder_changed(folder: String) -> void:
+    if _mode() == "character_folder":
+        var expected := "res://data/native/characters/" + folder.strip_edges().simplify_path().get_file() + ".tres"
+        for i in targets.item_count:
+            if str(targets.get_item_metadata(i)) == expected:
+                targets.select(i)
+                break
     _refresh_preview()
 
 
@@ -341,7 +375,7 @@ func _load_targets() -> void:
     targets.clear()
     var mode := _mode()
     var folders: Array[String] = []
-    if mode in ["portrait", "atlas"]:
+    if mode in ["portrait", "atlas", "character_folder"]:
         folders.append("res://data/native/characters")
     elif mode == "scene":
         folders.assign(["res://data/maps", "res://data/native/chapters"])
@@ -360,7 +394,7 @@ func _load_targets() -> void:
                     resource is WuxiaGridMapDefinition or
                     (resource is WuxiaChapterDefinition and resource.get("scene") is WuxiaChapterSceneDefinition)):
                 continue
-            if mode in ["portrait", "atlas"] and not resource is WuxiaCharacterDefinition:
+            if mode in ["portrait", "atlas", "character_folder"] and not resource is WuxiaCharacterDefinition:
                 continue
             var label := str(filename).get_basename()
             if resource is WuxiaContentDefinition:
@@ -370,6 +404,8 @@ func _load_targets() -> void:
             targets.set_item_metadata(index, path)
     if targets.item_count > 0:
         targets.select(0)
+        if mode == "character_folder" and character_folder != null:
+            _folder_changed(character_folder.text)
 
 
 func _browse(line: LineEdit) -> void:
@@ -408,6 +444,17 @@ func _fields() -> Dictionary:
 
 func _refresh_preview() -> void:
     if preview == null:
+        return
+    if _mode() == "character_folder":
+        var folder_plan := Service.plan_character_folder(character_folder.text.strip_edges(), _target(), _fields())
+        if not str(folder_plan.get("error", "")).is_empty():
+            info.text = str(folder_plan["error"])
+            return
+        var names := PackedStringArray()
+        for role in folder_plan["files"]:
+            names.append(str(role) + " → " + str(folder_plan["files"][role]["destination"]))
+        names.sort()
+        info.text = "角色文件自动归类（%d 项）：\n%s\n正式绑定需确认；不会自动选 _vNN 版本。" % [names.size(), "\n".join(names)]
         return
     var path := _selected_source()
     if path.is_empty():
@@ -471,7 +518,7 @@ func _next_frame() -> void:
 
 
 func _current_entry() -> Dictionary:
-    return {"mode": _mode(), "source": _selected_source(), "target": _target(),
+    return {"mode": _mode(), "source": character_folder.text.strip_edges() if _mode() == "character_folder" else _selected_source(), "target": _target(),
             "fields": _fields().duplicate(true)}
 
 
@@ -494,8 +541,7 @@ func _enqueue() -> void:
     if busy:
         return
     var entry := _current_entry()
-    var plan_data: Dictionary = Service.plan(str(entry["mode"]), str(entry["source"]),
-                                               str(entry["target"]), entry["fields"])
+    var plan_data: Dictionary = _plan_entry(entry)
     if not str(plan_data.get("error", "")).is_empty():
         info.text = "加入失败：" + str(plan_data["error"])
         return
@@ -525,13 +571,19 @@ func _clear_queue() -> void:
 func _gather_plans(entries: Array[Dictionary]) -> Dictionary:
     var plans: Array[Dictionary] = []
     for entry in entries:
-        var attempt: Dictionary = Service.plan(str(entry["mode"]), str(entry["source"]),
-                                                str(entry["target"]), entry["fields"])
+        var attempt: Dictionary = _plan_entry(entry)
         if not str(attempt.get("error", "")).is_empty():
             return {"error": _describe_entry(entry) + "：" + str(attempt["error"])}
         plans.append(attempt)
     var problem: String = Transaction.validate(plans)
     return {"error": problem, "plans": plans}
+
+
+func _plan_entry(entry: Dictionary) -> Dictionary:
+    if str(entry["mode"]) == "character_folder":
+        return Service.plan_character_folder(str(entry["source"]), str(entry["target"]), entry["fields"])
+    return Service.plan(str(entry["mode"]), str(entry["source"]),
+        str(entry["target"]), entry["fields"])
 
 
 func _signature(plans: Array[Dictionary]) -> String:
@@ -544,6 +596,9 @@ func _signature(plans: Array[Dictionary]) -> String:
             profile, FileAccess.get_sha256(profile) if not profile.is_empty() else "",
             FileAccess.get_sha256("res://data/content_manifest.tres") if plan_data["mode"] in ["ui_atlas", "vfx"] else ""
         ])
+        var template := str(plan_data.get("template_path", ""))
+        if not template.is_empty():
+            lines.append(template + "|" + FileAccess.get_sha256(template))
         var keys: Array = plan_data["files"].keys()
         keys.sort()
         for key in keys:

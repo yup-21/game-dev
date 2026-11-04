@@ -49,9 +49,10 @@ static func validate(plans: Array[Dictionary]) -> String:
         if target_path.is_empty() or not target_path.begins_with("res://data/") or ".." in target_path:
             return "非法 Resource 目标路径：" + target_path
         if logical_targets.has(target_path):
-            if str(plan.get("mode", "")) in ["vfx", "ui_atlas"] or bool(logical_targets[target_path]):
+            if str(plan.get("mode", "")) in ["vfx", "ui_atlas", "character_folder"] or \
+                    str(logical_targets[target_path]) in ["vfx", "ui_atlas", "character_folder"]:
                 return "同一 Resource 不允许混合 UI/VFX 或冲突目标：" + target_path
-        logical_targets[target_path] = str(plan.get("mode", "")) in ["vfx", "ui_atlas"]
+        logical_targets[target_path] = str(plan.get("mode", ""))
         for item in plan.get("files", {}).values():
             var path := str(item.get("destination", ""))
             var source_hash := str(item.get("sha256", ""))
