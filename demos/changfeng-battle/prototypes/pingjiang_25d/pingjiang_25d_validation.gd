@@ -7,8 +7,10 @@ const ActorProfile = preload("res://data/native/animations/shen_changfeng.tres")
 const RoadTexture = preload("res://prototypes/pingjiang_25d/stone_road.svg")
 const FacadeTexture = preload("res://prototypes/pingjiang_25d/house_facade.svg")
 
+const MAP_SIZE_PIXELS := Vector2(1600.0, 2000.0)
+const MAP_WIDTH := MAP_SIZE_PIXELS.x / CombatScale.PIXELS_PER_UNIT
+const ROAD_LENGTH := MAP_SIZE_PIXELS.y / CombatScale.PIXELS_PER_UNIT
 const ROAD_WIDTH := 5.0
-const ROAD_LENGTH := 50.0
 const WALK_SPEED := 4.0
 const PLAYER_START_Z := ROAD_LENGTH * 0.5 - 5.0
 const PLAYER_LIMIT_Z := ROAD_LENGTH * 0.5 - 1.2
@@ -49,6 +51,17 @@ func _build_street() -> void:
     street.name = "Street"
     add_child(street)
 
+    # Full 1600×2000 world-pixel footprint; the stone road occupies only its
+    # central 5u lane, with actual 3D ground extending beneath the houses.
+    var terrain := MeshInstance3D.new()
+    terrain.name = "MapGround"
+    var terrain_mesh := PlaneMesh.new()
+    terrain_mesh.size = Vector2(MAP_WIDTH, ROAD_LENGTH)
+    terrain.mesh = terrain_mesh
+    terrain.position.y = -0.025
+    terrain.material_override = _material(null, Color(0.36, 0.43, 0.36))
+    street.add_child(terrain)
+
     var ground := MeshInstance3D.new()
     ground.name = "TexturedRoad"
     var road_mesh := PlaneMesh.new()
@@ -59,19 +72,22 @@ func _build_street() -> void:
     road_material.uv1_scale = Vector3(1.0, ROAD_LENGTH / 5.0, 1.0)
     ground.material_override = road_material
     street.add_child(ground)
-    _add_solid_box(street, "RoadCollider", Vector3(ROAD_WIDTH, 0.12, ROAD_LENGTH),
+    _add_solid_box(street, "RoadCollider", Vector3(MAP_WIDTH, 0.12, ROAD_LENGTH),
         Vector3(0.0, -0.10, 0.0), _material(null, Color(0.30, 0.35, 0.33)), false)
 
     var facade_material := _material(FacadeTexture)
+    var house_count := int(floorf((ROAD_LENGTH - 5.7) / 6.1)) + 1
     for side in [-1, 1]:
-        for index in range(int(ceilf(ROAD_LENGTH / 6.1))):
-            var z: float = -ROAD_LENGTH * 0.5 + 3.05 + float(index) * 6.1
-            var x: float = float(side) * 3.65
-            _add_solid_box(street, "House_%s_%d" % ["L" if side == -1 else "R", index],
-                Vector3(2.2, 3.3, 5.7), Vector3(x, 1.65, z), facade_material)
-            _add_solid_box(street, "Roof_%s_%d" % ["L" if side == -1 else "R", index],
-                Vector3(2.8, 0.35, 6.0), Vector3(x, 3.47, z),
-                _material(null, Color(0.19, 0.24, 0.24)))
+        for row in range(2):
+            for index in range(house_count):
+                var z: float = -ROAD_LENGTH * 0.5 + 2.85 + float(index) * 6.1
+                var x: float = float(side) * (3.65 + float(row) * 3.5)
+                var prefix := "House" if row == 0 else "OuterHouse"
+                _add_solid_box(street, "%s_%s_%d" % [prefix, "L" if side == -1 else "R", index],
+                    Vector3(2.2, 3.3, 5.7), Vector3(x, 1.65, z), facade_material)
+                _add_solid_box(street, "Roof_%d_%s_%d" % [row, "L" if side == -1 else "R", index],
+                    Vector3(2.8, 0.35, 6.0), Vector3(x, 3.47, z),
+                    _material(null, Color(0.19, 0.24, 0.24)))
 
     # A tangible gate at the far end provides an unambiguous perspective ruler.
     var pillar_material := _material(null, Color(0.50, 0.52, 0.48))
@@ -181,13 +197,15 @@ func _physics_process(delta: float) -> void:
     movement = movement.limit_length(1.0)
     player.velocity = Vector3(movement.x, 0.0, movement.y) * WALK_SPEED
     player.move_and_slide()
+    player.position.x = clampf(player.position.x, -MAP_WIDTH * 0.5 + FOOTPRINT_RADIUS,
+        MAP_WIDTH * 0.5 - FOOTPRINT_RADIUS)
     player.position.z = clampf(player.position.z, -PLAYER_LIMIT_Z, PLAYER_LIMIT_Z)
     _update_camera_follow(delta)
     _play_actor(movement.length_squared() > 0.01, delta)
     _update_status()
 
 func _camera_target_position() -> Vector3:
-    return Vector3(clampf(player.position.x * 0.45, -1.0, 1.0), 14.0,
+    return Vector3(clampf(player.position.x * 0.6, -MAP_WIDTH * 0.25, MAP_WIDTH * 0.25), 14.0,
         clampf(player.position.z + CAMERA_OFFSET_Z, CAMERA_Z_MIN, CAMERA_Z_MAX))
 
 func _update_camera_follow(delta: float) -> void:
@@ -236,7 +254,7 @@ func _update_status() -> void:
     if status == null or player == null:
         return
     var mode := "透视" if camera.projection == Camera3D.PROJECTION_PERSPECTIVE else "正交"
-    status.text = "平江府 2.5D 长街验证 · %s · 街长 %.0f u\nWASD / 方向键移动 · 镜头平滑跟随 · P 对比投影 · R 复位 · Esc 返回\n位置 Z: %.1f u  镜头 Z: %.1f u  可见高: %.0f px\n同尺寸参照：远 %.0f px / 近 %.0f px" % [
-        mode, ROAD_LENGTH, player.position.z, camera.position.z,
+    status.text = "平江府 2.5D 验证 · %s · 地图 %.0f×%.0f px\nWASD / 方向键移动 · 镜头平滑跟随 · P 对比投影 · R 复位 · Esc 返回\n位置 Z: %.1f u  镜头 Z: %.1f u  可见高: %.0f px\n同尺寸参照：远 %.0f px / 近 %.0f px" % [
+        mode, MAP_SIZE_PIXELS.x, MAP_SIZE_PIXELS.y, player.position.z, camera.position.z,
         projected_actor_height(player.position.z),
         projected_actor_height(-REFERENCE_Z), projected_actor_height(REFERENCE_Z)]

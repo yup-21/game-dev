@@ -21,16 +21,26 @@ func _run() -> void:
     var player: CharacterBody3D = scene.get_node("Player")
     var sprite: Sprite3D = scene.get_node("Player/ActorSprite")
     var road: MeshInstance3D = scene.get_node("Street/TexturedRoad")
+    var map_ground: MeshInstance3D = scene.get_node("Street/MapGround")
+    var floor_collider: CollisionShape3D = scene.get_node("Street/RoadCollider/CollisionShape3D")
     var wall: StaticBody3D = scene.get_node("Street/House_L_0")
     _check(scene.get_script() != null and camera.current, "standalone scene and camera instantiate")
     _check(camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "real perspective projection")
     _check(road.mesh is PlaneMesh and road.material_override.albedo_texture != null,
         "real 3D plane with independently loaded paving texture")
-    _check(is_equal_approx(road.mesh.size.y, scene.ROAD_LENGTH)
-        and scene.ROAD_LENGTH >= 50.0
-        and scene.get_node_or_null("Street/House_L_7") != null
-        and scene.get_node_or_null("Street/House_R_7") != null,
-        "50u road and both rows of houses extend across the long street")
+    _check(is_equal_approx(scene.MAP_SIZE_PIXELS.x, 1600.0)
+        and is_equal_approx(scene.MAP_SIZE_PIXELS.y, 2000.0)
+        and is_equal_approx(map_ground.mesh.size.x, 20.0)
+        and is_equal_approx(map_ground.mesh.size.y, 25.0)
+        and is_equal_approx(floor_collider.shape.size.x, 20.0)
+        and is_equal_approx(road.mesh.size.x, scene.ROAD_WIDTH)
+        and is_equal_approx(road.mesh.size.y, scene.ROAD_LENGTH),
+        "full 1600x2000 world-pixel map with centered textured street and floor collision")
+    var last_house: StaticBody3D = scene.get_node("Street/OuterHouse_R_3")
+    _check(scene.get_node_or_null("Street/House_L_3") != null
+        and scene.get_node_or_null("Street/OuterHouse_L_3") != null
+        and last_house.position.z + 2.85 <= scene.ROAD_LENGTH * 0.5,
+        "both rows of buildings fit inside the 2000px-long map")
     _check(wall.get_node("CollisionShape3D").shape is BoxShape3D,
         "side buildings own real 3D obstacle shapes")
     _check(player.get_node("FootprintCollider").shape is CapsuleShape3D,
@@ -62,7 +72,7 @@ func _run() -> void:
         "near/far identical sprite references are present")
     camera.projection = Camera3D.PROJECTION_PERSPECTIVE
     var initial_camera_z: float = camera.position.z
-    player.position = Vector3(2.0, 0.5, -20.0)
+    player.position = Vector3(2.0, 0.5, -scene.PLAYER_LIMIT_Z + 1.0)
     scene._update_camera_follow(0.1)
     _check(camera.position.z < initial_camera_z - 1.0
         and camera.position.z > scene._camera_target_position().z,
@@ -79,6 +89,9 @@ func _run() -> void:
     scene._update_camera_follow(2.0)
     _check(absf(camera.position.z - scene.CAMERA_Z_MAX) < 0.01,
         "camera stops scrolling at the near edge")
+    player.position.x = 100.0
+    _check(scene._camera_target_position().x <= scene.MAP_WIDTH * 0.25,
+        "horizontal camera tracking respects the full map boundaries")
     print("PINGJIANG_25D_PASS failures=%d near=%.1fpx far=%.1fpx" % [
         failures, near_height, far_height])
     scene.queue_free()
