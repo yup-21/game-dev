@@ -24,7 +24,7 @@ clear silhouettes, natural materials, muted cool palette with warm accents.
 photorealistic, 3D render, neon, plastic, text, logo, watermark
 ```
 
-**发送原则：** 只发送对应类别的短模板、实际变量及必要参考图。已附批准参考图时，可省略全局风格短句；不拼接整份规范、Skill、检查清单或长篇反向词。反向约束按真实失败点补充 1–2 条。透明 Alpha、分层、脚点、帧序与精确尺寸单独技术验收。
+**发送原则：** Agent 先完成角色、规格、构图、帧数等选择，再将类别短模板中的**全部占位符替换为唯一确定值**，附必要参考图后发送。禁止把 `{变量}`、`A/B` 备选项、尺寸档位选择、`自行判断/任选/视情况` 等决策交给生图模型；不拼接规范、Skill、检查清单或长篇反向词。重试由 Agent 先改定参数，再发送完整确定版提示词。透明 Alpha、分层、脚点、帧序与精确尺寸单独技术验收。
 
 ## 2. 可复用变量与生成顺序
 
@@ -73,7 +73,7 @@ Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
 
 **新战斗角色精灵图已定稿**：普通角色每格 **328×256 源像素**，高个档 **384×288 源像素**；从角色设定读取身高 `height_m`，自然站姿人物高度为 `round(height_m × 100)` 源像素，常规范围 **100–220px**（例如 1.8m→180px）。一张 C×R Sheet 的目标尺寸为 `W×C` 宽、`H×R` 高；只固定单格，不固定动作帧数或行列数。`WuxiaActorAnimationProfile.tres` 支持独立 Clip Atlas、`columns/rows`、脚点、逐帧时长和根偏移；旧图集保持原 Resource 兼容，不暗中按新格切分。
 
-制作方法：先完成单个动作的逐帧分镜，再让 AI **每次输出一张包含连续多帧的 RGBA Sprite Sheet**，按分镜选择 C×R 个角色已选 **328×256／384×288** 等尺寸格和透明间距；程序机械拆格、逐格拒绝越界后，再按统一根点坐标系无损装配正式 Atlas。画布必须给完整人体/武器留白，不能把 4×2/6×4 的“关键姿势稿”伪称真实高帧率动画，也不能靠固定网格反推帧数。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯、零越界即可。方向目标为前/后/左右；当前水平镜像只能作为过渡。
+制作方法：Agent 先完成单个动作的逐帧分镜，依据角色身高、武器长度和各动作伸展范围在制图前**为整角色确定唯一格子档位**，再让 AI **每次输出一张包含连续多帧的 RGBA Sprite Sheet**。生图请求中只出现已选格宽高、固定格内根点坐标、已选 C×R 及由此计算的整张尺寸，**不询问生图模型角色是否高个、应该用哪档或应画几帧**。程序机械拆格、逐格拒绝越界后，再按统一根点坐标系无损装配正式 Atlas。画布必须给完整人体/武器留白，不能把 4×2/6×4 的“关键姿势稿”伪称真实高帧率动画，也不能靠固定网格反推帧数。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯、零越界即可。方向目标为前/后/左右；当前水平镜像只能作为过渡。
 
 **生图入口**：角色逐帧描述只作为分镜数据，不再单独使用单帧生图模板。实际调用下文 §5.1 的多帧 Sheet 简版提示词。
 
@@ -90,20 +90,20 @@ Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
 **默认生成与验收顺序**：
 
 1. 附角色获准设定和 `weapon_contract`（武器/徒手、数量、尺寸与握持方式），固定侧视基准与统一 O。不要从其他角色套用武器或镜头。
-2. 从 §5.2 的分镜得到真实 N、连续全局帧号、阶段与各帧姿势。按 **角色已选 W×H** 固定格选择 `grid_columns=C`、`grid_rows=R`，总尺寸 `W×C` 宽、`H×R` 高；人物高固定为角色设定身高×100 源像素。`C×R` 只承载所选帧，不决定帧数；每次一个 `action_id` 的连续帧，行优先排列，不足格全透明。
-3. 使用下方多帧母提示词一次生成整张 RGBA Sheet。要求各格同一角色/武器、固定 O/地线/比例，姿势随分镜连续变化，武器、头发、衣摆和四肢均不触格线；不要文字、边框、残影或跨格内容。
+2. 从 §5.2 的分镜得到真实 N、连续全局帧号、阶段与各帧姿势。Agent 选定本角色唯一 **W×H** 格，选 `grid_columns=C`、`grid_rows=R`，算出 `sheet_width_px=W×C`、`sheet_height_px=H×R` 和 `character_height_px=round(height_m×100)`；根据待机参考姿势与整套动作幅度锁定格内根点 `(root_x_px, root_y_px)`。`C×R` 只承载所选帧，不决定帧数；每次一个 `action_id` 的连续帧，行优先排列，不足格全透明。
+3. Agent 将下方模板的每个占位符替换为**确定值**再调用生图，禁止出现尺寸备选项、自动判断语句或未展开变量。要求各格同一角色/武器、固定根点/地线/比例，姿势随分镜连续变化，武器、头发、衣摆和四肢均不触格线；不要文字、边框、残影或跨格内容。
 4. **先机械拆格再判定是否可用**：按 **已选 W×H** 切片，核对图片尺寸恰为 `W×C` 宽、`H×R` 高、非空格数量=N、未用格透明、人物身高与设定一致、每格四边至少 **8px** 真透明边距。人体/武器越格、裁切或混格直接拒绝。AI 不保证精确像素格，也不能可靠识别动作阶段；不合格时返工对应连续多帧片段，不靠猜帧、紧裁切或强行缩放放行。
 5. 几何通过后按行优先帧序预览连续性、循环/复位、承重与根位移；AI 视觉仅初筛明显异常。最后由程序按统一 O 对通过验收的格子无损打包为运行时 Atlas，并再次自动检查零重叠和索引；疑难与最终少量样片才人工复核。
 
 **简版多帧 Sheet 母提示词**（仅传下面模板、角色基准图和选中分镜；完整检测合同不拼入生图请求）：
 
 ```text
-One transparent hand-painted 2D wuxia sprite sheet: {action_id}, {sheet_frame_count} frames.
-Reference: {character_reference}; equipment: {weapon_contract}.
-Frame poses in order: {frame_pose_list}.
-Grid: {grid_columns}×{grid_rows}, cells {cell_width_px}×{cell_height_px}px;
-standing height {character_height_px}px. Same strict side view, scale, ground and root O.
-Full figures and weapons within each cell; clear gaps, no clipping, borders or text.
+Transparent hand-painted 2D wuxia sprite sheet: {action_id}, {sheet_frame_count} frames.
+Match attached approved character reference; equipment: {weapon_contract}.
+Ordered poses (row-major): {frame_pose_list}.
+Canvas {sheet_width_px}×{sheet_height_px}px; grid {grid_columns}×{grid_rows}; cell {cell_width_px}×{cell_height_px}px.
+Figure height {character_height_px}px; strict 90° side view; ground root ({root_x_px},{root_y_px})px in every cell.
+One complete pose per cell; unused cells transparent; no clipping, spill, borders or text.
 ```
 
 **注意**：图像模型可能画错格子、重复姿势或忽略精确像素尺寸；这些文本是**生成约束**，不是验收通过的证明。既有工具如无法可靠按预设网格切片和检测 Alpha 边距，必须保留 candidate，不得宣称已自动验收。
@@ -122,7 +122,7 @@ Full figures and weapons within each cell; clear gaps, no clipping, borders or t
 | hit | 受力反应、退让或缓冲、恢复待机，禁止突然无原因反弹 |
 | defeat | 失衡→膝/躯干接地→最终静止倒地；这是不恢复站姿的终止例外 |
 
-**提示词精简原则**：格宽高预先填入本角色选定的 `328×256` 或 `384×288`，`character_height_px=round(height_m×100)`；上传获准参考图，每帧姿势只写相对前一帧的关键变化。无需重复完整风格、反向词和 QA；失败仅追加一两条针对性纠错。像素、Alpha 与帧序由工具测量；**源图 100px/米不等于当前运行时 200 世界像素的显示高度**。
+**提示词精简原则**：选档、身高换算、根点、分镜 N 和网格布局均由 Agent 在调用前计算并锁定；发给生图模型的文本只含已填好的一个格子尺寸、一个站姿像素高、一个根点、一个画布尺寸与确定的逐帧姿势。上传获准参考图，无需重复完整风格、反向词和 QA；失败由 Agent 针对性调整并再次发送确定版。像素、Alpha 与帧序由工具测量；**源图 100px/米不等于当前运行时 200 世界像素的显示高度**。
 
 ### 5.2 AI 动作分镜：先规划帧数，再逐帧绘图
 
@@ -189,13 +189,14 @@ Keep the same camera and landmark coordinates; all other areas transparent RGBA.
 使用 `--orientation vertical`／`mixed` 的透明比例尺参考图控制南北街与十字街口。实际世界画布可为 1600×1000 或 1600×2400 等；提示词只给出参考图、布局和实际尺寸，**80px/单位、200px 运行时人物、24px 占位**由场景验收检查，不必反复写进生图提示词。
 
 ```text
-手绘武侠城镇，固定2.5D斜俯视，严格参考附图的透视和比例。
-南北主街从上至下贯通，出入口清晰；两侧店铺紧凑、道路可行走。
-远近建筑、门洞比例一致，不使用强消失点透视。
-不画人物、标尺线、文字或UI；保持横向游戏画布。
+手绘武侠城镇：{street_layout_description}；画布 {dimensions}。
+固定2.5D斜俯视，严格参考附图的透视和比例。
+道路与出入口：{street_exits}；建筑地标：{landmarks}。
+店铺紧凑、可行走；建筑门洞尺度一致，无强消失点透视。
+不画人物、标尺线、文字或UI。
 ```
 
-十字街口改用 `mixed`，令上/下/左/右道路在中心真实连通，并分别设立 north/south/east/west 出口标记。`WuxiaMapDefinition.primary_axis` 标明画面主轴，`zone_exit` 标记目标街区与入口 ID；这两项是 Godot 制作数据，不意味着现已实现跨区自动加载。
+Agent 根据地图定义预先选 `vertical` 或 `mixed`，把街道走向、相交关系、出口位置和目标画布写成**唯一确定**的 `{street_layout_description}`、`{street_exits}` 与 `{dimensions}`，不把“纵向／十字”交给生图模型选。十字街口需上/下/左/右道路在中心真实连通，并分别设立 north/south/east/west 出口标记。`WuxiaMapDefinition.primary_axis` 标明画面主轴，`zone_exit` 标记目标街区与入口 ID；这两项是 Godot 制作数据，不意味着现已实现跨区自动加载。
 
 ## 7. 装备与物品图标
 

@@ -10,7 +10,7 @@ description: "为《长风浮生录》制作或审核战斗 HUD、CTB 跑轴、�
 - 读取 art-production/standards/ART_PRODUCTION_STANDARD.md；按需读取 art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md 的 UI、卡面与物品图标章节。
 - UI 风格使用宣纸、漆木、青铜与少量温金；低装饰密度、信息优先。战斗区域必须突出，右侧 CTB 头像跑轴和底部扇形可交互手牌的功能不可丢失。
 - 保持现有卡面兼容；不要因为生成新卡框而重复制作已存在的卡牌主体或改变战斗规则。
-- 实际绘图按需只发送 `ART_STYLE_AI_PROMPTS_V1.md` §7–9 的**对应类别短模板**与参考图。九宫格、点击区域、状态切换与可读性通过 Godot 验证，不当作绘图模型的长篇指令。
+- Agent 先决定图标／卡画／UI 具体类别、尺寸、视觉状态与素材细节，再把 `ART_STYLE_AI_PROMPTS_V1.md` §7–9 **对应类别短模板**填成唯一确定的绘图请求并附参考图；每次只请求一个已选状态，不让模型自行选版式或状态。九宫格、点击区域、状态切换与可读性通过 Godot 验证，不当作绘图模型的长篇指令。
 
 ## 分类制作
 
