@@ -15,11 +15,8 @@ extends Resource
 @export var attack_break_bonus: int = 0
 @export var once_per_action: bool = false
 @export var animation_action: String = ""
-@export var vfx_slot: String = ""
+@export var vfx_slot: WuxiaVFXDefinition
 @export var vfx_trigger: String = ""
-## Legacy explicit PackedScene binding; distinct from the native VFX atlas slot.
-@export var animation_id: String = ""
-@export var vfx_scene: PackedScene
 @export var effects: Array[Resource] = []
 @export var when: Resource
 
@@ -48,19 +45,16 @@ func to_record() -> Dictionary:
             "range": target_max_distance
         }
     if not animation_action.is_empty(): result["animation_action"] = animation_action
-    if not vfx_slot.is_empty(): result["vfx_slot"] = vfx_slot
-    if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
-    # Both action fields are explicit; mismatched duplicates are a configuration error.
-    if not animation_id.is_empty():
-        if not animation_id.is_valid_identifier() or animation_id != animation_id.to_lower() \
-                or (not animation_action.is_empty() and animation_id != animation_action):
+    if vfx_slot != null:
+        if vfx_trigger.is_empty() or vfx_slot.to_record().is_empty() or \
+                not vfx_slot.resource_path.begins_with("res://") or \
+                not ResourceLoader.exists(vfx_slot.resource_path):
             return {}
-        result["animation_id"] = animation_id
-    if vfx_scene != null:
-        if not vfx_slot.is_empty() or not vfx_scene.resource_path.begins_with("res://") \
-                or not ResourceLoader.exists(vfx_scene.resource_path):
+        result["vfx_slot"] = vfx_slot.content_id
+    if not vfx_trigger.is_empty():
+        if vfx_slot == null:
             return {}
-        result["vfx_path"] = vfx_scene.resource_path
+        result["vfx_trigger"] = vfx_trigger
     if when != null:
         if not when is WuxiaConditionDefinition:
             return {}

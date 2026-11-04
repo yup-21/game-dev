@@ -24,14 +24,15 @@ func _register(spec: Variant) -> bool:
     var path: String = str(spec.get("path",""))
     if definitions.has(id) or kind not in KINDS or str(spec.get("status","")) not in STATUSES or \
             not path.begins_with("res://") or path.contains("..") or \
-            not (path.begins_with("res://assets/imported/") or (kind == "actor_scene" and path.begins_with("res://scenes/"))) or \
+            not (path.begins_with("res://assets/imported/") or (kind in ["actor_scene", "vfx"] and path.begins_with("res://scenes/"))) or \
             not ResourceLoader.exists(path):
         return _fail("Invalid or missing asset: " + id)
     if str(spec.get("source","")).is_empty() or str(spec.get("rights","")).is_empty():
         return _fail("Asset provenance missing: " + id)
     if str(spec.status) == "approved" and str(spec.rights) != "verified":
         return _fail("Approved asset without verified rights: " + id)
-    var expected: String = "PackedScene" if kind == "actor_scene" else ("AudioStream" if kind == "audio" else "Texture2D")
+    var is_scene_vfx: bool = kind == "vfx" and path.get_extension() in ["tscn", "scn"]
+    var expected: String = "PackedScene" if kind == "actor_scene" or is_scene_vfx else ("AudioStream" if kind == "audio" else "Texture2D")
     var loaded: Resource = ResourceLoader.load(path, expected)
     if loaded == null:
         return _fail("Wrong asset resource type: " + id)
@@ -45,6 +46,15 @@ func _register(spec: Variant) -> bool:
         # The 6x4 layout is a legacy playback convention, not a registry contract.
         # Authored sheets use their character-owned AnimationProfile for frame indices.
     if kind == "vfx":
+        if is_scene_vfx:
+            var instance: Node = (loaded as PackedScene).instantiate()
+            if not instance is Node2D:
+                if instance != null:
+                    instance.free()
+                return _fail("VFX scene root must be Node2D: " + id)
+            instance.free()
+            if int(spec.get("columns", 1)) != 1 or int(spec.get("rows", 1)) != 1:
+                return _fail("VFX scene must not declare a texture grid: " + id)
         var indices: PackedInt32Array = spec.get("frame_indices", PackedInt32Array())
         var capacity: int = int(spec.get("columns", 1)) * int(spec.get("rows", 1))
         if indices.size() > 256:
@@ -81,7 +91,8 @@ func record_for_character(character_id: String, kind: String) -> Dictionary:
 
 func texture(id: String) -> Texture2D:
     var spec: Dictionary = definitions.get(id,{})
-    if spec.is_empty() or str(spec.get("kind","")) in ["actor_scene","audio"]: return null
+    if spec.is_empty() or str(spec.get("kind","")) in ["actor_scene","audio"] or \
+            str(spec.get("path", "")).get_extension() in ["tscn", "scn"]: return null
     return ResourceLoader.load(str(spec.path),"Texture2D") as Texture2D
 
 func texture_for_character(character_id: String, kind: String) -> Texture2D:
@@ -97,6 +108,15 @@ func vfx_spec(slot: String) -> Dictionary:
         return direct
     var event: Dictionary = record_for_event(slot)
     return event if str(event.get("kind", "")) == "vfx" else {}
+
+func vfx_scene(slot: String) -> PackedScene:
+    var spec: Dictionary = vfx_spec(slot)
+    if spec.is_empty():
+        return null
+    var path: String = str(spec.get("path", ""))
+    if path.get_extension() not in ["tscn", "scn"]:
+        return null
+    return ResourceLoader.load(path, "PackedScene") as PackedScene
 
 func texture_for_event(event_kind: String) -> Texture2D:
     return texture(str(event_index.get(event_kind,"")))

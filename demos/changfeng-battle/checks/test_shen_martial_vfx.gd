@@ -89,7 +89,8 @@ func _run() -> void:
     if technique != null:
         for node in technique.nodes:
             if node.node_id in ["change", "attack_counter", "defense_counter"]:
-                _check(SLOTS.has(node.vfx_slot) and not node.animation_action.is_empty(),
+                _check(node.vfx_slot != null and SLOTS.has(node.vfx_slot.content_id) and
+                    not node.animation_action.is_empty(),
                     "technique node bound: " + node.node_id)
     var hero: WuxiaCharacterDefinition = load(
         "res://data/native/characters/shen_changfeng.tres")

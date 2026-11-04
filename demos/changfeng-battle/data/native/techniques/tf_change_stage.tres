@@ -1,9 +1,12 @@
-[gd_resource type="Resource" script_class="WuxiaTechniqueDefinition" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="WuxiaTechniqueDefinition" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/technique_definition.gd" id="1_tech"]
 [ext_resource type="Script" path="res://scripts/content/technique_node_definition.gd" id="2_node"]
 [ext_resource type="Script" path="res://scripts/content/technique_trigger_definition.gd" id="3_trigger"]
 [ext_resource type="Script" path="res://scripts/content/technique_effect_definition.gd" id="4_effect"]
+
+[ext_resource type="Resource" path="res://data/native/assets/shen_sword_sweep.tres" id="vfx_shen_sword_sweep"]
+[ext_resource type="Resource" path="res://data/native/assets/shen_wind_guard.tres" id="vfx_shen_wind_guard"]
 
 [sub_resource type="Resource" id="Trigger"]
 script = ExtResource("3_trigger")
@@ -44,7 +47,7 @@ script = ExtResource("2_node")
 node_id = "change"
 display_name = "变锋·追击"
 animation_action = "skill"
-vfx_slot = "shen_sword_sweep"
+vfx_slot = ExtResource("vfx_shen_sword_sweep")
 vfx_trigger = "skill_visual_active"
 stage = "ready"
 next_node = "sealed"
@@ -58,7 +61,7 @@ script = ExtResource("2_node")
 node_id = "attack_counter"
 display_name = "变锋·截势（攻）"
 animation_action = "skill"
-vfx_slot = "shen_sword_sweep"
+vfx_slot = ExtResource("vfx_shen_sword_sweep")
 vfx_trigger = "skill_visual_active"
 stage = "ready"
 next_node = "sealed"
@@ -72,7 +75,7 @@ script = ExtResource("2_node")
 node_id = "defense_counter"
 display_name = "变锋·截势（守）"
 animation_action = "guard"
-vfx_slot = "shen_wind_guard"
+vfx_slot = ExtResource("vfx_shen_wind_guard")
 vfx_trigger = "guard_active"
 stage = "ready"
 next_node = "sealed"

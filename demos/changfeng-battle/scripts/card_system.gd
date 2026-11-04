@@ -227,8 +227,11 @@ func valid_definition(d: Dictionary) -> bool:
 		for value in u.get("cost",{}).values():
 			if not (value is int or value is float) or not is_finite(float(value)) or float(value)<0 or float(value)>10000: return false
 		if u.get("target",{}).get("kind","") not in ["self","enemy_actor","reachable_cell","pending_root_attack","opponent_unresolved_response_link"]: return false
-		if u.has("animation_id") and (not u.animation_id is String or not str(u.animation_id).is_valid_identifier()): return false
-		if u.has("vfx_path") and (not u.vfx_path is String or not str(u.vfx_path).begins_with("res://")): return false
+		for field in ["animation_action", "vfx_slot", "vfx_trigger"]:
+			if u.has(field) and (not u[field] is String or str(u[field]).is_empty()):
+				return false
+		if u.has("vfx_slot") != u.has("vfx_trigger"):
+			return false
 		for effect in u.get("effects",[]):
 			if not valid_effect(effect): return false
 			if str(effect.get("type",""))=="cancel_chain_link" and (

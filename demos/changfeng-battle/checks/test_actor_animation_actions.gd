@@ -107,7 +107,7 @@ func _run() -> void:
     var skill := WuxiaSkillUsageDefinition.new()
     skill.usage_id = "test_skill"
     skill.animation_action = "attack3"
-    skill.vfx_slot = "shen_sword_thrust"
+    skill.vfx_slot = load("res://data/native/assets/shen_sword_thrust.tres") as WuxiaVFXDefinition
     skill.vfx_trigger = "strike_active"
     _check(skill.to_record().get("animation_action", "") == "attack3" and
         skill.to_record().get("vfx_slot", "") == "shen_sword_thrust",
@@ -115,7 +115,8 @@ func _run() -> void:
     var node := WuxiaTechniqueNodeDefinition.new()
     node.node_id = "test_stage"
     node.animation_action = "attack3"
-    node.vfx_slot = "shen_sword_sweep"
+    node.vfx_slot = load("res://data/native/assets/shen_sword_sweep.tres") as WuxiaVFXDefinition
+    node.vfx_trigger = "strike_active"
     _check(node.to_record().get("animation_action", "") == "attack3" and
         node.to_record().get("vfx_slot", "") == "shen_sword_sweep",
         "technique stage can share action but change VFX")
