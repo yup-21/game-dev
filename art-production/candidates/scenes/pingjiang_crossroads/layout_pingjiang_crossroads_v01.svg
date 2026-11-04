@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <title>PJ-02 crossover layout calibration only; not runtime art</title>
+  <rect width="1600" height="1000" fill="#172c35"/>
+  <rect x="0" y="620" width="1600" height="320" fill="#6f987a" opacity="0.9"/>
+  <rect x="640" y="90" width="320" height="850" fill="#78b496" opacity="0.85"/>
+  <path d="M640 90H960V940H640Z M0 620H1600V940H0Z" fill="none" stroke="#d8dfcf" stroke-width="5" stroke-dasharray="16 16"/>
+  <g font-family="sans-serif" font-size="28" font-weight="600" text-anchor="middle" fill="#f5eee0">
+    <text x="800" y="46">PJ-02 | planning geometry only</text>
+    <text x="800" y="440">N–S lane • x=640–960</text>
+    <text x="800" y="885">E–W street • y=620–940</text>
+    <text x="800" y="982">1600×1000 | 1u=80px | character 200px</text>
+  </g>
+  <g fill="#efb45d" stroke="#302825" stroke-width="5">
+    <circle cx="800" cy="90" r="19"/><circle cx="800" cy="920" r="19"/>
+    <circle cx="90" cy="790" r="19"/><circle cx="1510" cy="790" r="19"/>
+  </g>
+  <g font-family="sans-serif" font-size="23" fill="#fff5d8" text-anchor="middle">
+    <text x="800" y="81">N</text><text x="800" y="950">S</text>
+    <text x="90" y="767">W</text><text x="1510" y="767">E</text>
+  </g>
+  <g fill="#c7a3de" stroke="#51465c" stroke-width="4">
+    <circle cx="235" cy="655" r="17"/><circle cx="1390" cy="655" r="17"/>
+  </g>
+  <g font-family="sans-serif" font-size="20" fill="#f1d7ff">
+    <text x="235" y="607" text-anchor="middle">clothier</text>
+    <text x="1390" y="607" text-anchor="middle">pawnshop</text>
+  </g>
+</svg>
