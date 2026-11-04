@@ -3,7 +3,7 @@
 
     python -m pip install Pillow
     python art-production/tools/batch_anchor_align.py --all
-    python art-production/tools/batch_anchor_align.py --all --annotations art-production/candidates/2026-11-03/actor_anchors
+    python art-production/tools/batch_anchor_align.py --all --annotations art-production/candidates/characters
 
 No per-frame resize, removal of image content, invented tween frames or runtime writes.
 Estimated anchors are NEVER marked reviewed. Review the CSV, then rerun with
@@ -40,8 +40,8 @@ ACTIONS = OrderedDict((
 ))
 FPS = {"idle": 9, "move": 12, "attack": 14, "guard": 10, "hit": 12,
        "evade": 14, "skill": 14, "combo": 15, "defeat": 10}
-SOURCE_DIR = ROOT / "art-production/candidates/2026-11-01"
-OUTPUT_DIR = ROOT / "art-production/candidates/2026-11-03"
+SOURCE_DIR = ROOT / "art-production/candidates/characters"
+OUTPUT_DIR = ROOT / "art-production/candidates/characters"
 GRID_COLS, GRID_ROWS = 6, 4
 ALPHA_THRESHOLD = 1
 DEFAULT_PADDING = 24
@@ -67,7 +67,7 @@ def action_for(index: int) -> tuple[str, int]:
 
 
 def source_path(actor: str) -> Path:
-    return SOURCE_DIR / actor / f"sprite_{actor}_atlas_aligned_v03.png"
+    return SOURCE_DIR / actor / "baseline" / f"sprite_{actor}_atlas_aligned_v03.png"
 
 
 def image_bbox(frame: Image.Image) -> tuple[int, int, int, int]:

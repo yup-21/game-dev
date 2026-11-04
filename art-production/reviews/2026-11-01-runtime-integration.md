@@ -1,7 +1,7 @@
 # Pilot runtime integration (review branch only)
 
-- Source batch: `art-production/candidates/2026-11-01/` (originals preserved).
-- Runtime copies: `demos/changfeng-battle/assets/imported/candidates/2026-11-01/` (byte-for-byte copies).
+- Source batch: `art-production/candidates/{characters,scenes}/` (originals preserved).
+- Runtime copies: `demos/changfeng-battle/assets/imported/{characters,scenes}/` (byte-for-byte copies).
 - Native character bindings: `data/native/characters/shen_changfeng.tres`, `pursuer_captain.tres`, with individual nine-action `data/native/animations/*.tres`.
 - Portrait registry bindings: `r22_shen_portrait.tres`, `r27_pursuer_study.tres` (otherwise existing registry resources would mask the new portraits).
 - Layered map binding: `data/native/scene_art/rainy_bridge.tres` and `data/maps/rainy_bridge.tres`. The old 15×10 terrain, cell centers, collision and encounter roster are unchanged; background transform changed from the old rotated image to a native 1600×1000, 0°/1× canvas.

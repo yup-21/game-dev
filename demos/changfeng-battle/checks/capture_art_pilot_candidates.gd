@@ -16,10 +16,10 @@ func _run() -> void:
     if DisplayServer.get_name() == "headless":
         _fail("Art preview requires a graphical display")
         return
-    var batch: String = Importer.production_root().path_join("candidates/2026-11-01")
+    var batch: String = Importer.production_root().path_join("candidates")
     world = Node2D.new()
     root.add_child(world)
-    var scene_dir: String = batch.path_join("rainy_bridge")
+    var scene_dir: String = batch.path_join("scenes/rainy_bridge/baseline")
     var depths := {"background": -20, "ground": -10, "foreground": 10, "weather": 20}
     for name in ["background", "ground", "foreground", "weather"]:
         var data: Dictionary = Importer.inspect(
@@ -35,7 +35,7 @@ func _run() -> void:
     var atlases: Dictionary = {}
     for id in ["shen_changfeng", "pursuer_captain"]:
         var data: Dictionary = Importer.inspect(
-            batch.path_join(id).path_join("sprite_%s_atlas_normalized_v02.png" % id))
+            batch.path_join("characters/" + id + "/baseline").path_join("sprite_%s_atlas_normalized_v02.png" % id))
         if not str(data.get("error", "")).is_empty():
             _fail("Unable to open actor atlas: " + id)
             return

@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="4_req"]
 [ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="5_event"]
 [ext_resource type="Resource" path="res://data/native/stories/r24_fog_pass.tres" id="6_story"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/scenes/story/ruined_temple_story.webp" id="7_background"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/ruined_temple/legacy/story.webp" id="7_background"]
 
 [sub_resource type="Resource" id="Scout"]
 script = ExtResource("3_npc")

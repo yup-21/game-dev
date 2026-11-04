@@ -107,17 +107,87 @@ static func inspect(path: String) -> Dictionary:
     }
 
 
-static func destination(path: String) -> String:
+## Imported filenames identify a role, while folders identify the owner.
+## Candidate originals keep their source filename; only the Godot copy is renamed.
+static func _import_filename(source: String, mode: String, owner: String) -> String:
+    var stem := source.get_file().get_basename()
+    var ext := "." + source.get_extension().to_lower()
+    if mode == "portrait" and stem.begins_with("portrait_" + owner + "_fullbody_"):
+        return "portrait" + ext
+    if mode == "atlas" and stem.begins_with("sprite_" + owner + "_atlas_"):
+        var variant := stem.trim_prefix("sprite_" + owner + "_atlas_")
+        if variant.begins_with("aligned_"):
+            return "atlas" + ext
+        if variant.begins_with("8x6_") or variant.begins_with("6x4_"):
+            variant = variant.substr(4)
+        return "atlas_" + variant + ext
+    if mode == "scene":
+        for layer in ["background", "ground", "foreground", "weather", "composite_preview"]:
+            if stem.begins_with("scene_") and stem.contains("_" + layer + "_v"):
+                return ("story_preview" if layer == "composite_preview" else layer) + ext
+    if mode == "ui_atlas":
+        if stem.begins_with("card_"):
+            return stem.trim_prefix("card_") + ext
+        if stem.begins_with("technique_art_atlas_"):
+            return "atlas" + ext
+    if mode == "vfx" and stem.begins_with("vfx_"):
+        return "atlas" + ext
+    return source.get_file()
+
+
+static func destination(path: String, mode: String = "") -> String:
     if not _source_allowed(path):
         return ""
     var relative := path.simplify_path().trim_prefix(production_root() + "/")
-    # Reimporting the exported in-use mirror must not nest imported/ again.
-    if relative.begins_with("in-use/imported/"):
-        return "res://assets/" + relative.trim_prefix("in-use/")
-    return "res://assets/imported/" + relative
+    if relative.begins_with("in-use/"):
+        # Production status is not part of the Godot path.
+        return "res://assets/imported/" + relative.trim_prefix("in-use/")
+    if not relative.begins_with("candidates/"):
+        return ""
+    # A selected candidate becomes a Godot asset; keep production status only
+    # in art-production, never in the res:// directory structure.
+    # Drop candidate production batches (baseline, sprite-v04, qa-layout).
+    var parts := relative.trim_prefix("candidates/").split("/")
+    if parts.size() < 3 or not _valid_id(parts[1]):
+        return ""
+    var group := str(parts[0])
+    var owner := str(parts[1])
+    var folder := ""
+    if group == "characters" and mode in ["portrait", "atlas"]:
+        folder = "characters/" + owner + ("/portraits" if mode == "portrait" else "/sprites")
+    elif group == "scenes" and mode == "scene":
+        folder = "scenes/" + owner
+    elif group == "vfx" and mode == "vfx" and parts.size() >= 4 and _valid_id(parts[2]):
+        folder = "vfx/" + owner + "/" + str(parts[2])
+    elif group == "ui" and mode == "ui_atlas":
+        folder = "ui/" + owner
+    if folder.is_empty():
+        return ""
+    return "res://assets/imported/" + folder + "/" + _import_filename(path, mode, owner)
 
 
-static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO, versioned: bool = false) -> Dictionary:
+## Both production roots use the same stable type/owner prefix.
+## Source batch names and dates are deliberately ignored.
+## A VFX has its own validated native Resource type; UI remains a generic asset.
+static func _new_asset_card(mode: String) -> WuxiaAssetDefinition:
+    return WuxiaVFXDefinition.new() if mode == "vfx" else WuxiaAssetDefinition.new()
+
+
+static func _source_identity(path: String) -> PackedStringArray:
+    if not _source_allowed(path):
+        return PackedStringArray()
+    var relative: String = path.simplify_path().trim_prefix(production_root() + "/")
+    if relative.begins_with("in-use/"):
+        relative = relative.trim_prefix("in-use/")
+    elif relative.begins_with("candidates/"):
+        relative = relative.trim_prefix("candidates/")
+    else:
+        return PackedStringArray()
+    return relative.split("/")
+
+
+static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO,
+        versioned: bool = false, mode: String = "") -> Dictionary:
     var info := inspect(path)
     if not str(info.get("error", "")).is_empty():
         return info
@@ -125,7 +195,7 @@ static func _check_image(path: String, require_alpha: bool, expected: Vector2i =
         return {"error": "角色或遮挡层必须具有实际透明像素：" + path.get_file()}
     if expected != Vector2i.ZERO and Vector2i(int(info["width"]), int(info["height"])) != expected:
         return {"error": "图层尺寸不符合目标画布 %s：%s" % [str(expected), path.get_file()]}
-    var target := destination(path)
+    var target := destination(path, mode)
     if target.is_empty():
         return {"error": "无法生成导入目标路径"}
     var previous := ""
@@ -185,8 +255,11 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             return {"error": "UI/VFX 登记 ID 只允许小写字母、数字、点、横线、下划线"}
         result["target"] = "res://data/native/assets/" + id + ".tres"
         var existing := ResourceLoader.load(result["target"]) if ResourceLoader.exists(result["target"]) else null
-        if existing != null and not existing is WuxiaAssetDefinition:
-            return {"error": "登记路径已有非 WuxiaAssetDefinition Resource"}
+        if existing != null:
+            if mode == "vfx" and not existing is WuxiaVFXDefinition:
+                return {"error": "VFX 必须使用 WuxiaVFXDefinition"}
+            if mode == "ui_atlas" and (not existing is WuxiaAssetDefinition or existing is WuxiaVFXDefinition):
+                return {"error": "UI 目标不是通用 Asset Resource"}
         if existing == null:
             var manifest := ResourceLoader.load(MANIFEST) as WuxiaContentManifest
             if manifest == null:
@@ -198,9 +271,21 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 for registered in manifest.get(category):
                     if registered is WuxiaContentDefinition and registered.content_id == id:
                         return {"error": "登记 ID 已被其他内容占用：" + id}
+    var source_parts: PackedStringArray = _source_identity(source)
+    if source_parts.size() >= 2:
+        if mode in ["portrait", "atlas"] and source_parts[0] == "characters" and \
+                source_parts[1] != str(owner.get("content_id")):
+            return {"error": "候选角色 ID 与目标角色 Resource 不一致：" + str(source_parts[1])}
+        if mode == "scene" and source_parts[0] == "scenes" and \
+                (owner is WuxiaMapDefinition or owner is WuxiaGridMapDefinition) and \
+                source_parts[1] != str(owner.get("content_id")):
+            return {"error": "场景素材 ID 与目标地图 Resource 不一致：" + str(source_parts[1])}
+        if mode == "vfx" and source_parts[0] == "vfx" and source_parts[1] != "shared" and \
+                _valid_id(str(source_parts[1])):
+            result["owner_character_id"] = str(source_parts[1])
     var alpha_required := mode in ["portrait", "atlas", "vfx"]
     var versioned := bool(fields.get("versioned_replace", false))
-    var first := _check_image(source, alpha_required, expected, versioned)
+    var first := _check_image(source, alpha_required, expected, versioned, mode)
     if not str(first.get("error", "")).is_empty():
         return first
     result["files"]["primary"] = first
@@ -265,7 +350,7 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 return {"error": "ground 不得复用 background 文件；需独立地面图层"}
             if layer_path.is_empty():
                 continue
-            var check := _check_image(layer_path, layer in ["ground", "foreground", "weather"], expected, versioned)
+            var check := _check_image(layer_path, layer in ["ground", "foreground", "weather"], expected, versioned, mode)
             if not str(check.get("error", "")).is_empty():
                 return check
             result["files"][layer] = check
@@ -436,18 +521,29 @@ static func save_bindings(plan_data: Dictionary) -> String:
         return map_error
 
     var card := ResourceLoader.load(target) as WuxiaAssetDefinition if ResourceLoader.exists(target) else null
+    if card != null:
+        if mode == "vfx" and not card is WuxiaVFXDefinition:
+            return "现有 VFX Resource 不是 WuxiaVFXDefinition"
+        if mode == "ui_atlas" and card is WuxiaVFXDefinition:
+            return "不能将 VFX Resource 当作 UI 资源覆盖"
     var creating := card == null
     if creating:
-        card = WuxiaAssetDefinition.new()
+        card = _new_asset_card(mode)
         card.content_id = target.get_file().get_basename()
     card.asset_kind = mode
-    card.status = "candidate"
+    # Importing and binding makes this the active runtime selection, not a candidate.
+    card.status = "runtime"
     card.resource = textures["primary"]
     card.source = "art_production"
     card.rights = "owner_review_required"
     card.columns = int(plan_data.get("columns", 1)) if mode == "vfx" else 1
     card.rows = int(plan_data.get("rows", 1)) if mode == "vfx" else 1
     if mode == "vfx":
+        var detected_owner: String = str(plan_data.get("owner_character_id", ""))
+        if not detected_owner.is_empty():
+            if not card.owner_character_id.is_empty() and card.owner_character_id != detected_owner:
+                return "VFX 已属于其他角色，请使用新的素材 ID 或手动调整原生 Resource"
+            card.owner_character_id = detected_owner
         card.frame_indices = plan_data.get("frame_indices", PackedInt32Array())
         card.event_kind = str(plan_data.get("event_kind", ""))
     var manifest := ResourceLoader.load(MANIFEST) as WuxiaContentManifest

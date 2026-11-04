@@ -79,11 +79,11 @@ func _initialize() -> void:
     # Retain a live factory with intentionally stale display data across import.
     var live_factory = Factory.new()
     live_factory.registry.profiles["shen_changfeng"]["art"]["portrait"] = \
-        "res://assets/imported/candidates/2026-11-01/escort_elder/portrait_escort_elder_fullbody_v01.png"
+        "res://assets/imported/characters/escort_elder/portraits/portrait.png"
     var batch: Array[Dictionary] = []
-    var production: String = Importer.production_root().path_join("candidates/2026-11-01")
+    var production: String = Importer.production_root().path_join("candidates")
     for actor_id in ["shen_changfeng", "pursuer_captain"]:
-        var folder: String = production.path_join(actor_id)
+        var folder: String = production.path_join("characters/" + actor_id + "/baseline")
         var target: String = "res://data/native/characters/%s.tres" % actor_id
         batch.append(Importer.plan("portrait",
             folder.path_join("portrait_%s_fullbody_v01.png" % actor_id), target, {}))
@@ -92,7 +92,7 @@ func _initialize() -> void:
                 "columns": 6, "rows": 4, "feet_offset": Vector2(0, -102),
                 "clip_profile_path": "res://data/art_previews/%s_pilot_clip_profile.tres" % actor_id,
             }))
-    var bridge: String = production.path_join("rainy_bridge")
+    var bridge: String = production.path_join("scenes/rainy_bridge/baseline")
     batch.append(Importer.plan("scene",
         bridge.path_join("scene_rainy_bridge_background_v01.png"),
         "res://data/maps/rainy_bridge.tres", {
@@ -111,7 +111,7 @@ func _initialize() -> void:
         return
     var full_log: String = str(full_import["journal"])
     var live_map: WuxiaMapDefinition = ResourceLoader.load("res://data/maps/rainy_bridge.tres")
-    live_map.background = load("res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp")
+    live_map.background = load("res://assets/imported/scenes/rainy_bridge/legacy/battle.webp")
     live_map.image_rotation_degrees = -6.0
     live_map.image_scale = 1.1
     for planned_import in batch:

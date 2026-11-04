@@ -1,6 +1,6 @@
 # 美术素材制作工作单模板
 
-复制本文件至 `art-production/candidates/YYYY-MM-DD/<asset-id>/WORK_ORDER.md` 并填写。文中的值只是示例。
+复制本文件至 `art-production/candidates/<asset-type>/<asset-id>/WORK_ORDER.md` 并填写。文中的值只是示例。
 
 ## 基本信息
 
@@ -8,10 +8,11 @@
 - asset_type: `character_design | portrait | sprite | environment | scene_layer | item_icon | card_art | ui | vfx`
 - target_usage: `story | battle | inventory | card | hud`
 - status: `candidate`（工作区状态；正式使用后由原生 Resource 确认 `in_use`）
-- owner/reviewer: `待填写`
-- source / rights: `待填写`
-- prompt_template_version: `ART_STYLE_AI_PROMPTS_V1`
-- model/version/seed: `可选；无需为补齐记录而猜测`
+- 目标 Godot Resource：`res://data/native/characters/shen_changfeng.tres`
+- 计划导入路径：`res://assets/imported/characters/shen_changfeng/portraits/portrait.png`
+- 原始提示词／修订：`记录实际发送内容`
+- 来源与权属：`如已知则记录；待核实可留空`
+- 模型/version/seed：`可选；不要猜测未知历史数据`
 
 ## 参考与身份锁定
 
@@ -29,7 +30,7 @@
 - 脚点 / 承重脚类型 / 复核状态 / 根位移 / 方向 / 时间轴（如适用）：
 - 场景图层及共享原点（如适用）：
 - Godot 目标 `.tres`：
-- 参考提示词全文及每次修订：
+- 参考提示词全文及每次修订（至少记录实际生效版本）：
 - 原始生成图和可编辑母版：
 
 ### 审核清单
@@ -48,4 +49,4 @@
 
 - 视觉验收结论：`待复核 | 需返工 | 已通过`（不是第三种资产管理状态）
 - 反馈与修订：
-- 批准版本 SHA / 路径：
+- 当前使用中的 Resource 槽位／文件路径（如已导入）：

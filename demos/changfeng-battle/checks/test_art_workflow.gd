@@ -4,6 +4,7 @@ const Importer = preload("res://addons/wuxia_art_importer/art_import_service.gd"
 const Export = preload("res://addons/wuxia_art_importer/art_export_service.gd")
 const Transaction = preload("res://addons/wuxia_art_importer/art_transaction_service.gd")
 const Dock = preload("res://addons/wuxia_art_importer/art_import_dock.gd")
+const ArtBinding = preload("res://scripts/content/art_resource_binding.gd")
 
 
 func _initialize() -> void:
@@ -47,7 +48,32 @@ func _initialize() -> void:
     if str(Export.plan("resource", "res://../outside.tres").get("error", "")).is_empty():
         _fail("Escaping res:// was accepted")
         return
-    var source: String = Importer.production_root().path_join("in-use/imported/in-use/legacy/fallback/default_actor_6x4.svg")
+    # Convention-only art is live even without an explicit .tres texture literal.
+    var manual := WuxiaCharacterDefinition.new()
+    manual.content_id = "shen_changfeng"
+    manual.battle_actor_id = 0
+    var manual_path := "res://assets/imported/characters/black_blade/portraits/portrait.png"
+    manual.portrait = ResourceLoader.load(manual_path) as Texture2D
+    if manual.portrait == null or not ArtBinding.apply(manual).is_empty():
+        _fail("Explicit portrait and convention-based sprite failed to resolve")
+        return
+    var resolved_paths: Array[String] = Export.native_image_paths(manual)
+    if not resolved_paths.has(manual_path) or not resolved_paths.has(
+            "res://assets/imported/characters/shen_changfeng/sprites/atlas.png") or resolved_paths.has(
+            "res://assets/imported/characters/shen_changfeng/portraits/portrait.png"):
+        _fail("Exporter ignored the manual override or missed default sprite")
+        return
+    var standalone := WuxiaActorAnimationProfile.new()
+    var clip := WuxiaActorAnimationClip.new()
+    clip.atlas = manual.sprite_sheet
+    standalone.clips.append(clip)
+    if not Export.native_image_paths(standalone).has(manual.sprite_sheet.resource_path):
+        _fail("Independent Clip atlas was not exported")
+        return
+    if not Export.destination("res://assets/legacy/obsolete.png").is_empty():
+        _fail("Exporter accepted non-imported path")
+        return
+    var source: String = Importer.production_root().path_join("in-use/placeholders/characters/default.svg")
     var atlas: Dictionary = Importer.plan("atlas", source,
         "res://data/native/characters/shen_changfeng.tres",
         {"columns": 6, "rows": 4, "versioned_replace": true})

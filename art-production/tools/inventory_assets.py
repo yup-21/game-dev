@@ -2,6 +2,7 @@
 """Inspect the actual Godot art bindings; no second runtime asset registry."""
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -30,13 +31,78 @@ def current_bindings() -> dict[str, list[str]]:
     return {key: sorted(owners) for key, owners in sorted(refs.items())}
 
 
+def imported_layout_errors(bindings: dict[str, list[str]]) -> list[str]:
+    errors: list[str] = []
+    imported_root = GAME / "assets/imported"
+    for image in sorted(imported_root.rglob("*")):
+        if not image.is_file() or image.suffix.lower() not in IMAGE_EXTS:
+            continue
+        parts = image.relative_to(imported_root).parts
+        category = parts[0] if parts else ""
+        if category == "characters":
+            valid = len(parts) == 4 and parts[2] in {
+                "portraits", "sprites", "story-poses", "concepts"}
+        elif category in {"scenes", "vfx"}:
+            valid = len(parts) >= 3
+        elif category in {"ui", "placeholders"}:
+            valid = len(parts) == 3
+        else:
+            valid = False
+        if not valid:
+            errors.append("Uncategorized imported image: " + image.relative_to(ROOT).as_posix())
+            continue
+        resource_path = "res://assets/imported/" + image.relative_to(imported_root).as_posix()
+        if resource_path in bindings:
+            # An active binding must have a matching art-production/in-use mirror;
+            # validate() checks the SHA below.
+            continue
+        # Existing preview-only resources are imported files too, with no status
+        # prefix in Godot. They must still match a production candidate source.
+        sources = ROOT / "art-production/candidates" / category / parts[1]
+        # The imported copy uses canonical purpose names; candidate originals
+        # retain descriptive production filenames. Compare by content hash.
+        originals = sources.rglob("*" + image.suffix) if sources.is_dir() else ()
+        current_hash = hashlib.sha256(image.read_bytes()).digest()
+        if not any(hashlib.sha256(src.read_bytes()).digest() == current_hash for src in originals):
+            errors.append("Unbound import has no matching candidate: " +
+                          image.relative_to(ROOT).as_posix())
+    return errors
+
+
 def validate(bindings: dict[str, list[str]]) -> list[str]:
-    errors = []
+    errors = imported_layout_errors(bindings)
+    mirror_root = ROOT / "art-production/in-use"
+    expected_mirrors = set()
     for path in bindings:
-        if not path.startswith("res://assets/imported/"):
-            errors.append("Legacy art path still referenced: " + path)
-        if ".." in path or not (GAME / path.removeprefix("res://")).is_file():
-            errors.append("Missing / unsafe imported art: " + path)
+        prefix = "res://assets/imported/"
+        if not path.startswith(prefix):
+            errors.append("Bound artwork must be under assets/imported/: " + path)
+            continue
+        if ".." in path:
+            errors.append("Unsafe imported art: " + path)
+            continue
+        source = GAME / path.removeprefix("res://")
+        mirror = mirror_root / path.removeprefix(prefix)
+        expected_mirrors.add(mirror)
+        if not source.is_file():
+            errors.append("Missing imported art: " + path)
+        if not mirror.is_file():
+            errors.append("Missing in-use mirror: " + mirror.relative_to(ROOT).as_posix())
+        if source.is_file() and mirror.is_file():
+            source_sha = hashlib.sha256(source.read_bytes()).digest()
+            mirror_sha = hashlib.sha256(mirror.read_bytes()).digest()
+            if source_sha != mirror_sha:
+                errors.append("In-use mirror differs: " + path)
+    for path in mirror_root.rglob("*"):
+        if path.is_file() and path.suffix.lower() in IMAGE_EXTS and path not in expected_mirrors:
+            errors.append("Unbound image in in-use mirror: " + path.relative_to(ROOT).as_posix())
+    # Date is metadata, not a directory classification key.
+    for root in (ROOT / "art-production/candidates", mirror_root,
+                 GAME / "assets/imported"):
+        if root.is_dir():
+            for folder in root.rglob("*"):
+                if folder.is_dir() and re.fullmatch(r"\d{4}-\d{2}-\d{2}", folder.name):
+                    errors.append("Date-based asset folder: " + folder.relative_to(ROOT).as_posix())
     return errors
 
 

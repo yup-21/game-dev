@@ -75,7 +75,7 @@ func _ready() -> void:
     add_child(body)
     _heading("Art Production Importer")
     var note := Label.new()
-    note.text = "仅编辑器使用；导入后生成原生 .tres，默认 candidate。"
+    note.text = "仅编辑器使用；导入后绑定到原生 .tres，成为当前使用版本。"
     note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     body.add_child(note)
 
@@ -418,7 +418,7 @@ func _refresh_preview() -> void:
         info.text = str(details["error"])
         return
     var mode := _mode()
-    info.text = "%s × %s | Alpha: %s | SHA-256: %s\n待审批素材不会自动标记 approved" % [
+    info.text = "%s × %s | Alpha: %s | SHA-256: %s\n文件导入与绑定不代表美术视觉或权属审核通过" % [
         details["width"], details["height"],
         "是" if details["alpha"] else "否", str(details["sha256"]).substr(0, 12)]
     if mode == "atlas":
@@ -595,7 +595,7 @@ func _review_entries(entries: Array[Dictionary]) -> void:
     confirm.dialog_text = "批次 %s 项：\n\n%s\n\n%s" % [
         str(plans.size()), "\n\n".join(descriptions),
         "开始前会为所有 .tres 建立事务备份；失败恢复 .tres，新图保留。\n" +
-        "状态保持 candidate，版权及动画验收仍需人工确认。"
+        "导入成功即成为 Resource 当前使用版本；版权及动画视觉验收仍需单独确认。"
     ]
     confirm.popup_centered_ratio(0.8)
 

@@ -9,7 +9,7 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
-BATCH = ROOT / "art-production" / "candidates" / "2026-11-01"
+BATCH = ROOT / "art-production" / "candidates"
 FRAME_ORDER = {
     "idle": (0, 1), "move": (2, 3, 4, 5),
     "attack": (6, 7, 8), "guard": (9, 10), "hit": (11, 12),
@@ -116,10 +116,10 @@ def build() -> list[tuple[Path, Image.Image]]:
         ("pursuer_captain", "sprite_pursuer_captain_atlas_source_v02.png"),
     ]:
         result.append((
-            BATCH / identity / f"sprite_{identity}_atlas_normalized_v02.png",
-            normalized_atlas(BATCH / identity / source),
+            BATCH / "characters" / identity / "baseline" / f"sprite_{identity}_atlas_normalized_v02.png",
+            normalized_atlas(BATCH / "characters" / identity / "baseline" / source),
         ))
-    scene_dir = BATCH / "rainy_bridge"
+    scene_dir = BATCH / "scenes" / "rainy_bridge" / "baseline"
     layers = separated_layers(scene_dir / "environment_rainy_bridge_master_v01.png")
     for name, image in layers.items():
         filename = (f"scene_rainy_bridge_{name}_v01.png"
