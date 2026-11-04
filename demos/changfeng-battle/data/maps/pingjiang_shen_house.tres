@@ -1,0 +1,107 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=20 format=3]
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_shen_house/background.png" id="2_bg"]
+[ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_shen_house.tres" id="3_art"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
+[ext_resource type="Script" path="res://scripts/content/map_polygon_definition.gd" id="5_polygon"]
+
+[sub_resource type="Resource" id="PorchSteps"]
+script = ExtResource("5_polygon")
+terrain_kind = "blocked"
+vertices = PackedVector2Array(183, 487, 671, 487, 672, 514, 595, 526, 530, 547, 232, 547, 184, 524)
+
+[sub_resource type="Resource" id="PracticePostWest"]
+script = ExtResource("5_polygon")
+terrain_kind = "blocked"
+vertices = PackedVector2Array(1011, 472, 1103, 472, 1110, 525, 1027, 536, 1006, 510)
+
+[sub_resource type="Resource" id="PracticePostEast"]
+script = ExtResource("5_polygon")
+terrain_kind = "blocked"
+vertices = PackedVector2Array(1125, 466, 1214, 466, 1227, 537, 1132, 545, 1118, 512)
+
+[sub_resource type="Resource" id="WellRim"]
+script = ExtResource("5_polygon")
+terrain_kind = "blocked"
+vertices = PackedVector2Array(1443, 478, 1552, 477, 1587, 515, 1587, 624, 1555, 646, 1423, 636, 1398, 585, 1407, 521)
+
+[sub_resource type="Resource" id="PlayerStart"]
+script = ExtResource("4_marker")
+marker_id = "player_start"
+marker_kind = "spawn"
+position = Vector2(800, 740)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromNorth"]
+script = ExtResource("4_marker")
+marker_id = "from_north"
+marker_kind = "spawn"
+position = Vector2(850, 565)
+radius = 24.0
+
+[sub_resource type="Resource" id="NorthExit"]
+script = ExtResource("4_marker")
+marker_id = "north"
+marker_kind = "zone_exit"
+position = Vector2(845, 338)
+radius = 78.0
+exit_side = "north"
+target_zone_id = "pingjiang_riverside_market"
+target_entry_id = "from_south"
+
+[sub_resource type="Resource" id="HouseDoor"]
+script = ExtResource("4_marker")
+marker_id = "house_door"
+marker_kind = "story_trigger"
+position = Vector2(335, 583)
+radius = 95.0
+
+[sub_resource type="Resource" id="SwordCase"]
+script = ExtResource("4_marker")
+marker_id = "sword_case"
+marker_kind = "story_trigger"
+position = Vector2(578, 582)
+radius = 85.0
+
+[sub_resource type="Resource" id="PracticePosts"]
+script = ExtResource("4_marker")
+marker_id = "practice_posts"
+marker_kind = "story_trigger"
+position = Vector2(1138, 595)
+radius = 88.0
+
+[sub_resource type="Resource" id="HiddenCompartment"]
+script = ExtResource("4_marker")
+marker_id = "hidden_compartment"
+marker_kind = "story_trigger"
+position = Vector2(1350, 555)
+radius = 72.0
+
+[sub_resource type="Resource" id="Well"]
+script = ExtResource("4_marker")
+marker_id = "well"
+marker_kind = "story_trigger"
+position = Vector2(1360, 690)
+radius = 84.0
+
+[sub_resource type="Resource" id="SavePoint"]
+script = ExtResource("4_marker")
+marker_id = "save_point"
+marker_kind = "story_trigger"
+position = Vector2(466, 638)
+radius = 80.0
+
+[resource]
+script = ExtResource("1_map")
+content_id = "pingjiang_shen_house"
+background = ExtResource("2_bg")
+scene_art = ExtResource("3_art")
+viewport_size = Vector2i(1600, 1000)
+pixels_per_unit = 80.0
+primary_axis = "horizontal"
+area_bounds = Rect2(0, 260, 1600, 720)
+image_rotation_degrees = 0.0
+image_scale = 1.0
+walkable_outline = PackedVector2Array(730, 290, 960, 290, 979, 510, 1370, 510, 1555, 650, 1570, 955, 55, 955, 55, 580, 172, 548, 685, 530, 704, 494)
+obstacles = Array[Resource]([SubResource("PorchSteps"), SubResource("PracticePostWest"), SubResource("PracticePostEast"), SubResource("WellRim")])
+markers = Array[Resource]([SubResource("PlayerStart"), SubResource("FromNorth"), SubResource("NorthExit"), SubResource("HouseDoor"), SubResource("SwordCase"), SubResource("PracticePosts"), SubResource("HiddenCompartment"), SubResource("Well"), SubResource("SavePoint")])

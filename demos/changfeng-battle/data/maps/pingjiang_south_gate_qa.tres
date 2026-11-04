@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_south_gate_qa/background.png" id="2_bg"]
+[ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_south_gate_qa.tres" id="3_art"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
+[ext_resource type="Script" path="res://scripts/content/map_polygon_definition.gd" id="5_obstacle"]
+
+[sub_resource type="Resource" id="FromNorth"]
+script = ExtResource("4_marker")
+marker_id = "from_north"
+marker_kind = "spawn"
+position = Vector2(800, 250)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromSouth"]
+script = ExtResource("4_marker")
+marker_id = "from_south"
+marker_kind = "spawn"
+position = Vector2(800, 1750)
+radius = 24.0
+
+[sub_resource type="Resource" id="NorthExit"]
+script = ExtResource("4_marker")
+marker_id = "north"
+marker_kind = "zone_exit"
+position = Vector2(800, 80)
+radius = 90.0
+exit_side = "north"
+target_zone_id = "pingjiang_crossroads_connector_qa"
+target_entry_id = "from_south"
+
+[sub_resource type="Resource" id="SouthExit"]
+script = ExtResource("4_marker")
+marker_id = "south"
+marker_kind = "zone_exit"
+position = Vector2(800, 1920)
+radius = 90.0
+exit_side = "south"
+target_zone_id = "pingjiang_wild_road_connector_qa"
+target_entry_id = "from_north"
+
+[sub_resource type="Resource" id="Checkpoint"]
+script = ExtResource("4_marker")
+marker_id = "checkpoint"
+marker_kind = "story_trigger"
+position = Vector2(918, 975)
+radius = 58.0
+
+[sub_resource type="Resource" id="NoticeBoard"]
+script = ExtResource("4_marker")
+marker_id = "notice_board"
+marker_kind = "story_trigger"
+position = Vector2(675, 1740)
+radius = 58.0
+
+[sub_resource type="Resource" id="LeftMoat"]
+script = ExtResource("5_obstacle")
+terrain_kind = "water"
+vertices = PackedVector2Array(1, 1100, 600, 1100, 600, 1540, 1, 1540)
+
+[sub_resource type="Resource" id="RightMoat"]
+script = ExtResource("5_obstacle")
+terrain_kind = "water"
+vertices = PackedVector2Array(1000, 1100, 1599, 1100, 1599, 1540, 1000, 1540)
+
+[resource]
+script = ExtResource("1_map")
+content_id = "pingjiang_south_gate_qa"
+background = ExtResource("2_bg")
+scene_art = ExtResource("3_art")
+viewport_size = Vector2i(1600, 2000)
+pixels_per_unit = 80.0
+primary_axis = "vertical"
+area_bounds = Rect2(0, 0, 1600, 2000)
+image_rotation_degrees = 0.0
+image_scale = 1.0
+walkable_outline = PackedVector2Array(620, 40, 980, 40, 980, 1960, 620, 1960)
+obstacles = Array[Resource]([SubResource("LeftMoat"), SubResource("RightMoat")])
+markers = Array[Resource]([SubResource("FromNorth"), SubResource("FromSouth"), SubResource("NorthExit"), SubResource("SouthExit"), SubResource("Checkpoint"), SubResource("NoticeBoard")])

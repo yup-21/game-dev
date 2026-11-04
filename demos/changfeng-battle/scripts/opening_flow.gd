@@ -305,6 +305,10 @@ func _action(action: String) -> void:
 		"pingjiang_25d_qa":
 			# Perspective experiment, not a production map or combat entry.
 			call_deferred("_change_scene", "res://prototypes/pingjiang_25d/pingjiang_25d_validation.tscn")
+		"pingjiang_south_gate_qa":
+			call_deferred("_change_scene", "res://scenes/pingjiang_south_gate_qa.tscn")
+		"shen_house_qa":
+			call_deferred("_change_scene", "res://scenes/pingjiang_shen_house_qa.tscn")
 		"hd2d":
 			var quick_session = _session()
 			if quick_session != null and quick_session.start_quick_battle():
@@ -341,6 +345,8 @@ func _input(event: InputEvent) -> void:
 				elif event.keycode == KEY_P: _action("pingjiang_qa")
 				elif event.keycode == KEY_V: _action("pingjiang_vertical_qa")
 				elif event.keycode == KEY_T: _action("pingjiang_25d_qa")
+				elif event.keycode == KEY_G: _action("pingjiang_south_gate_qa")
+				elif event.keycode == KEY_H: _action("shen_house_qa")
 			"cinematic":
 				if event.keycode in [KEY_ESCAPE, KEY_S]: _action("skip")
 				elif event.keycode in [KEY_ENTER,KEY_SPACE]: _action("continue")
@@ -561,8 +567,10 @@ func _draw_menu() -> void:
 	_button(Rect2(137,623,391,57),"进入战斗 · HD-2D","hd2d",true)
 	_button(Rect2(137,686,391,57),"P · 平江双区跳转测试","pingjiang_qa",true)
 	_button(Rect2(137,749,391,57),"V · 纵向四千滚屏测试","pingjiang_vertical_qa",true)
-	_button(Rect2(137,812,391,57),"T · 2.5D 透视地图测试","pingjiang_25d_qa",true)
-	_button(Rect2(137,875,391,50),"退出游戏","quit",true)
+	_button(Rect2(137,812,190,57),"T · 2.5D 透视","pingjiang_25d_qa",true)
+	_button(Rect2(338,812,190,57),"G · PJ-01 南门","pingjiang_south_gate_qa",true)
+	_button(Rect2(137,875,190,50),"H · 沈家旧宅","shen_house_qa",true)
+	_button(Rect2(338,875,190,50),"退出游戏","quit",true)
 	_text(Vector2(138,960),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:

@@ -9,6 +9,14 @@ const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const ACTOR_PROFILE_PATH := "res://data/native/animations/shen_changfeng.tres"
 const MOVE_SPEED := 265.0
 const REGIONS := {
+    "pingjiang_shen_house": {
+        "title": "PJ-04·沈家旧宅", "map": "res://data/maps/pingjiang_shen_house.tres",
+        "art": "res://data/native/scene_art/pingjiang_shen_house.tres",
+        "size": Vector2(1600, 1000), "start": "player_start"},
+    "pingjiang_riverside_market": {
+        "title": "PJ-03·临河水市主大街", "map": "res://data/maps/pingjiang_riverside_market.tres",
+        "art": "res://data/native/scene_art/pingjiang_riverside_market.tres",
+        "size": Vector2(4800, 1000), "start": "player_start"},
     "pingjiang_long_street_qa": {
         "title": "主干道·临河水市", "map": "res://data/maps/pingjiang_long_street_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_long_street_qa.tres",
@@ -25,6 +33,9 @@ const REGIONS := {
 
 @export var initial_region_id: String = "pingjiang_long_street_qa"
 
+## Other map QA scenes may add dedicated regions without changing the original
+## three-zone scrolling test or baking a second stitched world texture.
+var regions: Dictionary = {}
 var bake
 var region_node: Node2D
 var current_region_id: String = ""
@@ -42,6 +53,8 @@ var last_screen_click: Vector2 = Vector2.ZERO
 var last_world_click: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
+    regions = REGIONS.duplicate(true)
+    regions.merge(_additional_regions(), true)
     stage = Node2D.new()
     stage.name = "ScrollingWorld"
     add_child(stage)
@@ -75,16 +88,19 @@ func _ready() -> void:
     status.add_theme_constant_override("shadow_offset_x", 2)
     status.add_theme_constant_override("shadow_offset_y", 2)
     hud.add_child(status)
-    if not REGIONS.has(initial_region_id) or not _load_region(initial_region_id,
-            str(REGIONS[initial_region_id]["start"])):
+    if not regions.has(initial_region_id) or not _load_region(initial_region_id,
+            str(regions[initial_region_id]["start"])):
         push_error("Pingjiang QA cannot load initial map: " + initial_region_id)
+
+func _additional_regions() -> Dictionary:
+    return {}
 
 ## Load and display ONE native map; release the previous region after the
 ## destination Resource, layered art, polygon and entry point all validate.
 func _load_region(region_id: String, entry_id: String, prepared_bake = null) -> bool:
-    if not REGIONS.has(region_id):
+    if not regions.has(region_id):
         return false
-    var region: Dictionary = REGIONS[region_id]
+    var region: Dictionary = regions[region_id]
     var next_bake = prepared_bake
     if next_bake == null:
         next_bake = MapBake.new(str(region["map"]))
@@ -168,8 +184,8 @@ func _add_exit_sign(parent: Node2D, marker: Dictionary) -> void:
     gate.add_child(ring)
     var caption := Label.new()
     caption.name = "ConnectorHint"
-    var target: Dictionary = REGIONS.get(str(marker["target_zone_id"]), {})
-    caption.text = "E · " + str(target.get("title", "连接点"))
+    var target: Dictionary = regions.get(str(marker["target_zone_id"]), {})
+    caption.text = ("E · " + str(target["title"])) if not target.is_empty() else "规划连接 · 尚未接入"
     caption.position = Vector2(-135, -105)
     caption.size = Vector2(270, 38)
     caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -260,9 +276,9 @@ func _activate_exit(marker_id: String) -> bool:
     if marker.is_empty() or str(marker.get("id", "")) != marker_id:
         return false
     var target_id: String = str(marker.get("target_zone_id", ""))
-    if target_id == current_region_id or not REGIONS.has(target_id):
+    if target_id == current_region_id or not regions.has(target_id):
         return false
-    var target_bake = MapBake.new(str(REGIONS[target_id]["map"]))
+    var target_bake = MapBake.new(str(regions[target_id]["map"]))
     var route: Dictionary = ZoneConnection.resolve_exit(bake, marker_id, target_bake,
         CombatScale.footprint_radius_pixels())
     if route.is_empty() or not _load_region(target_id, str(route["target_entry_id"]), target_bake):
@@ -286,7 +302,7 @@ func _animate_actor(direction: Vector2, delta: float) -> void:
 func _update_camera_and_status() -> void:
     if current_region_id.is_empty() or stage == null or player == null:
         return
-    var region: Dictionary = REGIONS[current_region_id]
+    var region: Dictionary = regions[current_region_id]
     var size: Vector2 = region["size"]
     stage.position = ViewportShift.world_offset(player.position, size)
     var nearby: Dictionary = _nearby_exit()

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <!-- Deliberately simple QA connector, NOT PJ-02 or the outside-road final art. -->
+  <rect width="1600" height="1000" fill="#65756c"/>
+  <path d="M0 0H575V1000H0Z M1025 0H1600V1000H1025Z" fill="#46534c"/>
+  <g fill="#87978a" opacity=".38">
+    <path d="M80 150l250 -110 180 75 -250 110zM1150 135l245 -100 145 80 -235 100z"/>
+    <path d="M130 720l235 -90 155 80 -250 105zM1130 730l285 -105 135 75 -270 120z"/>
+  </g>
+  <path d="M585 0V1000 M1015 0V1000" stroke="#aab2a0" stroke-width="18"/>
+</svg>

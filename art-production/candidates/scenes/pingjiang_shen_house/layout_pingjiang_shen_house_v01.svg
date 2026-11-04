@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <title>PJ-04 沈家旧宅设计锚点与通路草案</title>
+  <desc>非运行时布局参考；绿色区域只是粗略构图建议，不代表正式碰撞。</desc>
+  <rect x="0" y="0" width="1600" height="1000" fill="#f7f4ec"/>
+  <rect x="20" y="20" width="1560" height="960" rx="12" fill="#ede8dc" stroke="#6f726a" stroke-width="4"/>
+  <rect x="130" y="135" width="540" height="320" rx="8" fill="#8c8073" opacity=".75"/>
+  <text x="400" y="280" fill="#fff" text-anchor="middle" font-size="36">沈家旧屋</text>
+  <rect x="1010" y="145" width="455" height="290" rx="8" fill="#b7a991" opacity=".7"/>
+  <text x="1240" y="260" fill="#393d36" text-anchor="middle" font-size="34">木人桩 / 石龛</text>
+  <rect x="705" y="0" width="260" height="600" rx="18" fill="#85b79c" opacity=".55"/>
+  <rect x="155" y="520" width="1290" height="350" rx="30" fill="#85b79c" opacity=".55"/>
+  <rect x="705" y="0" width="260" height="600" rx="18" fill="none" stroke="#277453" stroke-width="6" stroke-dasharray="18 14"/>
+  <rect x="155" y="520" width="1290" height="350" rx="30" fill="none" stroke="#277453" stroke-width="6" stroke-dasharray="18 14"/>
+  <text x="820" y="775" fill="#1c6144" text-anchor="middle" font-size="38">庭院活动面（粗略）</text>
+  <text x="820" y="85" fill="#1c6144" text-anchor="middle" font-size="30">北向连接巷</text>
+  <rect x="738" y="205" width="215" height="100" rx="6" fill="#e4b65f" stroke="#985c25" stroke-width="5"/>
+  <text x="845" y="265" fill="#3a3029" text-anchor="middle" font-size="28">北门</text>
+  <g fill="#1c4f7d" stroke="#fff" stroke-width="5">
+    <circle cx="845" cy="285" r="18"/><circle cx="845" cy="440" r="18"/>
+    <circle cx="320" cy="450" r="18"/><circle cx="525" cy="430" r="18"/>
+    <circle cx="1130" cy="455" r="18"/><circle cx="1465" cy="415" r="18"/>
+    <circle cx="425" cy="485" r="18"/>
+  </g>
+  <g fill="#232f36" font-family="sans-serif" font-size="25" font-weight="bold">
+    <text x="870" y="310">north (845,285)</text>
+    <text x="875" y="470">arrival (845,440)</text>
+    <text x="150" y="475">house_door</text>
+    <text x="455" y="400">sword_case</text>
+    <text x="1050" y="490">practice_posts</text>
+    <text x="1260" y="395">hidden_compartment</text>
+    <text x="300" y="520">save_point</text>
+  </g>
+  <rect x="35" y="913" width="1530" height="48" fill="#f7f4ec" stroke="#aba79e" stroke-width="2"/>
+  <text x="800" y="945" text-anchor="middle" font-family="sans-serif" font-size="25" fill="#4c4b45">1600 × 1000 · 设计示意，非碰撞和可玩地图 · 人物 200px / 脚点半径 24px</text>
+</svg>

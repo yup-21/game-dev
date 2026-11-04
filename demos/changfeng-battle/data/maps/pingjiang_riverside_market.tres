@@ -1,0 +1,92 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=12 format=3]
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_riverside_market/background_v02.webp" id="2_bg"]
+[ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_riverside_market.tres" id="3_art"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
+
+[sub_resource type="Resource" id="Start"]
+script = ExtResource("4_marker")
+marker_id = "player_start"
+marker_kind = "spawn"
+position = Vector2(3850, 715)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromEast"]
+script = ExtResource("4_marker")
+marker_id = "from_east"
+marker_kind = "spawn"
+position = Vector2(4520, 715)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromWest"]
+script = ExtResource("4_marker")
+marker_id = "from_west"
+marker_kind = "spawn"
+position = Vector2(260, 715)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromSouth"]
+script = ExtResource("4_marker")
+marker_id = "from_south"
+marker_kind = "spawn"
+position = Vector2(2400, 810)
+radius = 24.0
+
+[sub_resource type="Resource" id="WestExit"]
+script = ExtResource("4_marker")
+marker_id = "west"
+marker_kind = "zone_exit"
+position = Vector2(80, 715)
+radius = 70.0
+exit_side = "west"
+target_zone_id = "pingjiang_west_canal"
+target_entry_id = "from_east"
+
+[sub_resource type="Resource" id="EastExit"]
+script = ExtResource("4_marker")
+marker_id = "east"
+marker_kind = "zone_exit"
+position = Vector2(4720, 715)
+radius = 70.0
+exit_side = "east"
+target_zone_id = "pingjiang_crossroads"
+target_entry_id = "from_west"
+
+[sub_resource type="Resource" id="SouthExit"]
+script = ExtResource("4_marker")
+marker_id = "south"
+marker_kind = "zone_exit"
+position = Vector2(2400, 895)
+radius = 60.0
+exit_side = "south"
+target_zone_id = "pingjiang_shen_house"
+target_entry_id = "from_north"
+
+[sub_resource type="Resource" id="Blacksmith"]
+script = ExtResource("4_marker")
+marker_id = "shop_blacksmith"
+marker_kind = "story_trigger"
+position = Vector2(2100, 640)
+radius = 65.0
+
+[sub_resource type="Resource" id="Herbalist"]
+script = ExtResource("4_marker")
+marker_id = "shop_herb_hall"
+marker_kind = "story_trigger"
+position = Vector2(2750, 640)
+radius = 65.0
+
+[resource]
+script = ExtResource("1_map")
+content_id = "pingjiang_riverside_market"
+background = ExtResource("2_bg")
+scene_art = ExtResource("3_art")
+viewport_size = Vector2i(4800, 1000)
+pixels_per_unit = 80.0
+primary_axis = "horizontal"
+area_bounds = Rect2(24, 605, 4752, 326)
+image_rotation_degrees = 0.0
+image_scale = 1.0
+walkable_outline = PackedVector2Array(32, 612, 4768, 612, 4768, 780, 2540, 780, 2540, 925, 2260, 925, 2260, 780, 32, 780)
+obstacles = Array[Resource]([])
+markers = Array[Resource]([SubResource("Start"), SubResource("FromEast"), SubResource("FromWest"), SubResource("FromSouth"), SubResource("WestExit"), SubResource("EastExit"), SubResource("SouthExit"), SubResource("Blacksmith"), SubResource("Herbalist")])
