@@ -16,6 +16,15 @@
 5. **角色与交互：** 守卫 NPC、盘查区、告示、水闸与水师船埠分别独立放置；静态美术不烘焙 NPC。
 6. **游戏内验收：** 1600×1000 视口上下卷屏、移动/闪避前后脚点、两端往返传送、前景遮挡、门洞不被角色裁切；检查 1440×900 缩放视窗。
 
+供下一轮复核使用的**标准比例标尺**（透明参考叠层，绝不可烘焙进场景美术）：
+
+```bash
+python art-production/tools/scene_scale_guide.py --orientation vertical \
+  --width 1600 --height 2000 --lane-left 620 --lane-right 980 \
+  --lane-top 80 --lane-bottom 1920 --foot-x 800 --foot-y 1740 \
+  --door-x 1110 --output /tmp/pj01_vertical_scale_overlay.png
+```
+
 完成 1–6 后再提交正式运行时接入 PR；当前 PR 只记录候选美术与设计契约。
 
 ### 审核清单
