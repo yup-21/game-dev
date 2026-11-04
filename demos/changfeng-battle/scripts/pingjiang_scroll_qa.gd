@@ -9,6 +9,10 @@ const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const ACTOR_PROFILE_PATH := "res://data/native/animations/shen_changfeng.tres"
 const MOVE_SPEED := 265.0
 const REGIONS := {
+    "pingjiang_riverside_market": {
+        "title": "PJ-03·临河水市主大街", "map": "res://data/maps/pingjiang_riverside_market.tres",
+        "art": "res://data/native/scene_art/pingjiang_riverside_market.tres",
+        "size": Vector2(4800, 1000), "start": "player_start"},
     "pingjiang_long_street_qa": {
         "title": "主干道·临河水市", "map": "res://data/maps/pingjiang_long_street_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_long_street_qa.tres",
@@ -169,7 +173,7 @@ func _add_exit_sign(parent: Node2D, marker: Dictionary) -> void:
     var caption := Label.new()
     caption.name = "ConnectorHint"
     var target: Dictionary = REGIONS.get(str(marker["target_zone_id"]), {})
-    caption.text = "E · " + str(target.get("title", "连接点"))
+    caption.text = ("E · " + str(target["title"])) if not target.is_empty() else "规划连接 · 尚未接入"
     caption.position = Vector2(-135, -105)
     caption.size = Vector2(270, 38)
     caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
