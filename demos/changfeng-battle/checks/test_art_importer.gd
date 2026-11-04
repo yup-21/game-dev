@@ -2,6 +2,7 @@ extends SceneTree
 ## P1 offline import contract. No file is copied or modified by this test.
 const Importer = preload("res://addons/wuxia_art_importer/art_import_service.gd")
 const Dock = preload("res://addons/wuxia_art_importer/art_import_dock.gd")
+const Transaction = preload("res://addons/wuxia_art_importer/art_transaction_service.gd")
 const Assets = preload("res://scripts/asset_registry.gd")
 
 func _initialize() -> void:
@@ -44,6 +45,52 @@ func _initialize() -> void:
         return
     if not Importer.destination(candidate_actor).is_empty():
         _fail("Candidate image was accepted without an import type")
+        return
+    var organized := production_dir.path_join("in-use/characters/black_blade")
+    var folder_plan: Dictionary = Importer.plan_character_folder(organized,
+        "res://data/native/characters/black_blade.tres", {})
+    if not str(folder_plan.get("error", "")).is_empty() or folder_plan["files"].size() != 2 or \
+            not folder_plan["files"].has("portrait") or not folder_plan["files"].has("atlas"):
+        _fail("Organized character folder failed to build a two-asset plan: " + str(folder_plan.get("error", "")))
+        return
+    if not str(Importer.plan("character_folder", organized,
+            "res://data/native/characters/black_blade.tres", {}).get("error", "")).is_empty():
+        _fail("Generic importer plan did not dispatch character folders")
+        return
+    var imported: Dictionary = Importer.plan_character_folder(
+        "res://assets/imported/characters/black_blade",
+        "res://data/native/characters/black_blade.tres", {})
+    if not str(imported.get("error", "")).is_empty() or \
+            str(imported["files"]["atlas"]["path"]) != str(imported["files"]["atlas"]["destination"]):
+        _fail("Already-organized imported character folder was not accepted directly")
+        return
+    var filesystem_imported: Dictionary = Importer.plan_character_folder(
+        ProjectSettings.globalize_path("res://assets/imported/characters/black_blade"),
+        "res://data/native/characters/black_blade.tres", {})
+    if not str(filesystem_imported.get("error", "")).is_empty() or filesystem_imported["files"].size() != 2:
+        _fail("Filesystem picker path did not resolve an already-imported character")
+        return
+    var sample := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+    sample.fill(Color(0, 0, 0, 0))
+    sample.set_pixel(1, 1, Color.WHITE)
+    var valid_sample := ImageTexture.create_from_image(sample)
+    if not Importer.candidate_frame_geometry_error(valid_sample, 1, 1, PackedInt32Array([0])).is_empty():
+        _fail("Contained single candidate frame was rejected")
+        return
+    sample.set_pixel(0, 0, Color.WHITE)
+    if Importer.candidate_frame_geometry_error(ImageTexture.create_from_image(sample),
+            1, 1, PackedInt32Array([0])).is_empty():
+        _fail("Candidate source frame touching its border was accepted")
+        return
+    if str(Importer.plan_character_folder(organized,
+            "res://data/native/characters/shen_changfeng.tres", {}).get("error", "")).is_empty():
+        _fail("Cross-character folder import was allowed")
+        return
+    var existing_portrait: Dictionary = Importer.plan("portrait",
+        organized.path_join("portraits/portrait.png"),
+        "res://data/native/characters/black_blade.tres", {})
+    if Transaction.validate([folder_plan, existing_portrait]).is_empty():
+        _fail("Folder import mixed with a second binding to the same Resource")
         return
     var wrong_owner: Dictionary = Importer.plan("portrait", candidate_actor,
         "res://data/native/characters/black_blade.tres", {})
@@ -120,8 +167,17 @@ func _initialize() -> void:
     if dock.source_list == null or dock.kind == null:
         _fail("Editor dock did not initialize")
         return
-    if dock.source_list.item_count < 39 or dock.kind.item_count != 5:
+    if dock.source_list.item_count < 39 or dock.kind.item_count != 6:
         _fail("Editor dock failed to enumerate candidate sources")
+        return
+    dock.kind.select(5)
+    dock._mode_changed()
+    if not dock.folder_row.visible or dock.source_list.visible:
+        _fail("Whole-character folder UI did not switch to directory selection")
+        return
+    dock._folder_changed(organized)
+    if dock._target() != "res://data/native/characters/black_blade.tres":
+        _fail("Whole-character folder did not auto-select the matching character Resource")
         return
     dock.kind.select(2)
     dock._mode_changed()

@@ -4,7 +4,7 @@ extends RefCounted
 ## Never read by the game at runtime. The importer never overwrites source images.
 
 const EXTENSIONS := ["png", "webp", "jpg", "jpeg", "svg"]
-const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx"]
+const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx", "character_folder"]
 const MANIFEST := "res://data/content_manifest.tres"
 const CombatScale = preload("res://scripts/combat_scale.gd")
 
@@ -53,7 +53,18 @@ static func production_root() -> String:
 static func _source_allowed(path: String) -> bool:
     var canonical := path.simplify_path()
     var root := production_root()
-    return canonical.begins_with(root + "/in-use/") or canonical.begins_with(root + "/candidates/")
+    return canonical.begins_with(root + "/in-use/") or canonical.begins_with(root + "/candidates/") \
+        or not _imported_path(canonical).is_empty()
+
+
+static func _imported_path(path: String) -> String:
+    var canonical := path.simplify_path()
+    if canonical.begins_with("res://assets/imported/characters/"):
+        return canonical
+    var filesystem_root := ProjectSettings.globalize_path("res://assets/imported/characters").simplify_path()
+    if canonical.begins_with(filesystem_root + "/"):
+        return "res://assets/imported/characters/" + canonical.trim_prefix(filesystem_root + "/")
+    return ""
 
 
 static func collect_sources() -> Array[String]:
@@ -93,7 +104,7 @@ static func inspect(path: String) -> Dictionary:
     if path.get_extension().to_lower() == "svg":
         err = image.load_svg_from_buffer(FileAccess.get_file_as_bytes(path))
     else:
-        err = image.load(path)
+        err = image.load(ProjectSettings.globalize_path(path) if path.begins_with("res://") else path)
     if err != OK or image.is_empty():
         return {"error": "图像解码失败：" + str(err)}
     return {
@@ -138,6 +149,19 @@ static func _import_filename(source: String, mode: String, owner: String) -> Str
 static func destination(path: String, mode: String = "") -> String:
     if not _source_allowed(path):
         return ""
+    var imported := _imported_path(path)
+    if not imported.is_empty():
+        var relative_import := imported.trim_prefix("res://assets/imported/")
+        var parts_import := relative_import.split("/")
+        if parts_import.size() < 4 or not _valid_id(str(parts_import[1])):
+            return ""
+        if mode == "portrait" and parts_import[2] != "portraits":
+            return ""
+        if mode == "atlas" and parts_import[2] != "sprites":
+            return ""
+        if mode not in ["portrait", "atlas"]:
+            return ""
+        return imported
     var relative := path.simplify_path().trim_prefix(production_root() + "/")
     if relative.begins_with("in-use/"):
         # Production status is not part of the Godot path.
@@ -176,6 +200,9 @@ static func _new_asset_card(mode: String) -> WuxiaAssetDefinition:
 static func _source_identity(path: String) -> PackedStringArray:
     if not _source_allowed(path):
         return PackedStringArray()
+    var imported := _imported_path(path)
+    if not imported.is_empty():
+        return imported.trim_prefix("res://assets/imported/").split("/")
     var relative: String = path.simplify_path().trim_prefix(production_root() + "/")
     if relative.begins_with("in-use/"):
         relative = relative.trim_prefix("in-use/")
@@ -221,7 +248,216 @@ static func _valid_id(value: String) -> bool:
     return true
 
 
+## A character folder is already classified by its owner. Flat canonical
+## portrait/atlas filenames are also accepted and moved into their type folder.
+## Versioned files are never selected implicitly.
+static func _character_folder_owner(folder: String) -> String:
+    var source := folder.simplify_path().trim_suffix("/")
+    var relative := ""
+    var imported := _imported_path(source + "/portrait.png")
+    if not imported.is_empty():
+        relative = imported.trim_prefix("res://assets/imported/characters/").trim_suffix("/portrait.png")
+    elif source.begins_with(production_root() + "/"):
+        var parts := source.trim_prefix(production_root() + "/").split("/")
+        if parts.size() != 3 or parts[0] not in ["candidates", "in-use"] or parts[1] != "characters":
+            return ""
+        relative = str(parts[2])
+    return relative if _valid_id(relative) and not relative.contains("/") else ""
+
+
+static func _default_image(folder: String, stem: String) -> Dictionary:
+    if not DirAccess.dir_exists_absolute(folder):
+        return {"error": "", "path": ""}
+    var matches: Array[String] = []
+    for file in DirAccess.get_files_at(folder):
+        if str(file).get_basename() == stem and EXTENSIONS.has(str(file).get_extension().to_lower()):
+            matches.append(folder.path_join(str(file)))
+    if matches.size() > 1:
+        return {"error": "同一默认素材存在多种格式：" + folder.path_join(stem), "path": ""}
+    return {"error": "", "path": matches[0] if not matches.is_empty() else ""}
+
+
+static func _one_of_default(folder: String, subdir: String, stem: String) -> Dictionary:
+    var organized := _default_image(folder.path_join(subdir), stem)
+    if not str(organized["error"]).is_empty():
+        return organized
+    var flat := _default_image(folder, stem)
+    if not str(flat["error"]).is_empty():
+        return flat
+    if not str(organized["path"]).is_empty() and not str(flat["path"]).is_empty():
+        return {"error": "同一素材在根目录与分类目录重复：" + stem, "path": ""}
+    return organized if not str(organized["path"]).is_empty() else flat
+
+
+static func _plan_to_path(source: String, target_path: String, require_alpha: bool,
+        versioned: bool) -> Dictionary:
+    var info := inspect(source)
+    if not str(info.get("error", "")).is_empty():
+        return info
+    if require_alpha and not bool(info["alpha"]):
+        return {"error": "角色立绘/动作要求真实透明像素：" + source.get_file()}
+    var original := ""
+    var destination_path := target_path
+    if FileAccess.file_exists(destination_path) and \
+            FileAccess.get_sha256(destination_path) != str(info["sha256"]):
+        if not versioned:
+            return {"error": "目标已存在且内容不同，请勾选版本化替换：" + target_path}
+        original = destination_path
+        destination_path = target_path.get_basename() + "__" + str(info["sha256"]).substr(0, 12) \
+            + "." + target_path.get_extension()
+        if FileAccess.file_exists(destination_path) and \
+                FileAccess.get_sha256(destination_path) != str(info["sha256"]):
+            return {"error": "版本文件 SHA-256 冲突：" + destination_path}
+    info["destination"] = destination_path
+    info["replaces"] = original
+    return info
+
+
+## This checks the declared grid, never tries to detect or rearrange AI frames.
+## Visual continuity and real support-foot contacts still need separate review.
+static func candidate_frame_geometry_error(texture: Texture2D, cols: int, count_rows: int,
+        used_frames: PackedInt32Array) -> String:
+    var image := texture.get_image() if texture != null else null
+    if image == null or image.is_empty() or cols < 1 or count_rows < 1 or \
+            image.get_width() % cols != 0 or image.get_height() % count_rows != 0:
+        return "候选动作 Atlas 行列无法整除画布"
+    var occupied := {}
+    for frame in used_frames:
+        if frame < 0 or frame >= cols * count_rows:
+            return "动作帧索引超出候选 Atlas"
+        occupied[frame] = true
+    var fw := image.get_width() / cols
+    var fh := image.get_height() / count_rows
+    for frame in range(cols * count_rows):
+        var rect := Rect2i((frame % cols) * fw, (frame / cols) * fh, fw, fh)
+        var pixel_bounds := image.get_region(rect).get_used_rect()
+        if occupied.has(frame):
+            if not pixel_bounds.has_area():
+                return "有效帧为空：" + str(frame)
+            if pixel_bounds.position.x <= 0 or pixel_bounds.position.y <= 0 or \
+                    pixel_bounds.end.x >= fw or pixel_bounds.end.y >= fh:
+                return "候选帧触边、透明留白不足：" + str(frame)
+        elif pixel_bounds.has_area():
+            return "未使用帧格存在像素：" + str(frame)
+    return ""
+
+
+## One atomic plan for an existing character: portrait + shared Atlas and/or
+## independently configured per-action Atlas. No image content is used to guess
+## a grid, a frame index or an animation's meaning.
+static func plan_character_folder(folder: String, target: String, fields: Dictionary) -> Dictionary:
+    var actor_id := _character_folder_owner(folder)
+    if actor_id.is_empty():
+        return {"error": "请选择角色根目录：candidates/characters/<id>、in-use/characters/<id> 或 res://assets/imported/characters/<id>"}
+    if not DirAccess.dir_exists_absolute(folder):
+        return {"error": "角色目录不存在：" + folder}
+    if target != "res://data/native/characters/" + actor_id + ".tres":
+        return {"error": "角色目录 ID 与目标 Resource 不匹配：" + actor_id}
+    var character := ResourceLoader.load(target) as WuxiaCharacterDefinition
+    if character == null or character.content_id != actor_id:
+        return {"error": "请先创建并登记角色定义：" + target}
+
+    var found: Dictionary = {}
+    for role in ["portrait", "atlas"]:
+        var subdir := "portraits" if role == "portrait" else "sprites"
+        var item := _one_of_default(folder, subdir, role)
+        if not str(item["error"]).is_empty():
+            return item
+        if not str(item["path"]).is_empty():
+            found[role] = str(item["path"])
+    for action in WuxiaActorAnimationProfile.MODERN_REQUIRED_ACTIONS:
+        var in_sprites := _default_image(folder.path_join("sprites").path_join(action), "atlas")
+        var in_actions := _default_image(folder.path_join("actions").path_join(action), "atlas")
+        if not str(in_sprites["error"]).is_empty():
+            return in_sprites
+        if not str(in_actions["error"]).is_empty():
+            return in_actions
+        if not str(in_sprites["path"]).is_empty() and not str(in_actions["path"]).is_empty():
+            return {"error": "动作存在重复来源：" + action}
+        var source := str(in_sprites["path"]) if not str(in_sprites["path"]).is_empty() else str(in_actions["path"])
+        if not source.is_empty():
+            found["clip_" + action] = source
+    if found.is_empty():
+        return {"error": "没有找到规范化的 portrait/atlas 文件；不会自动选择 _vNN 备选或猜测 Sprite Sheet 帧格"}
+
+    var files := {}
+    var replace := bool(fields.get("versioned_replace", false))
+    for role in found:
+        var source_path := str(found[role])
+        var extension := source_path.get_extension().to_lower()
+        var suffix := "portraits/portrait" if role == "portrait" else "sprites/atlas"
+        if str(role).begins_with("clip_"):
+            suffix = "sprites/" + str(role).trim_prefix("clip_") + "/atlas"
+        var destination_path := "res://assets/imported/characters/" + actor_id + "/" + suffix + "." + extension
+        var info := _plan_to_path(source_path, destination_path, true, replace)
+        if not str(info.get("error", "")).is_empty():
+            return info
+        files[role] = info
+
+    var result := {"error": "", "mode": "character_folder", "target": target,
+        "files": files, "owner": actor_id, "source_folder": folder,
+        "current_binding": character.sprite_sheet.resource_path if character.sprite_sheet != null else "",
+        "next_binding": str(files["atlas"]["destination"]) if files.has("atlas") else "（保留当前 Atlas）"}
+    var has_clips := false
+    for key in files:
+        has_clips = has_clips or str(key).begins_with("clip_")
+    if files.has("atlas") or has_clips:
+        var template_path := str(fields.get("clip_profile_path", "")).strip_edges()
+        if not template_path.is_empty() and (not template_path.begins_with("res://data/") or
+                template_path.contains("..") or not ResourceLoader.exists(template_path)):
+            return {"error": "原生动画 Profile 模板不可用：" + template_path}
+        var profile: WuxiaActorAnimationProfile = ResourceLoader.load(template_path) as WuxiaActorAnimationProfile \
+            if not template_path.is_empty() else character.animation_profile
+        if profile == null:
+            return {"error": "角色缺少有效的动画 Profile；请先选择模板"}
+        var staged := profile.duplicate(true) as WuxiaActorAnimationProfile
+        if files.has("atlas"):
+            staged.atlas = files["atlas"]["texture"]
+        for key in files:
+            if not str(key).begins_with("clip_"):
+                continue
+            var action := str(key).trim_prefix("clip_")
+            var clip: WuxiaActorAnimationClip = staged.clip_for(action)
+            if clip == null:
+                return {"error": "Profile 缺少动作 Clip：" + action}
+            clip.atlas = files[key]["texture"]
+        if not staged.valid_profile():
+            return {"error": "动作帧索引、行列或统一格子不匹配；请在 Profile 中明确配置各 Clip"}
+        if folder.simplify_path().begins_with(production_root() + "/candidates/"):
+            var shared_indices := PackedInt32Array()
+            for action in WuxiaActorAnimationProfile.MODERN_REQUIRED_ACTIONS:
+                var clip: WuxiaActorAnimationClip = staged.clip_for(action)
+                if clip == null:
+                    continue
+                var key: String = "clip_" + str(action)
+                if files.has(key):
+                    var geometry_error := candidate_frame_geometry_error(
+                        files[key]["texture"], clip.columns, clip.rows, clip.frames)
+                    if not geometry_error.is_empty():
+                        return {"error": action + "：" + geometry_error}
+                elif clip.atlas == null:
+                    for frame in clip.frames:
+                        if not shared_indices.has(frame):
+                            shared_indices.append(frame)
+            if files.has("atlas") and not shared_indices.is_empty():
+                var atlas_error := candidate_frame_geometry_error(
+                    staged.atlas, staged.columns, staged.rows, shared_indices)
+                if not atlas_error.is_empty():
+                    return {"error": atlas_error}
+        if files.has("atlas") and folder.simplify_path().begins_with(production_root() + "/candidates/"):
+            var idle := staged.clip_for("idle")
+            var ref_index := int(idle.frames[0]) if idle != null and not idle.frames.is_empty() else -1
+            var scale_error := candidate_idle_scale_error(staged.atlas, staged.columns, staged.rows, ref_index)
+            if not scale_error.is_empty():
+                return {"error": scale_error}
+        result["profile_path"] = "res://data/native/animations/" + actor_id + ".tres"
+        result["template_path"] = template_path
+    return result
+
+
 static func plan(mode: String, source: String, target: String, fields: Dictionary) -> Dictionary:
+    if mode == "character_folder":
+        return plan_character_folder(source, target, fields)
     var result := {"error": "", "mode": mode, "target": target, "files": {}}
     if not MODES.has(mode):
         return {"error": "不支持的导入模式"}
@@ -403,7 +639,8 @@ static func copy_images(files: Dictionary) -> String:
         var err := DirAccess.make_dir_recursive_absolute(absolute.get_base_dir())
         if err != OK:
             return "无法创建素材目录：" + str(err)
-        err = DirAccess.copy_absolute(source, absolute)
+        var source_absolute := ProjectSettings.globalize_path(source) if source.begins_with("res://") else source
+        err = DirAccess.copy_absolute(source_absolute, absolute)
         if err != OK:
             return "复制素材失败：" + str(err)
         if FileAccess.get_sha256(source) != FileAccess.get_sha256(target):
@@ -446,6 +683,42 @@ static func save_bindings(plan_data: Dictionary) -> String:
         textures[key] = tex
     var mode := str(plan_data["mode"])
     var target := str(plan_data["target"])
+    if mode == "character_folder":
+        var actor := ResourceLoader.load(target) as WuxiaCharacterDefinition
+        if actor == null or actor.content_id != str(plan_data.get("owner", "")):
+            return "角色目录导入时目标 Resource 已改变"
+        if textures.has("portrait"):
+            actor.portrait = textures["portrait"]
+            actor.portrait_quality = "candidate"
+        if plan_data.has("profile_path"):
+            var template_path := str(plan_data.get("template_path", ""))
+            var source_profile := ResourceLoader.load(template_path) as WuxiaActorAnimationProfile \
+                if not template_path.is_empty() else actor.animation_profile
+            if source_profile == null:
+                return "动画 Profile 模板在导入期间消失"
+            var profile := source_profile.duplicate(true) as WuxiaActorAnimationProfile
+            if textures.has("atlas"):
+                profile.atlas = textures["atlas"]
+                actor.sprite_sheet = textures["atlas"]
+            for key in textures:
+                if not str(key).begins_with("clip_"):
+                    continue
+                var action := str(key).trim_prefix("clip_")
+                var clip: WuxiaActorAnimationClip = profile.clip_for(action)
+                if clip == null:
+                    return "缺少动作 Clip：" + action
+                clip.atlas = textures[key]
+            if not profile.valid_profile():
+                return "分动作 Atlas 与原生 Profile 不兼容"
+            var profile_error := _save(profile, str(plan_data["profile_path"]))
+            if not profile_error.is_empty():
+                return profile_error
+            actor.animation_profile = profile
+            actor.sheet_quality = "candidate"
+        var error := _save(actor, target)
+        if error.is_empty():
+            actor.emit_changed()
+        return error
     if mode == "portrait" or mode == "atlas":
         var character := ResourceLoader.load(target) as WuxiaCharacterDefinition
         if character == null:
