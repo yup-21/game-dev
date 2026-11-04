@@ -5,8 +5,12 @@ const CombatScale = preload("res://scripts/combat_scale.gd")
 ## Character-owned visual contract. Never mutates BattleModel or game state.
 ## Unlike the historical 6x4 pose sheet, actions may use distinct frame ranges.
 
+## Existing nine-action atlases remain valid during migration.
 const REQUIRED_ACTIONS := ["idle", "move", "attack", "guard", "hit",
     "evade", "skill", "combo", "defeat"]
+## Native twelve-action contract; attack1..4 are semantic slots, not weapon types.
+const BASE_ACTIONS := ["idle", "walk", "run", "attack1", "attack2",
+    "attack3", "attack4", "skill", "evade", "guard", "hit", "defeat"]
 
 @export var atlas: Texture2D
 @export_range(1, 64) var columns: int = 6
@@ -41,15 +45,20 @@ func valid_profile() -> bool:
         if not clip is WuxiaActorAnimationClip:
             return false
         var authored: WuxiaActorAnimationClip = clip as WuxiaActorAnimationClip
-        if not REQUIRED_ACTIONS.has(authored.action) or seen.has(authored.action):
+        if seen.has(authored.action):
             return false
         if not authored.valid_for(columns * rows):
             return false
         seen[authored.action] = true
+    var legacy_complete: bool = true
+    var base_complete: bool = true
     for action in REQUIRED_ACTIONS:
         if not seen.has(action):
-            return false
-    return true
+            legacy_complete = false
+    for action in BASE_ACTIONS:
+        if not seen.has(action):
+            base_complete = false
+    return legacy_complete or base_complete
 
 func clip_for(action: String) -> WuxiaActorAnimationClip:
     for clip in clips:

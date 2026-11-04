@@ -4,7 +4,8 @@ extends RefCounted
 const Facing = preload("res://scripts/actor_facing.gd")
 const ActionTimeline = preload("res://scripts/battle_action_timeline.gd")
 const NativeClips = preload("res://scripts/battle_native_sprite_clips.gd")
-const DURATIONS := {"idle": 1.0, "move": 0.55, "attack": 0.62,
+const DURATIONS := {"idle": 1.0, "move": 0.55, "walk": 0.55, "run": 0.55,
+    "attack1": 0.62, "attack2": 0.62, "attack3": 0.62, "attack4": 0.62, "attack": 0.62,
     "guard": 0.38, "hit": 0.46, "evade": 0.38, "skill": 0.55, "combo": 0.78, "defeat": 1.0}
 var tracks: Dictionary = {}
 var timeline: Array = []
@@ -48,19 +49,20 @@ func facing_for(id: int) -> Vector2i:
     return Vector2i(tracks[id].facing) if tracks.has(id) else Facing.EAST
 
 func play(id: int, state: String) -> void:
-    if not tracks.has(id) or not NativeClips.STATE_ROW.has(state):
+    if not tracks.has(id):
         return
     var track: Dictionary = tracks[id]
+    var player: AnimationPlayer = track.player
+    if not is_instance_valid(player) or not player.has_animation(state):
+        return
     track.state = state
     track.elapsed = 0.0
-    track.duration = action_timeline.duration_for(state, float(DURATIONS.get(state, 0.40)))
-    track.loop = state == "idle" or state == "move"
+    track.duration = player.get_animation(state).length
+    track.loop = player.get_animation(state).loop_mode != Animation.LOOP_NONE
     tracks[id] = track
-    var player: AnimationPlayer = track.player
-    if is_instance_valid(player):
-        player.stop()
-        player.play(state)
-        player.advance(0.0)
+    player.stop()
+    player.play(state)
+    player.advance(0.0)
 
 func events(emitted: Array) -> void:
     # Preserve the semantic event order; an attack, response and hit should
@@ -68,6 +70,10 @@ func events(emitted: Array) -> void:
     timeline.clear()
     stage_left = 0.0
     pending_cues.clear()
+    var skill_actors: Dictionary = {}
+    for event in emitted:
+        if str(event.get("type", "")) == "ACTION_PRESENTATION":
+            skill_actors[int(event.get("actor_id", -1))] = true
     for event in emitted:
         var kind := str(event.get("type", ""))
         var actor_id := int(event.get("actor_id", -1))
@@ -76,11 +82,38 @@ func events(emitted: Array) -> void:
         var id := actor_id
         if kind == "CHAIN_LINK_ADDED" and tracks.has(actor_id):
             set_facing(actor_id,Vector2i(event.get("facing",facing_for(actor_id))))
-        animation = action_timeline.animation_for_event(kind)
+        if kind in ["SHIELD", "INTERCEPT_JUDGED", "ATTACK_INTERRUPTED",
+                "CHAIN_LINK_CANCELED"] and skill_actors.has(actor_id):
+            continue
+        var semantic: String = action_timeline.animation_for_event(kind)
+        animation = str(event.get("animation_id", ""))
+        if animation.is_empty():
+            animation = semantic
+        if kind == "ACTION_PRESENTATION" and animation.is_empty():
+            animation = "skill"
+            semantic = "skill"
+        elif kind == "ATTACK_DECLARED" and str(event.get("animation_id", "")).is_empty():
+            animation = "attack1"
+        elif kind in ["MOVE", "MOVE_FREE"] and str(event.get("animation_id", "")).is_empty():
+            animation = "run" if bool(event.get("run", false)) else "walk"
+        elif kind == "HP_DAMAGED" and bool(event.get("defeated", false)):
+            animation = "defeat"
+            semantic = "defeat"
+        if kind == "ACTION_PRESENTATION":
+            semantic = "skill"
+        elif semantic.is_empty():
+            semantic = animation
         if kind in ["ATTACK_MISSED", "DAMAGE", "HP_DAMAGED", "SCORCH_TICK"]:
             id = target_id if target_id >= 0 else actor_id
         if not animation.is_empty() and tracks.has(id):
-            var duration: float=action_timeline.duration_for(animation,
+            var player: AnimationPlayer = tracks[id].player
+            if not is_instance_valid(player):
+                continue
+            if not player.has_animation(animation):
+                push_warning("Missing actor animation %s; using fallback" % animation)
+                var fallback: String = "skill" if kind == "ACTION_PRESENTATION" else semantic
+                animation = fallback if player.has_animation(fallback) else "idle"
+            var duration: float=action_timeline.duration_for(semantic,
                 float(DURATIONS.get(animation, 0.35)))
             var presentation_facing: Vector2i=Vector2i(event.get("facing",facing_for(id)))
             if kind == "MOVE":
@@ -100,7 +133,7 @@ func events(emitted: Array) -> void:
                     var heading: Vector2=route[1]-route[0]
                     presentation_facing=Facing.from_delta(Vector2i(roundi(heading.x),roundi(heading.y)),presentation_facing)
             timeline.append({"id": id, "state": animation,
-                "facing": presentation_facing, "profile": animation,
+                "facing": presentation_facing, "profile": semantic,
                 "duration": duration})
     _play_next()
 
@@ -114,9 +147,9 @@ func _play_next() -> void:
     var next: Dictionary = timeline.pop_front()
     set_facing(int(next.id),Vector2i(next.facing))
     play(int(next.id), str(next.state))
-    stage_left = float(next.duration)
+    stage_left = maxf(float(next.duration), float(tracks[int(next.id)].duration))
     stage_profile = str(next.get("profile", next.state))
-    stage_duration = float(next.duration)
+    stage_duration = stage_left
     stage_elapsed = 0.0
 
 func remaining_seconds() -> float:
@@ -141,11 +174,11 @@ func update(delta: float, moving: Dictionary = {}) -> void:
         var state: String = str(track.state)
         var dt: float = 0.0 if stage_transitioned else maxf(0.0, delta)
         track.elapsed = float(track.elapsed) + dt
-        if state != "idle" and state != "move" and float(track.elapsed) >= float(track.duration):
+        if state not in ["idle", "move", "walk", "run", "defeat"] and float(track.elapsed) >= float(track.duration):
             tracks[id] = track
             play(int(id), "idle")
             continue
-        if state == "move" and not bool(moving.get(id, false)):
+        if state in ["move", "walk", "run"] and not bool(moving.get(id, false)):
             tracks[id] = track
             play(int(id), "idle")
             continue

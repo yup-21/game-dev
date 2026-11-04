@@ -141,7 +141,8 @@ func tick(delta: float, snapshot: Dictionary, animation_driver: Variant) -> Dict
         var id := int(actor.id)
         var role: Node2D = actor_nodes.get(id, null)
         if role != null:
-            role.visible = float(actor.hp) > 0
+            # Keep defeated actors visible to finish and hold the fall animation.
+            role.visible = true
             role.z_index = clampi(roundi(role.position.y / 20.0), 0, 100)
     refresh_scroll()
     return moving

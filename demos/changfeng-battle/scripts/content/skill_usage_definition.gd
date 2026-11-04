@@ -15,6 +15,10 @@ extends Resource
 @export var attack_break_bonus: int = 0
 @export var once_per_action: bool = false
 @export var effects: Array[Resource] = []
+## Exactly one action clip and one optional Godot VFX scene per usage.
+## Any action ID registered on the character may be used, including attack1..4.
+@export var animation_id: String = ""
+@export var vfx_scene: PackedScene
 @export var when: Resource
 
 func to_record() -> Dictionary:
@@ -39,6 +43,13 @@ func to_record() -> Dictionary:
             "route": attack_route, "break_bonus": attack_break_bonus,
             "range": target_max_distance
         }
+    if not animation_id.is_empty():
+        if not animation_id.is_valid_identifier(): return {}
+        result["animation_id"] = animation_id
+    if vfx_scene != null:
+        if not vfx_scene.resource_path.begins_with("res://"):
+            return {}
+        result["vfx_path"] = vfx_scene.resource_path
     if when != null:
         if not when is WuxiaConditionDefinition:
             return {}

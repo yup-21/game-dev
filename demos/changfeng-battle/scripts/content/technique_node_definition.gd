@@ -19,6 +19,8 @@ extends Resource
 @export var attack_route: String = ""
 @export_range(0, 128, 1) var attack_range: int = 0
 @export var effects: Array[Resource] = []
+@export var animation_id: String = ""
+@export var vfx_scene: PackedScene
 @export var when: Resource
 
 func to_record() -> Dictionary:
@@ -45,6 +47,12 @@ func to_record() -> Dictionary:
     if unlock_rank != 1: result["unlock_rank"] = unlock_rank
     if same_action_extra_qi != 0: result["same_action_extra_qi"] = same_action_extra_qi
     if not reset_on_interrupt: result["reset_on_interrupt"] = false
+    if not animation_id.is_empty():
+        if not animation_id.is_valid_identifier(): return {}
+        result["animation_id"] = animation_id
+    if vfx_scene != null:
+        if not vfx_scene.resource_path.begins_with("res://"): return {}
+        result["vfx_path"] = vfx_scene.resource_path
     if when != null:
         if not when is WuxiaConditionDefinition:
             return {}

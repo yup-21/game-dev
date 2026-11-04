@@ -173,6 +173,8 @@ func play_card(actor,choice: Dictionary) -> void:
 	cards.leave_hand(actor,uid)
 	emit("CARD_PLAYED",{"actor_id":actor.id,"definition_id":d.id,"usage_id":u.id,"text":"%s · %s" % [actor.name,u.get("name",d.name)]})
 	if state.mode=="CLASH":
+		if not str(u.get("animation_id","")).is_empty() or not str(u.get("vfx_path","")).is_empty():
+			_emit_presentation(actor.id,u)
 		reactions.add(actor.id,uid,str(d.id),u,choice)
 		return
 	var damage: int=-1
@@ -180,8 +182,9 @@ func play_card(actor,choice: Dictionary) -> void:
 		if e.type=="deal_damage": damage=int(e.amount)
 	if damage>=0:
 		var profile: Dictionary=u.get("attack_profile",{})
-		declare_attack(actor.id,uid,str(d.id),str(u.id),int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.get("effects",[]))
+		declare_attack(actor.id,uid,str(d.id),str(u.id),int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.get("effects",[]),"","",str(u.get("animation_id","")),str(u.get("vfx_path","")))
 	else:
+		_emit_presentation(actor.id,u)
 		apply_effects(actor.id,u.get("effects",[]),choice)
 		finish_card(actor.id,uid)
 
@@ -192,6 +195,8 @@ func play_ability(actor,choice: Dictionary) -> void:
 	if u.is_empty(): return
 	emit("ABILITY_USED",{"actor_id":actor.id,"technique_id":id,"node_id":stage})
 	if state.mode=="CLASH":
+		if not str(u.get("animation_id","")).is_empty() or not str(u.get("vfx_path","")).is_empty():
+			_emit_presentation(actor.id,u)
 		techniques.advance(actor,id,stage)
 		reactions.add(actor.id,"",id,u,choice)
 		return
@@ -200,12 +205,19 @@ func play_ability(actor,choice: Dictionary) -> void:
 		if effect.type=="deal_damage": damage=int(effect.amount)
 	if damage>=0:
 		var profile: Dictionary=u.get("attack_profile",{})
-		declare_attack(actor.id,"",id,stage,int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.effects,id,stage)
+		declare_attack(actor.id,"",id,stage,int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.effects,id,stage,str(u.get("animation_id","")),str(u.get("vfx_path","")))
 	else:
+		_emit_presentation(actor.id,u)
 		apply_effects(actor.id,u.effects,choice)
 		techniques.advance(actor,id,stage)
 
-func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: String,target_id: int,damage: int,route: String,break_bonus: int,effects: Array,technique_id: String="",node_id: String="") -> void:
+## Presentation data is an optional, non-authoritative payload.
+func _emit_presentation(actor_id: int, usage: Dictionary) -> void:
+	emit("ACTION_PRESENTATION",{"actor_id":actor_id,
+		"animation_id":str(usage.get("animation_id","")),
+		"vfx_path":str(usage.get("vfx_path",""))})
+
+func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: String,target_id: int,damage: int,route: String,break_bonus: int,effects: Array,technique_id: String="",node_id: String="",animation_id: String="",vfx_path: String="") -> void:
 	var actor=state.get_actor(actor_id)
 	var target=state.get_actor(target_id)
 	# Attacks (basic, martial cards and staged abilities) all turn toward
@@ -236,7 +248,7 @@ func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: St
 		for armed_id in techniques.arm_from_card(actor,definition_id,usage_id):
 			emit("TECHNIQUE_ARMED",{"actor_id":actor_id,"technique_id":armed_id,"text":"变锋 · 势已成"})
 	reactions.declare(attack)
-	emit("ATTACK_DECLARED",{"actor_id":actor_id,"target_id":target_id,"facing":actor.facing,"definition_id":definition_id,"usage_id":usage_id,"text":"%s 向 %s 出招" % [actor.name,target.name]})
+	emit("ATTACK_DECLARED",{"actor_id":actor_id,"target_id":target_id,"facing":actor.facing,"definition_id":definition_id,"usage_id":usage_id,"animation_id":animation_id,"vfx_path":vfx_path,"text":"%s 向 %s 出招" % [actor.name,target.name]})
 	# Root attack effects are usually deferred until hit/miss resolution.
 	# A grant_card at the root is different: create the derivative NOW, before
 	# the defender/attacker alternate response priority, so 变锋 can actually
@@ -338,7 +350,7 @@ func deal_damage(source_id: int,target_id: int,amount: float) -> void:
 	var lost: int=mini(target.hp_u,raw_u-absorbed)
 	target.hp_u-=lost
 	emit("DAMAGE",{"actor_id":source_id,"defender_id":target_id,"hp_damage":float(lost)/UNIT,"absorbed":float(absorbed)/UNIT,"damage":amount,"text":"%s 受伤 %s · 护体吸收 %s" % [target.name,str(float(lost)/UNIT),str(float(absorbed)/UNIT)]})
-	if lost>0: emit("HP_DAMAGED",{"actor_id":target_id,"source_actor_id":source_id,"amount":float(lost)/UNIT,"damage_kind":"attack"})
+	if lost>0: emit("HP_DAMAGED",{"actor_id":target_id,"source_actor_id":source_id,"amount":float(lost)/UNIT,"damage_kind":"attack","defeated":target.hp_u<=0})
 	check_death()
 
 func apply_attack_effects(trigger: String,source_id: int) -> void:
@@ -577,4 +589,4 @@ func deal_status_damage(actor_id: int,amount: int,status_id: String) -> void:
 	var lost: int=mini(actor.hp_u,maxi(0,amount)*UNIT)
 	actor.hp_u-=lost
 	emit("SCORCH_TICK",{"actor_id":actor_id,"stacks":amount,"damage":float(lost)/UNIT,"text":"%s 灼痕 −%s" % [actor.name,str(float(lost)/UNIT)]})
-	if lost>0: emit("HP_DAMAGED",{"actor_id":actor_id,"amount":float(lost)/UNIT,"damage_kind":"status","status_id":status_id})
+	if lost>0: emit("HP_DAMAGED",{"actor_id":actor_id,"amount":float(lost)/UNIT,"damage_kind":"status","status_id":status_id,"defeated":actor.hp_u<=0})
