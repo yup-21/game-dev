@@ -38,9 +38,9 @@ static func _bind(owner: Resource, property_name: String, stem: String,
 static func _layers(scene_art: WuxiaSceneArtProfile, scene_id: String) -> String:
     if scene_art == null:
         return ""
-    var root := IMPORT_ROOT + "scenes/" + scene_id + "/"
+    var root: String = IMPORT_ROOT + "scenes/" + scene_id + "/"
     for layer in ["background", "ground", "foreground", "weather", "story_preview"]:
-        var required := layer in ["background", "ground"]
+        var required: bool = layer in ["background", "ground"]
         var problem := _bind(scene_art, layer, root + layer, required)
         if not problem.is_empty():
             return problem
@@ -51,7 +51,7 @@ static func _layers(scene_art: WuxiaSceneArtProfile, scene_id: String) -> String
 ## This only fills null Resource slots; manual Texture2D fields remain authoritative.
 static func apply(definition: Resource) -> String:
     if definition is WuxiaCharacterDefinition:
-        var root := IMPORT_ROOT + "characters/" + definition.content_id + "/"
+        var root: String = IMPORT_ROOT + "characters/" + definition.content_id + "/"
         var problem := _bind(definition, "portrait", root + "portraits/portrait",
                 definition.battle_actor_id >= 0)
         if not problem.is_empty():
@@ -67,13 +67,13 @@ static func apply(definition: Resource) -> String:
             if not problem.is_empty():
                 return problem
     elif definition is WuxiaMapDefinition or definition is WuxiaGridMapDefinition:
-        var root := IMPORT_ROOT + "scenes/" + definition.content_id + "/"
+        var root: String = IMPORT_ROOT + "scenes/" + definition.content_id + "/"
         var problem := _bind(definition, "background", root + "background", true)
         if not problem.is_empty():
             return problem
         return _layers(definition.scene_art, definition.content_id)
     elif definition is WuxiaChapterDefinition and definition.scene is WuxiaChapterSceneDefinition:
-        var root := IMPORT_ROOT + "scenes/" + definition.content_id + "/"
+        var root: String = IMPORT_ROOT + "scenes/" + definition.content_id + "/"
         var problem := _bind(definition.scene, "background", root + "background", true)
         if not problem.is_empty():
             return problem
