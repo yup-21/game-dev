@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Deliberately simple facade for real mesh perspective/occlusion testing. -->
+  <rect width="512" height="512" fill="#c4bba1"/>
+  <rect y="0" width="512" height="84" fill="#34464a"/>
+  <path d="M0 76L512 76 512 121 0 121Z" fill="#293b3e"/>
+  <path d="M0 102H512M0 112H512" stroke="#728082" stroke-width="6"/>
+  <path d="M0 145H512M0 412H512" stroke="#7f705e" stroke-width="18"/>
+  <path d="M48 120V512M464 120V512" stroke="#60493a" stroke-width="28"/>
+  <rect x="166" y="206" width="180" height="306" fill="#46392f"/>
+  <path d="M256 206V512" stroke="#977758" stroke-width="9"/>
+  <circle cx="240" cy="366" r="8" fill="#c5a15b"/>
+  <circle cx="272" cy="366" r="8" fill="#c5a15b"/>
+  <rect x="83" y="225" width="60" height="107" fill="#465d58" stroke="#534638" stroke-width="14"/>
+  <path d="M113 225V332M83 278H143" stroke="#a6a58b" stroke-width="7"/>
+  <rect x="369" y="225" width="60" height="107" fill="#465d58" stroke="#534638" stroke-width="14"/>
+  <path d="M399 225V332M369 278H429" stroke="#a6a58b" stroke-width="7"/>
+  <path d="M0 479H512" stroke="#5a635b" stroke-width="30"/>
+</svg>
