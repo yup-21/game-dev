@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="WuxiaSceneArtProfile" load_steps=4 format=3]
+[ext_resource type="Script" path="res://scripts/content/scene_art_profile.gd" id="1_art"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_outer_road/background.webp" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_outer_road/ground.webp" id="3_ground"]
+
+[resource]
+script = ExtResource("1_art")
+reference_size = Vector2i(1600, 1000)
+pixels_per_unit = 80.0
+background = ExtResource("2_bg")
+ground = ExtResource("3_ground")

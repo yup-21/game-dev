@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=7 format=3]
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_crossroads/background.webp" id="2_bg"]
+[ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_crossroads.tres" id="3_art"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
+
+[sub_resource type="Resource" id="FromSouth"]
+script = ExtResource("4_marker")
+marker_id = "from_south"
+marker_kind = "spawn"
+position = Vector2(800, 730)
+radius = 24.0
+
+[sub_resource type="Resource" id="ToSouth"]
+script = ExtResource("4_marker")
+marker_id = "to_south"
+marker_kind = "zone_exit"
+position = Vector2(800, 925)
+radius = 90.0
+exit_side = "south"
+target_zone_id = "pingjiang_south_gate"
+target_entry_id = "from_north"
+
+[resource]
+script = ExtResource("1_map")
+content_id = "pingjiang_crossroads"
+background = ExtResource("2_bg")
+scene_art = ExtResource("3_art")
+viewport_size = Vector2i(1600, 1000)
+pixels_per_unit = 80.0
+primary_axis = "mixed"
+area_bounds = Rect2(0, 0, 1600, 1000)
+image_rotation_degrees = 0.0
+image_scale = 1.0
+walkable_outline = PackedVector2Array(630, 40, 970, 40, 970, 545, 1560, 545, 1560, 836, 970, 836, 970, 960, 630, 960, 630, 836, 40, 836, 40, 545, 630, 545)
+obstacles = Array[Resource]([])
+markers = Array[Resource]([SubResource("FromSouth"), SubResource("ToSouth")])

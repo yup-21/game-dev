@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=82 format=3]
+[gd_resource type="Resource" script_class="WuxiaContentManifest" load_steps=85 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/content_manifest.gd" id="1_manifest"]
 [ext_resource type="Resource" path="res://data/native/characters/shen_changfeng.tres" id="2_hero"]
@@ -98,6 +98,9 @@
 [ext_resource type="Resource" path="res://data/native/assets/shen_sword_heavy.tres" id="86_shen_vfx"]
 [ext_resource type="Resource" path="res://data/native/assets/shen_wind_guard.tres" id="87_shen_vfx"]
 [ext_resource type="Resource" path="res://data/native/assets/shen_wind_step.tres" id="88_shen_vfx"]
+[ext_resource type="Resource" path="res://data/maps/pingjiang_south_gate.tres" id="89_pj01"]
+[ext_resource type="Resource" path="res://data/maps/pingjiang_crossroads.tres" id="90_pj02"]
+[ext_resource type="Resource" path="res://data/maps/pingjiang_outer_road.tres" id="91_outer"]
 
 [resource]
 script = ExtResource("1_manifest")
@@ -112,7 +115,7 @@ chapters = Array[Resource]([ExtResource("77_prologue_chapter"), ExtResource("78_
 quests = Array[Resource]([ExtResource("9_quest"), ExtResource("28_r24")])
 encounters = Array[Resource]([ExtResource("10_encounter"), ExtResource("29_r24"), ExtResource("63_r26"), ExtResource("54_r34"), ExtResource("79_r34"), ExtResource("80_r40")])
 assets = Array[Resource]([ExtResource("11_portrait"), ExtResource("12_sheet"), ExtResource("13_vfx"), ExtResource("14_scene"), ExtResource("31_r24"), ExtResource("32_r24"), ExtResource("33_r24"), ExtResource("34_r24"), ExtResource("64_r27"), ExtResource("65_r27"), ExtResource("66_r27"), ExtResource("67_r27"), ExtResource("68_r27"), ExtResource("69_r27"), ExtResource("70_r27"), ExtResource("71_r27"), ExtResource("72_r27"), ExtResource("73_r27"), ExtResource("74_r27"), ExtResource("81_r85"), ExtResource("82_r85"), ExtResource("83_r85"), ExtResource("84_shen_vfx"), ExtResource("85_shen_vfx"), ExtResource("86_shen_vfx"), ExtResource("87_shen_vfx"), ExtResource("88_shen_vfx")])
-maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24"), ExtResource("56_r35")])
+maps = Array[Resource]([ExtResource("15_map"), ExtResource("30_r24"), ExtResource("56_r35"), ExtResource("89_pj01"), ExtResource("90_pj02"), ExtResource("91_outer")])
 buffs = Array[Resource]([ExtResource("21_r24"), ExtResource("22_r24"), ExtResource("46_r25")])
 items = Array[Resource]([ExtResource("23_r24"), ExtResource("24_r24"), ExtResource("42_r25"), ExtResource("43_r25"), ExtResource("44_r25"), ExtResource("45_r25")])
 affixes = Array[Resource]([ExtResource("47_r25"), ExtResource("48_r25"), ExtResource("49_r25")])

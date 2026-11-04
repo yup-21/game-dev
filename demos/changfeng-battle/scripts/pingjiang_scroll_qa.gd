@@ -20,10 +20,25 @@ const REGIONS := {
     "pingjiang_north_lane_qa": {
         "title": "北街·南北长巷", "map": "res://data/maps/pingjiang_north_lane_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_north_lane_qa.tres",
-        "size": Vector2(1600, 4000), "start": "south_start"}
+        "size": Vector2(1600, 4000), "start": "south_start"},
+    "pingjiang_south_gate": {
+        "title": "PJ-01 · 平江瓮城正南门", "map": "res://data/maps/pingjiang_south_gate.tres",
+        "art": "res://data/native/scene_art/pingjiang_south_gate.tres",
+        "size": Vector2(1600, 2000), "start": "player_start"},
+    "pingjiang_crossroads": {
+        "title": "PJ-02 · 平江南城十字街", "map": "res://data/maps/pingjiang_crossroads.tres",
+        "art": "res://data/native/scene_art/pingjiang_crossroads.tres",
+        "size": Vector2(1600, 1000), "start": "from_south"},
+    "pingjiang_outer_road": {
+        "title": "平江城外官道", "map": "res://data/maps/pingjiang_outer_road.tres",
+        "art": "res://data/native/scene_art/pingjiang_outer_road.tres",
+        "size": Vector2(1600, 1000), "start": "from_north"}
 }
 
 @export var initial_region_id: String = "pingjiang_long_street_qa"
+## Formal entry is strict. The older QA scenes deliberately keep their explicit
+## diagnostic silhouette if their test-only character atlas is unavailable.
+@export var production_map_mode: bool = false
 
 var bake
 var region_node: Node2D
@@ -55,7 +70,8 @@ func _ready() -> void:
         Vector2(-24, 0), Vector2(-16, -10), Vector2(16, -10),
         Vector2(24, 0), Vector2(16, 10), Vector2(-16, 10)])
     player.add_child(foot)
-    _load_actor_sprite()
+    if not _load_actor_sprite():
+        return
     var nameplate := Label.new()
     nameplate.text = "沈长风"
     nameplate.position = Vector2(-70, -248)
@@ -93,7 +109,7 @@ func _load_region(region_id: String, entry_id: String, prepared_bake = null) -> 
         return false
     var art := load(str(region["art"])) as WuxiaSceneArtProfile
     var region_size: Vector2 = region["size"]
-    if art == null or not art.valid_for(Vector2i(region_size)):
+    if art == null or art != next_bake.scene_art or not art.valid_for(Vector2i(region_size)):
         push_error("Pingjiang QA art layers invalid for " + region_id)
         return false
     var entry: Dictionary = next_bake.markers.get(entry_id, {})
@@ -147,6 +163,10 @@ func _add_layer(parent: Node2D, name: String, texture: Texture2D,
     rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     rect.stretch_mode = TextureRect.STRETCH_SCALE
     rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    # Foreground/ground are complementary alpha masks with hard pixel ownership.
+    # Exact native-pixel sampling prevents bilinear bleed at their shared edge.
+    if production_map_mode:
+        rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     rect.z_index = order
     parent.add_child(rect)
 
@@ -181,9 +201,12 @@ func _add_exit_sign(parent: Node2D, marker: Dictionary) -> void:
     caption.z_index = 141
     gate.add_child(caption)
 
-func _load_actor_sprite() -> void:
+func _load_actor_sprite() -> bool:
     actor_profile = load(ACTOR_PROFILE_PATH) as WuxiaActorAnimationProfile
     if actor_profile == null or not actor_profile.valid_profile():
+        if production_map_mode:
+            push_error("Formal Pingjiang map requires a valid Shen Changfeng actor Resource")
+            return false
         push_warning("Existing actor atlas unavailable; using 200px test silhouette")
         var silhouette := Polygon2D.new()
         silhouette.color = Color(0.17, 0.34, 0.43)
@@ -193,7 +216,7 @@ func _load_actor_sprite() -> void:
             Vector2(18, -200), Vector2(15, -176), Vector2(28, -170),
             Vector2(43, -137), Vector2(28, -88), Vector2(20, 0)])
         player.add_child(silhouette)
-        return
+        return true
     actor_sprite = Sprite2D.new()
     actor_sprite.name = "ActionSprite"
     actor_sprite.texture = actor_profile.atlas
@@ -207,6 +230,7 @@ func _load_actor_sprite() -> void:
     VisualScale.fit(actor_sprite, actor_profile.actor_scale,
         CombatScale.actor_height_pixels(), actor_profile.feet_adjust, reference,
         actor_profile.auto_fit_height)
+    return true
 
 func _process(delta: float) -> void:
     if stage == null or player == null or bake == null:
@@ -288,10 +312,12 @@ func _update_camera_and_status() -> void:
         return
     var region: Dictionary = REGIONS[current_region_id]
     var size: Vector2 = region["size"]
-    stage.position = ViewportShift.world_offset(player.position, size)
+    stage.position = ViewportShift.world_offset(player.position, size).round() if production_map_mode else ViewportShift.world_offset(player.position, size)
     var nearby: Dictionary = _nearby_exit()
     var interaction: String = "靠近金色连接点按 E 换图" if nearby.is_empty() else "按 E 前往目标区域"
-    status.text = "平江地图测试  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 角色 200px / 80px=u" % [
+    var mode: String = "平江府·正式场景" if production_map_mode else "平江地图测试"
+    status.text = "%s  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 角色 200px / 80px=u" % [
+        mode,
         str(region["title"]), int(size.x), int(size.y), crossing_count, interaction,
         player.position.x, player.position.y, stage.position.x, stage.position.y]
 

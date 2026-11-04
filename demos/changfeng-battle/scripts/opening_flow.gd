@@ -300,6 +300,8 @@ func _action(action: String) -> void:
 		"pingjiang_qa":
 			# Isolated scene preview: no chapter flags or session mutations.
 			call_deferred("_change_scene", "res://scenes/pingjiang_scroll_qa.tscn")
+		"pingjiang_south_gate":
+			call_deferred("_change_scene", "res://scenes/pingjiang_south_gate.tscn")
 		"pingjiang_vertical_qa":
 			call_deferred("_change_scene", "res://scenes/pingjiang_vertical_qa.tscn")
 		"hd2d":
@@ -335,6 +337,7 @@ func _input(event: InputEvent) -> void:
 		match story.phase:
 			"menu":
 				if event.keycode in [KEY_ENTER, KEY_SPACE]: _action("start")
+				elif event.keycode == KEY_G: _action("pingjiang_south_gate")
 				elif event.keycode == KEY_P: _action("pingjiang_qa")
 				elif event.keycode == KEY_V: _action("pingjiang_vertical_qa")
 			"cinematic":
@@ -553,11 +556,12 @@ func _draw_menu() -> void:
 	_text(Vector2(135,524),"由武入道 · 逆天改命",17,Color("bbcfc3"))
 	# The scene QA entry is independent of the prologue and battle session.
 	# Old duel and party scenes are intentionally absent from player menus.
-	_button(Rect2(137,580,391,61),"初入江湖 · 新游戏","start",true)
-	_button(Rect2(137,653,391,59),"进入战斗 · HD-2D","hd2d",true)
-	_button(Rect2(137,724,391,59),"P · 平江双区跳转测试","pingjiang_qa",true)
-	_button(Rect2(137,795,391,59),"V · 纵向四千滚屏测试","pingjiang_vertical_qa",true)
-	_button(Rect2(137,866,391,54),"退出游戏","quit",true)
+	_button(Rect2(137,562,391,54),"初入江湖 · 新游戏","start",true)
+	_button(Rect2(137,623,391,54),"进入战斗 · HD-2D","hd2d",true)
+	_button(Rect2(137,684,391,54),"G · 瓮城正南门 · 正式地图","pingjiang_south_gate",true)
+	_button(Rect2(137,745,391,54),"P · 平江双区跳转测试","pingjiang_qa",true)
+	_button(Rect2(137,806,391,54),"V · 纵向四千滚屏测试","pingjiang_vertical_qa",true)
+	_button(Rect2(137,867,391,54),"退出游戏","quit",true)
 	_text(Vector2(138,960),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:

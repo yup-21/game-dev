@@ -1,0 +1,82 @@
+[gd_resource type="Resource" script_class="WuxiaMapDefinition" load_steps=15 format=3]
+[ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_south_gate/background.webp" id="2_bg"]
+[ext_resource type="Resource" path="res://data/native/scene_art/pingjiang_south_gate.tres" id="3_art"]
+[ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="4_marker"]
+[ext_resource type="Script" path="res://scripts/content/map_polygon_definition.gd" id="5_poly"]
+
+[sub_resource type="Resource" id="BridgeLeftParapet"]
+script = ExtResource("5_poly")
+terrain_kind = "blocked"
+vertices = PackedVector2Array(617, 1050, 677, 1050, 677, 1580, 617, 1580)
+
+[sub_resource type="Resource" id="BridgeRightParapet"]
+script = ExtResource("5_poly")
+terrain_kind = "blocked"
+vertices = PackedVector2Array(923, 1050, 983, 1050, 983, 1580, 923, 1580)
+
+[sub_resource type="Resource" id="GateLeftPier"]
+script = ExtResource("5_poly")
+terrain_kind = "blocked"
+vertices = PackedVector2Array(617, 745, 686, 745, 686, 1025, 617, 1025)
+
+[sub_resource type="Resource" id="GateRightPier"]
+script = ExtResource("5_poly")
+terrain_kind = "blocked"
+vertices = PackedVector2Array(914, 745, 983, 745, 983, 1025, 914, 1025)
+
+[sub_resource type="Resource" id="PlayerStart"]
+script = ExtResource("4_marker")
+marker_id = "player_start"
+marker_kind = "spawn"
+position = Vector2(800, 1700)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromNorth"]
+script = ExtResource("4_marker")
+marker_id = "from_north"
+marker_kind = "spawn"
+position = Vector2(800, 320)
+radius = 24.0
+
+[sub_resource type="Resource" id="FromSouth"]
+script = ExtResource("4_marker")
+marker_id = "from_south"
+marker_kind = "spawn"
+position = Vector2(800, 1710)
+radius = 24.0
+
+[sub_resource type="Resource" id="ToNorth"]
+script = ExtResource("4_marker")
+marker_id = "to_north"
+marker_kind = "zone_exit"
+position = Vector2(800, 105)
+radius = 100.0
+exit_side = "north"
+target_zone_id = "pingjiang_crossroads"
+target_entry_id = "from_south"
+
+[sub_resource type="Resource" id="ToSouth"]
+script = ExtResource("4_marker")
+marker_id = "to_south"
+marker_kind = "zone_exit"
+position = Vector2(800, 1905)
+radius = 100.0
+exit_side = "south"
+target_zone_id = "pingjiang_outer_road"
+target_entry_id = "from_north"
+
+[resource]
+script = ExtResource("1_map")
+content_id = "pingjiang_south_gate"
+background = ExtResource("2_bg")
+scene_art = ExtResource("3_art")
+viewport_size = Vector2i(1600, 2000)
+pixels_per_unit = 80.0
+primary_axis = "vertical"
+area_bounds = Rect2(0, 0, 1600, 2000)
+image_rotation_degrees = 0.0
+image_scale = 1.0
+walkable_outline = PackedVector2Array(610, 40, 990, 40, 990, 1960, 610, 1960)
+obstacles = Array[Resource]([SubResource("BridgeLeftParapet"), SubResource("BridgeRightParapet"), SubResource("GateLeftPier"), SubResource("GateRightPier")])
+markers = Array[Resource]([SubResource("PlayerStart"), SubResource("FromNorth"), SubResource("FromSouth"), SubResource("ToNorth"), SubResource("ToSouth")])
