@@ -44,6 +44,11 @@ func _initialize() -> void:
     if not Importer.destination(candidate_actor).is_empty():
         _fail("Candidate image was accepted without an import type")
         return
+    var wrong_owner: Dictionary = Importer.plan("portrait", candidate_actor,
+        "res://data/native/characters/black_blade.tres", {})
+    if not str(wrong_owner.get("error", "")).contains("角色 ID"):
+        _fail("Cross-character candidate was accepted")
+        return
     var atlas: Dictionary = Importer.plan("atlas", source, "res://data/native/characters/shen_changfeng.tres",
         {"columns": 6, "rows": 4, "feet_offset": Vector2(0, -102), "faces_left": false})
     if not str(atlas.get("error", "")).is_empty():
@@ -67,6 +72,15 @@ func _initialize() -> void:
          "frame_indices": PackedInt32Array([999])})
     if str(invalid_vfx.get("error", "")).is_empty():
         _fail("Out-of-range VFX animation index accepted")
+        return
+    var vfx_source: String = production_dir.path_join(
+        "in-use/vfx/shen_changfeng/martial-forms/atlas.svg")
+    var vfx_owner: Dictionary = Importer.plan("vfx", vfx_source, "", {
+        "asset_id": "art.vfx_owner_probe", "event_kind": "ATTACK_DECLARED"})
+    if not str(vfx_owner.get("error", "")).is_empty() or str(vfx_owner.get(
+            "owner_character_id", "")) != "shen_changfeng" or not str(vfx_owner.get(
+            "next_binding", "")).ends_with("/vfx/shen_changfeng/martial-forms/atlas.svg"):
+        _fail("VFX owner or canonical filename was not inferred: " + str(vfx_owner.get("error", "")))
         return
     var opaque_jpg: String = production_dir.path_join("in-use/scenes/mountain_herbal_workshop/background.jpg")
     var opaque_vfx: Dictionary = Importer.plan("vfx", opaque_jpg, "",
@@ -112,6 +126,12 @@ func _initialize() -> void:
     if not str(bridge_plan.get("error", "")).is_empty() or bridge_plan["files"].size() != 5 or \
             str(bridge_plan.get("current_binding", "")) != bridge_card.background.resource_path:
         _fail("Scene import must preflight the current map background and composite preview")
+        return
+    var wrong_scene: Dictionary = Importer.plan("scene",
+        bridge_dir.path_join("scene_rainy_bridge_background_v01.png"),
+        "res://data/maps/pingjiang_long_street_qa.tres", {})
+    if not str(wrong_scene.get("error", "")).contains("场景素材 ID"):
+        _fail("Cross-scene candidate was accepted")
         return
     var bad := Importer.plan("portrait", source, "res://data/maps/rainy_bridge.tres", {})
     if str(bad.get("error", "")).is_empty():

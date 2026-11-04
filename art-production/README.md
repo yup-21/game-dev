@@ -60,7 +60,7 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 ## 第一批生产试点
 
-沈长风（设定、立绘、九类动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。素材通过原生合同即可投入使用；视觉精修是独立制作任务。
+沈长风（设定、立绘、12 组动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。素材通过原生合同即可投入使用；视觉精修是独立制作任务。
 
 - [2026-11-01 四项优先试点工作单](candidates/records/pilot/README.md)：包含剧情场景分层与准确的原生资源目标。
 - [运行时代码与存量美术格式差异/验收状态](reviews/2026-11-01/FORMAT_UNIFICATION_STATUS.md)：明确代码已打通但历史图像尚不等于最终批准资产。
@@ -69,4 +69,4 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 Godot 4.7.2 编辑器内的 **Art Production** Dock 提供引用图像导出、角色动画与场景分层导入、批次预检、版本化替换和事务回退。运行时仍只读取 `.tres` Resource，离线清单不充当内容定义。
 
-参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。新导入资源默认 `candidate`，未经人工审查不得标记为 `approved`。本轮审核分支将候选资源接入原生角色卡及地图供试玩；历史原图已按使用情况迁入 imported 或 archive；保留既有回退素材。
+参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。导入且绑定到正式 Resource 的图片就是当前使用版本；候选原稿仍在 `candidates/`，不会随导入改名。Asset Resource 标记为 `runtime`，表示已接入，不代表动作、脚点或权属已审核。所有正式必需引用必须可解析，不能靠隐式旧图或占位回退。导出 Dock 会补齐按语义文件名自动绑定的图片，`inventory_assets.py` 仅负责静态引用库存。

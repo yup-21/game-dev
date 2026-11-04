@@ -24,7 +24,7 @@
 
 - 以 **1600×1000 的 16:10 逻辑画面**做基础设计；同时检查 1440×900 窗口，不能依赖单张图天然填满所有裁剪尺寸。
 - 每张正式场景的交付包包含 `background`（远景）、`ground`（可站立地面）、`foreground`（可遮挡主体）、可选 `weather`/光照遮罩。所有图层采用相同画布原点、尺寸和透明通道；保留可编辑母版。单张概念图不等于分层交付。
-- 战斗地图附带 Godot 原生 `WuxiaMapDefinition` / `WuxiaGridMapDefinition` 的地面、障碍、出生点、剧情标记；剧情场景挂到 `WuxiaChapterSceneDefinition.scene_art`，保留章节原背景回退。角色脚点与地图可行走区域在同一坐标空间，绝不根据 PNG 颜色推断碰撞。
+- 战斗地图附带 Godot 原生 `WuxiaMapDefinition` / `WuxiaGridMapDefinition` 的地面、障碍、出生点、剧情标记；剧情场景挂到 `WuxiaChapterSceneDefinition.scene_art`；必需背景及已声明的分层缺失或引用错误必须在加载／导入预检中报错，不用其他背景隐式代替。角色脚点与地图可行走区域在同一坐标空间，绝不根据 PNG 颜色推断碰撞。
 - 固定摄像机比例、地平线和人物脚点参照；重要道具及前景遮挡另建 `Node2D` 层，避免贴死在背景而无法正确穿行。
 - 雨、雾、流水、灯光和落叶均为可关闭的独立表现层；低性能档关闭后不影响路径、LOS 或脚点。
 - 验收：六人可站立区足够清楚，路径/碰撞与画面一致，前景遮挡正确，分辨率截图和真实 GUI 试玩通过。
@@ -51,9 +51,9 @@
 
 - 先冻结一张身份设定板：正/背/左右轮廓、主色/辅色、角色自己的武器契约（允许徒手，注明类型/件数/持手/握法）、脚底基点、动作态度。立绘、故事姿态、战斗 Atlas 用同一设定；不得把某个角色的单剑设定作为全项目通用默认值。
 - 立绘为独立透明 PNG/WebP；动作图要求真实 Alpha、统一色彩和明确的脚底基点，禁用白底 JPEG 当作已批准图集。
-- 一个 Atlas 内每格宽高一致且能整除图集宽高。**新内容不再要求固定 6×4，也不强制每动作一张 Sprite Sheet**；一个 Atlas 可以容纳一组或多组动作，各动作保留有序绝对帧索引与真实帧数，格子间所有非透明像素必须零越界且有安全留白。旧 6×4 只作为兼容回退。运行时已支持的动作帧范围明确列在 `WuxiaActorAnimationProfile` 中。
+- 一个 Atlas 内每格宽高一致且能整除图集宽高。**新内容不再要求固定 6×4，也不强制每动作一张 Sprite Sheet**；一个 Atlas 可以容纳一组或多组动作，各动作保留有序绝对帧索引与真实帧数，格子间所有非透明像素必须零越界且有安全留白。旧 6×4 是合法的存量格式，不作为硬编码默认回退。运行时已支持的动作帧范围明确列在 `WuxiaActorAnimationProfile` 中。
 - **新美术生产必需 12 组**：`idle` 待机、`walk` 行走、`run` 跑步、**基于角色武器契约的四套攻击变体**、`skill` 技能、`evade` 闪避、`guard` 格挡、`hit` 受击、`defeat` 倒地。单剑角色可参考直刺/下劈/横斩/蓄力重击；其他武器类型及徒手角色应自行设计适配的四套打击方式和语义 ID。每个动作先独立分镜并按复杂度选择帧数，**AI 每次生成一张包含连续多帧的动作 Sheet**，再由程序机械拆格/验收/装配。
-- **当前 Godot 运行时最低动作集合**：`idle`、`move`、`attack`、`guard`、`hit`、`evade`、`skill`、`combo`、`defeat`，现阶段不能删去 `combo` 或向 clip 枚举直接填新 ID。**新美术制作分类**将 `attack` 与固定 `combo` 制作需求整合为可扩展攻击组：每个角色从其武器设定设计四套独立候选；`attack_thrust/attack_overhead/attack_sweep/attack_heavy` 只是单剑角色示例；连携为攻击顺序编排，不另画固定连携。运行时的多攻击变体选择与连携编排尚未实现，相关候选不得声明已接入。非循环动作必须有清楚起手/发力/收势，除倒地终止态外恢复到统一待机兼容姿势；恢复姿势不能导致世界位置瞬移回起点。`idle/walk/run` 必须各自循环闭合，`defeat` 结束应停留在倒地姿态。
+- **当前 Godot 运行时支持 12 组动作 ID**：`idle`、`walk`、`run`、`attack1`、`attack2`、`attack3`、`attack4`、`skill`、`evade`、`guard`、`hit`、`defeat`。技能通过配置选择一个指定的攻击动作或 `skill` 动作，并可绑定单独 VFX 及有效帧 Cue；连携由动作与时间轴配置编排，不要求额外的 `combo` 图集。存量 Profile 中的 `move`、`attack`、`combo` 仅在显式配置时继续使用；不能把旧动作名作为缺失新动作的静默回退，也不能固定武器或攻击方式。非循环动作必须有清楚起手/发力/收势，除倒地终止态外恢复到统一待机兼容姿势；恢复姿势不能导致世界位置瞬移回起点。`idle/walk/run` 必须各自循环闭合，`defeat` 结束应停留在倒地姿态。
 - 朝向要求最终实现前、后、左、右一致的轮廓与脚点。目前播放器对左右使用镜像，上下仍沿用最后水平朝向；在完整方向动作接入前，不能把角色标为四方向最终批准。
 - 游戏规则时序由 `BattleActionTimeline` 记录语义窗口；动画帧只负责表现，不能写 HP、Qi、CTB、背包或响应权。
 
@@ -67,19 +67,19 @@
 
 ## 4. Godot 原生导入方式
 
-1. 候选原始帧/Atlas 留在 `art-production/candidates/`；经过 Godot Art Production 导入工具后，游戏图像统一从 `res://assets/imported/` 受原生 Resource 显式引用。不得将候选目录作为运行时自动扫描入口。
-2. 复制 `data/templates/actor_animation_profile.tres`，设定 Atlas、列/行、脚点偏移、缩放和每个动作的实际帧索引。循环动作按 `loop_fps` 播放；非循环动作由既有 `BattleActionTimeline` 控制完成时长。
+1. 候选原始帧/Atlas 留在 `art-production/candidates/`；Godot Art Production 导入工具以类型、拥有者 ID、语义文件名复制到 `res://assets/imported/`。此目录就是当前游戏资源区，不再划分 candidate/in_use 子目录；候选目录不能作为运行时入口。
+2. 使用 `data/templates/actor_animation_profile.tres` 或角色已有 `WuxiaActorAnimationProfile`，配置动作 ID、Atlas、列/行、统一脚点、根运动、逐帧时长及有序帧索引；可按需给某个 Clip 指定独立 Atlas。动作和 VFX Cue 时序由原生配置描述，规则结算仍由战斗层负责。
 3. 在对应 `WuxiaCharacterDefinition` 的 `animation_profile` 属性引用该 Resource。正式角色仍需在 `data/content_manifest.tres` 注册；**无需修改 `BattleModel` 或按角色 ID 添加脚本分支**。
-4. 场景制作使用 `WuxiaSceneArtProfile` 引用同画布 `background`、`ground`、`foreground` 和可选 `weather`，并挂到战斗地图 `WuxiaMapDefinition` / `WuxiaGridMapDefinition.scene_art`，或剧情章节 `WuxiaChapterSceneDefinition.scene_art`。地图几何仍由原 Map Resource 决定；未挂 Profile 的旧地图和旧章节继续显示单张背景。正式场景须同时交付可编辑分层母版。
-5. 导入后预览完整动作；检查角色移动脚点不漂移、攻击方向正确、VFX 与有效帧对齐。未配置 Profile 的老角色保持旧 6×4 兼容播放。
-6. 成品经过材质边缘、动作连续、资源依赖、视觉效果与权属审查后，才能选择替换当前 `in_use` 绑定；审核结论保存在工作单，不新增 `approved` 管理状态。
+4. 场景制作使用 `WuxiaSceneArtProfile` 管理同画布 `background`、`ground` 与可选 `foreground`、`weather`、`story_preview`，挂到战斗地图或剧情章节的 `scene_art`。空的图片属性优先按 `assets/imported/scenes/<scene-id>/<layer>.<ext>` 精确解析（仅要求已声明配置所需的素材）；显式指定的纹理始终优先。地图几何由 Map Resource 决定，缺少必需素材报错。正式场景同时交付可编辑分层母版。
+5. 导入后预览完整动作；检查角色脚点、根运动、四攻击变体、倒地停留、VFX 有效帧。新动作不能依赖旧 Profile 的隐式动作回退；正式素材引用不允许暗中替换为占位图。
+6. 导入并保存 Resource 后，该素材即成为对应槽位的当前使用版本；先预检变化、保留旧文件和 .tres 事务备份，需版本化替换时明确选择。技术接入不代表视觉及权属审核通过，结果记录在工作单中，不增加管理状态。
 
 ## 5. 各类素材的原生交付合同
 
 | 资产类别 | 可交付格式 | 必需的技术条件 | 原生绑定 |
 | --- | --- | --- | --- |
 | 角色立绘 | 透明 PNG / WebP | 真实 Alpha、单人、身份一致、边缘完整 | `WuxiaCharacterDefinition.portrait` |
-| 角色动画 | 透明 RGBA Atlas（PNG / WebP），可单动作或多动作合图 | 等尺寸格、列行可整除、逐动作有序帧索引、零越界、统一逻辑根点；运行时九动作合法范围 | `WuxiaActorAnimationProfile` |
+| 角色动画 | 透明 RGBA Atlas（PNG / WebP），可单动作或多动作合图 | 等尺寸格、列行可整除、逐动作有序帧索引、零越界、统一逻辑根点；运行时 12 组动作 ID 与显式 Clip 映射 | `WuxiaActorAnimationProfile` |
 | 场景分层 | 同画布背景与透明图层 | 1600×1000 同原点；背景、独立 ground 必需，前景和天气按需 | `WuxiaSceneArtProfile` → Map 或 ChapterScene |
 | 战斗 VFX | 透明 RGBA 图集或单图 | 真实 Alpha；列行可整除；`frame_indices` 不越界，按事件持续时间非循环播放 | `WuxiaAssetDefinition` 的 VFX 事件绑定 |
 | UI / 卡画 | SVG / PNG / WebP 分件 | 文字与交互不烘焙进贴图；九宫格、裁切与小尺寸可读性人工验证 | Godot `Control` / 原生资产引用 |
@@ -98,6 +98,6 @@
 | 风格锁定 | 角色设定、场景构图、色板和参考 | 身份/镜头/脚点一致 |
 | 制作候选 | 透明角色素材、场景分层、动作关键帧 | 来源明确、规格可校验 |
 | Godot 接入 | `.tres` AnimationProfile/场景/资产引用 | Import、动作、地图和导出加载通过 |
-| 人工批准 | 两套分辨率截图、动作录像、授权记录 | 批准后才替换当前运行素材 |
+| 视觉审核 | 两套分辨率截图、动作录像、授权记录 | 记录品质／权属结论；不新增状态目录 |
 
-**本次 2026-11-01 候选**：`assets/concepts/2026-11-01/` 的雨夜断桥整图与沈长风全身概念，只用于定风格与后续拆层；它们不是可直接替换地图拓扑的成品，也不是逐帧动画。RPG、敌方 HUD 修改不包含在本轮。
+历史雨夜断桥整图与沈长风概念图仅用于风格与后续拆层，不等同于可直接替换地图拓扑或逐帧动画的成品；制作稿按资产身份保存在 `art-production/candidates/`，不按日期建新目录。

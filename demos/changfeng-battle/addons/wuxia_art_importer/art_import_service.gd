@@ -166,6 +166,21 @@ static func destination(path: String, mode: String = "") -> String:
     return "res://assets/imported/" + folder + "/" + _import_filename(path, mode, owner)
 
 
+## Both production roots use the same stable type/owner prefix.
+## Source batch names and dates are deliberately ignored.
+static func _source_identity(path: String) -> PackedStringArray:
+    if not _source_allowed(path):
+        return PackedStringArray()
+    var relative: String = path.simplify_path().trim_prefix(production_root() + "/")
+    if relative.begins_with("in-use/"):
+        relative = relative.trim_prefix("in-use/")
+    elif relative.begins_with("candidates/"):
+        relative = relative.trim_prefix("candidates/")
+    else:
+        return PackedStringArray()
+    return relative.split("/")
+
+
 static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO,
         versioned: bool = false, mode: String = "") -> Dictionary:
     var info := inspect(path)
@@ -248,6 +263,17 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 for registered in manifest.get(category):
                     if registered is WuxiaContentDefinition and registered.content_id == id:
                         return {"error": "登记 ID 已被其他内容占用：" + id}
+    var source_parts: PackedStringArray = _source_identity(source)
+    if source_parts.size() >= 2:
+        if mode in ["portrait", "atlas"] and source_parts[0] == "characters" and \
+                source_parts[1] != str(owner.get("content_id")):
+            return {"error": "候选角色 ID 与目标角色 Resource 不一致：" + str(source_parts[1])}
+        if mode == "scene" and source_parts[0] == "scenes" and \
+                (owner is WuxiaMapDefinition or owner is WuxiaGridMapDefinition) and \
+                source_parts[1] != str(owner.get("content_id")):
+            return {"error": "场景素材 ID 与目标地图 Resource 不一致：" + str(source_parts[1])}
+        if mode == "vfx" and source_parts[0] == "vfx" and _valid_id(str(source_parts[1])):
+            result["owner_character_id"] = str(source_parts[1])
     var alpha_required := mode in ["portrait", "atlas", "vfx"]
     var versioned := bool(fields.get("versioned_replace", false))
     var first := _check_image(source, alpha_required, expected, versioned, mode)
@@ -491,13 +517,19 @@ static func save_bindings(plan_data: Dictionary) -> String:
         card = WuxiaAssetDefinition.new()
         card.content_id = target.get_file().get_basename()
     card.asset_kind = mode
-    card.status = "candidate"
+    # Importing and binding makes this the active runtime selection, not a candidate.
+    card.status = "runtime"
     card.resource = textures["primary"]
     card.source = "art_production"
     card.rights = "owner_review_required"
     card.columns = int(plan_data.get("columns", 1)) if mode == "vfx" else 1
     card.rows = int(plan_data.get("rows", 1)) if mode == "vfx" else 1
     if mode == "vfx":
+        var detected_owner: String = str(plan_data.get("owner_character_id", ""))
+        if not detected_owner.is_empty():
+            if not card.owner_character_id.is_empty() and card.owner_character_id != detected_owner:
+                return "VFX 已属于其他角色，请使用新的素材 ID 或手动调整原生 Resource"
+            card.owner_character_id = detected_owner
         card.frame_indices = plan_data.get("frame_indices", PackedInt32Array())
         card.event_kind = str(plan_data.get("event_kind", ""))
     var manifest := ResourceLoader.load(MANIFEST) as WuxiaContentManifest
