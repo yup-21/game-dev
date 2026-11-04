@@ -9,6 +9,10 @@ const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const ACTOR_PROFILE_PATH := "res://data/native/animations/shen_changfeng.tres"
 const MOVE_SPEED := 265.0
 const REGIONS := {
+    "pingjiang_shen_house": {
+        "title": "PJ-04·沈家旧宅", "map": "res://data/maps/pingjiang_shen_house.tres",
+        "art": "res://data/native/scene_art/pingjiang_shen_house.tres",
+        "size": Vector2(1600, 1000), "start": "player_start"},
     "pingjiang_riverside_market": {
         "title": "PJ-03·临河水市主大街", "map": "res://data/maps/pingjiang_riverside_market.tres",
         "art": "res://data/native/scene_art/pingjiang_riverside_market.tres",

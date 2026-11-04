@@ -29,4 +29,10 @@ magick v01-original.png -resize 1600x1000! -quality 93 environment_pingjiang_she
 magick v02-original.png -resize 1600x1000! -quality 93 environment_pingjiang_shen_house_master_v02.webp
 ```
 
-其中 `v01-original.png`、`v02-original.png` 是记录用占位文件名，并非仓库内实际提交的原始 PNG。未完成像素级几何校准与真实分层，详见 `QA.md`。
+其中 `v01-original.png`、`v02-original.png` 是记录用占位文件名，并非仓库内实际提交的原始 PNG。该生成阶段尚无分层；后续可运行掩膜拆层见下节。像素级通行几何与美术验收状态见 `QA.md`。
+
+## 4. PJ-04 可运行分层增量（未再次生图）
+
+本轮以已保留的 v02 WebP 作为唯一像素源，采用 `python art-production/tools/build_pj04_layers.py` 的可编辑几何掩膜，在同一 1600×1000 画布上将原始像素分别划入 `background.png`、`ground.png` 与 `foreground.png`，三层 Alpha 互斥、叠合逐像素不变。前景主要是镜头近端竹枝、枫叶与山石；这不是 AI 重新生成的独立遮挡物，也没有新增提示词或 seed。
+
+碰撞、剧情标记和北门双向换区坐标只写入 `WuxiaMapDefinition`，与画面 Alpha 分离；详见 `LAYOUT.md`。北门与角色 200px 标尺的实际视觉比例仍需 GUI 人工确认。

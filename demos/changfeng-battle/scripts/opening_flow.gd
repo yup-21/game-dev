@@ -302,6 +302,8 @@ func _action(action: String) -> void:
 			call_deferred("_change_scene", "res://scenes/pingjiang_scroll_qa.tscn")
 		"pingjiang_vertical_qa":
 			call_deferred("_change_scene", "res://scenes/pingjiang_vertical_qa.tscn")
+		"shen_house_qa":
+			call_deferred("_change_scene", "res://scenes/pingjiang_shen_house_qa.tscn")
 		"hd2d":
 			var quick_session = _session()
 			if quick_session != null and quick_session.start_quick_battle():
@@ -337,6 +339,7 @@ func _input(event: InputEvent) -> void:
 				if event.keycode in [KEY_ENTER, KEY_SPACE]: _action("start")
 				elif event.keycode == KEY_P: _action("pingjiang_qa")
 				elif event.keycode == KEY_V: _action("pingjiang_vertical_qa")
+				elif event.keycode == KEY_H: _action("shen_house_qa")
 			"cinematic":
 				if event.keycode in [KEY_ESCAPE, KEY_S]: _action("skip")
 				elif event.keycode in [KEY_ENTER,KEY_SPACE]: _action("continue")
@@ -557,8 +560,9 @@ func _draw_menu() -> void:
 	_button(Rect2(137,653,391,59),"进入战斗 · HD-2D","hd2d",true)
 	_button(Rect2(137,724,391,59),"P · 平江双区跳转测试","pingjiang_qa",true)
 	_button(Rect2(137,795,391,59),"V · 纵向四千滚屏测试","pingjiang_vertical_qa",true)
-	_button(Rect2(137,866,391,54),"退出游戏","quit",true)
-	_text(Vector2(138,960),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
+	_button(Rect2(137,864,391,46),"H · 沈家旧宅分层地图","shen_house_qa",true)
+	_button(Rect2(137,916,391,46),"退出游戏","quit",true)
+	_text(Vector2(138,984),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
 	# First beat is a memory of the destroyed school; the later rain

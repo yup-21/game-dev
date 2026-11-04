@@ -11,23 +11,25 @@
 
 | 名称 | 设计脚点 / 交互坐标 (px) | 画面语义 | 后续游戏用途 |
 | --- | --- | --- | --- |
-| `north` | `(845, 285)` | 北墙中央院门的内侧门槛 | `target_scene_id=pingjiang_riverside_market`，`target_spawn_id=south` |
-| `arrival_from_market` | `(845, 440)` | 进入院门后、避开门槛触发圈的院心 | PJ-03 `south` → 本区 `north` 的落脚点候选 |
-| `house_door` | `(320, 450)` | 左侧旧屋木门与台阶 | 旧宅内部交互；首版不另建室内区 |
-| `sword_case` | `(525, 430)` | 屋檐下剑匣案台 | 身世线索 / 剑匣调查 |
-| `practice_posts` | `(1130, 455)` | 右侧木人桩和兵器架 | 练功教学或可交互训练 |
-| `hidden_compartment` | `(1465, 415)` | 右墙隐蔽石龛 | 依剧情条件调查暗格 |
-| `save_point` | `(425, 485)` | 旧屋门前暖灯区域 | 存档交互拟定位置；不烘焙 UI 图标 |
+| `north` | `(845, 338)` | 北墙院门的石板通道 | `zone_exit` → PJ-03 `from_south`；78px E 键圈 |
+| `from_north` | `(850, 565)` | 院门以南的安全落点 | PJ-03 `south` → 本区独立 `spawn`，避免反跳 |
+| `player_start` | `(800, 740)` | 开阔庭院中央 | PJ-04 QA 起点 |
+| `house_door` | `(335, 583)` | 左侧旧屋阶梯下 | 剧情标记；首版不另建室内区 |
+| `sword_case` | `(578, 582)` | 剑匣案台下方可接近的地面 | 身世线索调查标记 |
+| `practice_posts` | `(1138, 595)` | 木人桩前石板地面 | 练功教学标记 |
+| `hidden_compartment` | `(1350, 555)` | 石龛左侧可接近地面 | 剧情暗格调查标记 |
+| `well` | `(1360, 690)` | 水井左下方活动面 | 水井调查标记 |
+| `save_point` | `(466, 638)` | 旧屋门前庭院 | 存档标记；不烘焙 UI 图标 |
 
-主庭院视觉活动带约 `Y=525–870`，向左、右保留练功绕行空间；入院路径大致 `X=715–965`、`Y=285–550`。这些矩形仅用于**构图检查**，不是可靠的地面碰撞边界，更不能直接复制成 `walkable_outline`。院门、阶梯、桩、井、檐下阴影的真实脚点须在 Godot 中逐一确定。
+原生 `WuxiaMapDefinition` 的凹形可走多边形由北门 `(730..960, 290)` 沿石板路下行后展开成横向院落，南侧约至 `Y=955`；运行时仍扣除 24px 脚点半径。另以四块原生障碍排除台阶、两个木桩底座和井沿。走位与障碍均为手动几何，**不从图像颜色自动推断**。剧情／存档机制尚未绑定，仅保留标记。
 
 ## 与 PJ-03 的连接
 
 | 来源 | 出口 | 目标 | 目标入口 |
 | --- | --- | --- | --- |
-| `pingjiang_riverside_market` | `south`，PJ-03 设计点约 `(2400,905)` | `pingjiang_shen_house` | `north` / `arrival_from_market` |
-| `pingjiang_shen_house` | `north`，PJ-04 设计点约 `(845,285)` | `pingjiang_riverside_market` | `south` / 其主街回程落脚点 |
+| `pingjiang_riverside_market` | `south` `(2400,895)` | `pingjiang_shen_house` | `from_north` `(850,565)` |
+| `pingjiang_shen_house` | `north` `(845,338)` | `pingjiang_riverside_market` | `from_south` `(2400,810)` |
 
-院墙门洞属于**可交互的连接点**，不要求北侧天空远景一直铺到贴图最顶边。后续显式配置 `zone_exit`、目标 `spawn` 与 `walkable_outline`，往返 `spawn` 应与出口触发区留出安全距离，避免切换后自动反跳。PJ-03 中段的南侧道路尚未精确腾出对应巷口，两个场景的门口与石路衔接必须一并视觉修正；目前不可声称可直接跨区游玩。
+E 键换图已在 `pingjiang_shen_house_qa.tscn` 跑通 PJ-03 ↔ PJ-04 双向移动，两个 `spawn` 与出口触发圈分离。**视觉衔接仍未验收**：PJ-03 的 4800×1000 SVG 原型尚未绘出与 PJ-04 北院门匹配的南支巷和过渡口；两区切换是显式加载而非无缝美术拼接。
 
-参见同目录 `layout_pingjiang_shen_house_v01.svg` 进行坐标审查。该 SVG 是**非运行时示意图**，不能导入为正式底图或碰撞。
+同目录的 `layout_pingjiang_shen_house_v01.svg` 记录早期构图锚点，部分点位已由本轮 Godot 资源精校；其自身不是运行时底图或碰撞来源。
