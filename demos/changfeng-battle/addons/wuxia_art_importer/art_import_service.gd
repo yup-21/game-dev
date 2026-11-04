@@ -107,6 +107,34 @@ static func inspect(path: String) -> Dictionary:
     }
 
 
+## Imported filenames identify a role, while folders identify the owner.
+## Candidate originals keep their source filename; only the Godot copy is renamed.
+static func _import_filename(source: String, mode: String, owner: String) -> String:
+    var stem := source.get_file().get_basename()
+    var ext := "." + source.get_extension().to_lower()
+    if mode == "portrait" and stem.begins_with("portrait_" + owner + "_fullbody_"):
+        return "portrait" + ext
+    if mode == "atlas" and stem.begins_with("sprite_" + owner + "_atlas_"):
+        var variant := stem.trim_prefix("sprite_" + owner + "_atlas_")
+        if variant.begins_with("aligned_"):
+            return "atlas" + ext
+        if variant.begins_with("8x6_") or variant.begins_with("6x4_"):
+            variant = variant.substr(4)
+        return "atlas_" + variant + ext
+    if mode == "scene":
+        for layer in ["background", "ground", "foreground", "weather", "composite_preview"]:
+            if stem.begins_with("scene_") and stem.contains("_" + layer + "_v"):
+                return ("story_preview" if layer == "composite_preview" else layer) + ext
+    if mode == "ui_atlas":
+        if stem.begins_with("card_"):
+            return stem.trim_prefix("card_") + ext
+        if stem.begins_with("technique_art_atlas_"):
+            return "atlas" + ext
+    if mode == "vfx" and stem.begins_with("vfx_"):
+        return "atlas" + ext
+    return source.get_file()
+
+
 static func destination(path: String, mode: String = "") -> String:
     if not _source_allowed(path):
         return ""
@@ -135,7 +163,7 @@ static func destination(path: String, mode: String = "") -> String:
         folder = "ui/" + owner
     if folder.is_empty():
         return ""
-    return "res://assets/imported/" + folder + "/" + path.get_file()
+    return "res://assets/imported/" + folder + "/" + _import_filename(path, mode, owner)
 
 
 static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO,

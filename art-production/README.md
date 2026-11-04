@@ -37,6 +37,8 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 - `assets/imported/` 是纳入版本控制的原始图片所在目录；Godot 自动生成的 `.godot/imported/` 是可重建缓存，不作为素材管理目录。
 - 历史 `archive/` 保持原样以便追溯；日期可以是工作单元数据，不是新目录键。
 
+导入到 Godot 的统一文件名范式见 [`assets/imported/README.md`](../demos/changfeng-battle/assets/imported/README.md)：角色和技能目录按稳定 ID 聚合，`portrait/atlas/background/ground` 等主文件采用固定语义名，Resource 手动绑定优先。
+
 ## 核心约束
 
 1. 游戏方向为原创国风手绘、原生 2D 与具有纵深和遮挡的 HD-2D 构图；不强制低像素。

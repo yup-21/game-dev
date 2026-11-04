@@ -59,8 +59,9 @@ def imported_layout_errors(bindings: dict[str, list[str]]) -> list[str]:
         # Existing preview-only resources are imported files too, with no status
         # prefix in Godot. They must still match a production candidate source.
         sources = ROOT / "art-production/candidates" / category / parts[1]
-        original_stem = re.sub(r"__[0-9a-f]{12}$", "", image.stem)
-        originals = sources.rglob(original_stem + image.suffix) if sources.is_dir() else ()
+        # The imported copy uses canonical purpose names; candidate originals
+        # retain descriptive production filenames. Compare by content hash.
+        originals = sources.rglob("*" + image.suffix) if sources.is_dir() else ()
         current_hash = hashlib.sha256(image.read_bytes()).digest()
         if not any(hashlib.sha256(src.read_bytes()).digest() == current_hash for src in originals):
             errors.append("Unbound import has no matching candidate: " +

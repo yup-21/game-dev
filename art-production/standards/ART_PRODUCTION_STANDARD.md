@@ -10,6 +10,14 @@
 - 素材版本管理只区分 `candidate` 与 `in_use`，前者可有多份，后者由当前原生 Resource 绑定决定。`concept`/`preview` 是制作用途描述，视觉审核结果记录在工作单中，**不另建管理状态**；运行可加载不等于图像和动作质量已通过。
 - 候选记录至少保留实际提示词和目标原生 Resource；可另保留来源/权属等已知信息，不强制补造模型、seed 或审批链。**未完成目标素材的人工验收不可替换当前运行绑定**；离线工作单不是游戏内容入口。
 
+## 1.1 Godot 导入路径与文件名
+
+导入素材统一按**类型 → 角色/场景/技能 ID → 功能**组织，不按日期或制作批次分类。游戏目录不区分候选与使用中；文件名不重复所属 ID。完整路径、扩展名和默认绑定规则参见 [`assets/imported/README.md`](../../demos/changfeng-battle/assets/imported/README.md)。
+
+- 默认立绘 `portraits/portrait.png`、动作 `sprites/atlas.png`、技能特效 `vfx/<actor-id>/<skill-id>/atlas.png`；场景使用 `background/ground/foreground/weather/story_preview`，UI 使用功能名。
+- 手动指定 Resource 优先；仅空绑定按精确文件名查找。缺失必需素材直接报错，重复格式视为歧义；可选图层允许为空，不自动选择 `_vNN` 或占位。
+- 候选区保留完整原文件名和多个版本；导入器只规范化导入副本，正式 `in-use` 镜像与实际 Resource 引用一一对应。
+
 ## 2. 场景制作合同
 
 **城镇、大地图及街区生成**：统一采用 [城镇与大地图比例尺生产规范](TOWN_MAP_SCALE_PRODUCTION.md)。DNF 式紧凑街区是本项目建议的空间密度参考，并非要求复制其场景素材或精确数值。当前剧情管线以 1600×1000 单屏街区分区制作；大型城市通过多个街区和区域拓扑呈现，不能把超大图缩小到一屏。

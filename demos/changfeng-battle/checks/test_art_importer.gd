@@ -15,7 +15,7 @@ func _initialize() -> void:
     if sources.size() < 39:
         _fail("P0 in-use artwork is absent")
         return
-    var source: String = production_dir.path_join("in-use/placeholders/characters/default_actor_6x4.svg")
+    var source: String = production_dir.path_join("in-use/placeholders/characters/default.svg")
     var image: Dictionary = Importer.inspect(source)
     if not str(image.get("error", "")).is_empty() or int(image["width"]) <= 0:
         _fail("SVG preview failed: " + str(image.get("error", "")))
@@ -26,19 +26,19 @@ func _initialize() -> void:
     var candidate_actor: String = production_dir.path_join(
         "candidates/characters/shen_changfeng/baseline/portrait_shen_changfeng_fullbody_v01.png")
     if Importer.destination(candidate_actor, "portrait") != \
-            "res://assets/imported/characters/shen_changfeng/portraits/portrait_shen_changfeng_fullbody_v01.png":
+            "res://assets/imported/characters/shen_changfeng/portraits/portrait.png":
         _fail("Candidate portrait was not grouped by character and type")
         return
     var candidate_sprite: String = production_dir.path_join(
         "candidates/characters/shen_changfeng/baseline/sprite_shen_changfeng_atlas_normalized_v02.png")
     if Importer.destination(candidate_sprite, "atlas") != \
-            "res://assets/imported/characters/shen_changfeng/sprites/sprite_shen_changfeng_atlas_normalized_v02.png":
+            "res://assets/imported/characters/shen_changfeng/sprites/atlas_normalized_v02.png":
         _fail("Candidate atlas was not grouped with the character sprites")
         return
     var candidate_scene: String = production_dir.path_join(
         "candidates/scenes/rainy_bridge/baseline/scene_rainy_bridge_ground_v01.png")
     if Importer.destination(candidate_scene, "scene") != \
-            "res://assets/imported/scenes/rainy_bridge/scene_rainy_bridge_ground_v01.png":
+            "res://assets/imported/scenes/rainy_bridge/ground.png":
         _fail("Candidate scene layer retained a production batch directory")
         return
     if not Importer.destination(candidate_actor).is_empty():
@@ -68,13 +68,13 @@ func _initialize() -> void:
     if str(invalid_vfx.get("error", "")).is_empty():
         _fail("Out-of-range VFX animation index accepted")
         return
-    var opaque_jpg: String = production_dir.path_join("in-use/scenes/mountain_herbal_workshop/mountain_herbal_workshop_day.jpg")
+    var opaque_jpg: String = production_dir.path_join("in-use/scenes/mountain_herbal_workshop/background.jpg")
     var opaque_vfx: Dictionary = Importer.plan("vfx", opaque_jpg, "",
         {"asset_id": "art.opaque_vfx", "event_kind": "ATTACK_DECLARED"})
     if str(opaque_vfx.get("error", "")).is_empty():
         _fail("Opaque JPEG accepted as production VFX")
         return
-    var ui_source: String = production_dir.path_join("in-use/ui/cards/card_probe.svg")
+    var ui_source: String = production_dir.path_join("in-use/ui/cards/probe.svg")
     var ui: Dictionary = Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
     if not str(ui.get("error", "")).is_empty():
         _fail("Valid UI registration plan rejected: " + str(ui.get("error", "")))

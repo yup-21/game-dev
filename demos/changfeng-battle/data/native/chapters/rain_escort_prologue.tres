@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="req"]
 [ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="event"]
 [ext_resource type="Resource" path="res://data/native/stories/rain_escort_prologue.tres" id="story"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/ruined_temple/scene_ruined_temple_composite_preview_v01.png" id="bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/ruined_temple/story_preview.png" id="bg"]
 
 [ext_resource type="Resource" path="res://data/native/scene_art/ruined_temple.tres" id="art"]
 

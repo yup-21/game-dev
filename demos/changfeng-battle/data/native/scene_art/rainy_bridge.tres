@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="WuxiaSceneArtProfile" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/scene_art_profile.gd" id="1_art"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/scene_rainy_bridge_background_v01.png" id="2_bg"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/scene_rainy_bridge_ground_v01.png" id="3_ground"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/scene_rainy_bridge_foreground_v01.png" id="4_fore"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/scene_rainy_bridge_weather_v01.png" id="5_rain"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/scene_rainy_bridge_composite_preview_v01.png" id="6_preview"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/background.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/ground.png" id="3_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/foreground.png" id="4_fore"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/weather.png" id="5_rain"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/story_preview.png" id="6_preview"]
 
 [resource]
 script = ExtResource("1_art")

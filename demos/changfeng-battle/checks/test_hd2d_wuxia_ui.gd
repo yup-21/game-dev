@@ -11,7 +11,7 @@ func _fail(reason: String) -> void:
     quit(1)
 
 func _run() -> void:
-    var atlas: Texture2D = load("res://assets/imported/ui/card-art/technique_art_atlas_v1.png")
+    var atlas: Texture2D = load("res://assets/imported/ui/card-art/atlas.png")
     if atlas == null or atlas.get_size() != Vector2(1536, 1024):
         _fail("card art atlas must be 1536x1024 (4x2)")
         return

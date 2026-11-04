@@ -22,9 +22,9 @@ const REQUIRED_SCENES := [
     "res://demo_result.tscn"
 ]
 const REQUIRED_ART := [
-    "res://assets/imported/scenes/rainy_bridge/legacy/rainy_bridge_battle.webp",
-    "res://assets/imported/scenes/ruined_temple/legacy/ruined_temple_story.webp",
-    "res://assets/imported/ui/card-art/technique_art_atlas_v1.png"
+    "res://assets/imported/scenes/rainy_bridge/legacy/battle.webp",
+    "res://assets/imported/scenes/ruined_temple/legacy/story.webp",
+    "res://assets/imported/ui/card-art/atlas.png"
 ]
 
 func _initialize() -> void:

@@ -22,6 +22,7 @@ on:
       - 'demos/changfeng-battle/checks/test_content_templates.gd'
       - 'demos/changfeng-battle/checks/test_actor_animation_profile.gd'
       - 'demos/changfeng-battle/checks/test_presentation_references.gd'
+      - 'demos/changfeng-battle/checks/test_art_resource_binding.gd'
       - 'demos/changfeng-battle/checks/test_scene_art_profile.gd'
       - 'demos/changfeng-battle/checks/test_art_importer.gd'
       - 'demos/changfeng-battle/checks/test_art_pilot_candidates.gd'
@@ -80,6 +81,8 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_shen_martial_vfx.gd
       - name: Migrate live Resource action bindings and validate fallbacks
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_resource_action_migration.gd
+      - name: Canonical art naming and automatic Resource binding
+        run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_art_resource_binding.gd
       - name: Required art and animation/timeline/VFX reference validation
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_presentation_references.gd
       - name: Native layered scene art profile

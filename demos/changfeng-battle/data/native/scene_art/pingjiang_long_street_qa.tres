@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="WuxiaSceneArtProfile" load_steps=5 format=3]
 [ext_resource type="Script" path="res://scripts/content/scene_art_profile.gd" id="1_art"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_long_street/scene_pingjiang_long_background_v01.svg" id="2_bg"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_long_street/scene_pingjiang_long_ground_v01.svg" id="3_ground"]
-[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_long_street/scene_pingjiang_long_foreground_v01.svg" id="4_fore"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_long_street_qa/background.svg" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_long_street_qa/ground.svg" id="3_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_long_street_qa/foreground.svg" id="4_fore"]
 
 [resource]
 script = ExtResource("1_art")
