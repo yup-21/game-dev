@@ -64,10 +64,13 @@ func _register(spec: Variant) -> bool:
                 return _fail("Invalid VFX frame index: " + id)
     var character_id: String = str(spec.get("owner_character_id",""))
     if not character_id.is_empty():
-        var key: String = character_id + ":" + kind
-        if character_index.has(key) or kind not in ["portrait","pose_sheet","static_pose","actor_scene"]:
-            return _fail("Duplicate/invalid character art binding: " + key)
-        character_index[key] = id
+        # VFX ownership enables semantic art paths but does not imply a unique
+        # character portrait/pose slot: many skills can share the same owner.
+        if kind != "vfx":
+            var key: String = character_id + ":" + kind
+            if character_index.has(key) or kind not in ["portrait","pose_sheet","static_pose","actor_scene"]:
+                return _fail("Duplicate/invalid character art binding: " + key)
+            character_index[key] = id
     var event_kind: String = str(spec.get("event_kind",""))
     if not event_kind.is_empty():
         if event_index.has(event_kind) or kind not in ["vfx","audio"]:

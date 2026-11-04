@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="WuxiaAssetDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/asset_definition.gd" id="1_asset"]
-[ext_resource type="Texture2D" path="res://assets/imported/candidates/2026-11-01/night_assassin/sprite_night_assassin_atlas_normalized_v01.png" id="2_resource"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/night_assassin/sprites/atlas_normalized_v01.png" id="2_resource"]
 
 [resource]
 script = ExtResource("1_asset")

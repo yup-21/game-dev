@@ -1,15 +1,15 @@
 extends RefCounted
 ## Explicit mapping: artwork never leaks card information or changes combat state.
-## Art source: imported/in-use/legacy/ui/original/*.svg, original jade-and-ink vectors.
-const PROBE = preload("res://assets/imported/in-use/legacy/ui/original/card_probe.svg")
-const SUNDER = preload("res://assets/imported/in-use/legacy/ui/original/card_sunder.svg")
-const STEP = preload("res://assets/imported/in-use/legacy/ui/original/card_step.svg")
-const GUARD = preload("res://assets/imported/in-use/legacy/ui/original/card_guard.svg")
-const CHANGE = preload("res://assets/imported/in-use/legacy/ui/original/card_change.svg")
-const COMBO = preload("res://assets/imported/in-use/legacy/ui/original/card_combo.svg")
-const BREATH = preload("res://assets/imported/in-use/legacy/ui/original/card_breath.svg")
-const CLASH = preload("res://assets/imported/in-use/legacy/ui/original/card_clash.svg")
-const SEAL = preload("res://assets/imported/in-use/legacy/ui/original/jade_seal.svg")
+## Art source: imported/legacy/ui/original/*.svg, original jade-and-ink vectors.
+const PROBE = preload("res://assets/imported/ui/cards/probe.svg")
+const SUNDER = preload("res://assets/imported/ui/cards/sunder.svg")
+const STEP = preload("res://assets/imported/ui/cards/step.svg")
+const GUARD = preload("res://assets/imported/ui/cards/guard.svg")
+const CHANGE = preload("res://assets/imported/ui/cards/change.svg")
+const COMBO = preload("res://assets/imported/ui/cards/combo.svg")
+const BREATH = preload("res://assets/imported/ui/cards/breath.svg")
+const CLASH = preload("res://assets/imported/ui/cards/clash.svg")
+const SEAL = preload("res://assets/imported/ui/cards/jade_seal.svg")
 
 ## Card art is bound to the currently imported vector assets.
 ## No legacy filename probing or hidden per-card image override.

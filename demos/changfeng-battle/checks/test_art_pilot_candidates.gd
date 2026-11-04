@@ -14,9 +14,9 @@ const FIRST_FRAME := {
 
 
 func _initialize() -> void:
-    var batch: String = Importer.production_root().path_join("candidates/2026-11-01")
+    var batch: String = Importer.production_root().path_join("candidates")
     for actor_id in ["shen_changfeng", "pursuer_captain"]:
-        var actor_dir: String = batch.path_join(actor_id)
+        var actor_dir: String = batch.path_join("characters/" + actor_id + "/baseline")
         var portrait: Dictionary = Importer.inspect(
             actor_dir.path_join("portrait_%s_fullbody_v01.png" % actor_id))
         if not _is_image(portrait, Vector2i(1024, 1536), true):
@@ -61,7 +61,7 @@ func _initialize() -> void:
                 return
         sprite.queue_free()
 
-    var scene_dir: String = batch.path_join("rainy_bridge")
+    var scene_dir: String = batch.path_join("scenes/rainy_bridge/baseline")
     var layer_names := ["background", "ground", "foreground", "weather"]
     var layers: Dictionary = {}
     var hashes: Dictionary = {}

@@ -13,10 +13,10 @@ python -m pip install Pillow
 python art-production/tools/test_batch_anchor_align.py
 python art-production/tools/batch_anchor_align.py --all
 python art-production/tools/batch_anchor_align.py --actor night_assassin --no-gif
-python art-production/tools/batch_anchor_align.py --all --annotations art-production/candidates/2026-11-03 --require-reviewed
+python art-production/tools/batch_anchor_align.py --all --annotations art-production/candidates/characters --require-reviewed
 ```
 
-输入是 `art-production/candidates/2026-11-01/<actor>/sprite_<actor>_atlas_aligned_v03.png`。输出独立候选文件夹，不变更任何正在使用的 Godot Resource。
+输入是 `art-production/candidates/characters/<actor>/baseline/sprite_<actor>_atlas_aligned_v03.png`。输出独立候选文件夹，不变更任何正在使用的 Godot Resource。
 
 ## CSV 字段
 
@@ -35,4 +35,4 @@ python art-production/tools/batch_anchor_align.py --all --annotations art-produc
 
 ## 与 Godot 接口
 
-需要经批准后将 Atlas 导入 `assets/imported/candidates` 并建立独立 `WuxiaActorAnimationProfile` 预览资源，其 `columns=6, rows=4`、帧号沿用旧资源。新格宽高是可变的，必须校准 `feet_offset` 和 `actor_scale`，保持普通角色 200 世界像素视觉高度。不要直接把旧版 `feet_offset=(0,-102)` 当成新图集正确值；也不要改 BattleModel / 技能结算。
+需要经批准后将 Atlas 导入 `assets/imported/characters/<actor>/sprites` 并建立独立 `WuxiaActorAnimationProfile` 预览资源，其 `columns=6, rows=4`、帧号沿用旧资源。新格宽高是可变的，必须校准 `feet_offset` 和 `actor_scale`，保持普通角色 200 世界像素视觉高度。不要直接把旧版 `feet_offset=(0,-102)` 当成新图集正确值；也不要改 BattleModel / 技能结算。

@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://scripts/content/chapter_npc_definition.gd" id="3_npc"]
 [ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="4_req"]
 [ext_resource type="Resource" path="res://data/templates/story.tres" id="5_story"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/fallback/default_scene.svg" id="6_background"]
+[ext_resource type="Texture2D" path="res://assets/imported/placeholders/scenes/default.svg" id="6_background"]
 
 [sub_resource type="Resource" id="Messenger"]
 script = ExtResource("3_npc")

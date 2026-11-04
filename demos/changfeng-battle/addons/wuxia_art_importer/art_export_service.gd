@@ -7,6 +7,8 @@ const IMAGE_EXTS := ["png", "webp", "jpg", "jpeg", "svg"]
 const IMAGE_REF := "res://assets/[A-Za-z0-9_./%+-]+"
 const RESOURCE_REF := "res://[A-Za-z0-9_./%+-]+"
 const ExportKinds := ["all", "character", "scene", "resource"]
+const Native = preload("res://scripts/content/content_registry.gd")
+const ArtBinding = preload("res://scripts/content/art_resource_binding.gd")
 
 
 static func production_root() -> String:
@@ -57,7 +59,7 @@ static func _read_text(path: String) -> String:
 static func _all_images() -> Array[String]:
     var files: Array[String] = []
     _collect("res://scripts", files, ["gd"])
-    _collect("res://data", files, ["tres"], ["res://data/templates", "res://data/native/assets"])
+    _collect("res://data", files, ["tres"], ["res://data/templates", "res://data/art_previews", "res://data/native/assets"])
     _collect("res://scenes", files, ["tscn"])
     var root := DirAccess.open("res://")
     if root != null:
@@ -76,6 +78,50 @@ static func _all_images() -> Array[String]:
         sorted.append(str(resource))
     sorted.sort()
     return sorted
+
+
+## Native Resources also contain convention-resolved textures that are absent
+## from serialized .tres path literals. Walk only presentation-bearing fields,
+## including independent per-clip atlases; never scan candidate directories.
+static func _add_texture(paths: Dictionary, texture: Texture2D) -> void:
+    if texture != null and not texture.resource_path.is_empty():
+        paths[texture.resource_path] = true
+
+
+static func _collect_native_images(resource: Resource, paths: Dictionary) -> void:
+    if resource == null:
+        return
+    if resource is WuxiaCharacterDefinition:
+        for key in ["portrait", "sprite_sheet", "static_pose"]:
+            _add_texture(paths, resource.get(key) as Texture2D)
+        _collect_native_images(resource.get("animation_profile") as Resource, paths)
+    elif resource is WuxiaActorAnimationProfile:
+        var profile: WuxiaActorAnimationProfile = resource as WuxiaActorAnimationProfile
+        _add_texture(paths, profile.atlas)
+        for entry in profile.clips:
+            if entry is WuxiaActorAnimationClip:
+                var clip: WuxiaActorAnimationClip = entry as WuxiaActorAnimationClip
+                _add_texture(paths, clip.atlas)
+    elif resource is WuxiaMapDefinition or resource is WuxiaGridMapDefinition or resource is WuxiaChapterSceneDefinition:
+        _add_texture(paths, resource.get("background") as Texture2D)
+        _collect_native_images(resource.get("scene_art") as Resource, paths)
+    elif resource is WuxiaChapterDefinition:
+        _collect_native_images(resource.get("scene") as Resource, paths)
+    elif resource is WuxiaSceneArtProfile:
+        for key in ["background", "ground", "foreground", "weather", "story_preview"]:
+            _add_texture(paths, resource.get(key) as Texture2D)
+    elif resource is WuxiaAssetDefinition:
+        _add_texture(paths, resource.get("resource") as Texture2D)
+
+
+static func native_image_paths(resource: Resource) -> Array[String]:
+    var paths: Dictionary = {}
+    _collect_native_images(resource, paths)
+    var result: Array[String] = []
+    for path in paths:
+        result.append(str(path))
+    result.sort()
+    return result
 
 
 static func _resource_graph(first: String) -> Dictionary:
@@ -108,8 +154,10 @@ static func _resource_graph(first: String) -> Dictionary:
 static func destination(source: String, is_resource: bool = false) -> String:
     if is_resource:
         return production_root().path_join("in-use/resources/" + source.trim_prefix("res://"))
-    # Production storage mirrors the single imported image root verbatim.
-    var relative := source.trim_prefix("res://assets/")
+    # In-use copies are grouped by type/owner; no date or imported/ nesting.
+    if not source.begins_with("res://assets/imported/") or ".." in source:
+        return ""
+    var relative := source.trim_prefix("res://assets/imported/")
     return production_root().path_join("in-use/" + relative)
 
 
@@ -120,6 +168,12 @@ static func plan(kind: String, resource_path: String = "", allow_replace: bool =
     var resource_paths: Array[String] = []
     if kind == "all":
         image_paths = _all_images()
+        var native = Native.new()
+        if not native.load_error.is_empty():
+            return {"error": "Native Resource 引用校验失败：" + native.load_error}
+        for content_kind in ["character", "map", "chapter", "asset"]:
+            for definition in native.definition_resources.get(content_kind, {}).values():
+                image_paths.append_array(native_image_paths(definition as Resource))
     else:
         if not resource_path.begins_with("res://") or not resource_path.ends_with(".tres") or ".." in resource_path:
             return {"error": "请选择有效的 Godot .tres Resource"}
@@ -131,13 +185,34 @@ static func plan(kind: String, resource_path: String = "", allow_replace: bool =
         if kind == "scene" and not (source is WuxiaMapDefinition or source is WuxiaGridMapDefinition or
                 (source is WuxiaChapterDefinition and source.get("scene") is WuxiaChapterSceneDefinition)):
             return {"error": "所选不是地图或章节场景 Resource"}
+        var binding_problem: String = ArtBinding.apply(source)
+        if not binding_problem.is_empty():
+            return {"error": "Resource 默认素材绑定失败：" + binding_problem}
         var graph := _resource_graph(resource_path)
         if graph["truncated"]:
             return {"error": "Resource 依赖超过 512 个，拒绝不完整导出"}
         for image in graph["images"]:
             image_paths.append(str(image))
         for metadata in graph["resources"]:
-            resource_paths.append(str(metadata))
+            var dependency_path: String = str(metadata)
+            resource_paths.append(dependency_path)
+            if dependency_path == resource_path:
+                continue
+            var dependency: Resource = ResourceLoader.load(dependency_path) as Resource
+            if dependency == null:
+                return {"error": "无法加载 Resource 依赖：" + dependency_path}
+            binding_problem = ArtBinding.apply(dependency)
+            if not binding_problem.is_empty():
+                return {"error": "Resource 依赖默认绑定失败：" + dependency_path + ": " + binding_problem}
+            image_paths.append_array(native_image_paths(dependency))
+        image_paths.append_array(native_image_paths(source))
+    # Direct .tres references and convention-resolved paths can overlap.
+    var distinct: Dictionary = {}
+    for image in image_paths:
+        distinct[image] = true
+    image_paths.clear()
+    for image in distinct:
+        image_paths.append(str(image))
     image_paths.sort()
     resource_paths.sort()
     var entries: Array[Dictionary] = []
@@ -147,6 +222,8 @@ static func plan(kind: String, resource_path: String = "", allow_replace: bool =
     for source in image_paths + resource_paths:
         var metadata := resource_paths.has(source)
         var target := destination(source, metadata)
+        if target.is_empty():
+            return {"error": "仅允许导出 assets/imported 下的正式图片：" + source}
         if not _inside(target, production_root().path_join("in-use")):
             return {"error": "目标路径越界：" + target}
         var sha := FileAccess.get_sha256(source)

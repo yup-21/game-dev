@@ -8,10 +8,10 @@
 | [prompts/](prompts/) | 可复制的 AI 生成母提示词与分类模板 |
 | [templates/](templates/) | 每次资产制作都需填写的工作单 |
 | [skills/](skills/) | 角色、场景、VFX、UI、审核导入的仓库级 Agent Skills；通过仓库根目录 `.agents/skills` 软连接自动发现 |
-| [candidates/](candidates/) | 后续生成的概念图和待审批图；按批次、类型存放 |
+| [candidates/](candidates/) | 按角色、场景、技能、UI 分类的候选资产；同一 ID 的版本放在一起 |
 | [reviews/](reviews/) | 人工验收、截图与批准记录 |
 | [inventory/](inventory/) | 按需生成的使用中 Resource 引用清单，不是第二套运行配置 |
-| [in-use/](in-use/) | 当前 Resource 绑定素材的原字节镜像 |
+| [in-use/](in-use/) | 当前 Resource 绑定素材的分类镜像，按类型与拥有者聚合 |
 | [tools/](tools/) | 离线库存工具与 Godot 导入导出指南 |
 
 Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontmatter 规范，详细工作规则由对应 Skill 在使用时按需加载；修改 Skill 只编辑本目录，不维护第二套副本。
@@ -26,6 +26,18 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 - [逐帧/视频/3D 渲染统一质量合同](standards/SPRITE_ANIMATION_QA.md)：集中列出身份变形、侧视角、承重脚、根位移、断剑/越格、Alpha 闪烁、真实补帧、Atlas 装配及 Godot 实速验收的返工闸门。
 - 角色生成时调用 `skills/wuxia-character-art`，审核和原生资源接入调用 `skills/wuxia-asset-pipeline`；已有脚点编辑器仍负责候选标注与无损打包。
 - 默认先规划动作分镜和真实帧数 N，再让 AI **每次输出一张包含多个连续姿势的透明动作 Sprite Sheet**。预先声明 C×R 等尺寸网格和宽透明留白；程序按固定格子机械切分，检查 N、边界、空格透明与**零重叠、正透明边距、无裁切**，通过后才装配运行时 Atlas。图像模型并不能保证按格准确绘画，违规需重生 Sheet/连续多帧片段。视频工具与脚点自动语义识别均未完成真实验收。
+
+## 目录组织
+
+- `candidates/characters/<actor-id>/`：角色设定、立绘、动作图集和不同候选版本。`baseline/` 为原始生产稿，后续可使用 `sprite-vNN/` 或按动作 `animations/<action-id>/`；不要按日期建目录。
+- `candidates/scenes/<scene-id>/`：场景母版、分层图、技术验证版。
+- `candidates/vfx/<actor-id>/<skill-id>/`：对应技能特效；多个技能共用的图集可集中在 `martial-forms/` 等明确命名的集合内。
+- `candidates/ui/<component-id>/`：界面分件和图标。旧批次清单、提示词放 `candidates/records/`，不构成新状态。
+- `in-use/characters|scenes|vfx|ui|placeholders/`：只保存正式 Resource 当前引用的图片原字节镜像；游戏侧统一使用 `assets/imported/<type>/<owner>/`，**不再按候选/使用中划分目录**。少量仅供编辑器预览的旧图与正式图片同处分类目录，但没有正式游戏绑定，其原稿仍归 `candidates/`。
+- `assets/imported/` 是纳入版本控制的原始图片所在目录；Godot 自动生成的 `.godot/imported/` 是可重建缓存，不作为素材管理目录。
+- 历史 `archive/` 保持原样以便追溯；日期可以是工作单元数据，不是新目录键。
+
+导入到 Godot 的统一文件名范式见 [`assets/imported/README.md`](../demos/changfeng-battle/assets/imported/README.md)：角色和技能目录按稳定 ID 聚合，`portrait/atlas/background/ground` 等主文件采用固定语义名，Resource 手动绑定优先。
 
 ## 核心约束
 
@@ -48,13 +60,13 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 ## 第一批生产试点
 
-沈长风（设定、立绘、九类动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。素材通过原生合同即可投入使用；视觉精修是独立制作任务。
+沈长风（设定、立绘、12 组动作）、追兵首领、雨夜断桥分层场景、核心 VFX、物品图标、武学卡面与 CTB/UI 分件。素材通过原生合同即可投入使用；视觉精修是独立制作任务。
 
-- [2026-11-01 四项优先试点工作单](candidates/2026-11-01/README.md)：包含剧情场景分层与准确的原生资源目标。
+- [2026-11-01 四项优先试点工作单](candidates/records/pilot/README.md)：包含剧情场景分层与准确的原生资源目标。
 - [运行时代码与存量美术格式差异/验收状态](reviews/2026-11-01/FORMAT_UNIFICATION_STATUS.md)：明确代码已打通但历史图像尚不等于最终批准资产。
 
 ## Godot 原生素材导入与导出
 
 Godot 4.7.2 编辑器内的 **Art Production** Dock 提供引用图像导出、角色动画与场景分层导入、批次预检、版本化替换和事务回退。运行时仍只读取 `.tres` Resource，离线清单不充当内容定义。
 
-参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。新导入资源默认 `candidate`，未经人工审查不得标记为 `approved`。本轮审核分支将候选资源接入原生角色卡及地图供试玩；历史原图已按使用情况迁入 imported 或 archive；保留既有回退素材。
+参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。导入且绑定到正式 Resource 的图片就是当前使用版本；候选原稿仍在 `candidates/`，不会随导入改名。Asset Resource 标记为 `runtime`，表示已接入，不代表动作、脚点或权属已审核。所有正式必需引用必须可解析，不能靠隐式旧图或占位回退。导出 Dock 会补齐按语义文件名自动绑定的图片，`inventory_assets.py` 仅负责静态引用库存。

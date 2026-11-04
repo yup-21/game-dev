@@ -5,6 +5,7 @@ extends RefCounted
 const Manifest = preload("res://scripts/content/content_manifest.gd")
 const Definition = preload("res://scripts/content/content_definition.gd")
 const PresentationRefs = preload("res://scripts/content/presentation_reference_validator.gd")
+const ArtResourceBinding = preload("res://scripts/content/art_resource_binding.gd")
 const DEFAULT_MANIFEST = "res://data/content_manifest.tres"
 # Production manifests are immutable for the lifetime of one running game.
 # Returning deep copies keeps battle-owned catalogs independent.
@@ -52,6 +53,9 @@ func import_manifest(manifest: Resource) -> bool:
             var id: String = definition.content_id
             if definition.schema_version != 1 or not _valid_id(id) or ids.has(id):
                 return _fail("Invalid schema version or duplicate native content ID: " + id)
+            var binding_error: String = ArtResourceBinding.apply(definition)
+            if not binding_error.is_empty():
+                return _fail("Native art binding failed for " + id + ": " + binding_error)
             var record: Variant = definition.to_record()
             if not record is Dictionary or record.get("schema_version") != 1 or record.get("id") != id:
                 return _fail("Native definition produced invalid data: " + id)

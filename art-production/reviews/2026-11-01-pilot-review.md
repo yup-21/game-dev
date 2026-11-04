@@ -3,7 +3,7 @@
 - 试点：`shen_changfeng`、`pursuer_captain`、`rainy_bridge`
 - 技术操作者：ChatGPT 图像生成与 Pillow 内存处理
 - 审核状态：**pending owner review**；`approved=false`
-- 版本与溯源：`candidates/2026-11-01/PILOT_MANIFEST.json`
+- 版本与溯源：`candidates/records/pilot/MANIFEST.json`
 - 现有正式资源：**未覆盖、未移动、未重新绑定**
 
 ## 自动项目

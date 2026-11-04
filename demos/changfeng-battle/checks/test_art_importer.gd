@@ -2,6 +2,7 @@ extends SceneTree
 ## P1 offline import contract. No file is copied or modified by this test.
 const Importer = preload("res://addons/wuxia_art_importer/art_import_service.gd")
 const Dock = preload("res://addons/wuxia_art_importer/art_import_dock.gd")
+const Assets = preload("res://scripts/asset_registry.gd")
 
 func _initialize() -> void:
     var production_dir: String = Importer.production_root()
@@ -15,13 +16,39 @@ func _initialize() -> void:
     if sources.size() < 39:
         _fail("P0 in-use artwork is absent")
         return
-    var source: String = production_dir.path_join("in-use/imported/in-use/legacy/fallback/default_actor_6x4.svg")
+    var source: String = production_dir.path_join("in-use/placeholders/characters/default.svg")
     var image: Dictionary = Importer.inspect(source)
     if not str(image.get("error", "")).is_empty() or int(image["width"]) <= 0:
         _fail("SVG preview failed: " + str(image.get("error", "")))
         return
-    if not Importer.destination(source).begins_with("res://assets/imported/in-use/"):
+    if not Importer.destination(source).begins_with("res://assets/imported/"):
         _fail("Source destination has incorrect root")
+        return
+    var candidate_actor: String = production_dir.path_join(
+        "candidates/characters/shen_changfeng/baseline/portrait_shen_changfeng_fullbody_v01.png")
+    if Importer.destination(candidate_actor, "portrait") != \
+            "res://assets/imported/characters/shen_changfeng/portraits/portrait.png":
+        _fail("Candidate portrait was not grouped by character and type")
+        return
+    var candidate_sprite: String = production_dir.path_join(
+        "candidates/characters/shen_changfeng/baseline/sprite_shen_changfeng_atlas_normalized_v02.png")
+    if Importer.destination(candidate_sprite, "atlas") != \
+            "res://assets/imported/characters/shen_changfeng/sprites/atlas_normalized_v02.png":
+        _fail("Candidate atlas was not grouped with the character sprites")
+        return
+    var candidate_scene: String = production_dir.path_join(
+        "candidates/scenes/rainy_bridge/baseline/scene_rainy_bridge_ground_v01.png")
+    if Importer.destination(candidate_scene, "scene") != \
+            "res://assets/imported/scenes/rainy_bridge/ground.png":
+        _fail("Candidate scene layer retained a production batch directory")
+        return
+    if not Importer.destination(candidate_actor).is_empty():
+        _fail("Candidate image was accepted without an import type")
+        return
+    var wrong_owner: Dictionary = Importer.plan("portrait", candidate_actor,
+        "res://data/native/characters/black_blade.tres", {})
+    if not str(wrong_owner.get("error", "")).contains("角色 ID"):
+        _fail("Cross-character candidate was accepted")
         return
     var atlas: Dictionary = Importer.plan("atlas", source, "res://data/native/characters/shen_changfeng.tres",
         {"columns": 6, "rows": 4, "feet_offset": Vector2(0, -102), "faces_left": false})
@@ -47,13 +74,42 @@ func _initialize() -> void:
     if str(invalid_vfx.get("error", "")).is_empty():
         _fail("Out-of-range VFX animation index accepted")
         return
-    var opaque_jpg: String = production_dir.path_join("in-use/imported/in-use/legacy/concepts/2026-10-30/scenes/mountain_herbal_workshop_day.jpg")
+    var vfx_source: String = production_dir.path_join(
+        "in-use/vfx/shen_changfeng/martial-forms/atlas.svg")
+    var vfx_owner: Dictionary = Importer.plan("vfx", vfx_source, "", {
+        "asset_id": "art.vfx_owner_probe", "event_kind": "ATTACK_DECLARED"})
+    if not str(vfx_owner.get("error", "")).is_empty() or str(vfx_owner.get(
+            "owner_character_id", "")) != "shen_changfeng" or not str(vfx_owner.get(
+            "next_binding", "")).ends_with("/vfx/shen_changfeng/martial-forms/atlas.svg"):
+        _fail("VFX owner or canonical filename was not inferred: " + str(vfx_owner.get("error", "")))
+        return
+    if not Importer._new_asset_card("vfx") is WuxiaVFXDefinition or \
+            Importer._new_asset_card("ui_atlas") is WuxiaVFXDefinition:
+        _fail("Importer creates the wrong native VFX/UI Resource type")
+        return
+    var live_vfx: WuxiaVFXDefinition = load(
+        "res://data/native/assets/shen_sword_thrust.tres") as WuxiaVFXDefinition
+    if live_vfx == null or live_vfx.owner_character_id != "shen_changfeng" or \
+            not live_vfx.resource.resource_path.ends_with("/vfx/shen_changfeng/martial-forms/atlas.svg"):
+        _fail("Shen martial VFX Resource was not migrated to the typed canonical binding")
+        return
+    var asset_registry = Assets.new()
+    if not asset_registry.load_error.is_empty():
+        _fail("Character-owned multi-skill VFX rejected: " + asset_registry.load_error)
+        return
+    var extra_vfx: Dictionary = asset_registry.record("shen_sword_thrust")
+    extra_vfx["id"] = "art.vfx_second_skill_probe"
+    extra_vfx["event_kind"] = ""
+    if not asset_registry._register(extra_vfx):
+        _fail("Multiple VFX for one actor were treated as duplicate character art")
+        return
+    var opaque_jpg: String = production_dir.path_join("in-use/scenes/mountain_herbal_workshop/background.jpg")
     var opaque_vfx: Dictionary = Importer.plan("vfx", opaque_jpg, "",
         {"asset_id": "art.opaque_vfx", "event_kind": "ATTACK_DECLARED"})
     if str(opaque_vfx.get("error", "")).is_empty():
         _fail("Opaque JPEG accepted as production VFX")
         return
-    var ui_source: String = production_dir.path_join("in-use/imported/in-use/legacy/ui/original/card_probe.svg")
+    var ui_source: String = production_dir.path_join("in-use/ui/cards/probe.svg")
     var ui: Dictionary = Importer.plan("ui_atlas", ui_source, "", {"asset_id": "art.ui_test"})
     if not str(ui.get("error", "")).is_empty():
         _fail("Valid UI registration plan rejected: " + str(ui.get("error", "")))
@@ -78,7 +134,7 @@ func _initialize() -> void:
         _fail("Chapter story scenes are missing from the scene import selector")
         return
     dock.queue_free()
-    var bridge_dir: String = production_dir.path_join("candidates/2026-11-01/rainy_bridge")
+    var bridge_dir: String = production_dir.path_join("candidates/scenes/rainy_bridge/baseline")
     var bridge_plan: Dictionary = Importer.plan("scene",
         bridge_dir.path_join("scene_rainy_bridge_background_v01.png"),
         "res://data/maps/rainy_bridge.tres", {
@@ -91,6 +147,12 @@ func _initialize() -> void:
     if not str(bridge_plan.get("error", "")).is_empty() or bridge_plan["files"].size() != 5 or \
             str(bridge_plan.get("current_binding", "")) != bridge_card.background.resource_path:
         _fail("Scene import must preflight the current map background and composite preview")
+        return
+    var wrong_scene: Dictionary = Importer.plan("scene",
+        bridge_dir.path_join("scene_rainy_bridge_background_v01.png"),
+        "res://data/maps/pingjiang_long_street_qa.tres", {})
+    if not str(wrong_scene.get("error", "")).contains("场景素材 ID"):
+        _fail("Cross-scene candidate was accepted")
         return
     var bad := Importer.plan("portrait", source, "res://data/maps/rainy_bridge.tres", {})
     if str(bad.get("error", "")).is_empty():

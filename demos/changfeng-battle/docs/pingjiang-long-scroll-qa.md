@@ -55,4 +55,4 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_pingji
 
 测试验证三张实际分层资源、各自可走区、四条出口路由、非法目标拒绝、E 互动范围、旧场景卸载、目标 spawn、横向/纵向镜头及点击坐标逆变换。
 
-地图转换目前只用于独立 QA，**没有自动接入正式剧情的区域管理或动态贴图流送**。美术仍为低保真候选，人工还须在 1600×1000 / 1440×900 观察人物脚点、建筑遮挡及切换表现。原候选工单在 `art-production/candidates/2026-11-03/pingjiang_north_lane_qa/WORK_ORDER.md`。
+地图转换目前只用于独立 QA，**没有自动接入正式剧情的区域管理或动态贴图流送**。美术仍为低保真候选，人工还须在 1600×1000 / 1440×900 观察人物脚点、建筑遮挡及切换表现。原候选工单在 `art-production/candidates/scenes/pingjiang_north_lane_qa/qa-layout/WORK_ORDER.md`。

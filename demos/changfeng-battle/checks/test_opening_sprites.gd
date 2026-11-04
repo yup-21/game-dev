@@ -64,7 +64,7 @@ func _run() -> void:
             "opaque-matte fallback still has positive character scale")
     _check(not layer.visible,"story role sprites stay hidden during title")
     var registered_pose: String = str(registry.for_name("老镖头").art.static_pose)
-    _check(registered_pose.contains("/imported/candidates/2026-11-01/escort_elder/pose_escort_elder_injured_v01.png"),
+    _check(registered_pose.contains("/imported/characters/escort_elder/story-poses/injured.png"),
         "new injured PNG is registered on the character dossier")
     opening.call("_enter_new_game")
     await process_frame

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/content/map_definition.gd" id="1_map"]
 [ext_resource type="Script" path="res://scripts/content/map_marker_definition.gd" id="2_marker"]
-[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/scenes/battle/rainy_bridge_battle.webp" id="3_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/legacy/battle.webp" id="3_bg"]
 
 [sub_resource type="Resource" id="North"]
 script = ExtResource("2_marker")

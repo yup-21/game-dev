@@ -3,7 +3,7 @@ name: Chapter one art concept audit
 on:
   pull_request:
     paths:
-      - 'art-production/candidates/2026-11-01/**'
+      - 'art-production/candidates/**'
       - 'art-production/tools/prepare_chapter_one_assets.py'
       - '.github/workflows/chapter-one-art-audit.yml'
   workflow_dispatch:
