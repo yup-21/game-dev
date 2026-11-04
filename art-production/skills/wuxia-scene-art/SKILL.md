@@ -10,6 +10,7 @@ description: "为《长风浮生录》设计、生成、拆分或审核剧情与
 - 先读取 art-production/standards/ART_PRODUCTION_STANDARD.md 与 art-production/standards/TOWN_MAP_SCALE_PRODUCTION.md 的场景、世界比例尺和城镇分区合同；AI 制作时读取 art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md 的场景提示词。
 - 复制 art-production/templates/asset-work-order.md 至 art-production/candidates/<asset-type>/<asset-id>/WORK_ORDER.md，记录参考母图、镜头、色板、地标、原点、图层、版权和版本。
 - 全游戏采用原创手绘自然材质、固定镜头、清晰地面空间及真实前后景遮挡；不用 3D 棋盘叠加背景伪造场景。
+- 实际绘图只使用 `ART_STYLE_AI_PROMPTS_V1.md` §6 的场景／分层短模板、地图参考图及必要构图信息。80px/u、碰撞范围、同画布对齐等保留在本 Skill 和检查工具，不逐项拼成绘图提示词。
 
 ## 制作流程
 

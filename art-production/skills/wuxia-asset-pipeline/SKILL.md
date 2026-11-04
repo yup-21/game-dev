@@ -11,6 +11,7 @@ description: "为《长风浮生录》检查美术素材规格、盘点在用资
 - art-production 是制作、审核、索引和交付区，不是运行时自动扫描目录。游戏的角色、地图、物品和武学由 Godot 原生 .tres Resource 及 data/content_manifest.tres 管理。
 - 素材管理仅有 `candidate` 与 `in_use` 两种：候选数量不限，同一原生 Resource 槽位只能绑定一个使用中的版本。符合既有 Godot 合同即可使用，无额外人工批准门槛。
 - 已有图像能正常通过合同则不强制返工；历史文件仅在确认无运行时引用后归档，不重新接入旧路径。原生 Resource 是唯一真值，不建立 JSON/YAML 运行时配置。
+- 绘图提示词只取 `prompts/ART_STYLE_AI_PROMPTS_V1.md` 中目标类别的短模板和参考图；机器校验细则只用于导入预检。工作单记录**实际发送的提示词**，不另附整套风格规范、失败清单或长负面词表。
 
 ## 可重复流程
 
