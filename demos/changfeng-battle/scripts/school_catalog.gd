@@ -186,12 +186,16 @@ func _valid_form(item: Variant, school_ids: Dictionary) -> bool:
 	return true
 
 func _valid_usage(usage: Variant) -> bool:
-	if not _keys(usage,["id","name","timing","cost","target","effects","attack_profile","once_per_action","animation_action","vfx_slot","vfx_trigger"],["id","name","timing","cost","target","effects"]): return false
+	if not _keys(usage,["id","name","timing","cost","target","effects","attack_profile","once_per_action","animation_action","vfx_slot","vfx_trigger","animation_id","vfx_path"],["id","name","timing","cost","target","effects"]): return false
 	if not _text(usage.id) or not _text(usage.name) or usage.timing not in ["ACTION","ATTACK_REACTION","DEFENSE_REACTION"]: return false
 	if not _keys(usage.cost,["qi","hp"],["qi"]): return false
 	for cost in usage.cost.values():
 		if not _number(cost): return false
 	if usage.has("once_per_action") and not usage.once_per_action is bool: return false
+	if usage.has("animation_id") and (not usage.animation_id is String or not str(usage.animation_id).is_valid_identifier()): return false
+	if usage.has("vfx_path") and (not usage.vfx_path is String or not str(usage.vfx_path).begins_with("res://")): return false
+	if not str(usage.get("animation_action","")).is_empty() and not str(usage.get("animation_id","")).is_empty() and str(usage.animation_action) != str(usage.animation_id): return false
+	if not str(usage.get("vfx_slot","")).is_empty() and not str(usage.get("vfx_path","")).is_empty(): return false
 	if not _keys(usage.target,["kind","min_distance","max_distance","line_of_sight"],["kind"]) or usage.target.kind not in TARGETS: return false
 	for key in ["min_distance","max_distance"]:
 		if usage.target.has(key) and not _number(usage.target[key],1): return false

@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="WuxiaActorAnimationProfile" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/actor_animation_profile.gd" id="1_profile"]
+[ext_resource type="Script" path="res://scripts/content/actor_animation_clip.gd" id="2_clip"]
+[ext_resource type="Texture2D" path="res://assets/imported/in-use/legacy/fallback/default_actor_6x4.svg" id="3_atlas"]
+
+[sub_resource type="Resource" id="idle"]
+script = ExtResource("2_clip")
+action = "idle"
+frames = PackedInt32Array(0, 1, 2, 3, 4, 5)
+loop_fps = 12.0
+loop = true
+
+[sub_resource type="Resource" id="walk"]
+script = ExtResource("2_clip")
+action = "walk"
+frames = PackedInt32Array(6, 7, 8, 9, 10, 11)
+loop_fps = 12.0
+loop = true
+
+[sub_resource type="Resource" id="run"]
+script = ExtResource("2_clip")
+action = "run"
+frames = PackedInt32Array(6, 7, 8, 9, 10, 11)
+loop_fps = 12.0
+loop = true
+
+[sub_resource type="Resource" id="attack1"]
+script = ExtResource("2_clip")
+action = "attack1"
+frames = PackedInt32Array(12)
+
+[sub_resource type="Resource" id="attack2"]
+script = ExtResource("2_clip")
+action = "attack2"
+frames = PackedInt32Array(13)
+
+[sub_resource type="Resource" id="attack3"]
+script = ExtResource("2_clip")
+action = "attack3"
+frames = PackedInt32Array(14)
+
+[sub_resource type="Resource" id="attack4"]
+script = ExtResource("2_clip")
+action = "attack4"
+frames = PackedInt32Array(15)
+
+[sub_resource type="Resource" id="skill"]
+script = ExtResource("2_clip")
+action = "skill"
+frames = PackedInt32Array(22)
+
+[sub_resource type="Resource" id="evade"]
+script = ExtResource("2_clip")
+action = "evade"
+frames = PackedInt32Array(20, 21)
+
+[sub_resource type="Resource" id="guard"]
+script = ExtResource("2_clip")
+action = "guard"
+frames = PackedInt32Array(18)
+
+[sub_resource type="Resource" id="hit"]
+script = ExtResource("2_clip")
+action = "hit"
+frames = PackedInt32Array(19)
+
+[sub_resource type="Resource" id="defeat"]
+script = ExtResource("2_clip")
+action = "defeat"
+frames = PackedInt32Array(23)
+
+[sub_resource type="Resource" id="skill_mist"]
+script = ExtResource("2_clip")
+action = "skill_mist"
+frames = PackedInt32Array(16, 17)
+
+[resource]
+script = ExtResource("1_profile")
+atlas = ExtResource("3_atlas")
+columns = 6
+rows = 4
+clips = Array[Resource]([SubResource("idle"), SubResource("walk"), SubResource("run"), SubResource("attack1"), SubResource("attack2"), SubResource("attack3"), SubResource("attack4"), SubResource("skill"), SubResource("evade"), SubResource("guard"), SubResource("hit"), SubResource("defeat"), SubResource("skill_mist")])

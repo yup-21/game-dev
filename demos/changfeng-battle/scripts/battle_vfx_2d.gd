@@ -3,6 +3,7 @@ extends RefCounted
 const Assets = preload("res://scripts/asset_registry.gd")
 var canvas: Node2D
 var bursts: Array = []
+var skill_scenes: Array = []
 var native_assets = Assets.new()
 
 func _init(painted_layer: Node2D) -> void:
@@ -111,11 +112,41 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
         if is_instance_valid(oldest.node):
             oldest.node.queue_free()
 
+## A specifically authored PackedScene effect has its own lifecycle.
+## Missing explicit scenes are errors, never a procedural VFX alias.
+func _spawn_skill_scene(path: String, position: Vector2) -> bool:
+    if path.is_empty() or not path.begins_with("res://") or not ResourceLoader.exists(path) or canvas == null:
+        push_error("Configured VFX scene missing: " + path)
+        return false
+    var packed: PackedScene = ResourceLoader.load(path) as PackedScene
+    if packed == null:
+        push_error("Configured VFX scene has wrong type: " + path)
+        return false
+    var node: Node = packed.instantiate()
+    if not node is Node2D:
+        node.free()
+        push_error("Configured VFX scene must instantiate a Node2D: " + path)
+        return false
+    var visual := node as Node2D
+    visual.position = position
+    visual.z_index = 151
+    canvas.add_child(visual)
+    skill_scenes.append({"node": visual, "left": 1.5})
+    return true
+
 func handle_events(events: Array, actor_nodes: Dictionary) -> void:
     for event in events:
         var kind := str(event.get("type", ""))
         var source := int(event.get("actor_id", -1))
         var target := int(event.get("defender_id", event.get("target_id", -1)))
+        var scene_path: String = str(event.get("vfx_path", ""))
+        if not scene_path.is_empty() and kind in ["ATTACK_DECLARED", "ACTION_PRESENTATION"]:
+            if actor_nodes.has(source):
+                _spawn_skill_scene(scene_path, actor_nodes[source].position)
+            else:
+                push_error("Configured VFX scene has no actor: " + scene_path)
+        if kind == "ACTION_PRESENTATION":
+            continue
         match kind:
             "HP_DAMAGED", "DAMAGE", "SCORCH_TICK":
                 var victim: int = target if actor_nodes.has(target) else source
@@ -172,6 +203,18 @@ func handle_action_cues(cues: Array, actor_nodes: Dictionary) -> void:
             slot if not slot.is_empty() else event_kind)
 
 func update(delta: float) -> void:
+    for i in range(skill_scenes.size() - 1, -1, -1):
+        var entry: Dictionary = skill_scenes[i]
+        var node: Node = entry.node
+        if not is_instance_valid(node):
+            skill_scenes.remove_at(i)
+            continue
+        entry.left = float(entry.left) - maxf(0.0, delta)
+        if float(entry.left) <= 0.0:
+            node.queue_free()
+            skill_scenes.remove_at(i)
+        else:
+            skill_scenes[i] = entry
     for i in range(bursts.size() - 1, -1, -1):
         var burst: Dictionary = bursts[i]
         var painted: Node2D = burst.node as Node2D
@@ -224,3 +267,7 @@ func clear() -> void:
         if is_instance_valid(burst.node):
             burst.node.queue_free()
     bursts.clear()
+    for entry in skill_scenes:
+        if is_instance_valid(entry.node):
+            entry.node.queue_free()
+    skill_scenes.clear()
