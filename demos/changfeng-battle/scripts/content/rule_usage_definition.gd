@@ -36,13 +36,17 @@ func to_record() -> Dictionary:
         result["attack_profile"] = profile
     if not animation_action.is_empty(): result["animation_action"] = animation_action
     if vfx_slot != null:
-        if vfx_trigger.is_empty() or vfx_slot.to_record().is_empty() or \
+        var slot_record: Dictionary = vfx_slot.to_record()
+        if vfx_trigger.is_empty() or slot_record.is_empty() or \
                 not vfx_slot.resource_path.begins_with("res://") or \
                 not ResourceLoader.exists(vfx_slot.resource_path):
+            push_error("Rule usage %s has an invalid VFX Resource %s (path=%s, record=%s, trigger=%s)" % \
+                [usage_id, vfx_slot.content_id, vfx_slot.resource_path, str(slot_record), vfx_trigger])
             return {}
         result["vfx_slot"] = vfx_slot.content_id
     if not vfx_trigger.is_empty():
         if vfx_slot == null:
+            push_error("Rule usage %s declares a VFX cue without an asset" % usage_id)
             return {}
         result["vfx_trigger"] = vfx_trigger
     if has_once_per_action: result["once_per_action"] = once_per_action
