@@ -24,7 +24,7 @@ func _run() -> void:
     var texture: Texture2D = view.temple_backdrop
     _check(texture!=null, "exploration has a scenery texture")
     if texture!=null:
-        _check(texture.resource_path.contains("/ruined_temple/scene_ruined_temple_background_"),
+        _check(texture.resource_path.contains("/ruined_temple/background."),
             "first-act native scene layer replaces title/fallback texture")
         _check(view._painted_content(texture),"chosen first-act texture has nonblank painted content")
         _check(texture.get_width()>=1024 and texture.get_height()>=600,
