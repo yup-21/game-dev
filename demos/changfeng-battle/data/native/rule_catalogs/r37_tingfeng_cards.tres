@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WuxiaRuleCatalogDefinition" load_steps=116 format=3]
+[gd_resource type="Resource" script_class="WuxiaRuleCatalogDefinition" load_steps=121 format=3]
 
 
 
@@ -31,6 +31,12 @@
 [ext_resource type="Script" path="res://scripts/content/rule_passive_definition.gd" id="14"]
 
 
+
+[ext_resource type="Resource" path="res://data/native/assets/shen_sword_thrust.tres" id="vfx_shen_sword_thrust"]
+[ext_resource type="Resource" path="res://data/native/assets/shen_sword_heavy.tres" id="vfx_shen_sword_heavy"]
+[ext_resource type="Resource" path="res://data/native/assets/shen_wind_step.tres" id="vfx_shen_wind_step"]
+[ext_resource type="Resource" path="res://data/native/assets/shen_wind_guard.tres" id="vfx_shen_wind_guard"]
+[ext_resource type="Resource" path="res://data/native/assets/shen_sword_sweep.tres" id="vfx_shen_sword_sweep"]
 
 [sub_resource type="Resource" id="R0001"]
 script = ExtResource("9")
@@ -94,6 +100,9 @@ parameters = {"card_id":"tf_follow","destination":"hand","target":"self","count"
 script = ExtResource("4")
 usage_id = "probe"
 display_name = "探锋·试探"
+animation_action = "attack1"
+vfx_slot = ExtResource("vfx_shen_sword_thrust")
+vfx_trigger = "strike_active"
 timing = "ACTION"
 cost = SubResource("R0003")
 target = SubResource("R0004")
@@ -159,6 +168,9 @@ effects = Array[Resource]([SubResource("R0015")])
 script = ExtResource("4")
 usage_id = "heavy"
 display_name = "断岳·重斩"
+animation_action = "attack4"
+vfx_slot = ExtResource("vfx_shen_sword_heavy")
+vfx_trigger = "strike_active"
 timing = "ACTION"
 cost = SubResource("R0010")
 target = SubResource("R0011")
@@ -207,6 +219,9 @@ effects = Array[Resource]([SubResource("R0022")])
 script = ExtResource("4")
 usage_id = "expose"
 display_name = "断岳·照胆"
+animation_action = "attack2"
+vfx_slot = ExtResource("vfx_shen_sword_heavy")
+vfx_trigger = "strike_active"
 timing = "ACTION"
 cost = SubResource("R0018")
 target = SubResource("R0019")
@@ -241,6 +256,9 @@ parameters = {"max_distance":2,"path_required":true}
 script = ExtResource("4")
 usage_id = "step"
 display_name = "游身·踏雪"
+animation_action = "evade"
+vfx_slot = ExtResource("vfx_shen_wind_step")
+vfx_trigger = "evade_visual_start"
 timing = "ACTION"
 cost = SubResource("R0026")
 target = SubResource("R0027")
@@ -266,6 +284,9 @@ parameters = {"max_distance":1,"path_required":true}
 script = ExtResource("4")
 usage_id = "evasion"
 display_name = "游身·避锋"
+animation_action = "evade"
+vfx_slot = ExtResource("vfx_shen_wind_step")
+vfx_trigger = "evade_visual_start"
 timing = "DEFENSE_REACTION"
 cost = SubResource("R0030")
 target = SubResource("R0031")
@@ -302,6 +323,9 @@ parameters = {"target":"self","amount":3}
 script = ExtResource("4")
 usage_id = "guard"
 display_name = "化劲·护元"
+animation_action = "guard"
+vfx_slot = ExtResource("vfx_shen_wind_guard")
+vfx_trigger = "guard_active"
 timing = "ACTION"
 cost = SubResource("R0035")
 target = SubResource("R0036")
@@ -324,6 +348,9 @@ parameters = {"flat_delta":-3}
 script = ExtResource("4")
 usage_id = "yield"
 display_name = "化劲·卸劲"
+animation_action = "guard"
+vfx_slot = ExtResource("vfx_shen_wind_guard")
+vfx_trigger = "guard_active"
 timing = "DEFENSE_REACTION"
 cost = SubResource("R0040")
 target = SubResource("R0041")
@@ -363,6 +390,9 @@ parameters = {"parry_bonus":1,"route_bonus":{"thrust":2,"sweep":0,"crushing":-1}
 script = ExtResource("4")
 usage_id = "intercept"
 display_name = "化劲·迎锋"
+animation_action = "guard"
+vfx_slot = ExtResource("vfx_shen_wind_guard")
+vfx_trigger = "guard_active"
 timing = "DEFENSE_REACTION"
 cost = SubResource("R0044")
 target = SubResource("R0045")
@@ -394,6 +424,9 @@ parameters = {"shape":"locked_cell_plus_orthogonal_neighbors","single_original_t
 script = ExtResource("4")
 usage_id = "change"
 display_name = "变锋·追击"
+animation_action = "skill"
+vfx_slot = ExtResource("vfx_shen_sword_sweep")
+vfx_trigger = "skill_visual_active"
 timing = "ATTACK_REACTION"
 cost = SubResource("R0052")
 target = SubResource("R0053")
@@ -416,6 +449,9 @@ parameters = {"target":"chosen_opponent_unresolved_response_link"}
 script = ExtResource("4")
 usage_id = "attack_counter"
 display_name = "变锋·截势（攻）"
+animation_action = "skill"
+vfx_slot = ExtResource("vfx_shen_sword_sweep")
+vfx_trigger = "skill_visual_active"
 timing = "ATTACK_REACTION"
 cost = SubResource("R0056")
 target = SubResource("R0057")
@@ -438,6 +474,9 @@ parameters = {"target":"chosen_opponent_unresolved_response_link"}
 script = ExtResource("4")
 usage_id = "defense_counter"
 display_name = "变锋·截势（守）"
+animation_action = "guard"
+vfx_slot = ExtResource("vfx_shen_wind_guard")
+vfx_trigger = "guard_active"
 timing = "DEFENSE_REACTION"
 cost = SubResource("R0060")
 target = SubResource("R0061")
@@ -490,6 +529,9 @@ parameters = {"amount":2}
 script = ExtResource("4")
 usage_id = "follow"
 display_name = "探锋·追风"
+animation_action = "attack3"
+vfx_slot = ExtResource("vfx_shen_sword_sweep")
+vfx_trigger = "strike_active"
 timing = "ACTION"
 cost = SubResource("R0065")
 target = SubResource("R0066")

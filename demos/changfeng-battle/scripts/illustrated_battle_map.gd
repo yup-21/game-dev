@@ -1,7 +1,6 @@
 extends CanvasLayer
 ## Painted 2D battle. A versioned MapBake, not a perspective camera, is
 ## authoritative for ALL tile footprints, mouse hits and character feet.
-const Fallback = preload("res://scripts/fallback_assets.gd")
 const MapBake = preload("res://scripts/map_bake.gd")
 const CombatScale = preload("res://scripts/combat_scale.gd")
 var bake
@@ -36,10 +35,11 @@ func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH)
     picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
     if bake.scene_art != null:
         picture.texture = bake.scene_art.background
-    elif ResourceLoader.exists(bake.image_path):
-        picture.texture = load(bake.image_path)
     else:
-        picture.texture = Fallback.SCENE
+        picture.texture = ResourceLoader.load(bake.image_path, "Texture2D") as Texture2D
+    if picture.texture == null:
+        push_error("Required battle map artwork missing: " + bake.image_path)
+        return
     picture.z_index = -10
     scene_root.add_child(picture)
     if bake.scene_art != null:

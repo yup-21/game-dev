@@ -22,6 +22,7 @@ loop = true
 script = ExtResource("2_clip")
 action = "attack"
 frames = PackedInt32Array(6, 7, 8)
+frame_durations = PackedFloat32Array(0.083333, 0.083333, 0.083334)
 
 [sub_resource type="Resource" id="Guard"]
 script = ExtResource("2_clip")
@@ -52,6 +53,7 @@ frames = PackedInt32Array(19, 20, 21)
 script = ExtResource("2_clip")
 action = "defeat"
 frames = PackedInt32Array(22, 23)
+frame_durations = PackedFloat32Array(0.5, 0.5)
 
 [resource]
 script = ExtResource("1_profile")
@@ -60,4 +62,5 @@ columns = 6
 rows = 4
 feet_offset = Vector2(0, -102)
 actor_scale = Vector2(0.78, 0.78)
+action_fallbacks = {"walk":"move", "run":"move", "attack1":"attack", "attack2":"attack", "attack3":"attack", "attack4":"attack"}
 clips = Array[Resource]([SubResource("Idle"), SubResource("Move"), SubResource("Attack"), SubResource("Guard"), SubResource("Hit"), SubResource("Evade"), SubResource("Skill"), SubResource("Combo"), SubResource("Defeat")])

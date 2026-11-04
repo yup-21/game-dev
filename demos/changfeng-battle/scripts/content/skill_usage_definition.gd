@@ -14,14 +14,15 @@ extends Resource
 @export_enum("thrust", "sweep", "crushing") var attack_route: String = "thrust"
 @export var attack_break_bonus: int = 0
 @export var once_per_action: bool = false
+@export var animation_action: String = ""
+@export var vfx_slot: WuxiaVFXDefinition
+@export var vfx_trigger: String = ""
 @export var effects: Array[Resource] = []
-## Exactly one action clip and one optional Godot VFX scene per usage.
-## Any action ID registered on the character may be used, including attack1..4.
-@export var animation_id: String = ""
-@export var vfx_scene: PackedScene
 @export var when: Resource
 
 func to_record() -> Dictionary:
+    if not animation_action.is_empty() and (not animation_action.is_valid_identifier() or animation_action != animation_action.to_lower()):
+        return {}
     var converted: Array = []
     for effect in effects:
         if not effect is WuxiaEffectDefinition:
@@ -43,13 +44,14 @@ func to_record() -> Dictionary:
             "route": attack_route, "break_bonus": attack_break_bonus,
             "range": target_max_distance
         }
-    if not animation_id.is_empty():
-        if not animation_id.is_valid_identifier(): return {}
-        result["animation_id"] = animation_id
-    if vfx_scene != null:
-        if not vfx_scene.resource_path.begins_with("res://"):
+    if not animation_action.is_empty(): result["animation_action"] = animation_action
+    if vfx_slot != null:
+        if vfx_trigger.is_empty() or vfx_slot.to_record().is_empty() or \
+                not vfx_slot.resource_path.begins_with("res://") or \
+                not ResourceLoader.exists(vfx_slot.resource_path):
             return {}
-        result["vfx_path"] = vfx_scene.resource_path
+        result["vfx_slot"] = vfx_slot.content_id
+    if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
     if when != null:
         if not when is WuxiaConditionDefinition:
             return {}

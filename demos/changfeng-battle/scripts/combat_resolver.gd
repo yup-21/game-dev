@@ -171,10 +171,12 @@ func play_card(actor,choice: Dictionary) -> void:
 	var u: Dictionary=cards.usage(uid,str(choice.usage_id))
 	if u.get("once_per_action",false): actor.card_uses[str(d.id)+":"+str(u.id)]=int(actor.card_uses.get(str(d.id)+":"+str(u.id),0))+1
 	cards.leave_hand(actor,uid)
-	emit("CARD_PLAYED",{"actor_id":actor.id,"definition_id":d.id,"usage_id":u.id,"text":"%s · %s" % [actor.name,u.get("name",d.name)]})
+	emit("CARD_PLAYED",{"actor_id":actor.id,"definition_id":d.id,"usage_id":u.id,
+        "animation_action":str(u.get("animation_action","")),
+        "vfx_slot":str(u.get("vfx_slot","")),
+        "vfx_trigger":str(u.get("vfx_trigger","")),
+        "text":"%s · %s" % [actor.name,u.get("name",d.name)]})
 	if state.mode=="CLASH":
-		if not str(u.get("animation_id","")).is_empty() or not str(u.get("vfx_path","")).is_empty():
-			_emit_presentation(actor.id,u)
 		reactions.add(actor.id,uid,str(d.id),u,choice)
 		return
 	var damage: int=-1
@@ -182,9 +184,8 @@ func play_card(actor,choice: Dictionary) -> void:
 		if e.type=="deal_damage": damage=int(e.amount)
 	if damage>=0:
 		var profile: Dictionary=u.get("attack_profile",{})
-		declare_attack(actor.id,uid,str(d.id),str(u.id),int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.get("effects",[]),"","",str(u.get("animation_id","")),str(u.get("vfx_path","")))
+		declare_attack(actor.id,uid,str(d.id),str(u.id),int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.get("effects",[]),"","",u)
 	else:
-		_emit_presentation(actor.id,u)
 		apply_effects(actor.id,u.get("effects",[]),choice)
 		finish_card(actor.id,uid)
 
@@ -193,10 +194,11 @@ func play_ability(actor,choice: Dictionary) -> void:
 	var stage: String=str(choice.node_id)
 	var u: Dictionary=techniques.node(actor,id,stage)
 	if u.is_empty(): return
-	emit("ABILITY_USED",{"actor_id":actor.id,"technique_id":id,"node_id":stage})
+	emit("ABILITY_USED",{"actor_id":actor.id,"technique_id":id,"node_id":stage,
+        "animation_action":str(u.get("animation_action","")),
+        "vfx_slot":str(u.get("vfx_slot","")),
+        "vfx_trigger":str(u.get("vfx_trigger",""))})
 	if state.mode=="CLASH":
-		if not str(u.get("animation_id","")).is_empty() or not str(u.get("vfx_path","")).is_empty():
-			_emit_presentation(actor.id,u)
 		techniques.advance(actor,id,stage)
 		reactions.add(actor.id,"",id,u,choice)
 		return
@@ -205,19 +207,12 @@ func play_ability(actor,choice: Dictionary) -> void:
 		if effect.type=="deal_damage": damage=int(effect.amount)
 	if damage>=0:
 		var profile: Dictionary=u.get("attack_profile",{})
-		declare_attack(actor.id,"",id,stage,int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.effects,id,stage,str(u.get("animation_id","")),str(u.get("vfx_path","")))
+		declare_attack(actor.id,"",id,stage,int(choice.target_id),damage,str(profile.get("route","thrust")),int(profile.get("break_bonus",0)),u.effects,id,stage,u)
 	else:
-		_emit_presentation(actor.id,u)
 		apply_effects(actor.id,u.effects,choice)
 		techniques.advance(actor,id,stage)
 
-## Presentation data is an optional, non-authoritative payload.
-func _emit_presentation(actor_id: int, usage: Dictionary) -> void:
-	emit("ACTION_PRESENTATION",{"actor_id":actor_id,
-		"animation_id":str(usage.get("animation_id","")),
-		"vfx_path":str(usage.get("vfx_path",""))})
-
-func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: String,target_id: int,damage: int,route: String,break_bonus: int,effects: Array,technique_id: String="",node_id: String="",animation_id: String="",vfx_path: String="") -> void:
+func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: String,target_id: int,damage: int,route: String,break_bonus: int,effects: Array,technique_id: String="",node_id: String="",presentation: Dictionary={}) -> void:
 	var actor=state.get_actor(actor_id)
 	var target=state.get_actor(target_id)
 	# Attacks (basic, martial cards and staged abilities) all turn toward
@@ -248,7 +243,12 @@ func declare_attack(actor_id: int,uid: String,definition_id: String,usage_id: St
 		for armed_id in techniques.arm_from_card(actor,definition_id,usage_id):
 			emit("TECHNIQUE_ARMED",{"actor_id":actor_id,"technique_id":armed_id,"text":"变锋 · 势已成"})
 	reactions.declare(attack)
-	emit("ATTACK_DECLARED",{"actor_id":actor_id,"target_id":target_id,"facing":actor.facing,"definition_id":definition_id,"usage_id":usage_id,"animation_id":animation_id,"vfx_path":vfx_path,"text":"%s 向 %s 出招" % [actor.name,target.name]})
+	emit("ATTACK_DECLARED",{"actor_id":actor_id,"target_id":target_id,
+        "facing":actor.facing,"definition_id":definition_id,"usage_id":usage_id,
+        "animation_action":str(presentation.get("animation_action","")),
+        "vfx_slot":str(presentation.get("vfx_slot","")),
+        "vfx_trigger":str(presentation.get("vfx_trigger","")),
+        "text":"%s 向 %s 出招" % [actor.name,target.name]})
 	# Root attack effects are usually deferred until hit/miss resolution.
 	# A grant_card at the root is different: create the derivative NOW, before
 	# the defender/attacker alternate response priority, so 变锋 can actually

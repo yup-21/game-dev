@@ -1,8 +1,10 @@
-[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/skill_definition.gd" id="1_skill"]
 [ext_resource type="Script" path="res://scripts/content/skill_usage_definition.gd" id="2_usage"]
 [ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+
+[ext_resource type="Resource" path="res://data/native/assets/shen_sword_thrust.tres" id="vfx_shen_sword_thrust"]
 
 [sub_resource type="Resource" id="Resource_damage"]
 script = ExtResource("3_effect")
@@ -14,6 +16,9 @@ amount = 2.0
 script = ExtResource("2_usage")
 usage_id = "follow"
 display_name = "追风"
+animation_action = "attack1"
+vfx_slot = ExtResource("vfx_shen_sword_thrust")
+vfx_trigger = "strike_active"
 timing = "ACTION"
 cost_qi = 1
 target_kind = "enemy_actor"

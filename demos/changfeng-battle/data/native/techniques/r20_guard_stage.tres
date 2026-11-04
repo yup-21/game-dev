@@ -21,6 +21,8 @@ text_value = "iron_body"
 [sub_resource type="Resource" id="Resource_guard"]
 script = ExtResource("2_node")
 node_id = "guard"
+animation_action = "guard"
+vfx_trigger = "guard_active"
 stage = "guard"
 next_node = "guard"
 timing = "ACTION"

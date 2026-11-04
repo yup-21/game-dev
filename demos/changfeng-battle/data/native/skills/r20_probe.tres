@@ -1,8 +1,10 @@
-[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/skill_definition.gd" id="1_skill"]
 [ext_resource type="Script" path="res://scripts/content/skill_usage_definition.gd" id="2_usage"]
 [ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+
+[ext_resource type="Resource" path="res://data/native/assets/shen_wind_guard.tres" id="vfx_shen_wind_guard"]
 
 [sub_resource type="Resource" id="Resource_status"]
 script = ExtResource("3_effect")
@@ -27,6 +29,9 @@ parameters = {"card_id": "r20_follow", "count": 1, "destination": "hand"}
 script = ExtResource("2_usage")
 usage_id = "probe"
 display_name = "试锋"
+animation_action = "guard"
+vfx_slot = ExtResource("vfx_shen_wind_guard")
+vfx_trigger = "guard_active"
 timing = "ACTION"
 target_kind = "self"
 effects = Array[Resource]([SubResource("Resource_status"), SubResource("Resource_echo"), SubResource("Resource_derived")])

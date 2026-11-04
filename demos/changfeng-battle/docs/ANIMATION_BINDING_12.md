@@ -1,64 +1,76 @@
-# 12-action animation binding and optional skill VFX
+# Twelve-action animation and skill VFX bindings
 
-The Godot runtime supports twelve semantic base actions while continuing to
-load the existing nine-action atlases. The twelve native action IDs are:
+The runtime supports `idle`, `walk`, `run`, `attack1`–`attack4`,
+`skill`, `evade`, `guard`, `hit` and `defeat`, plus custom
+`WuxiaActorAnimationClip.action` IDs. Clips belong to each character's
+`WuxiaActorAnimationProfile`.
 
-`idle`, `walk`, `run`, `attack1`, `attack2`, `attack3`, `attack4`,
-`skill`, `evade`, `guard`, `hit`, and `defeat`.
+## Single authoring contract
 
-An animation profile may contain further character-specific IDs such as
-`skill_mist_cut`. Any ID must be a valid Godot identifier, unique within the
-profile, and associated with a nonempty list of valid atlas frame indices.
+A skill usage, rule usage or technique stage has exactly three presentation fields:
 
-## Authoring
+- `animation_action: String` — the **one** chosen action ID, such as `attack3`
+  or `skill`. Leave empty to use the semantic event's action. A nonempty
+  action must be defined by the applicable character's animation profile.
+- `vfx_slot: WuxiaVFXDefinition` — optional, typed reference to a native
+  VFX `.tres` Resource (for example
+  `res://data/native/assets/shen_sword_thrust.tres`). The Resource has
+  one stable `content_id`, which is serialized for the battle runtime.
+  **Do not** type an asset ID, file path or PackedScene on the usage.
+- `vfx_trigger: String` — the named semantic action-timeline cue (for
+  example `strike_active`). Required whenever `vfx_slot` is bound;
+  a trigger without an explicit VFX Resource may still time ordinary\n  procedural event visuals.
 
-1. Author a `WuxiaActorAnimationProfile` containing all twelve base clips.
-   `attack1`–`attack4` represent four independent attacks; their poses and
-   weapon techniques are chosen per character, not globally fixed to swords.
-2. Record each `WuxiaActorAnimationClip.action`, frame order, loop flag and
-   FPS. `idle`, `walk` and `run` may loop; defeat stays at the final pose.
-3. Each usage in `WuxiaSkillUsageDefinition`, `WuxiaRuleUsageDefinition`
-   and each technique node in `WuxiaTechniqueNodeDefinition` can configure
-   **one** `animation_id`. Choose any existing action ID including `attack1`
-   through `attack4` or an additional actor-specific clip. An empty ID
-   means use the usual presentation action.
-4. Set the optional **single** `vfx_scene: PackedScene` slot to a saved
-   `.tscn` scene. Its path is forwarded to the visual event and instantiated
-   in the 2D battle world; it is disposed of after 1.5 seconds if the scene
-   does not free itself. This slot does not alter combat damage, duration,
-   action legality or invulnerability.
-5. A skill that declares an attack carries its visual selection on the
-   `ATTACK_DECLARED` event. Other skills emit a presentation-only
-   `ACTION_PRESENTATION` event. This keeps animation selection separate
-   from the rules engine and allows the same action to be shared by skills.
+There is no second `animation_id` or `vfx_scene` authoring field,
+no `vfx_path` runtime shortcut and no `ACTION_PRESENTATION` event.
+Configured effects fire **only when the queued animation reaches their cue**.
+Missing actions, cues or assets fail validation rather than silently
+choosing another configured action or effect. Combat timing and damage
+remain independent of visual playback.
 
-## Compatibility and limitations
+## VFX Resource formats
 
-- Existing nine-action profiles remain valid and render through aliases:
-  `walk/run -> move`, `attack1..4 -> attack`. Until a full twelve-action
-  artwork profile is imported, these aliases **reuse the original frames**;
-  they do not generate new animation art.
-- Character profiles still use one packed atlas (`atlas`, `columns`,
-  `rows`). Separate source Sprite Sheets should be repacked into that
-  atlas by the art workflow before import.
-- `attack1` is the default for an unbound attack; the original `attack`
-  and `combo` names remain playable as compatibility aliases.
-- Additional skill animations can be registered without editing any
-  animation-name enumeration. Missing animation IDs fall back to the
-  semantic action and emit a warning.
-- Individual attack timing phases currently share the semantic `attack`
-  ActionTimeline. The animation itself is cosmetic. Per-frame duration
-  tables and root-motion tracks are not added by this change.
-- `run` can be selected with a movement event's `run=true` flag. Normal
-  movements use `walk`. Movement physics remains authoritative elsewhere.
-- When HP reaches zero, `defeat` is played and held; the battlefield no
-  longer hides defeated sprites immediately.
+`WuxiaVFXDefinition` extends the existing imported-asset Resource:
+`content_id`, ownership, provenance and status stay in one place.
 
-Run the smoke test with:
+- **Texture2D atlas:** set `resource` to the imported texture, then author
+  `columns`, `rows` and optional `frame_indices`. The VFX uses the
+  authored frame order at the cue; no extra wrapping Resource is required.
+- **PackedScene:** set `resource` to a scene whose root is `Node2D`.
+  Scene effects are instantiated at the same authored cue, and cleaned
+  up after their visual lifetime. Scene VFX have a 1×1 grid and no atlas
+  frame indices. Native VFX scenes live under `res://scenes/` or
+  `res://assets/imported/`.
+
+The imported VFX asset card is declared once in the native content
+manifest. Skill, card and technique Resources point directly to that
+card. Asset loading validates the referenced file and media type.
+
+A missing optional VFX binding permits ordinary generic event visuals.
+It **never** substitutes a generic effect for a nonempty invalid binding.
+
+## Animation resources
+
+Modern profiles may author all twelve actions and arbitrary additional
+ones. Earlier nine-action profiles remain legal. Compatibility remaps
+must be **explicitly authored** in `action_fallbacks`, with a direct
+existing clip as target—there is no hard-coded alias table.
+
+An individual clip can use its own Sprite Sheet, dimensions,
+per-frame `frame_durations` and visual-only `root_offsets`.
+Non-loop clips normalize their frame beats to semantic presentation
+windows; `defeat` holds its final pose. Visual root motion never
+modifies battle state or hitboxes.
+
+## Regression checks
 
 ```sh
 godot --headless --path demos/changfeng-battle --script res://checks/test_twelve_action_binding.gd
+godot --headless --path demos/changfeng-battle --script res://checks/test_actor_animation_actions.gd
+godot --headless --path demos/changfeng-battle --script res://checks/test_shen_martial_vfx.gd
+godot --headless --path demos/changfeng-battle --script res://checks/test_presentation_references.gd
 ```
 
-The fixture profile uses an existing generic atlas for mechanical validation;
-it is not production art and does not replace an in-use character profile.
+The scene VFX check uses a neutral marker scene under
+`res://scenes/vfx/`; it is a mechanical test fixture, not a replacement
+for approved production artwork.

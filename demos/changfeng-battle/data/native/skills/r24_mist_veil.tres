@@ -1,8 +1,10 @@
-[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="WuxiaSkillDefinition" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/skill_definition.gd" id="1_skill"]
 [ext_resource type="Script" path="res://scripts/content/skill_usage_definition.gd" id="2_usage"]
 [ext_resource type="Script" path="res://scripts/content/effect_definition.gd" id="3_effect"]
+
+[ext_resource type="Resource" path="res://data/native/assets/r24_status_vfx.tres" id="vfx_r24_status_vfx"]
 
 [sub_resource type="Resource" id="Dew"]
 script = ExtResource("3_effect")
@@ -25,6 +27,9 @@ parameters = {"card_id": "r24_mist_follow", "count": 1, "destination": "hand"}
 [sub_resource type="Resource" id="Usage"]
 script = ExtResource("2_usage")
 usage_id = "veil"
+animation_action = "skill"
+vfx_slot = ExtResource("vfx_r24_status_vfx")
+vfx_trigger = "skill_visual_active"
 display_name = "敛雾"
 timing = "ACTION"
 cost_qi = 0

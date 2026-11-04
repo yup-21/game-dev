@@ -83,9 +83,10 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
                 root.add_child(shard)
 
     # Authored transparent textures remain the preferred production art.
-    var lookup: String = source_event if not source_event.is_empty() and not native_assets.record_for_event(source_event).is_empty() else kind
-    var authored_spec: Dictionary = native_assets.record_for_event(lookup)
-    var authored: Texture2D = native_assets.texture_for_event(lookup)
+    var authored_spec: Dictionary = native_assets.vfx_spec(source_event)
+    if authored_spec.is_empty():
+        authored_spec = native_assets.vfx_spec(kind)
+    var authored: Texture2D = native_assets.texture(str(authored_spec.get("id", ""))) if not authored_spec.is_empty() else null
     var authored_frames: PackedInt32Array = authored_spec.get("frame_indices", PackedInt32Array())
     if authored != null:
         var sprite := Sprite2D.new()
@@ -99,24 +100,32 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
             float(authored.get_height()) / float(sprite.vframes))
         sprite.scale = Vector2.ONE * (100.0 * size / maxf(longest, 1.0))
         root.add_child(sprite)
+        # Authored textures replace, rather than stack on, geometric fallbacks.
+        for extra in root.get_children():
+            if extra != sprite and extra is CanvasItem:
+                extra.visible = false
     bursts.append({"node": root, "duration": duration, "left": duration,
-        "kind": kind, "path": path, "size": size, "vfx_frames": authored_frames})
+        "kind": kind, "path": path, "size": size, "vfx_frames": authored_frames,
+        "authored": authored != null})
     if bursts.size() > 32:
         var oldest: Dictionary = bursts.pop_front()
         if is_instance_valid(oldest.node):
             oldest.node.queue_free()
 
-## The optional skill slot loads a regular Godot PackedScene. A finite visual
-## lifetime is enforced even if the authored scene does not free itself.
+## A specifically authored PackedScene effect has its own lifecycle.
+## Missing explicit scenes are errors, never a procedural VFX alias.
 func _spawn_skill_scene(path: String, position: Vector2) -> bool:
-    if path.is_empty() or not path.begins_with("res://") or not ResourceLoader.exists(path):
+    if path.is_empty() or not path.begins_with("res://") or not ResourceLoader.exists(path) or canvas == null:
+        push_error("Configured VFX scene missing: " + path)
         return false
     var packed: PackedScene = ResourceLoader.load(path) as PackedScene
-    if packed == null or canvas == null:
+    if packed == null:
+        push_error("Configured VFX scene has wrong type: " + path)
         return false
     var node: Node = packed.instantiate()
     if not node is Node2D:
         node.free()
+        push_error("Configured VFX scene must instantiate a Node2D: " + path)
         return false
     var visual := node as Node2D
     visual.position = position
@@ -125,27 +134,12 @@ func _spawn_skill_scene(path: String, position: Vector2) -> bool:
     skill_scenes.append({"node": visual, "left": 1.5})
     return true
 
-
 func handle_events(events: Array, actor_nodes: Dictionary) -> void:
     for event in events:
         var kind := str(event.get("type", ""))
         var source := int(event.get("actor_id", -1))
         var target := int(event.get("defender_id", event.get("target_id", -1)))
-        var authored_vfx: bool = false
-        if kind in ["ATTACK_DECLARED", "ACTION_PRESENTATION"] and actor_nodes.has(source):
-            authored_vfx = _spawn_skill_scene(str(event.get("vfx_path", "")),
-                actor_nodes[source].position)
-        if kind == "ACTION_PRESENTATION" or (kind == "ATTACK_DECLARED" and authored_vfx):
-            continue
         match kind:
-            "ATTACK_DECLARED":
-                if actor_nodes.has(source):
-                    _spawn_canvas(actor_nodes[source].position, "slash",
-                        Color(0.70, 0.97, 0.92, 0.78), 0.45, 1.15, kind)
-            "COMBO_TRIGGERED":
-                if actor_nodes.has(source):
-                    _spawn_canvas(actor_nodes[source].position, "combo",
-                        Color(1.00, 0.78, 0.38, 0.90), 0.70, 1.45, kind)
             "HP_DAMAGED", "DAMAGE", "SCORCH_TICK":
                 var victim: int = target if actor_nodes.has(target) else source
                 if actor_nodes.has(victim):
@@ -169,6 +163,43 @@ func handle_events(events: Array, actor_nodes: Dictionary) -> void:
                 if actor_nodes.has(source):
                     _spawn_canvas(actor_nodes[source].position, "guard",
                         Color(0.65, 0.86, 1.0, 0.70), 0.40, 0.85, kind)
+
+## Both authored texture and PackedScene skill VFX fire on their queued action cue.
+## Slots resolve to one registered native VFX Resource, never a legacy scene path.
+func handle_action_cues(cues: Array, actor_nodes: Dictionary) -> void:
+    for cue in cues:
+        if str(cue.get("name", "")) != str(cue.get("vfx_trigger", "")):
+            continue
+        var id: int = int(cue.get("actor_id", -1))
+        if not actor_nodes.has(id):
+            continue
+        var event_kind: String = str(cue.get("event_type", ""))
+        var slot: String = str(cue.get("vfx_slot", ""))
+        if slot.is_empty() and event_kind not in ["ATTACK_DECLARED", "COMBO_TRIGGERED"]:
+            continue
+        if not slot.is_empty():
+            var explicit_spec: Dictionary = native_assets.vfx_spec(slot)
+            if explicit_spec.is_empty():
+                push_error("Configured VFX slot missing: " + slot)
+                continue
+            var scene: PackedScene = native_assets.vfx_scene(slot)
+            if scene != null:
+                _spawn_skill_scene(str(explicit_spec.path), actor_nodes[id].position)
+                continue
+            if native_assets.texture(str(explicit_spec.id)) == null:
+                push_error("Configured VFX texture missing: " + slot)
+                continue
+        var kind: String = "combo" if event_kind == "COMBO_TRIGGERED" else "slash"
+        if str(cue.get("profile", "")) == "guard":
+            kind = "guard"
+        elif str(cue.get("profile", "")) == "evade":
+            kind = "evade"
+        _spawn_canvas(actor_nodes[id].position, kind,
+            Color(1.0, 0.78, 0.38, 0.90) if kind == "combo" else
+            Color(0.70, 0.97, 0.92, 0.78),
+            0.70 if kind == "combo" else 0.45,
+            1.45 if kind == "combo" else 1.15,
+            slot if not slot.is_empty() else event_kind)
 
 func update(delta: float) -> void:
     for i in range(skill_scenes.size() - 1, -1, -1):
@@ -199,7 +230,11 @@ func update(delta: float) -> void:
                 authored_sprite.frame = vfx_frames[mini(int(progress * vfx_frames.size()), vfx_frames.size() - 1)]
         var stroke: Line2D = painted.get_node("MartialStroke") as Line2D
         var glow: Line2D = painted.get_node("SoftGlow") as Line2D
-        if kind in ["slash", "combo"]:
+        if bool(burst.get("authored", false)):
+            # Production atlas owns its shape. Avoid drawing procedural arcs over it.
+            stroke.points = PackedVector2Array()
+            glow.points = PackedVector2Array()
+        elif kind in ["slash", "combo"]:
             # Sweep the tip quickly, then let the trail disperse.
             var sweep := clampf(progress / 0.56, 0.0, 1.0)
             var path: PackedVector2Array = burst.path

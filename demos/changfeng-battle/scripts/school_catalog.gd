@@ -186,12 +186,17 @@ func _valid_form(item: Variant, school_ids: Dictionary) -> bool:
 	return true
 
 func _valid_usage(usage: Variant) -> bool:
-	if not _keys(usage,["id","name","timing","cost","target","effects","attack_profile","once_per_action"],["id","name","timing","cost","target","effects"]): return false
+	if not _keys(usage,["id","name","timing","cost","target","effects","attack_profile","once_per_action","animation_action","vfx_slot","vfx_trigger"],["id","name","timing","cost","target","effects"]): return false
 	if not _text(usage.id) or not _text(usage.name) or usage.timing not in ["ACTION","ATTACK_REACTION","DEFENSE_REACTION"]: return false
 	if not _keys(usage.cost,["qi","hp"],["qi"]): return false
 	for cost in usage.cost.values():
 		if not _number(cost): return false
 	if usage.has("once_per_action") and not usage.once_per_action is bool: return false
+	for field in ["animation_action", "vfx_slot", "vfx_trigger"]:
+		if usage.has(field) and (not usage[field] is String or str(usage[field]).is_empty()):
+			return false
+	if usage.has("vfx_slot") and not usage.has("vfx_trigger"):
+		return false
 	if not _keys(usage.target,["kind","min_distance","max_distance","line_of_sight"],["kind"]) or usage.target.kind not in TARGETS: return false
 	for key in ["min_distance","max_distance"]:
 		if usage.target.has(key) and not _number(usage.target[key],1): return false

@@ -117,8 +117,15 @@ func _run() -> void:
         return
     vfx.call("handle_events", [{"type": "ATTACK_DECLARED", "actor_id": 0}], scene.get("actor_nodes"))
     var bursts: Array = vfx.get("bursts")
-    if bursts.is_empty():
-        push_error("HD2D_STARTUP: slash VFX did not spawn")
+    if not bursts.is_empty():
+        push_error("HD2D_STARTUP: attack VFX fired before effective animation cue")
+        quit(1)
+        return
+    vfx.call("handle_action_cues", [{"name":"strike_active",
+        "vfx_trigger":"strike_active", "profile":"attack",
+        "event_type":"ATTACK_DECLARED", "actor_id":0}], scene.get("actor_nodes"))
+    if vfx.get("bursts").is_empty():
+        push_error("HD2D_STARTUP: slash VFX did not spawn on effective cue")
         quit(1)
         return
     vfx.call("clear")

@@ -9,11 +9,14 @@ extends Resource
 @export var attack_profile: WuxiaRuleAttackProfileDefinition
 @export var has_once_per_action: bool = false
 @export var once_per_action: bool = false
+@export var animation_action: String = ""
+@export var vfx_slot: WuxiaVFXDefinition
+@export var vfx_trigger: String = ""
 @export var effects: Array[Resource] = []
-@export var animation_id: String = ""
-@export var vfx_scene: PackedScene
 
 func to_record() -> Dictionary:
+    if not animation_action.is_empty() and (not animation_action.is_valid_identifier() or animation_action != animation_action.to_lower()):
+        return {}
     if usage_id.is_empty() or cost == null or target == null: return {}
     var cost_data: Dictionary = cost.to_record()
     var target_data: Dictionary = target.to_record()
@@ -31,11 +34,16 @@ func to_record() -> Dictionary:
         var profile: Dictionary = attack_profile.to_record()
         if profile.is_empty(): return {}
         result["attack_profile"] = profile
+    if not animation_action.is_empty(): result["animation_action"] = animation_action
+    if vfx_slot != null:
+        var slot_record: Dictionary = vfx_slot.to_record()
+        if vfx_trigger.is_empty() or slot_record.is_empty() or \
+                not vfx_slot.resource_path.begins_with("res://") or \
+                not ResourceLoader.exists(vfx_slot.resource_path):
+            push_error("Rule usage %s has an invalid VFX Resource %s (path=%s, record=%s, trigger=%s)" % \
+                [usage_id, vfx_slot.content_id, vfx_slot.resource_path, str(slot_record), vfx_trigger])
+            return {}
+        result["vfx_slot"] = vfx_slot.content_id
+    if not vfx_trigger.is_empty(): result["vfx_trigger"] = vfx_trigger
     if has_once_per_action: result["once_per_action"] = once_per_action
-    if not animation_id.is_empty():
-        if not animation_id.is_valid_identifier(): return {}
-        result["animation_id"] = animation_id
-    if vfx_scene != null:
-        if not vfx_scene.resource_path.begins_with("res://"): return {}
-        result["vfx_path"] = vfx_scene.resource_path
     return result

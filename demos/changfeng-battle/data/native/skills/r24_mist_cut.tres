@@ -13,6 +13,8 @@ amount = 2.0
 [sub_resource type="Resource" id="Usage"]
 script = ExtResource("2_usage")
 usage_id = "cut"
+animation_action = "attack1"
+vfx_trigger = "strike_active"
 display_name = "破岚"
 timing = "ACTION"
 cost_qi = 1

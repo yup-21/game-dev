@@ -13,6 +13,8 @@ amount = 1.0
 [sub_resource type="Resource" id="Usage"]
 script = ExtResource("2_usage")
 usage_id = "follow"
+animation_action = "attack3"
+vfx_trigger = "strike_active"
 display_name = "追雾"
 timing = "ACTION"
 cost_qi = 0
