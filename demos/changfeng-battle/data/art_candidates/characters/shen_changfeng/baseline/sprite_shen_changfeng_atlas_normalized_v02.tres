@@ -8,5 +8,5 @@ asset_kind = "sprite"
 owner_id = "shen_changfeng"
 source_path = "art-production/candidates/characters/shen_changfeng/baseline/sprite_shen_changfeng_atlas_normalized_v02.png"
 source_pixel_size = Vector2i(1536, 1024)
-columns = 0
-rows = 0
+columns = 6
+rows = 4
