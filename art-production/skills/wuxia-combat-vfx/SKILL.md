@@ -10,7 +10,7 @@ description: "为《长风浮生录》创作、优化或审核剑气、格挡、
 - 读取 art-production/standards/ART_PRODUCTION_STANDARD.md 和 art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md 的风格、动画与 VFX 章节；使用模板 art-production/templates/asset-work-order.md 留档。
 - 效果使用克制水墨边缘、可辨识的力量方向和短促明亮的核心；不得使用不受控的全屏霓虹，遮蔽角色脚点、目标状态、交锋提示或右侧 CTB。
 - 将每个新增效果先归档至 art-production/candidates/<asset-type>/<asset-id>/，保存源帧、提示词、参考、模型/seed（如可得）、修订和权属。
-- Agent 先选定 VFX 的类型、准确阶段、方向、轨迹和配色，把 `ART_STYLE_AI_PROMPTS_V1.md` §10 的短模板**完全展开为一次只画一个确定效果**后发送，不让生图模型选择类型或阶段；帧索引、触发窗口、性能与验收规则留在 Resource／制作检查，不拼入生图提示词。
+- Agent 先选定 VFX 的类型、准确阶段、方向、轨迹、配色与实际目标像素尺寸 `{dimensions}`，把 `ART_STYLE_AI_PROMPTS_V1.md` §10 的短模板完全展开为一次只画一个确定效果后发送，不让生图模型选择类型或阶段；帧索引、触发窗口、性能与验收规则留在 Resource／制作检查，不拼入生图提示词。
 
 ## 制作与接入
 

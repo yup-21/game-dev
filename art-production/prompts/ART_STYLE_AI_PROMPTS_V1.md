@@ -47,7 +47,7 @@ photorealistic, 3D render, neon, plastic, text, logo, watermark
 目标：**先固定身份，再生成其他资产**。建议设计板为 2048×1536 PNG（候选基线；构图可以变化），应展示正面、背面、左右轮廓、武器、配饰特写与色板；各视图使用一致比例。
 
 ```text
-Hand-painted wuxia character design sheet: {asset_id}, {identity_lock}.
+Hand-painted wuxia character design sheet, {dimensions}px: {asset_id}, {identity_lock}.
 Personality: {age_personality}; silhouette: {silhouette}; hair: {hair}.
 Costume: {costume_materials}; equipment: {weapon}; colors: {palette}.
 Front/back/left/right views at equal scale, one weapon detail and color swatches.
@@ -61,7 +61,7 @@ Same face and outfit in every view; neutral background, no labels.
 建议输出透明 RGBA PNG/WebP（立绘母版建议长边 2048px 以上，非硬性运行时合同）；构图保留剑、衣摆和头发安全边距，背景可单独生成，**不要以纯色背景冒充 Alpha**。
 
 ```text
-Full-body hand-painted wuxia portrait of {asset_id}, matching the attached
+Full-body hand-painted wuxia portrait, {dimensions}px, of {asset_id}, matching the attached
 approved character sheet. Identity: {identity_lock}; palette: {palette}.
 Natural pose, complete weapon and feet, soft light from {light_direction}.
 Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
@@ -85,12 +85,12 @@ Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
 
 按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。**每次 AI 生图应输出一张包含多个连续动作姿势的透明 Sprite Sheet，不是每次只输出一个帧。** 先由 §5.2 动作分镜决定有效帧数 N，再决定列数 C、行数 R；**格子按角色固定为 328×256 或 384×288**，不为填满 2×4 或 6×4 网格反过来固定 N。单张放不下完整动作时拆成多个连续多帧 Sheet；人物/武器超出单格须返工，高个角色须在制作前选择高个档；已选格仍装不下则返工或申报专用例外。视频提帧尚未真实验收，脚点工具不能自动识别真实承重脚。
 
-**统一坐标约定**：以批准的战斗待机帧作为所有动作的身份、`pose_local`、比例和朝向基准；逻辑 O 是待机骨盆地面投影（+x 右、+y 下），地线及镜头固定。一个 Sheet 内各格的 O 位于**相同格内相对坐标**，不能按每格不透明轮廓单独居中/缩放。保留分镜 `root_offset`，攻击/闪避等动作的局部姿态复位不代表世界位置回到起点；`defeat` 停留在倒地终止态，`idle/walk/run` 检查首尾循环。
+**统一坐标约定**：以批准的战斗待机帧作为所有动作的身份、`pose_local`、比例和朝向基准；逻辑 O 是待机骨盆地面投影（+x 右、+y 下），地线及镜头固定。一个 Sheet 内各格的 O 位于**相同格内相对坐标**，不能按每格不透明轮廓单独居中/缩放。分镜单独保存世界移动计划；**生图只画相对于 O 的局部姿态，不把整个人的世界前冲/后退位移烘焙进帧图**。当前 `WuxiaActorAnimationClip.root_offsets` 仅移动 Sprite2D 的局部显示位置，不能作为战斗角色的世界位移；普通非循环 Clip 的末帧视觉偏移必须归零。`defeat` 停留在倒地终止态，`idle/walk/run` 检查首尾循环。
 
 **默认生成与验收顺序**：
 
 1. 附角色获准设定和 `weapon_contract`（武器/徒手、数量、尺寸与握持方式），固定侧视基准与统一 O。不要从其他角色套用武器或镜头。
-2. 从 §5.2 的分镜得到真实 N、连续全局帧号、阶段与各帧姿势。Agent 选定本角色唯一 **W×H** 格，选 `grid_columns=C`、`grid_rows=R`，算出 `sheet_width_px=W×C`、`sheet_height_px=H×R` 和 `character_height_px=round(height_m×100)`；根据待机参考姿势与整套动作幅度锁定格内根点 `(root_x_px, root_y_px)`。`C×R` 只承载所选帧，不决定帧数；每次一个 `action_id` 的连续帧，行优先排列，不足格全透明。
+2. 从 §5.2 的分镜得到真实 N、连续全局帧号、阶段与各帧姿势。Agent 选定本角色唯一 **W×H** 格，选 `grid_columns=C`、`grid_rows=R`，算出 `sheet_width_px=W×C`、`sheet_height_px=H×R` 和 `character_height_px=round(height_m×100)`；根据待机参考姿势与整套动作幅度锁定格内根点 `(root_x_px, root_y_px)`。`C×R` 只承载所选帧，不决定帧数；每次一个 `action_id` 的连续帧，行优先排列，不足格全透明。格数是**本次单张 Sheet 的布局**，不是生图次数或最终动作总帧数。
 3. Agent 将下方模板的每个占位符替换为**确定值**再调用生图，禁止出现尺寸备选项、自动判断语句或未展开变量。要求各格同一角色/武器、固定根点/地线/比例，姿势随分镜连续变化，武器、头发、衣摆和四肢均不触格线；不要文字、边框、残影或跨格内容。
 4. **先机械拆格再判定是否可用**：按 **已选 W×H** 切片，核对图片尺寸恰为 `W×C` 宽、`H×R` 高、非空格数量=N、未用格透明、人物身高与设定一致、每格四边至少 **8px** 真透明边距。人体/武器越格、裁切或混格直接拒绝。AI 不保证精确像素格，也不能可靠识别动作阶段；不合格时返工对应连续多帧片段，不靠猜帧、紧裁切或强行缩放放行。
 5. 几何通过后按行优先帧序预览连续性、循环/复位、承重与根位移；AI 视觉仅初筛明显异常。最后由程序按统一 O 对通过验收的格子无损打包为运行时 Atlas，并再次自动检查零重叠和索引；疑难与最终少量样片才人工复核。
@@ -100,17 +100,17 @@ Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
 ```text
 Transparent hand-painted 2D wuxia sprite sheet: {action_id}, {sheet_frame_count} frames.
 Match attached approved character reference; equipment: {weapon_contract}.
-Ordered poses and root offsets (row-major): {frame_pose_list}.
+Ordered local poses (row-major): {frame_pose_list}.
 Canvas {sheet_width_px}×{sheet_height_px}px; grid {grid_columns}×{grid_rows}; cell {cell_width_px}×{cell_height_px}px.
 Figure height {character_height_px}px; strict 90° side view; reference root O=({root_x_px},{root_y_px})px per cell.
-One complete pose per cell; unused cells transparent; no clipping, spill, borders or text.
+One complete pose per cell, no baked world translation; unused cells transparent; no clipping, spill, borders or text.
 ```
 
-**注意**：图像模型可能画错格子、重复姿势或忽略精确像素尺寸；这些文本是**生成约束**，不是验收通过的证明。既有工具如无法可靠按预设网格切片和检测 Alpha 边距，必须保留 candidate，不得宣称已自动验收。
+**格数如何生效**：Agent 将 `N`（本张有效帧数）、`C`（列）、`R`（行）及 `W×H`（单格）填入提示词；当前生图工具没有独立的格数/精确像素尺寸参数，**提示词是生成目标，不是程序化网格设置**。生成一张 Sheet 后，将 C/R 另填入候选 `WuxiaArtCandidateDefinition.columns/rows` 和导入器，按实际图片尺寸、帧数与边距验收，再写入正式动画 Profile/Clip。`C×R` 必须不小于 N。模型可能画错格子、重复姿势或忽略尺寸；不合格则保留 candidate，不得宣称自动验收通过。
 
-**动作描述检查示例**：
+**动作分镜检查示例**（下表的位移只记录在分镜，不发送为生图像素偏移）：
 
-| 动作 | 提示词必须说明的力学变化 |
+| 动作 | 分镜需要说明的力学变化 |
 | --- | --- |
 | idle | 后脚承重，躯干轻微呼吸，支撑鞋底稳定，首尾近似闭环 |
 | walk | 蹬地、摆腿、落脚、换脚承重完整循环，步幅、重心、腿摆对应，不做脚滑 |
@@ -122,7 +122,7 @@ One complete pose per cell; unused cells transparent; no clipping, spill, border
 | hit | 受力反应、退让或缓冲、恢复待机，禁止突然无原因反弹 |
 | defeat | 失衡→膝/躯干接地→最终静止倒地；这是不恢复站姿的终止例外 |
 
-**提示词精简原则**：选档、身高换算、根点、分镜 N 和网格布局均由 Agent 在调用前计算并锁定；发给生图模型的文本只含已填好的一个格子尺寸、一个站姿像素高、一个根点、一个画布尺寸与确定的逐帧姿势。上传获准参考图，无需重复完整风格、反向词和 QA；失败由 Agent 针对性调整并再次发送确定版。像素、Alpha 与帧序由工具测量；**源图 100px/米不等于当前运行时 200 世界像素的显示高度**。
+**提示词精简原则**：选档、身高换算、根点、分镜 N 和网格布局均由 Agent 在调用前计算并锁定；发给生图模型的文本只含一个格子尺寸、一个站姿像素高、一个根点、一个画布尺寸与确定的局部姿势，**不传世界位移或运行时 `root_offsets` 数值**。上传获准参考图，无需重复完整风格、反向词和 QA；失败由 Agent 针对性调整并再次发送确定版。像素、Alpha 与帧序由工具测量；**源图 100px/米不等于当前运行时 200 世界像素的显示高度**。
 
 ### 5.2 AI 动作分镜：先规划帧数，再逐帧绘图
 
@@ -165,7 +165,7 @@ One complete pose per cell; unused cells transparent; no clipping, spill, border
 ### 场景设定图
 
 ```text
-Hand-painted wuxia scene: {location}, {season_time_weather}.
+Hand-painted wuxia scene, {dimensions}px: {location}, {season_time_weather}.
 Fixed {camera} view; landmarks: {landmarks}; palette: {palette}.
 Clear walkable area: {playable_polygon_description}, matching attached scale guide.
 Foreground/midground/background depth; no characters, text, UI or grid.
@@ -203,7 +203,7 @@ Agent 根据地图定义预先选 `vertical` 或 `mixed`，把街道走向、相
 建议候选规格：母版 **512×512 RGBA**，导出 128×128、64×64 等尺寸做可读性验收；尺寸不是当前已冻结的引擎强制值。以**单一斜侧视角、统一光源、统一材质笔触与留白**为准，物品辨识度高于背景装饰。
 
 ```text
-Hand-painted wuxia {item_category} icon: {item_name}, {item_description}.
+Hand-painted wuxia {item_category} icon, {dimensions}px: {item_name}, {item_description}.
 Three-quarter view, soft top-left light, palette {palette}.
 Single centered object, transparent RGBA, generous margin, readable at 64px.
 No text, border or rarity effect.
@@ -216,7 +216,7 @@ No text, border or rarity effect.
 将 **卡牌框架**、**武学插画**、**规则文字**分离。已有卡面保持兼容；本模板主要用于后续新增武学。母版建议竖幅 **768×1024** 作为候选，最终按现有 UI 组件的实际裁切尺寸验收。
 
 ```text
-Vertical hand-painted wuxia card illustration: {technique_name}, {school_identity}.
+Vertical hand-painted wuxia card illustration, {dimensions}px: {technique_name}, {school_identity}.
 Match character reference {identity_lock}; decisive pose: {action_pose}.
 Ink-brush energy: {vfx_palette}; clear silhouette and safe crop margins.
 Illustration only, no words, numbers or card frame.
@@ -229,10 +229,10 @@ Illustration only, no words, numbers or card frame.
 UI 使用统一的“宣纸、漆木、青铜、少量温金”材质体系，**低装饰密度、信息优先**。目标：战斗区不被 UI 压缩；右侧 CTB 跑轴保留头像动态运动，底部扇形手牌有明确可点区域，敌方状态与 CLASH 响应可读。
 
 ```text
-Reusable wuxia UI component: {component_name}; shape: {interaction_area}.
+Wuxia UI component {component_name}, state {interaction_state}, {dimensions}px; shape: {interaction_area}.
 Lacquer, aged bronze and parchment, palette {palette}; simple ornament.
 Flat front view, transparent RGBA, scalable border, margin {safe_margin}.
-No text or screenshot; produce each requested interaction state separately.
+No text or screenshot; draw only the specified state.
 ```
 
 推荐分件：卡槽底板、卡框、角色头像框、CTB 轴底纹、轴上标记、状态徽记、按钮底板、面板九宫格切片。文本、图标、进度条和跑轴头像由 Godot 控件绘制；不要让 AI 将文字直接烧进背景。
@@ -242,7 +242,7 @@ No text or screenshot; produce each requested interaction state separately.
 建议先做透明逐帧序列、再组图集或动画 Resource；原生 `AssetRegistry.texture_for_event()` 可继续复用。特效不影响 `BattleModel` 结算。不要在本轮把精确帧数/分辨率宣称为已锁定；按实际镜头比例验证。
 
 ```text
-Transparent 2D wuxia VFX frame: {effect_type}, phase {phase}.
+Transparent 2D wuxia VFX frame, {dimensions}px: {effect_type}, phase {phase}.
 Trajectory: {trajectory}; colors: {effect_palette}; restrained ink-brush glow.
 Clear force direction, stable framing, fade naturally; no character, scene or text.
 ```
