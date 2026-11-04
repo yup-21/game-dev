@@ -27,3 +27,14 @@
 - [ ] 权属和项目负责人视觉批准
 
 结论：**工程候选，非最终美术**。固定点自动估算不能替代人工标注；未批准不覆盖任何在用 .tres。
+
+## 2026-11-04：十二动作新候选与 Resource 接线
+
+- 原始素材：本目录 `concept/character_design_v01.png` 及 `actions/<action-id>/sprite_<action-id>_vNN.png`；对应来源、目标分镜与技术初筛见 `AI_12_ACTION_CANDIDATES.md`。
+- 新建**不参与 Content Manifest** 的候选原生 Profile：`res://data/candidates/characters/black_blade/animation_profile.tres`。
+- 对应正式角色：`res://data/native/characters/black_blade.tres`；正式 Profile：`res://data/native/animations/black_blade.tres`；两者保持原绑定不变。
+- 候选 Profile 已逐项声明 `idle/walk/run/attack1/attack2/attack3/attack4/skill/evade/guard/hit/defeat`；目前所有 Clip 仅引用已在用的 **旧 6×4 Atlas**，是验证原生 Resource 接线和替换入口的临时配置，**不代表本轮新生成动作已导入或验收**。新 `walk/run` 暂共用旧 `move` 帧，四组攻击暂共用旧 `attack` 帧；这是候选 Profile 的显式配置，非运行时隐式回退。
+- 新源图暂不进入 `assets/imported/`：14 张动作图未通过 G1 分格和安全边距；三组 `guard/hit/defeat` 新原图缺失。不得将这些未经检查的 Sheet 按一格一帧伪装导入。
+- 后续逐动作通过 G1/G2 后，先导入合格的单动作 Atlas，填写每个 Clip 的 `atlas/columns/rows/frames/frame_durations/root_offsets`；全部 12 组通过动态验收后，再另行评估替换正式绑定。
+- 实际完整生图提示词未随原始文件保留，本次没有杜撰；`AI_12_ACTION_CANDIDATES.md` 记录了可追溯的用户要求。
+- 检查：`godot --headless --path demos/changfeng-battle --script res://checks/test_black_blade_candidate_profile.gd`。
