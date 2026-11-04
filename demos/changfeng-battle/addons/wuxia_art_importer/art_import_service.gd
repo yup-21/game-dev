@@ -50,6 +50,18 @@ static func production_root() -> String:
     return ProjectSettings.globalize_path("res://").path_join("../../art-production").simplify_path()
 
 
+static func candidate_for_source(path: String) -> WuxiaArtCandidateDefinition:
+    var root: String = production_root().path_join("candidates") + "/"
+    var canonical: String = path.simplify_path()
+    if not canonical.begins_with(root):
+        return null
+    var relative: String = canonical.trim_prefix(root)
+    var resource_path: String = "res://data/art_candidates/" + relative.get_basename() + ".tres"
+    if not ResourceLoader.exists(resource_path):
+        return null
+    return ResourceLoader.load(resource_path) as WuxiaArtCandidateDefinition
+
+
 static func _source_allowed(path: String) -> bool:
     var canonical := path.simplify_path()
     var root := production_root()
@@ -225,6 +237,27 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
     var result := {"error": "", "mode": mode, "target": target, "files": {}}
     if not MODES.has(mode):
         return {"error": "不支持的导入模式"}
+    var candidate_root: String = production_root().path_join("candidates") + "/"
+    var candidate: WuxiaArtCandidateDefinition = null
+    if source.simplify_path().begins_with(candidate_root):
+        candidate = candidate_for_source(source)
+        if candidate == null:
+            return {"error": "候选图片缺少对应的原生 .tres Resource"}
+        var candidate_problem: String = candidate.validate_source()
+        if not candidate_problem.is_empty():
+            return {"error": candidate_problem}
+        if mode in ["atlas", "vfx"] and candidate.columns == 0:
+            return {"error": "候选 Resource 尚未声明图集 C×R 网格；请先核实原图后填写"}
+        if mode in ["atlas", "vfx"] and (
+                candidate.columns != int(fields.get("columns", 0)) or
+                candidate.rows != int(fields.get("rows", 0))):
+            return {"error": "图集列/行与候选 Resource 声明不一致；请先调整候选 Resource 或导入设置"}
+        if mode == "atlas" and candidate.display_scale_override > 0.0:
+            if candidate.reference_visible_height_px <= 0.0:
+                return {"error": "手动角色缩放需要先测量待机可见高度"}
+            var displayed_height: float = candidate.reference_visible_height_px * candidate.display_scale_override
+            if absf(displayed_height - CombatScale.actor_height_pixels()) > 10.0:
+                return {"error": "候选角色缩放偏离统一 200px 站立高度，请校正参考高度或倍数"}
     var owner: Resource = null
     var expected := Vector2i.ZERO
     if mode == "portrait" or mode == "atlas":
@@ -305,6 +338,8 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             return {"error": "Atlas 宽高必须能被列数和行数整除"}
         result["columns"] = cols
         result["rows"] = rows
+        if candidate != null and candidate.display_scale_override > 0.0:
+            result["candidate_scale_override"] = candidate.display_scale_override
         result["feet_offset"] = fields.get("feet_offset", Vector2(0, -102))
         result["faces_left"] = bool(fields.get("faces_left", false))
         var clip_path := str(fields.get("clip_profile_path", "")).strip_edges()
@@ -469,6 +504,9 @@ static func save_bindings(plan_data: Dictionary) -> String:
             profile.columns = int(plan_data["columns"])
             profile.rows = int(plan_data["rows"])
             profile.feet_offset = plan_data["feet_offset"]
+            if float(plan_data.get("candidate_scale_override", 0.0)) > 0.0:
+                profile.auto_fit_height = false
+                profile.actor_scale = Vector2.ONE * float(plan_data["candidate_scale_override"])
             profile.faces_left_unflipped = bool(plan_data["faces_left"])
             if not profile.valid_profile():
                 return "新 Atlas 的动作定义不合法"

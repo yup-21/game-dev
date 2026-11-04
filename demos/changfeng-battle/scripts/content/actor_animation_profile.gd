@@ -20,6 +20,9 @@ const BASE_ACTIONS := MODERN_REQUIRED_ACTIONS
 @export var feet_offset: Vector2 = Vector2(0, -102)
 @export var feet_adjust: Vector2 = Vector2.ZERO
 @export var actor_scale: Vector2 = Vector2(0.53, 0.53)
+## Default: normalize the authored idle silhouette to 200 world pixels.
+## Disable only when an explicitly authored uniform actor_scale is desired.
+@export var auto_fit_height: bool = true
 @export var faces_left_unflipped: bool = false
 ## Optional, single-step resource mappings. Only a direct existing Clip may be
 ## selected as a target. Missing mappings never use an engine-defined alias.

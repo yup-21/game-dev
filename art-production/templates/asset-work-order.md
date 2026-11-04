@@ -9,6 +9,7 @@
 - target_usage: `story | battle | inventory | card | hud`
 - status: `candidate`（工作区状态；正式使用后由原生 Resource 确认 `in_use`）
 - 目标 Godot Resource：`res://data/native/characters/shen_changfeng.tres`
+- 候选 Godot Resource：`res://data/art_candidates/characters/shen_changfeng/<source-file-stem>.tres`（自动补齐后可修改）
 - 计划导入路径：`res://assets/imported/characters/shen_changfeng/portraits/portrait.png`
 - 原始提示词／修订：`记录实际发送内容`
 - 来源与权属：`如已知则记录；待核实可留空`
@@ -27,6 +28,7 @@
 - 最终目标尺寸（非默认猜测）：
 - 文件格式与 Alpha：
 - Atlas 行列 / 帧索引（如适用）：
+- 候选 Resource 中测得的源图像素 / 参考姿势可见高度 / 建议显示比例（如适用）：
 - 脚点 / 承重脚类型 / 复核状态 / 根位移 / 方向 / 时间轴（如适用）：
 - 场景图层及共享原点（如适用）：
 - Godot 目标 `.tres`：

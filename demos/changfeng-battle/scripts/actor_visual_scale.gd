@@ -49,9 +49,14 @@ static func _opaque_bounds(texture: Texture2D, columns: int, rows: int,
 static func fit(sprite: Sprite2D, fallback_scale: Vector2 = Vector2.ONE,
         target_height: float = TARGET_HEIGHT,
         feet_adjust: Vector2 = Vector2.ZERO,
-        reference_frame: int = 0) -> bool:
+        reference_frame: int = 0, auto_fit: bool = true) -> bool:
     if sprite == null or sprite.texture == null:
         return false
+    if not auto_fit:
+        sprite.scale = fallback_scale
+        sprite.offset += Vector2(feet_adjust.x / maxf(fallback_scale.x, 0.001),
+            feet_adjust.y / maxf(fallback_scale.y, 0.001))
+        return true
     var columns: int = maxi(1, sprite.hframes)
     var rows: int = maxi(1, sprite.vframes)
     var rect: Rect2i = _opaque_bounds(sprite.texture, columns, rows, reference_frame)

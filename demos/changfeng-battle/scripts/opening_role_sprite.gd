@@ -82,7 +82,7 @@ func configure(id: String) -> bool:
             idle_frame = int(idle_clip.frames[0])
     VisualScale.fit(body, body.scale, CombatScale.actor_height_pixels(),
         animation_profile.feet_adjust if animation_profile != null else Vector2.ZERO,
-        idle_frame)
+        idle_frame, animation_profile.auto_fit_height if animation_profile != null else true)
     foot_shadow = Polygon2D.new()
     foot_shadow.name = "FootShadow"
     foot_shadow.color = Color(0.015,0.060,0.065,0.22)

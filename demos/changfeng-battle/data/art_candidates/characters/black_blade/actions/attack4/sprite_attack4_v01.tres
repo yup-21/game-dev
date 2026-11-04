@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WuxiaArtCandidateDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/art_candidate_definition.gd" id="1_candidate"]
+
+[resource]
+script = ExtResource("1_candidate")
+asset_kind = "sprite"
+owner_id = "black_blade"
+source_path = "art-production/candidates/characters/black_blade/actions/attack4/sprite_attack4_v01.png"
+source_pixel_size = Vector2i(1774, 887)
+columns = 0
+rows = 0
+action_id = "attack4"

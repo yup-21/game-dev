@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="WuxiaArtCandidateDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/art_candidate_definition.gd" id="1_candidate"]
+
+[resource]
+script = ExtResource("1_candidate")
+asset_kind = "concept"
+owner_id = "black_blade"
+source_path = "art-production/candidates/characters/black_blade/concept/character_design_v01.png"
+source_pixel_size = Vector2i(1536, 1024)
+columns = 1
+rows = 1

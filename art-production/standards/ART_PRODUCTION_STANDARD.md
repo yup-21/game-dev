@@ -17,6 +17,7 @@
 - 默认立绘 `portraits/portrait.png`、动作 `sprites/atlas.png`、技能特效 `vfx/<actor-id>/<skill-id>/atlas.png`；场景使用 `background/ground/foreground/weather/story_preview`，UI 使用功能名。
 - 手动指定 Resource 优先；仅空绑定按精确文件名查找。缺失必需素材直接报错，重复格式视为歧义；可选图层允许为空，不自动选择 `_vNN` 或占位。
 - 候选区保留完整原文件名和多个版本；导入器只规范化导入副本，正式 `in-use` 镜像与实际 Resource 引用一一对应。
+- **每张候选图也有独立 Godot `.tres`**：`data/art_candidates/` 按候选的类型／角色／动作及源版本组织 `WuxiaArtCandidateDefinition`，指向仓库中的 `art-production/candidates/` 源图并记录实际像素尺寸、声明网格和比例参数。候选 `.tres` 不进入 Content Manifest、不绑定运行时；只有显式导入时才将配置校验、转换为正式 `.tres`。不生成第二套 JSON 运行时定义。
 
 ## 2. 场景制作合同
 
@@ -42,6 +43,8 @@
 | Atlas 源帧 | 当前六套仍为 256×256 / 6×4 | **只是存量格式**；新图集可变列行，但必须记录在原生 AnimationProfile 内 |
 
 **贴图比例约束：** AI 生成／修图时维持固定侧面镜头、统一角色地面逻辑根点 O（待机骨盆地面投影、+x 向右、+y 向下）、源像素比例与地线，画面内透明安全边距（建议 >=8 源像素）。不允许逐帧按 Alpha 框居中、重定比例或将合法前冲 root_offset 归零。人物不是在 256px 格中占满 256px 后强行缩放，而是按“可见立姿高度”落在战斗世界的 200px。待机参考帧高度应占格高 35%–95%，过小的缩略人物或截断主体应重新绘制，不应靠剧烈放大掩盖。脚点必须是双脚接地位置，不能用衣摆或剑尖替代；攻击和受击的重心变化允许，但不改变战斗地面坐标。
+
+**尺寸校正分工：** 候选 Resource 允许保留不同原图像素和不同动作网格，记录已测的参考站姿可见高度；`display_scale()` 给出基于 200 世界像素的建议显示倍数，可用显式 override 试验。正式 `WuxiaActorAnimationProfile` 仍只能设一套角色显示比例，默认在播放启动时基于待机有效 Alpha 轮廓自动适配 200px，之后不会对每个 Clip 重新归一；只有显式设 `auto_fit_height=false` 才按 `actor_scale` 手动显示。候选 override 被正式导入时必须已测量参考身高且结果在 200±10px 内。若不同动作真实人体比例不一致，须在候选图集打包时按统一根坐标校正源画面；单独改比例系数不能修复缺帧、越界、脚滑或场景透视问题。地图禁止用缩放代替尺寸及坐标一致性检查。
 
 **地图比例约束：** `WuxiaMapDefinition`／`WuxiaGridMapDefinition` 标注 `pixels_per_unit=80`，不符合全局尺度的资源将拒绝加载；分层背景同画布同原点。15×10 `MapBake.step` 仅是兼容 GRID 的地形索引采样密度，既不是世界长度单位，也不是角色身高比例。非正方形格不可能在屏幕上代表两个方向相等的物理距离：FREE 使用真实二维欧氏路径与单位换算；GRID 保留既有离散曼哈顿格数玩法，不再把格宽当成 FREE 的距离单位。
 

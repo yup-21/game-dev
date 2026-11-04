@@ -5,6 +5,21 @@ Godot **4.7.2** 编辑器显示 **Art Production** Dock。
 **运行时引用仍以 Godot 原生 .tres 为唯一配置来源。**
 `art-production/inventory` 与 `art-production/reviews` 的 JSON 只用于离线审计、SHA-256 校验和回退。
 
+## 未导入候选的原生 Resource
+
+每个 `art-production/candidates/` 下的图片对应 `data/art_candidates/` 下同名、同类别、同角色的 `WuxiaArtCandidateDefinition.tres`。执行：
+
+```bash
+python3 art-production/tools/sync_candidate_resources.py
+python3 art-production/tools/sync_candidate_resources.py --check
+godot --headless --path demos/changfeng-battle --script res://checks/test_art_candidates.gd
+```
+
+生成器只创建缺少的候选 `.tres`，保留美术人员手动设置的 `columns/rows`、`feet_offset`、`reference_visible_height_px` 和 `display_scale_override`。0/空值表示**尚未测量**，不是默认通过。候选图片仍保存在仓库的 `art-production/candidates/`，候选 Resource 仅用于制作/验证，不注册 Manifest，也不会参与正式导出。Dock 选择候选图片后点击「读取当前候选 .tres 参数」，将已声明的 Atlas 网格、脚点或 VFX 帧序填入导入表单；正式导入预检会核对候选源图的实际尺寸与已声明网格。若候选 `.tres` 的网格尚未配置，必须先在编辑器中核实，再明确填写导入参数。
+
+候选 Resource 的参考可见高度来自一张已确认的待机姿势（不是整张图的高度或 Atlas 单格高度），建议显示倍数为 `200 / reference_visible_height_px`。运行时 `actor_visual_scale.gd` 基于待机姿势轮廓自动适配 200px，但其他 Clip 不会逐个缩放；跨动作比例仍需统一原画。场景仍要求同世界坐标同画布，无二次拉伸。
+若候选 `display_scale_override > 0`，正式导入该角色 Atlas 时会显式设置 `WuxiaActorAnimationProfile.auto_fit_height=false` 和 `actor_scale`；否则保持原有自动适配策略。手动倍数只控制视觉显示，不得代替统一帧比例、透明边距和世界碰撞距离校验。
+
 ## 导出：当前 Godot → art-production
 
 1. 选择“全部实际使用图片 / 单个角色依赖 / 单个地图依赖 / 指定 .tres 依赖”。
