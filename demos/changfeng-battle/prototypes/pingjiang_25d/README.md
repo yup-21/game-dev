@@ -4,7 +4,7 @@
 
 ## 直接运行
 
-在 Godot 中打开 `demos/changfeng-battle/project.godot`，运行 `res://prototypes/pingjiang_25d/pingjiang_25d_validation.tscn`，或执行：
+在 Godot 中打开 `demos/changfeng-battle/project.godot`，启动游戏后点击主菜单的 **T · 2.5D 透视地图测试**（也可直接按 `T`）。仍可直接运行 `res://prototypes/pingjiang_25d/pingjiang_25d_validation.tscn`，或执行：
 
 ```bash
 godot --path demos/changfeng-battle res://prototypes/pingjiang_25d/pingjiang_25d_validation.tscn
@@ -13,6 +13,7 @@ godot --path demos/changfeng-battle res://prototypes/pingjiang_25d/pingjiang_25d
 - WASD / 方向键：沿 3D 地面行走；两侧房屋和远端门柱有真实碰撞。
 - `P`：透视与正交投影切换；在透视模式中，向远处走屏幕上的人物会缩小。
 - `R`：复位位置。远、近两处半透明人影是同一个 `.tres` Atlas 的对照。
+- `Esc`：返回游戏主菜单，不修改章节或战斗存档状态。
 - 屏幕左上角显示实时 Z 坐标、投影高度和同世界身高两处参照的像素高度。
 
 ## 技术范围

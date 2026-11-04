@@ -196,6 +196,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
     elif event.keycode == KEY_R:
         player.position = Vector3(0.0, 0.5, 3.0)
         player.velocity = Vector3.ZERO
+    elif event.keycode == KEY_ESCAPE:
+        # Restore the existing title screen; QA never changes GameSession.
+        get_tree().change_scene_to_file("res://opening.tscn")
+        get_viewport().set_input_as_handled()
+        return
     else:
         return
     _update_status()
@@ -210,6 +215,6 @@ func _update_status() -> void:
     if status == null or player == null:
         return
     var mode := "透视" if camera.projection == Camera3D.PROJECTION_PERSPECTIVE else "正交"
-    status.text = "平江府 2.5D 独立验证 · %s\nWASD / 方向键移动 · P 对比投影 · R 复位\n位置 Z: %.1f u  可见高: %.0f px\n同尺寸参照：远 %.0f px / 近 %.0f px" % [
+    status.text = "平江府 2.5D 独立验证 · %s\nWASD / 方向键移动 · P 对比投影 · R 复位 · Esc 返回\n位置 Z: %.1f u  可见高: %.0f px\n同尺寸参照：远 %.0f px / 近 %.0f px" % [
         mode, player.position.z, projected_actor_height(player.position.z),
         projected_actor_height(-8.0), projected_actor_height(8.0)]
