@@ -1,0 +1,27 @@
+name: Pingjiang 2.5D perspective prototype
+
+on:
+  pull_request:
+    paths:
+      - 'demos/changfeng-battle/prototypes/pingjiang_25d/**'
+      - 'demos/changfeng-battle/checks/test_pingjiang_25d_prototype.gd'
+      - '.github/workflows/pingjiang-25d-prototype.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  perspective-prototype:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2.4.3
+        with:
+          version: '4.7.2'
+          use-dotnet: false
+      - name: Import prototype textures and shared assets
+        run: godot --headless --path demos/changfeng-battle --editor --import --quit
+      - name: Validate perspective, sprite, textures, and native 3D collision
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_pingjiang_25d_prototype.gd

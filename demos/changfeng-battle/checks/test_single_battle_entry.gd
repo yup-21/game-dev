@@ -34,8 +34,8 @@ func _run() -> void:
     root.add_child(view)
     await process_frame
     await process_frame
-    _check(_actions(view) == ["start", "hd2d", "pingjiang_qa", "pingjiang_vertical_qa", "quit"],
-        "main menu keeps one HD-2D battle and two isolated map QA entries, without duel/party variants")
+    _check(_actions(view) == ["start", "hd2d", "pingjiang_qa", "pingjiang_vertical_qa", "pingjiang_25d_qa", "quit"],
+        "main menu keeps one HD-2D battle and three isolated map QA entries, without duel/party variants")
     view.get("story").set("phase", "complete")
     view.queue_redraw()
     await process_frame
@@ -44,6 +44,12 @@ func _run() -> void:
         "prologue complete must show canonical story encounter only")
     var opening_code := FileAccess.get_file_as_string("res://scripts/opening_flow.gd")
     var result_code := FileAccess.get_file_as_string("res://scripts/demo_result.gd")
+    var perspective_qa := "res://prototypes/pingjiang_25d/pingjiang_25d_validation.tscn"
+    _check(load(perspective_qa) is PackedScene
+        and opening_code.contains('"pingjiang_25d_qa"')
+        and opening_code.contains('KEY_T')
+        and opening_code.contains(perspective_qa),
+        "T shortcut and independent 2.5D test scene are reachable from title")
     for path in ["res://battle.tscn", "res://party_battle.tscn"]:
         _check(not opening_code.contains(path) and not result_code.contains(path),
             "public story/menu/result still points to deprecated " + path)

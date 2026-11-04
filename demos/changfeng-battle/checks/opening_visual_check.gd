@@ -38,14 +38,14 @@ func _fail(view, message: String) -> void:
 
 func run(view) -> void:
 	await _wait(view)
-	if view.story.phase!="menu" or view.buttons.size()!=3:
+	if view.story.phase!="menu" or view.buttons.size()!=6:
 		_fail(view,"title screen/menu buttons")
 		return
 	var menu_actions: Array = []
 	for button in view.buttons:
 		menu_actions.append(str(button.action))
-	if menu_actions != ["start", "hd2d", "quit"]:
-		_fail(view,"menu must expose only story + one illustrated battle + quit")
+	if menu_actions != ["start", "hd2d", "pingjiang_qa", "pingjiang_vertical_qa", "pingjiang_25d_qa", "quit"]:
+		_fail(view,"menu must expose story, one illustrated battle, three isolated map QA entries, and quit")
 		return
 	if view.player_sprite == null or view.escort_sprite == null:
 		_fail(view,"story scene missing registered Sprite2D actors")
