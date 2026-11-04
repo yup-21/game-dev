@@ -23,6 +23,27 @@ func _initialize() -> void:
     if not Importer.destination(source).begins_with("res://assets/imported/in-use/"):
         _fail("Source destination has incorrect root")
         return
+    var candidate_actor: String = production_dir.path_join(
+        "candidates/characters/shen_changfeng/baseline/portrait_shen_changfeng_fullbody_v01.png")
+    if Importer.destination(candidate_actor, "portrait") != \
+            "res://assets/imported/candidates/characters/shen_changfeng/portraits/portrait_shen_changfeng_fullbody_v01.png":
+        _fail("Candidate portrait was not grouped by character and type")
+        return
+    var candidate_sprite: String = production_dir.path_join(
+        "candidates/characters/shen_changfeng/baseline/sprite_shen_changfeng_atlas_normalized_v02.png")
+    if Importer.destination(candidate_sprite, "atlas") != \
+            "res://assets/imported/candidates/characters/shen_changfeng/sprites/sprite_shen_changfeng_atlas_normalized_v02.png":
+        _fail("Candidate atlas was not grouped with the character sprites")
+        return
+    var candidate_scene: String = production_dir.path_join(
+        "candidates/scenes/rainy_bridge/baseline/scene_rainy_bridge_ground_v01.png")
+    if Importer.destination(candidate_scene, "scene") != \
+            "res://assets/imported/candidates/scenes/rainy_bridge/scene_rainy_bridge_ground_v01.png":
+        _fail("Candidate scene layer retained a production batch directory")
+        return
+    if not Importer.destination(candidate_actor).is_empty():
+        _fail("Candidate image was accepted without an import type")
+        return
     var atlas: Dictionary = Importer.plan("atlas", source, "res://data/native/characters/shen_changfeng.tres",
         {"columns": 6, "rows": 4, "feet_offset": Vector2(0, -102), "faces_left": false})
     if not str(atlas.get("error", "")).is_empty():

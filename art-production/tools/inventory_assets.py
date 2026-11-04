@@ -31,8 +31,47 @@ def current_bindings() -> dict[str, list[str]]:
     return {key: sorted(owners) for key, owners in sorted(refs.items())}
 
 
+def imported_layout_errors() -> list[str]:
+    errors: list[str] = []
+    imported_root = GAME / "assets/imported"
+    for image in sorted(imported_root.rglob("*")):
+        if not image.is_file() or image.suffix.lower() not in IMAGE_EXTS:
+            continue
+        parts = image.relative_to(imported_root).parts
+        status = parts[0] if parts else ""
+        category = parts[1] if len(parts) > 1 else ""
+        valid = status in {"candidates", "in-use"}
+        if category == "characters":
+            valid = valid and len(parts) == 5 and parts[3] in {
+                "portraits", "sprites", "story-poses", "concepts"}
+        elif category == "scenes":
+            valid = valid and len(parts) >= 4
+        elif category == "vfx":
+            valid = valid and len(parts) >= 4
+        elif category == "ui":
+            valid = valid and len(parts) == 4
+        elif category == "placeholders":
+            valid = valid and status == "in-use" and len(parts) == 4
+        else:
+            valid = False
+        if not valid:
+            errors.append("Uncategorized imported image: " + image.relative_to(ROOT).as_posix())
+            continue
+        if status == "candidates":
+            # A preview import must still exist as a candidate source, regardless
+            # of its baseline/variant production subdirectory.
+            sources = ROOT / "art-production/candidates" / category / parts[2]
+            original_stem = re.sub(r"__[0-9a-f]{12}$", "", image.stem)
+            originals = sources.rglob(original_stem + image.suffix) if sources.is_dir() else ()
+            current_hash = hashlib.sha256(image.read_bytes()).digest()
+            if not any(hashlib.sha256(src.read_bytes()).digest() == current_hash for src in originals):
+                errors.append("Candidate import has no matching source: " +
+                              image.relative_to(ROOT).as_posix())
+    return errors
+
+
 def validate(bindings: dict[str, list[str]]) -> list[str]:
-    errors = []
+    errors = imported_layout_errors()
     mirror_root = ROOT / "art-production/in-use"
     expected_mirrors = set()
     for path in bindings:

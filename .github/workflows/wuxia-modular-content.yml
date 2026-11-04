@@ -68,13 +68,13 @@ jobs:
         run: |
           for actor in shen_changfeng pursuer_captain; do
             source_dir="art-production/candidates/characters/$actor/baseline"
-            target_dir="demos/changfeng-battle/assets/imported/candidates/characters/$actor/baseline"
-            mkdir -p "$target_dir"
-            cp "$source_dir/portrait_${actor}_fullbody_v01.png" "$target_dir/"
-            cp "$source_dir/sprite_${actor}_atlas_normalized_v02.png" "$target_dir/"
+            target_root="demos/changfeng-battle/assets/imported/candidates/characters/$actor"
+            mkdir -p "$target_root/portraits" "$target_root/sprites"
+            cp "$source_dir/portrait_${actor}_fullbody_v01.png" "$target_root/portraits/"
+            cp "$source_dir/sprite_${actor}_atlas_normalized_v02.png" "$target_root/sprites/"
           done
           source_dir="art-production/candidates/scenes/rainy_bridge/baseline"
-          target_dir="demos/changfeng-battle/assets/imported/candidates/scenes/rainy_bridge/baseline"
+          target_dir="demos/changfeng-battle/assets/imported/candidates/scenes/rainy_bridge"
           mkdir -p "$target_dir"
           for layer in background ground foreground weather composite_preview; do
             cp "$source_dir/scene_rainy_bridge_${layer}_v01.png" "$target_dir/"

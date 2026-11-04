@@ -107,15 +107,38 @@ static func inspect(path: String) -> Dictionary:
     }
 
 
-static func destination(path: String) -> String:
+static func destination(path: String, mode: String = "") -> String:
     if not _source_allowed(path):
         return ""
     var relative := path.simplify_path().trim_prefix(production_root() + "/")
-    # Production folders already follow the imported/{in-use,candidates}/ type/owner layout.
-    return "res://assets/imported/" + relative
+    if relative.begins_with("in-use/"):
+        # Active copies already have canonical type/owner folders.
+        return "res://assets/imported/" + relative
+    if not relative.begins_with("candidates/"):
+        return ""
+    # Drop candidate production batches (baseline, sprite-v04, qa-layout).
+    # Imported files are grouped by usage type and owner, never by batch or date.
+    var parts := relative.trim_prefix("candidates/").split("/")
+    if parts.size() < 3 or not _valid_id(parts[1]):
+        return ""
+    var group := str(parts[0])
+    var owner := str(parts[1])
+    var folder := ""
+    if group == "characters" and mode in ["portrait", "atlas"]:
+        folder = "characters/" + owner + ("/portraits" if mode == "portrait" else "/sprites")
+    elif group == "scenes" and mode == "scene":
+        folder = "scenes/" + owner
+    elif group == "vfx" and mode == "vfx" and parts.size() >= 4 and _valid_id(parts[2]):
+        folder = "vfx/" + owner + "/" + str(parts[2])
+    elif group == "ui" and mode == "ui_atlas":
+        folder = "ui/" + owner
+    if folder.is_empty():
+        return ""
+    return "res://assets/imported/candidates/" + folder + "/" + path.get_file()
 
 
-static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO, versioned: bool = false) -> Dictionary:
+static func _check_image(path: String, require_alpha: bool, expected: Vector2i = Vector2i.ZERO,
+        versioned: bool = false, mode: String = "") -> Dictionary:
     var info := inspect(path)
     if not str(info.get("error", "")).is_empty():
         return info
@@ -123,7 +146,7 @@ static func _check_image(path: String, require_alpha: bool, expected: Vector2i =
         return {"error": "角色或遮挡层必须具有实际透明像素：" + path.get_file()}
     if expected != Vector2i.ZERO and Vector2i(int(info["width"]), int(info["height"])) != expected:
         return {"error": "图层尺寸不符合目标画布 %s：%s" % [str(expected), path.get_file()]}
-    var target := destination(path)
+    var target := destination(path, mode)
     if target.is_empty():
         return {"error": "无法生成导入目标路径"}
     var previous := ""
@@ -198,7 +221,7 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                         return {"error": "登记 ID 已被其他内容占用：" + id}
     var alpha_required := mode in ["portrait", "atlas", "vfx"]
     var versioned := bool(fields.get("versioned_replace", false))
-    var first := _check_image(source, alpha_required, expected, versioned)
+    var first := _check_image(source, alpha_required, expected, versioned, mode)
     if not str(first.get("error", "")).is_empty():
         return first
     result["files"]["primary"] = first
@@ -263,7 +286,7 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
                 return {"error": "ground 不得复用 background 文件；需独立地面图层"}
             if layer_path.is_empty():
                 continue
-            var check := _check_image(layer_path, layer in ["ground", "foreground", "weather"], expected, versioned)
+            var check := _check_image(layer_path, layer in ["ground", "foreground", "weather"], expected, versioned, mode)
             if not str(check.get("error", "")).is_empty():
                 return check
             result["files"][layer] = check

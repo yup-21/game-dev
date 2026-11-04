@@ -33,7 +33,8 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 - `candidates/scenes/<scene-id>/`：场景母版、分层图、技术验证版。
 - `candidates/vfx/<actor-id>/<skill-id>/`：对应技能特效；多个技能共用的图集可集中在 `martial-forms/` 等明确命名的集合内。
 - `candidates/ui/<component-id>/`：界面分件和图标。旧批次清单、提示词放 `candidates/records/`，不构成新状态。
-- `in-use/characters|scenes|vfx|ui|placeholders/`：只保存运行时实际引用的图片原字节；游戏侧对应 `assets/imported/in-use/`。候选预览才保存在游戏侧 `assets/imported/candidates/`。
+- `in-use/characters|scenes|vfx|ui|placeholders/`：只保存运行时实际引用的图片原字节；游戏侧对应 `assets/imported/in-use/`。候选预览保存在游戏侧 `assets/imported/candidates/`，按角色/图片类型、场景、技能或 UI 组件分类，不继承生产稿的日期/批次目录。
+- `assets/imported/` 是纳入版本控制的原始图片所在目录；Godot 自动生成的 `.godot/imported/` 是可重建缓存，不作为素材管理目录。
 - 历史 `archive/` 保持原样以便追溯；日期可以是工作单元数据，不是新目录键。
 
 ## 核心约束
