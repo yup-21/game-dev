@@ -148,6 +148,10 @@ func _ready() -> void:
     clip_profile.placeholder_text = "res://data/.../animation_profile.tres（动作帧配置可选）"
     clip_profile.text_changed.connect(func(_value: String): _refresh_preview())
     atlas_rows.append(_labeled("原生动作帧 Profile 模板（可选）", clip_profile))
+    var apply_candidate := Button.new()
+    apply_candidate.text = "读取当前候选 .tres 参数"
+    apply_candidate.pressed.connect(_apply_candidate_resource)
+    body.add_child(apply_candidate)
     action_select = OptionButton.new()
     for action in WuxiaActorAnimationProfile.REQUIRED_ACTIONS:
         action_select.add_item(action)
@@ -442,6 +446,33 @@ func _fields() -> Dictionary:
     }
 
 
+func _apply_candidate_resource() -> void:
+    var candidate: WuxiaArtCandidateDefinition = Service.candidate_for_source(_selected_source())
+    if candidate == null:
+        info.text = "当前图片没有对应候选 .tres；使用正式 in-use 图片时无需候选 Resource。"
+        return
+    var problem: String = candidate.validate_source()
+    if not problem.is_empty():
+        info.text = problem
+        return
+    if candidate.columns > 0 and candidate.rows > 0:
+        if _mode() == "atlas":
+            columns.value = candidate.columns
+            rows.value = candidate.rows
+        elif _mode() == "vfx":
+            vfx_columns.value = candidate.columns
+            vfx_row_count.value = candidate.rows
+    if _mode() == "atlas" and candidate.feet_offset_set:
+        feet_x.value = candidate.feet_offset.x
+        feet_y.value = candidate.feet_offset.y
+    if _mode() == "vfx" and not candidate.frame_indices.is_empty():
+        var parts := PackedStringArray()
+        for index in candidate.frame_indices:
+            parts.append(str(index))
+        vfx_frame_indices.text = ",".join(parts)
+    _refresh_preview()
+
+
 func _refresh_preview() -> void:
     if preview == null:
         return
@@ -468,6 +499,13 @@ func _refresh_preview() -> void:
     info.text = "%s × %s | Alpha: %s | SHA-256: %s\n文件导入与绑定不代表美术视觉或权属审核通过" % [
         details["width"], details["height"],
         "是" if details["alpha"] else "否", str(details["sha256"]).substr(0, 12)]
+    var candidate: WuxiaArtCandidateDefinition = Service.candidate_for_source(path)
+    preview.call("set_candidate_display_scale", candidate.display_scale() if candidate != null and mode == "atlas" else 0.0)
+    if candidate != null:
+        var scale_factor: float = candidate.display_scale()
+        info.text += "\n候选 .tres：%s×%s 格；参考高度：%s px；预览比例：%s" % [
+            candidate.columns, candidate.rows, candidate.reference_visible_height_px,
+            ("%.3f" % scale_factor) if scale_factor > 0.0 else "未测量"]
     if mode == "atlas":
         preview.call("show_atlas", details["texture"], int(columns.value), int(rows.value),
                            Vector2(feet_x.value, feet_y.value))

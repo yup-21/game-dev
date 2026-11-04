@@ -205,7 +205,8 @@ func _load_actor_sprite() -> void:
     actor_sprite.frame = reference
     player.add_child(actor_sprite)
     VisualScale.fit(actor_sprite, actor_profile.actor_scale,
-        CombatScale.actor_height_pixels(), actor_profile.feet_adjust, reference)
+        CombatScale.actor_height_pixels(), actor_profile.feet_adjust, reference,
+        actor_profile.auto_fit_height)
 
 func _process(delta: float) -> void:
     if stage == null or player == null or bake == null:

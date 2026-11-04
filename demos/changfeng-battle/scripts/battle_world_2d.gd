@@ -61,7 +61,7 @@ func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
             idle_frame = int(idle_clip.frames[0])
     VisualScale.fit(sprite, profile.actor_scale if profile != null else sprite.scale,
         CombatScale.actor_height_pixels(), profile.feet_adjust if profile != null else Vector2.ZERO,
-        idle_frame)
+        idle_frame, profile.auto_fit_height if profile != null else true)
     sprite.set_meta("faces_left_unflipped", profile.faces_left_unflipped if profile != null
         else (ArtCatalog.sheet_faces_left_for_character(character_id) if not character_id.is_empty()
         else ArtCatalog.sheet_faces_left(id)))

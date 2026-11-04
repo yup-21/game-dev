@@ -30,6 +30,7 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 ## 目录组织
 
 - `candidates/characters/<actor-id>/`：角色设定、立绘、动作图集和不同候选版本。`baseline/` 为原始生产稿，后续可使用 `sprite-vNN/` 或按动作 `animations/<action-id>/`；不要按日期建目录。
+- **候选原生 Resource**：`demos/changfeng-battle/data/art_candidates/` 按 `candidates/` 的分类与原图片文件名一一对应保存 `.tres`；调用 `python3 art-production/tools/sync_candidate_resources.py` 补齐，`--check` 检查缺漏。候选可编辑原始像素尺寸、网格、脚点、参考可见身高及预览比例，但不会成为 Content Manifest 的运行时绑定。
 - `candidates/scenes/<scene-id>/`：场景母版、分层图、技术验证版。
 - `candidates/vfx/<actor-id>/<skill-id>/`：对应技能特效；多个技能共用的图集可集中在 `martial-forms/` 等明确命名的集合内。
 - `candidates/ui/<component-id>/`：界面分件和图标。旧批次清单、提示词放 `candidates/records/`，不构成新状态。

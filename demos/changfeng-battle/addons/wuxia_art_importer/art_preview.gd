@@ -10,6 +10,12 @@ var rows: int = 4
 var frame: int = 0
 var feet_offset: Vector2 = Vector2(0, -102)
 var map_resource: Resource
+var candidate_display_scale: float = 0.0
+
+
+func set_candidate_display_scale(value: float) -> void:
+    candidate_display_scale = value if is_finite(value) and value > 0.0 else 0.0
+    queue_redraw()
 
 
 func show_image(texture: Texture2D) -> void:
@@ -69,6 +75,11 @@ func _draw_picture() -> void:
         var cell := frame % maxi(columns * rows, 1)
         var source_rect := Rect2(Vector2(float(cell % columns), float(cell / columns)) * frame_size, frame_size)
         var dest := _fitted(frame_size)
+        if candidate_display_scale > 0.0:
+            # Exact 1 preview pixel = 1 logical world pixel. No image resampling
+            # or changes to the source atlas or combat scale are performed.
+            var screen_size: Vector2 = frame_size * candidate_display_scale
+            dest = Rect2((size - screen_size) * 0.5, screen_size)
         draw_texture_rect_region(picture, dest, source_rect)
         var marker := dest.position + dest.size * Vector2(0.5, 1.0)
         marker += feet_offset * (dest.size.x / frame_size.x)
