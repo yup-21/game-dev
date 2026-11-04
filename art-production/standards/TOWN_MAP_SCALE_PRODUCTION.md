@@ -22,7 +22,7 @@
 - 远处山体、城墙天际线可以有绘画透视和层次，不以其“看起来的高度”决定战斗碰撞与移动距离。
 - **地图画面不能靠把整张 PNG 再缩小或拉伸来塞进窗口。** 新地图原生 Resource 必须标记 `pixels_per_unit=80`，图片运行时 `image_scale=1`、`rotation_degrees=0`；地面碰撞与画面在同一坐标中编辑。
 - 历史画面若源尺寸不完全一致，应以独立候选重新校准后迁移；不在本次规范修改中强行重采样旧素材。
-- 对于大画布，80px/u 依然有效，但当前剧情 `WuxiaChapterSceneDefinition` 和 `WuxiaSceneArtProfile` 仍以 1600×1000 单场景绑定；**不能把超大图当成现在就支持的无缝城市地图**。
+- 对于大画布，80px/u 依然有效。**1600×1000 是单屏视口基准，不是所有地图图层的强制大小**；已接入的长街可用 1600×2000／2400 等真实世界画布，由 `WuxiaChapterSceneDefinition.world_size`、`WuxiaSceneArtProfile.reference_size` 或 Map 世界尺寸显式对齐并配合镜头跟随。不能把长图缩成单屏，也不能误认为已支持无缝城市、自动分块加载或跨区拓扑。
 
 ## 2. 借鉴 DNF 的画面密度（不是 DNF 官方像素数据）
 
