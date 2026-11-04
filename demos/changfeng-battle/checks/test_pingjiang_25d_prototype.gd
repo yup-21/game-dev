@@ -21,47 +21,82 @@ func _run() -> void:
     var player: CharacterBody3D = scene.get_node("Player")
     var sprite: Sprite3D = scene.get_node("Player/ActorSprite")
     var road: MeshInstance3D = scene.get_node("Street/TexturedRoad")
+    var cross_street: MeshInstance3D = scene.get_node("Street/CrossStreet")
     var map_ground: MeshInstance3D = scene.get_node("Street/MapGround")
     var floor_collider: CollisionShape3D = scene.get_node("Street/RoadCollider/CollisionShape3D")
-    var wall: StaticBody3D = scene.get_node("Street/House_L_0")
+    var wall: StaticBody3D = scene.get_node("Street/SideFacade_W_N")
     _check(scene.get_script() != null and camera.current, "standalone scene and camera instantiate")
     _check(camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "real perspective projection")
-    _check(road.mesh is PlaneMesh and road.material_override.albedo_texture != null,
-        "real 3D plane with independently loaded paving texture")
+    _check(road.mesh is PlaneMesh and cross_street.mesh is PlaneMesh
+        and road.material_override.albedo_texture != null
+        and cross_street.material_override.albedo_texture != null
+        and cross_street.position.y > road.position.y,
+        "two textured 3D road planes cross without z-fighting")
     _check(is_equal_approx(scene.MAP_SIZE_PIXELS.x, 1600.0)
         and is_equal_approx(scene.MAP_SIZE_PIXELS.y, 2000.0)
         and is_equal_approx(map_ground.mesh.size.x, 20.0)
         and is_equal_approx(map_ground.mesh.size.y, 25.0)
         and is_equal_approx(floor_collider.shape.size.x, 20.0)
         and is_equal_approx(road.mesh.size.x, scene.ROAD_WIDTH)
-        and is_equal_approx(road.mesh.size.y, scene.ROAD_LENGTH),
-        "full 1600x2000 world-pixel map with centered textured street and floor collision")
-    var last_house: StaticBody3D = scene.get_node("Street/OuterHouse_R_3")
-    _check(scene.get_node_or_null("Street/House_L_3") != null
-        and scene.get_node_or_null("Street/OuterHouse_L_3") != null
-        and last_house.position.z + 2.85 <= scene.ROAD_LENGTH * 0.5,
-        "both rows of buildings fit inside the 2000px-long map")
+        and is_equal_approx(road.mesh.size.y, scene.ROAD_LENGTH)
+        and is_equal_approx(cross_street.mesh.size.x, scene.MAP_WIDTH)
+        and is_equal_approx(cross_street.mesh.size.y, scene.CROSS_STREET_WIDTH),
+        "actual map footprint is 20x25u with four continuous street arms")
+    var facade_count := 0
+    var flat_facades := true
+    var roof_present := false
+    for child in scene.get_node("Street").get_children():
+        if child.name.begins_with("SideFacade_") or child.name.begins_with("CrossFacade_"):
+            facade_count += 1
+            var plane: MeshInstance3D = child.get_node("FacadePlane")
+            var collider: CollisionShape3D = child.get_node("CollisionShape3D")
+            flat_facades = flat_facades and plane.mesh is QuadMesh
+            flat_facades = flat_facades and collider.shape is BoxShape3D
+            flat_facades = flat_facades and collider.shape.size.z < 0.2
+        if child.name.begins_with("Roof_") or child.name.begins_with("Gate"):
+            roof_present = true
+    _check(facade_count == 8 and flat_facades and not roof_present
+        and scene.get_node("Street").get_child_count() == 12,
+        "eight flat textured facade panels, thin invisible blockers, no roof or gate meshes")
     _check(wall.get_node("CollisionShape3D").shape is BoxShape3D,
-        "side buildings own real 3D obstacle shapes")
+        "facade plane owns an invisible narrow obstacle")
     _check(player.get_node("FootprintCollider").shape is CapsuleShape3D,
         "actor has native 3D collision")
-    # The right building sits at x=3.65 with half width=1.1. A 0.3u
-    # character should stop before its inner face at x=2.55.
-    player.position = Vector3(0.0, 0.5, scene.PLAYER_START_Z)
+    # A 0.3u foot radius meets the paper-thin western wall before x=-3.17.
+    player.position = Vector3(0.0, 0.5, -8.2)
     for step in range(35):
-        player.move_and_collide(Vector3(0.15, 0.0, 0.0))
-    _check(player.position.x <= 2.26 and player.position.x > 1.5,
-        "a moving CharacterBody3D is stopped by the actual facade collider")
+        player.move_and_collide(Vector3(-0.15, 0.0, 0.0))
+    _check(player.position.x < -2.0 and player.position.x > -3.0,
+        "invisible facade collider stops the character, without a 3D building block")
+    player.position = Vector3(-9.0, 0.5, 0.0)
+    for step in range(90):
+        player.move_and_collide(Vector3(0.2, 0.0, 0.0))
+    _check(player.position.x > 8.5,
+        "the west-east stone road stays physically open through the junction")
+    player.position = Vector3(0.0, 0.5, -11.0)
+    for step in range(110):
+        player.move_and_collide(Vector3(0.0, 0.0, 0.2))
+    _check(player.position.z > 10.5,
+        "the north-south stone road stays physically open through the junction")
     _check(sprite.texture != null and sprite.hframes > 1 and sprite.pixel_size > 0.0,
         "existing Shen Changfeng atlas appears on Sprite3D")
     _check(is_equal_approx(Scale.PIXELS_PER_UNIT, 80.0)
         and is_equal_approx(Scale.actor_height_pixels(), 200.0)
         and is_equal_approx(scene.FOOTPRINT_RADIUS, 0.3),
         "existing combat scale stays authoritative")
+    _check(camera.fov < 40.0 and is_equal_approx(camera.position.y, scene.CAMERA_HEIGHT)
+        and scene.ACTOR_DISPLAY_SCALE < 0.5,
+        "prototype camera uses a narrower field and only its test sprites are downsized")
+    player.position = Vector3(0.0, 0.5, scene.PLAYER_START_Z)
+    camera.position = scene._camera_target_position()
+    var north_screen := camera.unproject_position(Vector3(0.0, 0.0, -scene.ROAD_LENGTH * 0.5))
+    var south_screen := camera.unproject_position(Vector3(0.0, 0.0, scene.ROAD_LENGTH * 0.5))
+    _check(absf(north_screen.y - south_screen.y) > root.size.y,
+        "camera framing is tighter than the full 2000px-long map")
     var far_height: float = scene.projected_actor_height(-scene.REFERENCE_Z)
     var near_height: float = scene.projected_actor_height(scene.REFERENCE_Z)
-    _check(near_height > far_height * 1.3 and far_height > 0.0,
-        "two equally tall world sprites have measurably different screen heights")
+    _check(near_height > far_height * 1.1 and far_height > 0.0,
+        "the tighter view still preserves measurable perspective size difference")
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
     var ortho_far: float = scene.projected_actor_height(-scene.REFERENCE_Z)
     var ortho_near: float = scene.projected_actor_height(scene.REFERENCE_Z)
