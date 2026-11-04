@@ -194,7 +194,17 @@ static func plan(kind: String, resource_path: String = "", allow_replace: bool =
         for image in graph["images"]:
             image_paths.append(str(image))
         for metadata in graph["resources"]:
-            resource_paths.append(str(metadata))
+            var dependency_path: String = str(metadata)
+            resource_paths.append(dependency_path)
+            if dependency_path == resource_path:
+                continue
+            var dependency: Resource = ResourceLoader.load(dependency_path) as Resource
+            if dependency == null:
+                return {"error": "无法加载 Resource 依赖：" + dependency_path}
+            binding_problem = ArtBinding.apply(dependency)
+            if not binding_problem.is_empty():
+                return {"error": "Resource 依赖默认绑定失败：" + dependency_path + ": " + binding_problem}
+            image_paths.append_array(native_image_paths(dependency))
         image_paths.append_array(native_image_paths(source))
     # Direct .tres references and convention-resolved paths can overlap.
     var distinct: Dictionary = {}
