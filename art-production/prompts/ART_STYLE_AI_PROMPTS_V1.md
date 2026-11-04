@@ -1,6 +1,6 @@
 # 《长风浮生录》统一美术风格与 AI 生成提示词模板 V1
 
-> 状态：**制作模板 / candidate baseline**，供整个项目使用，不局限 Demo。继承 [ART_PRODUCTION_STANDARD.md](../standards/ART_PRODUCTION_STANDARD.md)；若有冲突，以运行时 Resource 合同及已批准素材为准。本文的建议尺寸、配色和帧数必须通过首个角色与场景试点后才能标记为 frozen。AI 生成图一律先作为 `candidate`；concept/preview 只是制作用途，不能自动替换 `in_use`。
+> 状态：**制作模板 / candidate baseline**，供整个项目使用，不局限 Demo。继承 [ART_PRODUCTION_STANDARD.md](../standards/ART_PRODUCTION_STANDARD.md)；若有冲突，以运行时 Resource 合同及已批准素材为准。**新角色 Sprite 已确定普通档 328×256／高个档 384×288（宽×高）、身高 100 源像素/米**；其他待定尺寸、色板和帧数不因此冻结。AI 生成图一律先作为 `candidate`，不能自动替换 `in_use`。
 
 ## 1. 全项目共同视觉语言（Style DNA）
 
@@ -94,9 +94,9 @@ Allow 10% safety margin around the silhouette.
 
 ## 5. 游戏内 2D 角色：Sprite / Animation Atlas
 
-**资源接口已定，最终帧尺寸与方向仍待试点冻结**：`WuxiaActorAnimationProfile.tres` 支持自定义 atlas `columns/rows`、`feet_offset`、`actor_scale`、动作帧索引。历史 6×4 是可读的存量格式，不作为缺失配置的隐式回退。
+**新战斗角色精灵图已定稿**：普通角色每格 **328×256 源像素**，高个档 **384×288 源像素**；从角色设定读取身高 `height_m`，自然站姿人物高度为 `round(height_m × 100)` 源像素，常规范围 **100–220px**（例如 1.8m→180px）。一张 C×R Sheet 的目标尺寸为 `W×C` 宽、`H×R` 高；只固定单格，不固定动作帧数或行列数。`WuxiaActorAnimationProfile.tres` 支持独立 Clip Atlas、`columns/rows`、脚点、逐帧时长和根偏移；旧图集保持原 Resource 兼容，不暗中按新格切分。
 
-制作建议（未批准）：先完成单个动作的逐帧分镜，再让 AI **每次输出一张包含连续多帧的 RGBA Sprite Sheet**，按分镜选择适当 C×R 等尺寸格和宽透明间距；程序机械拆格、逐格拒绝越界后，再按统一根点坐标系无损装配正式 Atlas。画布必须给完整人体/武器留白，不能把 4×2/6×4 的“关键姿势稿”伪称真实高帧率动画，也不能靠固定网格反推帧数。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯，所有格子等大、透明留白充分且零越界。方向目标为前/后/左右；当前水平镜像只能作为过渡。
+制作方法：先完成单个动作的逐帧分镜，再让 AI **每次输出一张包含连续多帧的 RGBA Sprite Sheet**，按分镜选择 C×R 个角色已选 **328×256／384×288** 等尺寸格和透明间距；程序机械拆格、逐格拒绝越界后，再按统一根点坐标系无损装配正式 Atlas。画布必须给完整人体/武器留白，不能把 4×2/6×4 的“关键姿势稿”伪称真实高帧率动画，也不能靠固定网格反推帧数。**一个 Atlas 可包含一个或多个动作**，只要每动作的有序绝对帧索引可追溯、零越界即可。方向目标为前/后/左右；当前水平镜像只能作为过渡。
 
 **生图入口**：角色逐帧描述只作为分镜数据，不再单独使用单帧生图模板。实际调用下文 §5.1 的多帧 Sheet 简版提示词。
 
@@ -106,16 +106,16 @@ Allow 10% safety margin around the silhouette.
 
 ### 5.1 AI 默认生成：一张多帧动作 Sprite Sheet
 
-按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。**每次 AI 生图应输出一张包含多个连续动作姿势的透明 Sprite Sheet，不是每次只输出一个帧。** 先由 §5.2 的动作分镜决定有效帧数 N，再决定适合当前画布/动作幅度的列数 C、行数 R 和统一格子；不能为填满 2×4 或 6×4 网格反过来固定 N。单张容不下完整动作时，可拆成多个连续时间段，**每次仍输出包含多帧的 Sheet**。视频提帧尚未真实验收，脚点编辑器也不能自动识别动作帧语义或真实承重脚。
+按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。**每次 AI 生图应输出一张包含多个连续动作姿势的透明 Sprite Sheet，不是每次只输出一个帧。** 先由 §5.2 动作分镜决定有效帧数 N，再决定列数 C、行数 R；**格子按角色固定为 328×256 或 384×288**，不为填满 2×4 或 6×4 网格反过来固定 N。单张放不下完整动作时拆成多个连续多帧 Sheet；人物/武器超出单格须返工，高个角色须在制作前选择高个档；已选格仍装不下则返工或申报专用例外。视频提帧尚未真实验收，脚点工具不能自动识别真实承重脚。
 
 **统一坐标约定**：以批准的战斗待机帧作为所有动作的身份、`pose_local`、比例和朝向基准；逻辑 O 是待机骨盆地面投影（+x 右、+y 下），地线及镜头固定。一个 Sheet 内各格的 O 位于**相同格内相对坐标**，不能按每格不透明轮廓单独居中/缩放。保留分镜 `root_offset`，攻击/闪避等动作的局部姿态复位不代表世界位置回到起点；`defeat` 停留在倒地终止态，`idle/walk/run` 检查首尾循环。
 
 **默认生成与验收顺序**：
 
 1. 附角色获准设定和 `weapon_contract`（武器/徒手、数量、尺寸与握持方式），固定侧视基准与统一 O。不要从其他角色套用武器或镜头。
-2. 从 §5.2 的分镜得到真实 N、连续全局帧号、阶段与各帧姿势。选择让人物/武器有足够空间的 `grid_columns=C`、`grid_rows=R`、共同格宽/高与透明留白；`C×R` 仅承载所选帧，不决定帧数。每次一个 `action_id` 的一组连续帧，按行优先从左到右、从上到下排列；不足格全透明。
+2. 从 §5.2 的分镜得到真实 N、连续全局帧号、阶段与各帧姿势。按 **角色已选 W×H** 固定格选择 `grid_columns=C`、`grid_rows=R`，总尺寸 `W×C` 宽、`H×R` 高；人物高固定为角色设定身高×100 源像素。`C×R` 只承载所选帧，不决定帧数；每次一个 `action_id` 的连续帧，行优先排列，不足格全透明。
 3. 使用下方多帧母提示词一次生成整张 RGBA Sheet。要求各格同一角色/武器、固定 O/地线/比例，姿势随分镜连续变化，武器、头发、衣摆和四肢均不触格线；不要文字、边框、残影或跨格内容。
-4. **先机械拆格再判定是否可用**：按已声明 C/R 等尺寸切片，检查整张尺寸可整除、实际非空格数量与预期帧数匹配、空格完全透明、每个非空格四边 Alpha 边距 m>0（24px 仅试点建议），任何人体/武器越格、裁切或轮廓混格一律拒绝。AI 不能保证精确网格，也不能可靠识别动作阶段；不合格时重新生成该动作或有问题的**连续多帧片段**，而不是靠猜帧、紧裁切或补黑边放行。
+4. **先机械拆格再判定是否可用**：按 **已选 W×H** 切片，核对图片尺寸恰为 `W×C` 宽、`H×R` 高、非空格数量=N、未用格透明、人物身高与设定一致、每格四边至少 **8px** 真透明边距。人体/武器越格、裁切或混格直接拒绝。AI 不保证精确像素格，也不能可靠识别动作阶段；不合格时返工对应连续多帧片段，不靠猜帧、紧裁切或强行缩放放行。
 5. 几何通过后按行优先帧序预览连续性、循环/复位、承重与根位移；AI 视觉仅初筛明显异常。最后由程序按统一 O 对通过验收的格子无损打包为运行时 Atlas，并再次自动检查零重叠和索引；疑难与最终少量样片才人工复核。
 
 **简版多帧 Sheet 母提示词**（仅传下面模板、角色基准图和选中分镜；完整检测合同不拼入生图请求）：
@@ -126,6 +126,7 @@ include {sheet_frame_count} consecutive poses (global frames {first_frame_index}
 Character reference: {character_reference}. Equipment/unarmed: {weapon_contract}.
 Ordered frame poses: {frame_pose_list}.
 Layout: {grid_columns} × {grid_rows} equal cells, left-to-right then top-to-bottom; unused cells transparent.
+Each cell: {cell_width_px} × {cell_height_px} pixels (328×256 standard or 384×288 tall, choose once per character). Standing character height: {character_height_px} pixels ({character_height_m} m at 100 px/m).
 Keep the same character, scale, strict side view, ground line and root O in every cell.
 Follow natural motion, planted-foot changes and valid root movement; close loops or recover to idle (defeat stays down).
 Each entire character, limb and weapon MUST fit inside its own cell with wide transparent margins.
@@ -149,7 +150,7 @@ Transparent background; no borders, labels or extra equipment.
 | hit | 受力反应、退让或缓冲、恢复待机，禁止突然无原因反弹 |
 | defeat | 失衡→膝/躯干接地→最终静止倒地；这是不恢复站姿的终止例外 |
 
-**提示词精简原则**：只传角色基准、武器契约、动作分镜、N、网格、统一 O、透明留白和零跨格；重复说明、机器可检查的像素阈值与验收清单留在规范，不逐条发给图像模型。失败重试仅增加针对性纠错描述。提示词中不要强制源图恰为 200px 人高或 24px 边距；这些是后续原生尺度归一和程序排布约束，AI 很难严格遵守像素数字。可以请求大留白与一致画布，但不能把生成模型承诺当成测量结果。
+**提示词精简原则**：只传角色基准、武器契约、动作分镜、N、角色已选 328×256 或 384×288px 格、角色设定身高×100px、统一 O、透明留白和零跨格；机器可检查的阈值与验收清单留在规范，不逐条发给模型。失败仅增加一两条针对性纠错。模型可能忽略精确数字，必须由导入预检测量验证；**源图 100px/米不能与当前运行时默认 200 世界像素人物高度混为一谈**。
 
 ### 5.2 AI 动作分镜：先规划帧数，再逐帧绘图
 
@@ -343,7 +344,10 @@ status: concept
 source_reference: [approved_design_sheet_path, approved_palette_path]
 identity_lock: "..."
 camera_and_light: "..."
-target_canvas: "256x256 candidate; final pending pilot"
+character_height_m: 1.80
+standing_height_px: 180
+cell_size_px: "328x256"  # tall: "384x288"
+target_canvas: "W*C by H*R"  # W/H from cell_size_px
 alpha_required: true
 action_or_layer: attack
 direction: right
@@ -372,10 +376,10 @@ review:
 
 **完成定义**：不是提示词“写好”，而是多类别素材基于同一 identity/style reference 稳定复现、透明/脚点/分层通过、Godot 实机一致并批准。
 
-## 2026-11-02 战斗角色贴图比例尺补充
+## 战斗角色贴图比例尺补充
 
 所有新战斗角色的生成提示词统一添加：
 
-> 固定游戏世界比例尺，普通人物站立姿态在游戏内对应 **2.5 战斗单位（200 世界像素）**，角色地面占位半径 **0.3 单位（24 世界像素）**；1 战斗单位 = 80 世界像素。独立透明动作帧，统一角色头身比、脚底基线、完整轮廓、侧身朝向，图集内每格四周保留至少 8 源像素透明边距，不出现跨格的武器／衣摆／脚趾。尽量简化纹理，保留剪影、发型、武器和主配色。角色站立、行走与攻击不随帧切换改变世界尺度。
+> 新角色精灵图每格 **328×256 普通档或 384×288 高个档**（宽×高）；人物自然站姿高度按角色设计 **1 米 = 100 源像素** 换算（1.0–2.2 米，人物 100–220px）。每个动作保持同一头身比、脚底基线、统一 O、完整侧面轮廓，格子四边至少 8px 真透明留白，不出现跨格的武器、衣摆或脚趾。只改变动作姿势，不改变人物源像素比例。生成结果必须经过机械拆格和视觉预览确认。
 
-生成时 **不要**要求所有输出固定 256×256；该尺寸是旧图集兼容范例，正式列行与格尺寸由每个原生 `WuxiaActorAnimationProfile` 确定。AI 提示词控制风格，不保证数值精确；必须通过图集工具、脚点预览和原生 Resource 校验后使用。
+现有 Demo **仍默认将普通角色缩放到 200 世界像素高**，`1 战斗单位 = 80 世界像素`、碰撞半径 24px；源图 100px/米是新制作标准，运行时按角色真实身高显示尚待 Resource/导入器迁移。历史 256×256 图集照旧引用，不按新标准无损迁移前不得声称合规；AI 提示词不保证精确尺寸，必须通过图集工具、脚点预览和原生 Resource 校验。
