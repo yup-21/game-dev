@@ -9,7 +9,7 @@ description: "为《长风浮生录》设计、生成、拆分或审核剧情与
 
 - 先读取 art-production/standards/ART_PRODUCTION_STANDARD.md 与 art-production/standards/TOWN_MAP_SCALE_PRODUCTION.md 的场景、世界比例尺和城镇分区合同；AI 制作时读取 art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md 的场景提示词。
 - 复制 art-production/templates/asset-work-order.md 至 art-production/candidates/<asset-type>/<asset-id>/WORK_ORDER.md，记录参考母图、镜头、色板、地标、原点、图层、版权和版本。
-- 全游戏采用原创手绘自然材质、固定镜头、清晰地面空间及真实前后景遮挡；不用 3D 棋盘叠加背景伪造场景。
+- 全游戏采用原创手绘自然材质、清晰地面空间及真实前后景遮挡；正式 **2D 分层场景**保持既定镜头合同，不用 3D 棋盘叠加背景伪造场景。真实简易 3D 几何加手绘贴图的已验证 **2.5D 技术原型**属于独立入口，不等同于 2D 分层交付，也不由本条禁止；正式采用时仍须显式定义相应场景 Resource/碰撞与镜头合同并做实机验收。
 - Agent 先选定 `horizontal/vertical/mixed`、镜头、出口拓扑、画布像素尺寸及当前图层，再把 `ART_STYLE_AI_PROMPTS_V1.md` §6 的场景／分层短模板**全部填成确定值**后发送；不让生图模型选择街区方向、图层或画布。80px/u、碰撞范围、同画布对齐等保留在本 Skill 和检查工具，不逐项拼成绘图提示词。
 
 ## 制作流程
@@ -24,6 +24,6 @@ description: "为《长风浮生录》设计、生成、拆分或审核剧情与
 ## 交付门槛
 
 - 提交按统一世界比例生产的分层贴图、必要的可编辑母版、**原始提示词和绑定的 Godot Resource**。候选与使用中是唯一素材状态；不另建审批状态或重复的版本来源表。
-- 自动检查所有必需层存在、可解码、每层为同一 1600×1000 画布、Resource 引用可加载；人工检查透视、脚点、六人站位、遮挡、性能与授权。
+- 自动检查必需图层存在、可解码、共享同一原点与**当前场景 Resource 声明的真实世界画布尺寸**且引用可加载：单屏为 1600×1000，纵向长图可为 1600×2000／1600×2400 等（全部图层与 `WuxiaSceneArtProfile.reference_size`、相应 Map/Chapter 世界尺寸一致）。1600×1000／1440×900 为 GUI 视口截图验证尺寸，不是长图贴图的统一硬限制；人工检查透视、脚点、六人站位、遮挡、性能与授权。
 - 单张概念场景不能代替分层地图；原稿保留 candidate，导入并绑定到地图 Resource 后成为当前 `in_use`，先预检与备份再切换。视觉与权属审核独立记录，不另建 `approved` 状态。
 - 汇报未解决的几何/遮挡问题和待冻结参数，不自行修改战斗规则或地图拓扑以迁就画面。
