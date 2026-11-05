@@ -2,6 +2,8 @@
 extends Control
 ## Lightweight editor preview. No gameplay state or Resource writes.
 
+signal cell_clicked(index: int)
+
 var mode: String = "image"
 var picture: Texture2D
 var layers: Dictionary = {}
@@ -11,6 +13,9 @@ var frame: int = 0
 var feet_offset: Vector2 = Vector2(0, -102)
 var map_resource: Resource
 var candidate_display_scale: float = 0.0
+var grid_source: Dictionary = {}
+var crop_rect: Rect2i = Rect2i()
+const Assembly = preload("res://addons/wuxia_art_importer/sprite_assembly.gd")
 
 
 func set_candidate_display_scale(value: float) -> void:
@@ -32,6 +37,23 @@ func show_atlas(texture: Texture2D, cols: int, row_count: int, feet: Vector2) ->
     rows = maxi(row_count, 1)
     feet_offset = feet
     frame = 0
+    layers.clear()
+    queue_redraw()
+
+
+func show_grid(texture: Texture2D, source: Dictionary) -> void:
+    mode = "grid"
+    picture = texture
+    grid_source = source.duplicate(true)
+    layers.clear()
+    queue_redraw()
+
+
+func show_sliced_frame(texture: Texture2D, region: Rect2i, feet: Vector2) -> void:
+    mode = "slice"
+    picture = texture
+    crop_rect = region
+    feet_offset = feet
     layers.clear()
     queue_redraw()
 
@@ -69,24 +91,61 @@ func _fitted(source_size: Vector2) -> Rect2:
 
 
 func _draw_picture() -> void:
+    if mode == "grid":
+        var whole := _fitted(picture.get_size())
+        draw_texture_rect(picture, whole, false)
+        var factor := whole.size / picture.get_size()
+        var cols := int(grid_source.get("columns", 0))
+        var rows_count := int(grid_source.get("rows", 0))
+        for index in range(cols * rows_count):
+            var rect := Assembly.cell_rect(grid_source, index)
+            var target := Rect2(whole.position + Vector2(rect.position) * factor,
+                Vector2(rect.size) * factor)
+            draw_rect(target, Color(0.1, 0.96, 0.68, 0.9), false, 1.3)
+            if target.size.x > 15.0 and target.size.y > 11.0:
+                draw_string(get_theme_default_font(), target.position + Vector2(2, 12),
+                    str(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.YELLOW)
+        return
+    if mode == "slice":
+        _draw_region(Rect2(crop_rect))
+        return
     if mode == "atlas":
         var frame_size := Vector2(float(picture.get_width()) / float(columns),
                                   float(picture.get_height()) / float(rows))
         var cell := frame % maxi(columns * rows, 1)
         var source_rect := Rect2(Vector2(float(cell % columns), float(cell / columns)) * frame_size, frame_size)
-        var dest := _fitted(frame_size)
-        if candidate_display_scale > 0.0:
-            # Exact 1 preview pixel = 1 logical world pixel. No image resampling
-            # or changes to the source atlas or combat scale are performed.
-            var screen_size: Vector2 = frame_size * candidate_display_scale
-            dest = Rect2((size - screen_size) * 0.5, screen_size)
-        draw_texture_rect_region(picture, dest, source_rect)
-        var marker := dest.position + dest.size * Vector2(0.5, 1.0)
-        marker += feet_offset * (dest.size.x / frame_size.x)
-        draw_line(marker - Vector2(7, 0), marker + Vector2(7, 0), Color.ORANGE, 2)
-        draw_line(marker - Vector2(0, 7), marker + Vector2(0, 7), Color.ORANGE, 2)
+        _draw_region(source_rect)
     else:
         draw_texture_rect(picture, _fitted(picture.get_size()), false)
+
+
+func _draw_region(source_rect: Rect2) -> void:
+    if not source_rect.has_area():
+        return
+    var dest := _fitted(source_rect.size)
+    if candidate_display_scale > 0.0:
+        var screen_size: Vector2 = source_rect.size * candidate_display_scale
+        dest = Rect2((size - screen_size) * 0.5, screen_size)
+    draw_texture_rect_region(picture, dest, source_rect)
+    var marker := dest.position + dest.size * Vector2(0.5, 1.0)
+    marker += feet_offset * (dest.size.x / source_rect.size.x)
+    draw_line(marker - Vector2(7, 0), marker + Vector2(7, 0), Color.ORANGE, 2)
+    draw_line(marker - Vector2(0, 7), marker + Vector2(0, 7), Color.ORANGE, 2)
+
+
+func _gui_input(event: InputEvent) -> void:
+    if mode != "grid" or picture == null or not event is InputEventMouseButton or \
+            event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
+        return
+    var whole := _fitted(picture.get_size())
+    if not whole.has_point(event.position):
+        return
+    var pixel: Vector2 = (event.position - whole.position) * picture.get_size() / whole.size
+    for index in range(int(grid_source["columns"]) * int(grid_source["rows"])):
+        if Assembly.cell_rect(grid_source, index).has_point(Vector2i(pixel)):
+            cell_clicked.emit(index)
+            accept_event()
+            return
 
 
 func _draw_scene() -> void:

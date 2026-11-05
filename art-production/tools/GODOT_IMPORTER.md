@@ -37,7 +37,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_art_ca
 1. 选择 `in-use/` 或 `candidates/` 下的图片，预览尺寸、Alpha 与 SHA-256。
 2. 选择素材类型，并明确设置角色、地图或内容 ID：
    - **角色立绘**：更新 `WuxiaCharacterDefinition.portrait`。
-   - **角色 Atlas**：设置列数、行数、脚点与朝向；可选已有原生动作 Profile 模板以保留显式 Clip 动作映射（支持新 12 组动作及逐 Clip Atlas），更新 `sprite_sheet` 和 `WuxiaActorAnimationProfile`。
+   - **角色 Atlas**：新素材勾选「自由装配」，通过源图网格与十二动作有序帧映射生成新的 Atlas + `WuxiaActorAnimationProfile`。原有单图路径只在显式选择已有 Profile 模板或勾选「兼容旧图：沿用已有帧配置」时使用，绝不默认拿旧动作帧套到新图上。
    - **分层场景**：选择 `data/maps/` 战斗地图或 `data/native/chapters/` 剧情章节；背景与必选地面、可选前景／天气／同画布剧情复合预览（`story_preview`）须匹配**当前场景 `WuxiaSceneArtProfile.reference_size` 与 Map/Chapter 声明的完整世界画布**（单屏 1600×1000，纵向长图可为 1600×2000／2400 等），不能把长图缩至 1600×1000。更新 `WuxiaSceneArtProfile` 并挂到 Map 或 ChapterScene；未配置的可选图层可为空，缺失的必需层直接报错，不借用单图回退。旧图片保留作为审计/回滚资产，已注册地图或角色以新 `.tres` 绑定为准。预览显示章节主角/NPC 脚点。
    - **UI Atlas / VFX**：填写唯一内容 ID，UI 创建/更新 `WuxiaAssetDefinition`；VFX 创建/更新继承它的 `WuxiaVFXDefinition`，并注册到 Manifest。当前导入 Dock 接收图像 VFX，必须具备真实 Alpha，可配置列/行及用逗号分隔的绝对播放帧索引；播放速度由事件表现时长决定，图集不要求固定 6×4。`event_kind` 优先填原始战斗事件（如 `ATTACK_DECLARED`、`HP_DAMAGED`、`COMBO_TRIGGERED`）；旧视觉键（如 `slash`）继续兼容。
 3. 可直接单项“检查并导入”，或者“加入批次”逐项入队（最多 64 项）后统一检查。
@@ -47,6 +47,16 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_art_ca
 
 导入并绑定后的当前素材属于 `in_use`（Asset Resource `status=runtime`），不会在 `assets/imported/` 下再建立候选状态；权属仍标记 `owner_review_required`。**导入通过不等于动作、脚点、遮挡及版权验收通过**。
 如 Inspector 缓存未刷新，重新打开资源或编辑器。
+
+### 新角色动作 Atlas：自由装配
+
+1. 选择「角色动作 Atlas」及目标角色，勾选「自由装配」，从顶部源图列表逐一选取、点击「添加选中的源图集」。一个批次可以混排动作，多张图可以接续同一动作。源图按加入顺序编号 `0,1,2...`。
+2. 在下方「已添加源图」选择当前图，分别指定真实列数/行数、单格宽高、网格起点 X/Y、横纵格距；点击图上的格位即可选择/加入当前动作。若格子偏移，选择格号并调整该格局部 X/Y。原图不变，画面有叠加格线以供核对。
+3. 动作选择器固定显示新十二动作 `idle/walk/run/attack1/attack2/attack3/attack4/skill/evade/guard/hit/defeat`。在「当前动作的有序帧映射」输入如 `0:0-7,1:4,0:9`，表示源图 0 的 0～7 格、源图 1 的第 4 格、源图 0 的第 9 格，**严格按填写顺序播放**。可手动乱序、非连续选择，也可以点击网格逐帧追加，跨图续帧不需额外 Clip。
+4. 分别设置每个动作循环、FPS、可选的逗号分隔逐帧秒数；取消「显示整图切格」后预览真实映射。非循环动作只播放一次，`defeat` 保持最后一帧。预检要求十二动作均已绑定，丢失动作直接报错，不使用 `move/attack/combo` 旧别名回退。
+5. 选择输出普通档单格 328×256（默认）或高个档 384×288。「检查并导入」校验每帧内容非空、至少 8px 真透明留白、切格不越界、所有源图单格同像素大小、合法的时间/帧序；使用**所有帧共同的等比缩放因子与一致的透明补边**标准化。合格后按动作顺序装配为 PNG，并生成十二个原生 Clip（有序绝对帧索引）。`WuxiaCharacterDefinition`、Animation Profile 与 PNG 仍通过原有事务备份、版本化路径和确认界面一起切换。**候选图的独立 `.tres` 与角色 ID 必须一致**。
+
+注意：人工调整切格只能纠正格位识别误差。不会自动擦除相邻动作残影、裁人物/武器、缩放单独帧、猜测动作语义或修复真正越格的原稿。不同源图的**原始单格尺寸不一致**时须先完成统一规格处理，无法满足 8px 留白时回到候选返工。源图文件始终保留。新动作集为十二动作，历史九动作 Resource 仍可正常读取和播放。
 
 ## 数据保护与限制
 
@@ -64,5 +74,6 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_art_ca
 godot --headless --path demos/changfeng-battle --editor --import --quit
 godot --headless --path demos/changfeng-battle --script res://checks/test_art_importer.gd
 godot --headless --path demos/changfeng-battle --script res://checks/test_art_workflow.gd
+godot --headless --path demos/changfeng-battle --script res://checks/test_sprite_assembly.gd
 python3 art-production/tools/inventory_assets.py --check
 ```

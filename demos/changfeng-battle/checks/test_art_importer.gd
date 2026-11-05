@@ -70,9 +70,9 @@ func _initialize() -> void:
     if not str(filesystem_imported.get("error", "")).is_empty() or filesystem_imported["files"].size() != 2:
         _fail("Filesystem picker path did not resolve an already-imported character")
         return
-    var sample := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+    var sample := Image.create(32, 32, false, Image.FORMAT_RGBA8)
     sample.fill(Color(0, 0, 0, 0))
-    sample.set_pixel(1, 1, Color.WHITE)
+    sample.set_pixel(10, 10, Color.WHITE)
     var valid_sample := ImageTexture.create_from_image(sample)
     if not Importer.candidate_frame_geometry_error(valid_sample, 1, 1, PackedInt32Array([0])).is_empty():
         _fail("Contained single candidate frame was rejected")
@@ -98,9 +98,15 @@ func _initialize() -> void:
         _fail("Cross-character candidate was accepted")
         return
     var atlas: Dictionary = Importer.plan("atlas", source, "res://data/native/characters/shen_changfeng.tres",
-        {"columns": 6, "rows": 4, "feet_offset": Vector2(0, -102), "faces_left": false})
+        {"columns": 6, "rows": 4, "feet_offset": Vector2(0, -102), "faces_left": false,
+        "reuse_existing_clips": true})
     if not str(atlas.get("error", "")).is_empty():
         _fail("Valid atlas plan rejected: " + str(atlas.get("error", "")))
+        return
+    var unbound: Dictionary = Importer.plan("atlas", source,
+        "res://data/native/characters/shen_changfeng.tres", {"columns": 6, "rows": 4})
+    if not str(unbound.get("error", "")).contains("自由装配"):
+        _fail("New sheet silently inherited the old Profile frame sequence")
         return
     var invalid_clip: Dictionary = Importer.plan("atlas", source,
         "res://data/native/characters/shen_changfeng.tres", {
@@ -169,6 +175,40 @@ func _initialize() -> void:
         return
     if dock.source_list.item_count < 39 or dock.kind.item_count != 6:
         _fail("Editor dock failed to enumerate candidate sources")
+        return
+    dock.kind.select(1)
+    dock._mode_changed()
+    if dock.action_select.item_count != 12:
+        _fail("New Atlas editor still displays nine historical actions")
+        return
+    dock.compose_enabled.button_pressed = true
+    dock._mode_changed()
+    var composed_source := ""
+    for index in range(dock.source_list.item_count):
+        var path := str(dock.source_list.get_item_metadata(index))
+        if path.ends_with("/in-use/characters/black_blade/sprites/atlas.png"):
+            dock.source_list.select(index)
+            composed_source = path
+            break
+    if composed_source.is_empty():
+        _fail("Cannot find a source for the visual grid editor")
+        return
+    dock._add_composition_source()
+    if dock.compose_sources.size() != 1 or dock.preview.mode != "grid":
+        _fail("Composer did not add a source and show the grid")
+        return
+    dock._on_grid_cell_clicked(3)
+    if dock.compose_mapping.text != "0:3":
+        _fail("Clicking grid did not assign a frame to the selected action")
+        return
+    dock.compose_numbers["local_x"].value = 2
+    if dock.compose_sources[0]["offsets"].get(3, Vector2i.ZERO) != Vector2i(2, 0):
+        _fail("Per-cell grid adjustment was not retained")
+        return
+    dock.compose_grid.button_pressed = false
+    dock._refresh_preview()
+    if dock.preview.mode != "slice":
+        _fail("Action preview is not using the authored source-frame mapping")
         return
     dock.kind.select(5)
     dock._mode_changed()
