@@ -379,6 +379,36 @@ static func _composed_profile(template: WuxiaActorAnimationProfile, atlas: Textu
     return profile
 
 
+static func _stage_candidate_grid(candidate: WuxiaArtCandidateDefinition,
+        config: Dictionary) -> WuxiaArtCandidateDefinition:
+    var staged := candidate.duplicate(true) as WuxiaArtCandidateDefinition
+    staged.columns = int(config.get("columns", 0))
+    staged.rows = int(config.get("rows", 0))
+    staged.grid_origin = Vector2i(int(config.get("origin_x", 0)), int(config.get("origin_y", 0)))
+    staged.grid_cell_size = Vector2i(int(config.get("cell_width", 0)), int(config.get("cell_height", 0)))
+    staged.grid_gap = Vector2i(int(config.get("gap_x", 0)), int(config.get("gap_y", 0)))
+    staged.grid_cell_offsets = config.get("offsets", {}).duplicate(true)
+    return staged
+
+
+static func _save_candidate_grids(plan_data: Dictionary) -> String:
+    for entry in plan_data.get("candidate_updates", []):
+        var path := str(entry.get("resource_path", ""))
+        var source := str(entry.get("source_path", ""))
+        var existing := candidate_for_source(source)
+        if existing == null or existing.resource_path != path or \
+                not path.begins_with("res://data/art_candidates/"):
+            return "候选 Resource 的身份或路径在导入期间发生变化"
+        var staged := _stage_candidate_grid(existing, entry["geometry"])
+        var problem := staged.validate_source()
+        if not problem.is_empty():
+            return problem
+        var failure := _save(staged, path)
+        if not failure.is_empty():
+            return failure
+    return ""
+
+
 ## Explicit multi-source sheet assembly. Source images remain in art-production;
 ## the new packed PNG and its fully authored twelve-action Profile are imported
 ## together through the existing transactional review/rollback path.
@@ -390,6 +420,7 @@ static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
         return {"error": "目标角色 Resource 不存在"}
     var source_definitions: Array = fields.get("composition_sources", [])
     var sources: Array = []
+    var candidate_updates: Array[Dictionary] = []
     for item in source_definitions:
         var config: Dictionary = (item as Dictionary).duplicate(true)
         var path := str(config.get("path", ""))
@@ -403,14 +434,17 @@ static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
         if path.simplify_path().begins_with(production_root().path_join("candidates/")):
             if candidate == null:
                 return {"error": "候选源图缺少独立 .tres：" + path}
-            var error: String = candidate.validate_source()
+            var staged_candidate := _stage_candidate_grid(candidate, config)
+            var error: String = staged_candidate.validate_source()
             if not error.is_empty():
                 return {"error": error}
-            if candidate.columns <= 0 or candidate.rows <= 0:
-                return {"error": "候选源图尚未在 .tres 声明真实 C×R 网格：" + path}
-            if candidate.columns != int(config.get("columns", 0)) or \
-                    candidate.rows != int(config.get("rows", 0)):
-                return {"error": "源图网格与候选 Resource 声明不同：" + path}
+            if candidate.columns != staged_candidate.columns or candidate.rows != staged_candidate.rows or \
+                    candidate.grid_origin != staged_candidate.grid_origin or \
+                    candidate.grid_cell_size != staged_candidate.grid_cell_size or \
+                    candidate.grid_gap != staged_candidate.grid_gap or \
+                    candidate.grid_cell_offsets != staged_candidate.grid_cell_offsets:
+                candidate_updates.append({"resource_path": candidate.resource_path,
+                    "source_path": path, "geometry": config.duplicate(true)})
         config["texture"] = details["texture"]
         sources.append(config)
     var requested_cell := Vector2i(384, 288) if bool(fields.get("composition_tall", false)) \
@@ -446,6 +480,7 @@ static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
         "owner": actor, "profile_path": "res://data/native/animations/" + actor.content_id + ".tres",
         "template_path": template_path, "clip_profile_path": template_path,
         "assembly": assembly, "feet_offset": fields.get("feet_offset", Vector2(0, -102)),
+        "candidate_updates": candidate_updates,
         "faces_left": bool(fields.get("faces_left", false)),
         "files": {"primary": {"path": str(source_definitions[0]["path"]), "destination": destination_path,
             "sha256": hash, "generated_bytes": assembly["bytes"], "replaces": replaced}},
@@ -905,6 +940,8 @@ static func save_bindings(plan_data: Dictionary) -> String:
             character.animation_profile = profile
             character.sheet_quality = "candidate"
         var char_error := _save(character, target)
+        if char_error.is_empty() and bool(plan_data.get("composition", false)):
+            char_error = _save_candidate_grids(plan_data)
         if char_error.is_empty():
             character.emit_changed()
         return char_error

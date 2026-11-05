@@ -63,6 +63,42 @@ func _initialize() -> void:
     if Transaction.rollback(import_log).is_empty():
         _fail("Import transaction rollback was incorrectly allowed twice")
         return
+    # The visual importer promotes a manually calibrated candidate CxR from
+    # 0x0 only after explicit confirmation, and restores it on undo.
+    var source_path := Importer.production_root().path_join(
+        "candidates/characters/shen_changfeng/sprite-v04/sprite_shen_changfeng_core_8x4_source_v04.png")
+    var candidate := Importer.candidate_for_source(source_path)
+    if candidate == null or candidate.columns != 0:
+        _fail("Undeclared candidate fixture is missing")
+        return
+    var candidate_path := candidate.resource_path
+    var candidate_hash := FileAccess.get_sha256(candidate_path)
+    var pixels: Vector2i = candidate.source_pixel_size
+    var candidate_plan: Dictionary = {"error": "", "mode": "atlas", "target": character_path,
+        "files": {}, "candidate_updates": [{"resource_path": candidate_path,
+        "source_path": source_path, "geometry": {"columns": 5, "rows": 5,
+        "cell_width": pixels.x / 5, "cell_height": pixels.y / 5,
+        "origin_x": 0, "origin_y": 0, "gap_x": 0, "gap_y": 0, "offsets": {}}}]}
+    var candidate_transaction := Transaction.begin([candidate_plan])
+    if not str(candidate_transaction.get("error", "")).is_empty():
+        _fail("Candidate metadata transaction could not begin")
+        return
+    var candidate_log := str(candidate_transaction["journal"])
+    var candidate_failure: String = Importer._save_candidate_grids(candidate_plan)
+    if not candidate_failure.is_empty():
+        Transaction.rollback(candidate_log, true)
+        _fail("Candidate grid metadata save failed: " + candidate_failure)
+        return
+    if FileAccess.get_sha256(candidate_path) == candidate_hash:
+        Transaction.rollback(candidate_log, true)
+        _fail("Candidate grid was not persisted")
+        return
+    candidate_failure = Transaction.commit(candidate_log)
+    if candidate_failure.is_empty():
+        candidate_failure = Transaction.rollback(candidate_log)
+    if not candidate_failure.is_empty() or FileAccess.get_sha256(candidate_path) != candidate_hash:
+        _fail("Candidate CxR metadata was not restored after rollback: " + candidate_failure)
+        return
     # Exercise the actual five-item pilot import on a disposable CI checkout:
     # two portraits, two native action atlases, one layered scene + story preview.
     var before_paths := [

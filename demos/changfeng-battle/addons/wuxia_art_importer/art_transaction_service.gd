@@ -70,6 +70,8 @@ static func _resource_paths(plans: Array[Dictionary]) -> Array[String]:
         paths[str(plan["target"])] = true
         if plan.has("profile_path"):
             paths[str(plan["profile_path"])] = true
+        for item in plan.get("candidate_updates", []):
+            paths[str(item["resource_path"])] = true
         if str(plan["mode"]) in ["ui_atlas", "vfx"]:
             paths[MANIFEST] = true
     var sorted: Array[String] = []

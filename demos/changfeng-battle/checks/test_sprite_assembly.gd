@@ -27,6 +27,20 @@ func _source(color_offset: int, offset_grid: bool = false) -> Dictionary:
 
 
 func _initialize() -> void:
+    var original_candidate: WuxiaArtCandidateDefinition = Service.candidate_for_source(
+        Service.production_root().path_join("candidates/characters/shen_changfeng/sprite-v04/sprite_shen_changfeng_core_8x4_source_v04.png"))
+    check(original_candidate != null and original_candidate.columns == 0,
+        "candidate fixture starts with an undeclared CxR grid")
+    if original_candidate != null:
+        var size := original_candidate.source_pixel_size
+        var calibrated := Service._stage_candidate_grid(original_candidate, {"columns": 5,
+            "rows": 5, "cell_width": size.x / 5, "cell_height": size.y / 5,
+            "origin_x": 0, "origin_y": 0, "gap_x": 0, "gap_y": 0, "offsets": {}})
+        check(calibrated.columns == 5 and calibrated.rows == 5 and \
+            calibrated.validate_source().is_empty(),
+            "undeclared candidate grid accepts explicitly calibrated visual geometry")
+        check(original_candidate.columns == 0,
+            "calibrating a candidate does not mutate its original Resource before confirmation")
     var sources := [_source(0), _source(25, true)]
     var mappings := {"idle": "0:0-1", "walk": "0:2-3", "run": "0:4",
         "attack1": "0:5", "attack2": "0:6", "attack3": "0:7", "attack4": "0:8",
