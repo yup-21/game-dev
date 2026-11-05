@@ -20,9 +20,10 @@ func _actions(view: Node) -> Array:
         for node in view.get_node("NativeMenuUI/MenuControls").get_children():
             if node is Button:
                 result.append(str(node.get_meta("action", "")))
-    else:
-        for button in view.get("buttons"):
-            result.append(str(button.get("action", "")))
+    elif str(view.get("story").phase) == "complete":
+        for node in view.get_node("CompleteUI").get_children():
+            if node is Button:
+                result.append(str(node.get_meta("action", "")))
     return result
 
 func _run() -> void:

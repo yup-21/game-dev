@@ -17,6 +17,10 @@
 | 可交互物 | `scenes/story/interaction_point.tscn` | Sprite、交互 Area2D、音效槽、提示；Inspector 可设 `interaction_id` | 使用 `interaction_requested` 信号；不修改任务规则 |
 | 战斗特效 | `scenes/vfx/combat_burst.tscn` | 描边、发光、连段残影、素材 Sprite、音效槽 | `BattleVFX2D` 根据 Cue 实例化并控制播放 |
 | 标题菜单 | `opening.tscn` → `NativeMenuUI` | 标题、文字、九个交互按钮、hover/pressed 样式与位置 | 按钮直接连接原有 `_action`；地图和剧情入口不变 |
+| 序章探索 HUD | `opening.tscn` → `ExploreUI/ExploreHUD` | 场景名称、任务提示、消息、E 交谈按钮 | 文字来自剧情 Resource；NPC 探测与按键行为不变 |
+| 序章对白 | `opening.tscn` → `DialogueUI` | 肖像、角色名、打字机文本、继续与分支选项按钮 | `opening_flow.gd` 只填内容、控制显示；选项条件仍由剧情数据计算 |
+| 序章结算 | `opening.tscn` → `CompleteUI` | 结语、奖励文案、迎战追兵/返回菜单按钮 | 仍进入唯一正式战斗；不改变奖励发放逻辑 |
+| 序章过场操作 | `opening.tscn` → `CinematicOverlay` | 跳过过场按钮、操作提示、过场字幕与淡入动画 | `skip` 信号与过场状态同步 |
 | 剧情与分层 | `opening.tscn` | 背景/地面/前景/天气层、角色容器、过场文字/淡入动画、音轨 | `opening_flow.gd` 引用现成节点，更新文本和所选素材 |
 | 战斗结果 | `demo_result.tscn` | 文字、按钮位置及颜色 | `demo_result.gd` 根据 GameSession 更新 |
 | 2.5D 技术验证 | `prototypes/pingjiang_25d/pingjiang_25d_validation.tscn` | 完整 3D 道路、立面、碰撞、角色、摄像机和 QA HUD | 仍为独立原型，未成为正式四区地图 |
@@ -35,7 +39,7 @@
 1. 修改角色相对 Sprite2D 的脚点/尺寸，先确认 `actor_visual_scale.gd`、动画 Profile 中的 `feet_offset`/`actor_scale` 会在运行时覆盖部分值；不要在两个地方各维护一份尺寸真值。
 2. `ActorList`、`CardActions`、`CommandActions` 和角色详情中的 `LearnedSchools` 是**运行时内容容器**；编辑它们的尺寸、主题和布局即可，不要把固定角色/卡牌作为运行节点保存在场景里。
 3. `2.5D` 的道路与建筑几何已保存为原生 MeshInstance3D / StaticBody3D；调整立面时应同步检查其碰撞、镜头、地面尺度。该 QA 原型不影响正式平江府四区连接。
-4. 过场 `CinematicText` 使用 Godot AnimationPlayer 的 `fade_in`；文字来自当前剧情 Resource，直接改 Label 的初始文字只改变编辑器预览。
+4. 过场 `CinematicText` 使用 Godot AnimationPlayer 的 `fade_in`；探索、对白、结算 Label 的文字来自当前剧情 Resource，直接修改初始文本只影响编辑器预览；**位置、字号、样式**可以直接在 Inspector 微调。
 5. 请在 1600×1000、1440×900 下复查画面与交互。自动测试只能确认加载、结构和规则未回归，不能替代 GUI 视觉审核。
 
 运行结构检查：`godot --headless --path demos/changfeng-battle --script res://checks/test_native_scene_authoring.gd`。

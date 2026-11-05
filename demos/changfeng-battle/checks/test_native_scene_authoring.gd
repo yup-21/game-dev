@@ -90,6 +90,18 @@ func _run() -> void:
     var opening: Node = _load_scene("res://opening.tscn")
     _require(opening.get_node_or_null("NativeMenuUI/MenuControls/Start") is Button,
         "Opening title menu must be an editable native Button tree")
+    _require(opening.get_node_or_null("ExploreUI/ExploreHUD/Prompt") is Label and
+        opening.get_node_or_null("ExploreUI/ExploreHUD/TalkButton") is Button,
+        "Opening exploration HUD must be authorable as native nodes")
+    _require(opening.get_node_or_null("DialogueUI/Body") is Label and
+        opening.get_node_or_null("DialogueUI/Portrait") is TextureRect and
+        opening.get_node_or_null("DialogueUI/Choice1") is Button,
+        "Opening dialogue, portrait and choices must be editor-authored")
+    _require(opening.get_node_or_null("CompleteUI/BeginBattle") is Button and
+        opening.get_node_or_null("CompleteUI/BackToMenu") is Button,
+        "Opening completion must use native battle/menu actions")
+    _require(opening.get_node_or_null("CinematicOverlay/CinematicSkip") is Button,
+        "Opening cinematic skip must be a native Button")
     _require(opening.get_node_or_null("CinematicOverlay/CinematicAnimations") is AnimationPlayer,
         "Opening cutscene must have editable animation tracks")
     _require(opening.get_node_or_null("ForegroundOcclusionClip/ForegroundOcclusion") is TextureRect,

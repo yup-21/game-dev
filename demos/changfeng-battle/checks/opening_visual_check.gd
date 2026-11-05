@@ -75,6 +75,9 @@ func run(view) -> void:
 	if not view.characters_layer.visible or view.player_sprite.body.texture == null or view.escort_sprite.body.texture == null:
 		_fail(view,"exploration must display both registered characters")
 		return
+	if not view.get_node("ExploreUI").visible or not view.get_node("ExploreUI/ExploreHUD/Prompt") is Label:
+		_fail(view,"exploration HUD must be visible and editor-authored")
+		return
 	if not await _capture(view,"opening-explore.png"):
 		_fail(view,"exploration screenshot write")
 		return
@@ -86,6 +89,9 @@ func run(view) -> void:
 	if view.story.phase!="dialogue" or view.story.current_dialogue().is_empty():
 		_fail(view,"escort dialogue")
 		return
+	if not view.get_node("DialogueUI").visible or not view.get_node("DialogueUI/Body") is Label:
+		_fail(view,"dialogue text must use native editable Label")
+		return
 	view.visible_characters=float(view.story.current_dialogue().text.length())
 	if not await _capture(view,"opening-dialogue.png"):
 		_fail(view,"dialogue screenshot write")
@@ -95,6 +101,10 @@ func run(view) -> void:
 		var node: Dictionary=view.story.current_dialogue()
 		if not node.get("choices",[]).is_empty():
 			view.visible_characters=float(node.text.length())
+			await _wait(view)
+			if not view.get_node("DialogueUI/Choice1").visible:
+				_fail(view,"choices must render as native Buttons")
+				return
 			if not await _capture(view,"opening-choice.png"):
 				_fail(view,"choice screenshot write")
 				return
@@ -110,10 +120,11 @@ func run(view) -> void:
 		return
 	await _wait(view)
 	var completion_actions: Array = []
-	for button in view.buttons:
-		completion_actions.append(str(button.action))
-	if completion_actions != ["story_battle", "menu"]:
-		_fail(view,"prologue completion must expose only canonical story battle and menu")
+	for node in view.get_node("CompleteUI").get_children():
+		if node is Button:
+			completion_actions.append(str(node.get_meta("action", "")))
+	if completion_actions != ["story_battle", "menu"] or not view.get_node("CompleteUI").visible:
+		_fail(view,"native completion must expose only canonical story battle and menu")
 		return
 	if not await _capture(view,"opening-complete.png"):
 		_fail(view,"chapter completion screenshot write")
