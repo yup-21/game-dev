@@ -7,6 +7,8 @@ on:
   pull_request:
     paths:
       - 'demos/changfeng-battle/scripts/**'
+      - 'demos/changfeng-battle/scenes/pingjiang_regions/**'
+      - 'demos/changfeng-battle/checks/test_pingjiang_native_regions.gd'
       - 'art-production/**'
       - 'demos/changfeng-battle/data/**'
       - 'demos/changfeng-battle/checks/test_catalog_extensibility.gd'
@@ -95,7 +97,7 @@ jobs:
         run: timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script res://checks/test_pingjiang_long_street.gd
       - name: Pingjiang four-area exploration and layered map regressions
         run: |
-          for check in test_pingjiang_exploration test_pingjiang_south_gate test_pingjiang_riverside_market test_pingjiang_shen_house; do
+          for check in test_pingjiang_native_regions test_pingjiang_exploration test_pingjiang_south_gate test_pingjiang_riverside_market test_pingjiang_shen_house; do
             timeout --signal=TERM 90s godot --headless --path demos/changfeng-battle --script "res://checks/${check}.gd"
           done
       - name: Read-only offline art pilot reconstruction check

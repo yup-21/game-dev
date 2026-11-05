@@ -19,6 +19,12 @@
 
 这仍是**可玩的四区探索技术场景**。主线章节、NPC、任务和存档尚未接入，正式 `data/content_manifest.tres` 未改；不宣称正式城镇系统或美术验收已经完成。
 
+## Godot 原生可视化编辑（增补）
+
+PJ-01～PJ-04 现各有可直接在 Godot 2D 编辑器中打开的 `.tscn`，位于 `demos/changfeng-battle/scenes/pingjiang_regions/`。三层 Sprite2D、可走 CollisionPolygon2D、障碍 StaticBody2D、Marker2D 出生/交互点及 Area2D 出口都已实体化。四区探索加载这些场景，运行时从节点读取几何与标记，拖动节点后保存 `.tscn` 再按 F6 即可在该地图试走；原有四区连续探索和独立 QA 入口保留。
+
+正式 `WuxiaMapDefinition` `.tres` 仍保留，完成可视化微调后可在场景根节点 Inspector 点击“同步原生节点到地图 .tres”，更新其它资源使用方。CI 增加 `test_pingjiang_native_regions.gd` 保证编辑场景与正式 Resource 一致，防止双份数据漂移。详细编辑步骤见 `demos/changfeng-battle/docs/pingjiang-native-godot-editing.md`。
+
 ## 本轮资源制作
 
 - `build_pj02_layers.py` 使用 v02 原图与可编辑多边形蒙版，确定性生成同原点三层。原图像素只归属一层，回拼精确，ground/foreground 有真实 Alpha；不使用带红黄色边的旧 v01 draft。

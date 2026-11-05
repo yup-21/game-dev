@@ -14,19 +14,23 @@ const REGIONS := {
     "pingjiang_crossroads": {
         "title": "PJ-02·四街十字路", "map": "res://data/maps/pingjiang_crossroads.tres",
         "art": "res://data/native/scene_art/pingjiang_crossroads.tres",
-        "size": Vector2(1600, 1000), "start": "player_start"},
+        "size": Vector2(1600, 1000), "start": "player_start",
+        "scene": "res://scenes/pingjiang_regions/pj02_crossroads.tscn"},
     "pingjiang_south_gate_qa": {
         "title": "PJ-01·平江瓮城正南门", "map": "res://data/maps/pingjiang_south_gate_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_south_gate_qa.tres",
-        "size": Vector2(1600, 2000), "start": "from_south"},
+        "size": Vector2(1600, 2000), "start": "from_south",
+        "scene": "res://scenes/pingjiang_regions/pj01_south_gate.tscn"},
     "pingjiang_shen_house": {
         "title": "PJ-04·沈家旧宅", "map": "res://data/maps/pingjiang_shen_house.tres",
         "art": "res://data/native/scene_art/pingjiang_shen_house.tres",
-        "size": Vector2(1600, 1000), "start": "player_start"},
+        "size": Vector2(1600, 1000), "start": "player_start",
+        "scene": "res://scenes/pingjiang_regions/pj04_shen_house.tscn"},
     "pingjiang_riverside_market": {
         "title": "PJ-03·临河水市主大街", "map": "res://data/maps/pingjiang_riverside_market.tres",
         "art": "res://data/native/scene_art/pingjiang_riverside_market.tres",
-        "size": Vector2(4800, 1000), "start": "player_start"},
+        "size": Vector2(4800, 1000), "start": "player_start",
+        "scene": "res://scenes/pingjiang_regions/pj03_riverside_market.tscn"},
     "pingjiang_long_street_qa": {
         "title": "主干道·临河水市", "map": "res://data/maps/pingjiang_long_street_qa.tres",
         "art": "res://data/native/scene_art/pingjiang_long_street_qa.tres",
@@ -230,36 +234,74 @@ func _refresh_view_readouts() -> void:
 func _additional_regions() -> Dictionary:
     return {}
 
+func _create_region_node(region_id: String) -> Node2D:
+    var spec: Dictionary = regions[region_id]
+    if not spec.has("scene"):
+        return Node2D.new() # explicit legacy QA fixtures only
+    var packed := load(str(spec["scene"])) as PackedScene
+    if packed == null:
+        push_error("Missing native region scene for " + region_id)
+        return null
+    var result := packed.instantiate() as WuxiaNativeMapRegion
+    if result == null or result.source_map == null or result.source_map.content_id != region_id:
+        push_error("Invalid native region scene for " + region_id)
+        if result != null:
+            result.free()
+        return null
+    return result
+
+func _new_bake(region_id: String):
+    var spec: Dictionary = regions[region_id]
+    if not spec.has("scene"):
+        return MapBake.new(str(spec["map"]))
+    var node := _create_region_node(region_id)
+    if node == null:
+        return null
+    var definition := (node as WuxiaNativeMapRegion).build_definition()
+    node.free()
+    return MapBake.new(str(spec["map"]), definition) if definition != null else null
+
 ## Load and display ONE native map; release the previous region after the
 ## destination Resource, layered art, polygon and entry point all validate.
 func _load_region(region_id: String, entry_id: String, prepared_bake = null) -> bool:
     if not regions.has(region_id):
         return false
     var region: Dictionary = regions[region_id]
+    var next_node := _create_region_node(region_id)
+    if next_node == null:
+        return false
     var next_bake = prepared_bake
     if next_bake == null:
-        next_bake = MapBake.new(str(region["map"]))
-    if not next_bake.error.is_empty() or next_bake.id != region_id:
-        push_error("Pingjiang QA map %s: %s" % [region_id, next_bake.error])
+        if next_node is WuxiaNativeMapRegion:
+            var snapshot := (next_node as WuxiaNativeMapRegion).build_definition()
+            if snapshot != null:
+                next_bake = MapBake.new(str(region["map"]), snapshot)
+        else:
+            next_bake = MapBake.new(str(region["map"]))
+    if next_bake == null or not next_bake.error.is_empty() or next_bake.id != region_id:
+        push_error("Pingjiang QA map invalid: " + region_id)
+        next_node.free()
         return false
     var art := load(str(region["art"])) as WuxiaSceneArtProfile
     var region_size: Vector2 = region["size"]
     if art == null or not art.valid_for(Vector2i(region_size)):
         push_error("Pingjiang QA art layers invalid for " + region_id)
+        next_node.free()
         return false
     var entry: Dictionary = next_bake.markers.get(entry_id, {})
     var entry_point: Vector2 = next_bake.marker_position(entry_id)
     if str(entry.get("kind", "")) != "spawn" or entry_point == Vector2.INF or \
             not next_bake.is_walkable_point(entry_point, CombatScale.footprint_radius_pixels()):
         push_error("Pingjiang QA requires a walkable spawn marker: " + entry_id)
+        next_node.free()
         return false
 
-    var next_node := Node2D.new()
     next_node.name = region_id
     stage.add_child(next_node)
-    _add_layer(next_node, "Background", art.background, region_size, -100)
-    _add_layer(next_node, "Ground", art.ground, region_size, -90)
-    _add_layer(next_node, "Foreground", art.foreground, region_size, 110)
+    if not region.has("scene"):
+        _add_layer(next_node, "Background", art.background, region_size, -100)
+        _add_layer(next_node, "Ground", art.ground, region_size, -90)
+        _add_layer(next_node, "Foreground", art.foreground, region_size, 110)
     var boundary := Line2D.new()
     boundary.name = "WalkableBoundary"
     boundary.points = next_bake.walkable_outline.duplicate()
@@ -416,7 +458,9 @@ func _activate_exit(marker_id: String) -> bool:
     var target_id: String = str(marker.get("target_zone_id", ""))
     if target_id == current_region_id or not regions.has(target_id):
         return false
-    var target_bake = MapBake.new(str(regions[target_id]["map"]))
+    var target_bake = _new_bake(target_id)
+    if target_bake == null:
+        return false
     var route: Dictionary = ZoneConnection.resolve_exit(bake, marker_id, target_bake,
         CombatScale.footprint_radius_pixels())
     if route.is_empty() or not _load_region(target_id, str(route["target_entry_id"]), target_bake):
