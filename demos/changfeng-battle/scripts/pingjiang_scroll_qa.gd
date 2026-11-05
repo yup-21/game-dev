@@ -8,6 +8,8 @@ const ZoneConnection = preload("res://scripts/map_zone_connection.gd")
 const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const ACTOR_PROFILE_PATH := "res://data/native/animations/shen_changfeng.tres"
 const MOVE_SPEED := 265.0
+const DEFAULT_EXPLORATION_HEIGHT := 170.0
+const DEFAULT_EXPLORATION_ZOOM := 1.375
 const REGIONS := {
     "pingjiang_crossroads": {
         "title": "PJ-02·四街十字路", "map": "res://data/maps/pingjiang_crossroads.tres",
@@ -44,6 +46,7 @@ const REGIONS := {
 ## independent map QA scenes keep the existing 200px actor and 1:1 viewport.
 @export var actor_display_scale: float = 1.0
 @export var camera_zoom: float = 1.0
+@export var enable_view_controls: bool = false
 
 ## Other map QA scenes may add dedicated regions without changing the original
 ## three-zone scrolling test or baking a second stitched world texture.
@@ -55,8 +58,17 @@ var crossing_count: int = 0
 var stage: Node2D
 var player: Node2D
 var actor_sprite: Sprite2D
+var actor_base_scale: Vector2 = Vector2.ONE
+var actor_silhouette: Polygon2D
 var actor_profile: WuxiaActorAnimationProfile
+var nameplate: Label
 var status: Label
+var view_settings_panel: PanelContainer
+var actor_height_slider: HSlider
+var camera_zoom_slider: HSlider
+var actor_height_readout: Label
+var camera_zoom_readout: Label
+var view_summary: Label
 var debug_line: Line2D
 var debug_visible: bool = false
 var goal: Vector2 = Vector2.INF
@@ -85,7 +97,7 @@ func _ready() -> void:
         Vector2(24, 0), Vector2(16, 10), Vector2(-16, 10)])
     player.add_child(foot)
     _load_actor_sprite()
-    var nameplate := Label.new()
+    nameplate = Label.new()
     nameplate.text = "沈长风"
     nameplate.position = Vector2(-70.0 / camera_zoom,
         -CombatScale.actor_height_pixels() * actor_display_scale - 48.0 / camera_zoom)
@@ -109,6 +121,111 @@ func _ready() -> void:
     if not regions.has(initial_region_id) or not _load_region(initial_region_id,
             str(regions[initial_region_id]["start"])):
         push_error("Pingjiang QA cannot load initial map: " + initial_region_id)
+    if enable_view_controls:
+        _build_view_controls(hud)
+
+func _build_view_controls(hud: CanvasLayer) -> void:
+    view_settings_panel = PanelContainer.new()
+    view_settings_panel.name = "ViewSettings"
+    view_settings_panel.position = Vector2(1190, 20)
+    view_settings_panel.custom_minimum_size = Vector2(380, 0)
+    view_settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+    hud.add_child(view_settings_panel)
+    var layout := VBoxContainer.new()
+    layout.name = "Options"
+    view_settings_panel.add_child(layout)
+    var heading := Label.new()
+    heading.text = "四区视图调节 · F4 收起/展开"
+    layout.add_child(heading)
+
+    var actor_row := HBoxContainer.new()
+    layout.add_child(actor_row)
+    var actor_caption := Label.new()
+    actor_caption.text = "人物高度"
+    actor_row.add_child(actor_caption)
+    actor_height_slider = HSlider.new()
+    actor_height_slider.name = "ActorHeight"
+    actor_height_slider.min_value = 100.0
+    actor_height_slider.max_value = 220.0
+    actor_height_slider.step = 5.0
+    actor_height_slider.custom_minimum_size = Vector2(170, 24)
+    actor_height_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    actor_height_slider.value = CombatScale.actor_height_pixels() * actor_display_scale
+    actor_row.add_child(actor_height_slider)
+    actor_height_readout = Label.new()
+    actor_height_readout.custom_minimum_size = Vector2(66, 0)
+    actor_row.add_child(actor_height_readout)
+    actor_height_slider.value_changed.connect(_on_actor_height_changed)
+
+    var camera_row := HBoxContainer.new()
+    layout.add_child(camera_row)
+    var camera_caption := Label.new()
+    camera_caption.text = "地图镜头"
+    camera_row.add_child(camera_caption)
+    camera_zoom_slider = HSlider.new()
+    camera_zoom_slider.name = "CameraZoom"
+    camera_zoom_slider.min_value = 1.0
+    camera_zoom_slider.max_value = 2.0
+    camera_zoom_slider.step = 0.001
+    camera_zoom_slider.custom_minimum_size = Vector2(170, 24)
+    camera_zoom_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    camera_zoom_slider.value = camera_zoom
+    camera_row.add_child(camera_zoom_slider)
+    camera_zoom_readout = Label.new()
+    camera_zoom_readout.custom_minimum_size = Vector2(66, 0)
+    camera_row.add_child(camera_zoom_readout)
+    camera_zoom_slider.value_changed.connect(_on_camera_zoom_changed)
+
+    view_summary = Label.new()
+    layout.add_child(view_summary)
+
+    var reset := Button.new()
+    reset.name = "ResetView"
+    reset.text = "恢复 170px / 1.375×"
+    reset.pressed.connect(_reset_view_settings)
+    layout.add_child(reset)
+    _refresh_view_readouts()
+
+func _on_actor_height_changed(value: float) -> void:
+    actor_display_scale = value / CombatScale.actor_height_pixels()
+    _apply_view_settings()
+
+func _on_camera_zoom_changed(value: float) -> void:
+    camera_zoom = value
+    _apply_view_settings()
+
+func _reset_view_settings() -> void:
+    actor_display_scale = DEFAULT_EXPLORATION_HEIGHT / CombatScale.actor_height_pixels()
+    camera_zoom = DEFAULT_EXPLORATION_ZOOM
+    actor_height_slider.set_value_no_signal(DEFAULT_EXPLORATION_HEIGHT)
+    camera_zoom_slider.set_value_no_signal(DEFAULT_EXPLORATION_ZOOM)
+    _apply_view_settings()
+
+func _apply_view_settings() -> void:
+    if stage == null:
+        return
+    stage.scale = Vector2.ONE * camera_zoom
+    if actor_sprite != null:
+        actor_sprite.scale = actor_base_scale * actor_display_scale
+    if actor_silhouette != null:
+        actor_silhouette.scale = Vector2.ONE * actor_display_scale
+    if nameplate != null:
+        nameplate.position = Vector2(-70.0 / camera_zoom,
+            -CombatScale.actor_height_pixels() * actor_display_scale - 48.0 / camera_zoom)
+        nameplate.scale = Vector2.ONE / camera_zoom
+    _refresh_view_readouts()
+    _update_camera_and_status()
+
+func _refresh_view_readouts() -> void:
+    if actor_height_readout != null:
+        actor_height_readout.text = "%.0fpx" % (CombatScale.actor_height_pixels() * actor_display_scale)
+    if camera_zoom_readout != null:
+        camera_zoom_readout.text = "×%.3f" % camera_zoom
+    if view_summary != null:
+        view_summary.text = "屏幕人物约 %.0fpx · 可见地图 %.0f×%.0f" % [
+            CombatScale.actor_height_pixels() * actor_display_scale * camera_zoom,
+            ViewportShift.VIEWPORT_SIZE.x / camera_zoom,
+            ViewportShift.VIEWPORT_SIZE.y / camera_zoom]
 
 func _additional_regions() -> Dictionary:
     return {}
@@ -219,15 +336,15 @@ func _load_actor_sprite() -> void:
     actor_profile = load(ACTOR_PROFILE_PATH) as WuxiaActorAnimationProfile
     if actor_profile == null or not actor_profile.valid_profile():
         push_warning("Existing actor atlas unavailable; using explicitly scaled QA silhouette")
-        var silhouette := Polygon2D.new()
-        silhouette.color = Color(0.17, 0.34, 0.43)
-        silhouette.polygon = PackedVector2Array([
+        actor_silhouette = Polygon2D.new()
+        actor_silhouette.color = Color(0.17, 0.34, 0.43)
+        actor_silhouette.polygon = PackedVector2Array([
             Vector2(-20, 0), Vector2(-28, -88), Vector2(-43, -137),
             Vector2(-28, -170), Vector2(-15, -176), Vector2(-18, -200),
             Vector2(18, -200), Vector2(15, -176), Vector2(28, -170),
             Vector2(43, -137), Vector2(28, -88), Vector2(20, 0)])
-        silhouette.scale = Vector2.ONE * actor_display_scale
-        player.add_child(silhouette)
+        actor_silhouette.scale = Vector2.ONE * actor_display_scale
+        player.add_child(actor_silhouette)
         return
     actor_sprite = Sprite2D.new()
     actor_sprite.name = "ActionSprite"
@@ -242,7 +359,8 @@ func _load_actor_sprite() -> void:
     VisualScale.fit(actor_sprite, actor_profile.actor_scale,
         CombatScale.actor_height_pixels(), actor_profile.feet_adjust, reference,
         actor_profile.auto_fit_height)
-    actor_sprite.scale *= actor_display_scale
+    actor_base_scale = actor_sprite.scale
+    actor_sprite.scale = actor_base_scale * actor_display_scale
 
 func _process(delta: float) -> void:
     if stage == null or player == null or bake == null:
@@ -330,7 +448,7 @@ func _update_camera_and_status() -> void:
     var interaction: String = "靠近金色连接点按 E 换图" if nearby.is_empty() else "按 E 前往目标区域"
     if not nearby.is_empty() and not regions.has(str(nearby.get("target_zone_id", ""))):
         interaction = "规划连接 · 尚未开放"
-    status.text = "平江地图测试  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 演示角色 %.0fpx / 80px=u · 镜头×%.2f" % [
+    status.text = "平江地图测试  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 演示角色 %.0fpx / 80px=u · 镜头×%.3f" % [
         str(region["title"]), int(size.x), int(size.y), crossing_count, interaction,
         player.position.x, player.position.y, stage.position.x, stage.position.y,
         CombatScale.actor_height_pixels() * actor_display_scale, camera_zoom]
@@ -355,6 +473,9 @@ func _unhandled_input(event: InputEvent) -> void:
             debug_visible = not debug_visible
             if debug_line != null:
                 debug_line.visible = debug_visible
+        elif event.keycode == KEY_F4 and view_settings_panel != null:
+            view_settings_panel.visible = not view_settings_panel.visible
+            get_viewport().set_input_as_handled()
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         last_screen_click = event.position
         last_world_click = ViewportShift.screen_to_world(last_screen_click, stage.position, camera_zoom)

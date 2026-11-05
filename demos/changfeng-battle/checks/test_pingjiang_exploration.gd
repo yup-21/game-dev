@@ -69,18 +69,50 @@ func _run() -> void:
     await process_frame
     scene.set_process(false)
     check(scene.current_region_id == "pingjiang_south_gate_qa", "starts at PJ-01 south")
-    check(is_equal_approx(scene.camera_zoom, 1.25)
-        and is_equal_approx(scene.actor_display_scale, 2.0 / 3.0)
-        and scene.stage.scale.is_equal_approx(Vector2(1.25, 1.25)),
-        "four-area scene alone uses 1.25x camera and two-thirds-size actor")
+    check(is_equal_approx(scene.camera_zoom, 1.375)
+        and is_equal_approx(scene.actor_display_scale, 0.85)
+        and scene.stage.scale.is_equal_approx(Vector2(1.375, 1.375)),
+        "four-area scene alone defaults to 170px actor and 1.375x camera")
     var sprite: Sprite2D = scene.actor_sprite
     check(sprite != null, "four-area explorer uses the native actor Atlas")
     if sprite != null:
         var frame_bounds: Rect2i = VisualScale._opaque_bounds(sprite.texture,
             sprite.hframes, sprite.vframes, sprite.frame)
         check(absf(float(frame_bounds.size.y) * sprite.scale.y
-            - Scale.actor_height_pixels() * (2.0 / 3.0)) < 1.0,
-            "visible actor height is 133px in world space")
+            - 170.0) < 1.0,
+            "visible actor height is 170px in world space")
+    check(scene.enable_view_controls and scene.view_settings_panel != null
+        and scene.actor_height_slider != null and scene.camera_zoom_slider != null
+        and scene.view_summary != null,
+        "F4 view adjustment panel is available only in four-area exploration")
+    if scene.view_settings_panel != null:
+        var toggle := InputEventKey.new()
+        toggle.keycode = KEY_F4
+        toggle.pressed = true
+        scene._unhandled_input(toggle)
+        check(not scene.view_settings_panel.visible, "F4 hides adjustment panel")
+        scene._unhandled_input(toggle)
+        check(scene.view_settings_panel.visible, "F4 restores adjustment panel")
+    if scene.actor_height_slider != null and scene.camera_zoom_slider != null:
+        scene.actor_height_slider.value = 180.0
+        scene.camera_zoom_slider.value = 1.5
+        check(is_equal_approx(scene.actor_display_scale, 0.9)
+            and is_equal_approx(scene.camera_zoom, 1.5)
+            and scene.stage.scale.is_equal_approx(Vector2(1.5, 1.5)),
+            "sliders live-update both actor and map camera")
+        check(scene.view_summary.text.contains("270px"),
+            "view panel shows effective on-screen actor size after zoom")
+        if sprite != null:
+            var changed_bounds: Rect2i = VisualScale._opaque_bounds(sprite.texture,
+                sprite.hframes, sprite.vframes, sprite.frame)
+            check(absf(float(changed_bounds.size.y) * sprite.scale.y - 180.0) < 1.0,
+                "changing slider height reuses native atlas without cumulative scaling")
+        check_camera_bounds(scene)
+        scene._reset_view_settings()
+        check(is_equal_approx(scene.camera_zoom, 1.375)
+            and is_equal_approx(scene.actor_display_scale, 0.85)
+            and is_equal_approx(scene.actor_height_slider.value, 170.0),
+            "reset restores 170px and 1.375x defaults")
     check_camera_bounds(scene)
     await capture(scene, "01_south_gate_south")
     walk(scene, [Vector2(800, 1000), Vector2(800, 80)])
