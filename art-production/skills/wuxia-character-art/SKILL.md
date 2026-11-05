@@ -7,7 +7,7 @@ description: "为《长风浮生录》规划12组2D武侠动作与真实帧数�
 
 ## 必读合同与素材边界
 
-- 开始前读取 `art-production/standards/ART_PRODUCTION_STANDARD.md` 与 `art-production/standards/SPRITE_ANIMATION_QA.md`；设计分镜或 AI 生图时按需阅读 `art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md` 的 §3、§5.1、§5.2。**绘图只发对应短模板、获准参考图和本动作变量**；不叠加整份规范、全局长风格词或负面词表。脚点语义和自动动作分帧不能靠 AI 保证。
+- 开始前读取 `art-production/standards/ART_PRODUCTION_STANDARD.md` 与 `art-production/standards/SPRITE_ANIMATION_QA.md`；设计分镜或 AI 生图时按需阅读 `art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md` 的 §3、§5.1、§5.2。**绘图只发对应短模板、获准参考图及本批次 5×5 多动作格位／姿势变量**；不叠加整份规范、全局长风格词或负面词表。脚点语义和自动动作分帧不能靠 AI 保证。
 - 读取 `art-production/templates/asset-work-order.md`，在 `art-production/candidates/<asset-type>/<asset-id>/` 留候选工作单、真实提示词与目标原生 Resource。来源可记录对应提示词/Resource，不强制额外模型、seed 或审批字段。
 - 资产管理只有 `candidate` 与 `in_use`：技术预检不会批准画面；未完成视觉验收不覆盖当前绑定。Godot 运行内容仍仅来自 `.tres` 与 Content Manifest，离线 CSV/JSON 不成为运行时源数据。
 
