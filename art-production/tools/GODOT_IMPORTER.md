@@ -38,7 +38,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_art_ca
 2. 选择素材类型，并明确设置角色、地图或内容 ID：
    - **角色立绘**：更新 `WuxiaCharacterDefinition.portrait`。
    - **角色 Atlas**：设置列数、行数、脚点与朝向；可选已有原生动作 Profile 模板以保留显式 Clip 动作映射（支持新 12 组动作及逐 Clip Atlas），更新 `sprite_sheet` 和 `WuxiaActorAnimationProfile`。
-   - **分层场景**：选择 `data/maps/` 战斗地图或 `data/native/chapters/` 剧情章节；背景与必选地面、可选前景/天气/同画布剧情复合预览（`story_preview`）统一为 1600×1000，更新 `WuxiaSceneArtProfile`，挂到 Map 或 ChapterScene。未配置的可选图层可为空，缺失的必需层直接报错，不借用单图回退。旧图片保留作为审计/回滚资产，但已注册地图或角色卡以新 `.tres` 绑定为准。预览显示章节主角/NPC 脚点。
+   - **分层场景**：选择 `data/maps/` 战斗地图或 `data/native/chapters/` 剧情章节；背景与必选地面、可选前景／天气／同画布剧情复合预览（`story_preview`）须匹配**当前场景 `WuxiaSceneArtProfile.reference_size` 与 Map/Chapter 声明的完整世界画布**（单屏 1600×1000，纵向长图可为 1600×2000／2400 等），不能把长图缩至 1600×1000。更新 `WuxiaSceneArtProfile` 并挂到 Map 或 ChapterScene；未配置的可选图层可为空，缺失的必需层直接报错，不借用单图回退。旧图片保留作为审计/回滚资产，已注册地图或角色以新 `.tres` 绑定为准。预览显示章节主角/NPC 脚点。
    - **UI Atlas / VFX**：填写唯一内容 ID，UI 创建/更新 `WuxiaAssetDefinition`；VFX 创建/更新继承它的 `WuxiaVFXDefinition`，并注册到 Manifest。当前导入 Dock 接收图像 VFX，必须具备真实 Alpha，可配置列/行及用逗号分隔的绝对播放帧索引；播放速度由事件表现时长决定，图集不要求固定 6×4。`event_kind` 优先填原始战斗事件（如 `ATTACK_DECLARED`、`HP_DAMAGED`、`COMBO_TRIGGERED`）；旧视觉键（如 `slash`）继续兼容。
 3. 可直接单项“检查并导入”，或者“加入批次”逐项入队（最多 64 项）后统一检查。
 4. 当固定目标图片路径已有不同内容时，勾选“版本化替换”，新图片保存在 SHA-256 前 12 位后缀的新路径，保留旧图片；预检列出旧/新绑定差异。

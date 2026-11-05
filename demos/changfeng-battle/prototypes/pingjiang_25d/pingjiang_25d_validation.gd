@@ -11,14 +11,19 @@ const MAP_SIZE_PIXELS := Vector2(1600.0, 2000.0)
 const MAP_WIDTH := MAP_SIZE_PIXELS.x / CombatScale.PIXELS_PER_UNIT
 const ROAD_LENGTH := MAP_SIZE_PIXELS.y / CombatScale.PIXELS_PER_UNIT
 const ROAD_WIDTH := 5.0
+const CROSS_STREET_WIDTH := 5.0
 const WALK_SPEED := 4.0
 const PLAYER_START_Z := ROAD_LENGTH * 0.5 - 5.0
 const PLAYER_LIMIT_Z := ROAD_LENGTH * 0.5 - 1.2
 const REFERENCE_Z := ROAD_LENGTH * 0.3
-const CAMERA_OFFSET_Z := 19.0
-const CAMERA_Z_MIN := -ROAD_LENGTH * 0.5 + 24.0
-const CAMERA_Z_MAX := ROAD_LENGTH * 0.5 + 14.0
+const CAMERA_HEIGHT := 10.0
+const CAMERA_OFFSET_Z := 8.0
+const CAMERA_AIM_Z := -1.0
+const CAMERA_Z_MIN := -ROAD_LENGTH * 0.5 + 10.0
+const CAMERA_Z_MAX := ROAD_LENGTH * 0.5 + 6.5
 const CAMERA_FOLLOW_SPEED := 5.0
+const ACTOR_DISPLAY_SCALE := 0.30 # Only the isolated perspective QA sprite, not the 2D actor contract.
+const ORTHOGRAPHIC_SIZE := 15.0
 const FOOTPRINT_RADIUS := CombatScale.FOOTPRINT_RADIUS_UNITS
 const ACTOR_HEIGHT := CombatScale.ACTOR_HEIGHT_UNITS
 
@@ -30,8 +35,8 @@ var actor_elapsed := 0.0
 var status: Label
 
 func _ready() -> void:
-    camera.position = Vector3(0.0, 14.0, PLAYER_START_Z + CAMERA_OFFSET_Z)
-    camera.look_at(Vector3(0.0, 0.0, PLAYER_START_Z - 4.0), Vector3.UP)
+    camera.position = Vector3(0.0, CAMERA_HEIGHT, PLAYER_START_Z + CAMERA_OFFSET_Z)
+    camera.look_at(Vector3(0.0, 0.0, PLAYER_START_Z + CAMERA_AIM_Z), Vector3.UP)
     camera.projection = Camera3D.PROJECTION_PERSPECTIVE
     _build_street()
     _build_character()
@@ -51,8 +56,8 @@ func _build_street() -> void:
     street.name = "Street"
     add_child(street)
 
-    # Full 1600×2000 world-pixel footprint; the stone road occupies only its
-    # central 5u lane, with actual 3D ground extending beneath the houses.
+    # Full 1600×2000 world-pixel footprint. Both flat road strips meet at (0,0)
+    # without hiding a smaller level under a large perspective illustration.
     var terrain := MeshInstance3D.new()
     terrain.name = "MapGround"
     var terrain_mesh := PlaneMesh.new()
@@ -67,36 +72,64 @@ func _build_street() -> void:
     var road_mesh := PlaneMesh.new()
     road_mesh.size = Vector2(ROAD_WIDTH, ROAD_LENGTH)
     ground.mesh = road_mesh
+    ground.position.y = 0.001
     var road_material := _material(RoadTexture)
     # UVs repeat on the real 3D plane; this is not a perspective-baked image.
     road_material.uv1_scale = Vector3(1.0, ROAD_LENGTH / 5.0, 1.0)
     ground.material_override = road_material
     street.add_child(ground)
+    var cross_street := MeshInstance3D.new()
+    cross_street.name = "CrossStreet"
+    var cross_mesh := PlaneMesh.new()
+    cross_mesh.size = Vector2(MAP_WIDTH, CROSS_STREET_WIDTH)
+    cross_street.mesh = cross_mesh
+    cross_street.position.y = 0.003 # Avoid coplanar z-fighting at the intersection.
+    var cross_material := _material(RoadTexture)
+    cross_material.uv1_scale = Vector3(MAP_WIDTH / 5.0, 1.0, 1.0)
+    cross_street.material_override = cross_material
+    street.add_child(cross_street)
     _add_solid_box(street, "RoadCollider", Vector3(MAP_WIDTH, 0.12, ROAD_LENGTH),
         Vector3(0.0, -0.10, 0.0), _material(null, Color(0.30, 0.35, 0.33)), false)
 
     var facade_material := _material(FacadeTexture)
-    var house_count := int(floorf((ROAD_LENGTH - 5.7) / 6.1)) + 1
+    facade_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+    # Only textured upright quads: no building boxes, roof meshes, or roof surfaces.
+    # Thin hidden colliders prevent passing through a painted facade while the
+    # middle of all four roads stays open and connected.
     for side in [-1, 1]:
-        for row in range(2):
-            for index in range(house_count):
-                var z: float = -ROAD_LENGTH * 0.5 + 2.85 + float(index) * 6.1
-                var x: float = float(side) * (3.65 + float(row) * 3.5)
-                var prefix := "House" if row == 0 else "OuterHouse"
-                _add_solid_box(street, "%s_%s_%d" % [prefix, "L" if side == -1 else "R", index],
-                    Vector3(2.2, 3.3, 5.7), Vector3(x, 1.65, z), facade_material)
-                _add_solid_box(street, "Roof_%d_%s_%d" % [row, "L" if side == -1 else "R", index],
-                    Vector3(2.8, 0.35, 6.0), Vector3(x, 3.47, z),
-                    _material(null, Color(0.19, 0.24, 0.24)))
+        var side_label := "W" if side == -1 else "E"
+        var cross_label := "N" if side == -1 else "S"
+        for half in [-1, 1]:
+            var half_label := "N" if half == -1 else "S"
+            var horizontal_label := "W" if half == -1 else "E"
+            _add_flat_facade(street, "SideFacade_%s_%s" % [side_label, half_label],
+                Vector2(5.5, 3.3), Vector3(float(side) * 3.25, 1.65, float(half) * 8.2),
+                -float(side) * PI * 0.5, facade_material)
+            _add_flat_facade(street, "CrossFacade_%s_%s" % [cross_label, horizontal_label],
+                Vector2(5.5, 3.3), Vector3(float(half) * 6.2, 1.65, float(side) * 3.25),
+                PI if side == 1 else 0.0, facade_material)
 
-    # A tangible gate at the far end provides an unambiguous perspective ruler.
-    var pillar_material := _material(null, Color(0.50, 0.52, 0.48))
-    for side in [-1, 1]:
-        _add_solid_box(street, "GatePillar_%s" % side, Vector3(0.65, 3.6, 0.8),
-            Vector3(float(side) * 2.15, 1.8, -ROAD_LENGTH * 0.5 + 1.7), pillar_material)
-    _add_solid_box(street, "GateLintel", Vector3(5.0, 0.55, 1.1),
-        Vector3(0.0, 3.85, -ROAD_LENGTH * 0.5 + 1.7),
-        _material(null, Color(0.24, 0.31, 0.30)))
+func _add_flat_facade(parent: Node3D, node_name: String, dimensions: Vector2,
+        location: Vector3, facing_y: float, material: StandardMaterial3D) -> StaticBody3D:
+    var body := StaticBody3D.new()
+    body.name = node_name
+    body.position = location
+    body.rotation.y = facing_y
+    parent.add_child(body)
+    var visual := MeshInstance3D.new()
+    visual.name = "FacadePlane"
+    var quad := QuadMesh.new()
+    quad.size = dimensions
+    visual.mesh = quad
+    visual.material_override = material
+    body.add_child(visual)
+    var collision := CollisionShape3D.new()
+    collision.name = "CollisionShape3D"
+    var thin_panel := BoxShape3D.new()
+    thin_panel.size = Vector3(dimensions.x, dimensions.y, 0.16)
+    collision.shape = thin_panel
+    body.add_child(collision)
+    return body
 
 func _add_solid_box(parent: Node3D, node_name: String, size: Vector3,
         location: Vector3, material: StandardMaterial3D, visible_mesh: bool = true) -> StaticBody3D:
@@ -168,7 +201,7 @@ func _new_actor_sprite(profile: WuxiaActorAnimationProfile,
         sprite.vframes, frame_id)
     var frame_height: float = float(sprite.texture.get_height()) / float(sprite.vframes)
     var visible_height: float = float(bounds.size.y) if bounds.size.y > 0 else frame_height
-    sprite.pixel_size = ACTOR_HEIGHT / visible_height
+    sprite.pixel_size = ACTOR_HEIGHT * ACTOR_DISPLAY_SCALE / visible_height
     # Translate the visible feet, not the transparent atlas cell, to Y=0.
     var feet_from_center: float = float(bounds.end.y) - frame_height * 0.5
     sprite.position.y = feet_from_center * sprite.pixel_size - 0.5
@@ -205,7 +238,7 @@ func _physics_process(delta: float) -> void:
     _update_status()
 
 func _camera_target_position() -> Vector3:
-    return Vector3(clampf(player.position.x * 0.6, -MAP_WIDTH * 0.25, MAP_WIDTH * 0.25), 14.0,
+    return Vector3(clampf(player.position.x * 0.6, -MAP_WIDTH * 0.25, MAP_WIDTH * 0.25), CAMERA_HEIGHT,
         clampf(player.position.z + CAMERA_OFFSET_Z, CAMERA_Z_MIN, CAMERA_Z_MAX))
 
 func _update_camera_follow(delta: float) -> void:
@@ -230,7 +263,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
         camera.projection = Camera3D.PROJECTION_ORTHOGONAL \
             if camera.projection == Camera3D.PROJECTION_PERSPECTIVE \
             else Camera3D.PROJECTION_PERSPECTIVE
-        camera.size = 28.0
+        camera.size = ORTHOGRAPHIC_SIZE
     elif event.keycode == KEY_R:
         player.position = Vector3(0.0, 0.5, PLAYER_START_Z)
         player.velocity = Vector3.ZERO
@@ -247,14 +280,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func projected_actor_height(z: float) -> float:
     var feet := camera.unproject_position(Vector3(0.0, 0.0, z))
-    var head := camera.unproject_position(Vector3(0.0, ACTOR_HEIGHT, z))
+    var head := camera.unproject_position(Vector3(0.0, ACTOR_HEIGHT * ACTOR_DISPLAY_SCALE, z))
     return absf(feet.y - head.y)
 
 func _update_status() -> void:
     if status == null or player == null:
         return
     var mode := "透视" if camera.projection == Camera3D.PROJECTION_PERSPECTIVE else "正交"
-    status.text = "平江府 2.5D 验证 · %s · 地图 %.0f×%.0f px\nWASD / 方向键移动 · 镜头平滑跟随 · P 对比投影 · R 复位 · Esc 返回\n位置 Z: %.1f u  镜头 Z: %.1f u  可见高: %.0f px\n同尺寸参照：远 %.0f px / 近 %.0f px" % [
+    status.text = "平江府 2.5D 十字街 · %s · 地图 %.0f×%.0f px (20×25u)\n四向路口 · 贴图立面/无房顶 · WASD/方向键 · P 投影 · R 复位 · Esc 返回\n位置 Z: %.1f u  镜头 Z: %.1f u  角色画面高: %.0f px\n同尺寸参照：远 %.0f px / 近 %.0f px" % [
         mode, MAP_SIZE_PIXELS.x, MAP_SIZE_PIXELS.y, player.position.z, camera.position.z,
         projected_actor_height(player.position.z),
         projected_actor_height(-REFERENCE_Z), projected_actor_height(REFERENCE_Z)]
