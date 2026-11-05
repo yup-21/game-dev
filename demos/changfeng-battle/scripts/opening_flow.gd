@@ -134,15 +134,25 @@ func _ready() -> void:
 		npc_sprites.append(npc_sprite)
 	escort_sprite = npc_sprites[0] if not npc_sprites.is_empty() else null
 	_sync_story_sprites(Vector2.ZERO,0.0)
+	_bind_native_menu()
 	print("CHANGFENG_OPENING_READY chapter=", story.data.id)
 	if "--opening-visual-check" in OS.get_cmdline_user_args():
 		call_deferred("_run_visual_check")
+
+func _bind_native_menu() -> void:
+	# Buttons live in opening.tscn and remain editable in the Inspector.
+	for node in $NativeMenuUI/MenuControls.get_children():
+		if node is Button:
+			var action: String = str(node.get_meta("action", ""))
+			if not action.is_empty():
+				node.pressed.connect(_action.bind(action))
 
 func _run_visual_check() -> void:
 	var check=load("res://checks/opening_visual_check.gd").new()
 	await check.run(self)
 
 func _process(delta: float) -> void:
+	$NativeMenuUI.visible = story.phase == "menu"
 	clock += delta
 	if message_left > 0: message_left = maxf(0.0, message_left-delta)
 	match story.phase:
@@ -580,23 +590,10 @@ func _draw_menu() -> void:
 	_panel(Rect2(855,91,510,813),Color(0.07,0.15,0.15,0.62),Color(GOLD,0.7))
 	_painted_portrait("沈长风",Rect2(865,101,490,792))
 	draw_circle(Vector2(800,370),105,Color(0.93,0.86,0.67,0.10))
-	_text(Vector2(132,250),"MORTAL DAO  /  江 湖 浮 生",19,GOLD)
-	_text(Vector2(118,384),"长风浮生录",77,PAPER,true)
 	draw_line(Vector2(126,424),Vector2(618,424),GOLD,2)
-	_text(Vector2(132,482),"英雄无百岁，刀剑不饶人。",23,Color("e1dcc7"),true)
-	_text(Vector2(135,524),"由武入道 · 逆天改命",17,Color("bbcfc3"))
+	# Interactive title/menu typography is in the native CanvasLayer.
 	# The scene QA entry is independent of the prologue and battle session.
 	# Old duel and party scenes are intentionally absent from player menus.
-	_button(Rect2(137,560,391,57),"初入江湖 · 新游戏","start",true)
-	_button(Rect2(137,623,391,57),"进入战斗 · HD-2D","hd2d",true)
-	_button(Rect2(137,686,391,57),"P · 平江双区跳转测试","pingjiang_qa",true)
-	_button(Rect2(137,749,391,57),"V · 纵向四千滚屏测试","pingjiang_vertical_qa",true)
-	_button(Rect2(137,812,190,57),"T · 2.5D 透视","pingjiang_25d_qa",true)
-	_button(Rect2(338,812,190,57),"G · PJ-01 南门","pingjiang_south_gate_qa",true)
-	_button(Rect2(137,875,190,50),"H · 沈家旧宅","shen_house_qa",true)
-	_button(Rect2(338,875,190,50),"J · 平江四区","pingjiang_exploration",true)
-	_button(Rect2(137,933,391,38),"退出游戏","quit",true)
-	_text(Vector2(138,990),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
 	# First beat is a memory of the destroyed school; the later rain

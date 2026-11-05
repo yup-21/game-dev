@@ -88,6 +88,8 @@ func _run() -> void:
     await process_frame
 
     var opening: Node = _load_scene("res://opening.tscn")
+    _require(opening.get_node_or_null("NativeMenuUI/MenuControls/Start") is Button,
+        "Opening title menu must be an editable native Button tree")
     _require(opening.get_node_or_null("CinematicOverlay/CinematicAnimations") is AnimationPlayer,
         "Opening cutscene must have editable animation tracks")
     _require(opening.get_node_or_null("ForegroundOcclusionClip/ForegroundOcclusion") is TextureRect,

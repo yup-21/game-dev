@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/opening_flow.gd" id="1_story"]
 
@@ -15,6 +15,31 @@ tracks/0/keys = {"times": PackedFloat32Array(0, 0.8), "transitions": PackedFloat
 
 [sub_resource type="AnimationLibrary" id="CinematicAnimations"]
 _data = {"fade_in": SubResource("CaptionFade")}
+
+
+[sub_resource type="StyleBoxFlat" id="TitleMenuNormal"]
+bg_color = Color(0.14902, 0.282353, 0.258824, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.721569, 0.588235, 0.364706, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_left = 6
+corner_radius_bottom_right = 6
+
+[sub_resource type="StyleBoxFlat" id="TitleMenuHover"]
+bg_color = Color(0.21, 0.37, 0.33, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.73, 0.46, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_left = 6
+corner_radius_bottom_right = 6
 
 [node name="Opening" type="Node2D" unique_id=1104709788]
 texture_filter = 2
@@ -131,3 +156,179 @@ horizontal_alignment = 1
 
 [node name="CinematicAnimations" type="AnimationPlayer" parent="CinematicOverlay"]
 libraries = {"": SubResource("CinematicAnimations")}
+
+[node name="NativeMenuUI" type="CanvasLayer" parent="."]
+
+[node name="MenuControls" type="Control" parent="NativeMenuUI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="MenuEyebrow" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 132.0
+offset_top = 222.0
+offset_right = 612.0
+offset_bottom = 255.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7725, 0.6313, 0.4196, 1)
+theme_override_font_sizes/font_size = 19
+text = "MORTAL DAO  /  江 湖 浮 生"
+
+[node name="MenuTitle" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 118.0
+offset_top = 292.0
+offset_right = 665.0
+offset_bottom = 399.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 77
+text = "长风浮生录"
+
+[node name="MenuMotto" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 132.0
+offset_top = 446.0
+offset_right = 645.0
+offset_bottom = 488.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.882, 0.863, 0.78, 1)
+theme_override_font_sizes/font_size = 23
+text = "英雄无百岁，刀剑不饶人。"
+
+[node name="MenuSubtitle" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 135.0
+offset_top = 502.0
+offset_right = 645.0
+offset_bottom = 535.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7333, 0.812, 0.765, 1)
+theme_override_font_sizes/font_size = 17
+text = "由武入道 · 逆天改命"
+
+[node name="MenuFooter" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 138.0
+offset_top = 971.0
+offset_right = 620.0
+offset_bottom = 1000.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7647, 0.7882, 0.7137, 1)
+theme_override_font_sizes/font_size = 13
+text = "序章演示 · 原创非像素插画 · 暮秋雨夜"
+
+[node name="Start" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 560.0
+offset_right = 528.0
+offset_bottom = 617.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "初入江湖 · 新游戏"
+metadata/action = "start"
+
+[node name="QuickBattle" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 623.0
+offset_right = 528.0
+offset_bottom = 680.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "进入战斗 · HD-2D"
+metadata/action = "hd2d"
+
+[node name="PingjiangQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 686.0
+offset_right = 528.0
+offset_bottom = 743.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "P · 平江双区跳转测试"
+metadata/action = "pingjiang_qa"
+
+[node name="VerticalQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 749.0
+offset_right = 528.0
+offset_bottom = 806.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "V · 纵向四千滚屏测试"
+metadata/action = "pingjiang_vertical_qa"
+
+[node name="PerspectiveQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 812.0
+offset_right = 327.0
+offset_bottom = 869.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "T · 2.5D 透视"
+metadata/action = "pingjiang_25d_qa"
+
+[node name="SouthGateQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 338.0
+offset_top = 812.0
+offset_right = 528.0
+offset_bottom = 869.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "G · PJ-01 南门"
+metadata/action = "pingjiang_south_gate_qa"
+
+[node name="HouseQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 875.0
+offset_right = 327.0
+offset_bottom = 925.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "H · 沈家旧宅"
+metadata/action = "shen_house_qa"
+
+[node name="FourDistrictQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 338.0
+offset_top = 875.0
+offset_right = 528.0
+offset_bottom = 925.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "J · 平江四区"
+metadata/action = "pingjiang_exploration"
+
+[node name="Quit" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 933.0
+offset_right = 528.0
+offset_bottom = 971.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "退出游戏"
+metadata/action = "quit"

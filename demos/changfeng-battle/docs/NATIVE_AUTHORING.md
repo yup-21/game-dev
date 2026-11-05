@@ -16,6 +16,7 @@
 | NPC | `scenes/actors/story_npc.tscn` | 角色实例、交谈碰撞圈、提示 | 序章按注册角色、NPC 数据实例化 |
 | 可交互物 | `scenes/story/interaction_point.tscn` | Sprite、交互 Area2D、音效槽、提示；Inspector 可设 `interaction_id` | 使用 `interaction_requested` 信号；不修改任务规则 |
 | 战斗特效 | `scenes/vfx/combat_burst.tscn` | 描边、发光、连段残影、素材 Sprite、音效槽 | `BattleVFX2D` 根据 Cue 实例化并控制播放 |
+| 标题菜单 | `opening.tscn` → `NativeMenuUI` | 标题、文字、九个交互按钮、hover/pressed 样式与位置 | 按钮直接连接原有 `_action`；地图和剧情入口不变 |
 | 剧情与分层 | `opening.tscn` | 背景/地面/前景/天气层、角色容器、过场文字/淡入动画、音轨 | `opening_flow.gd` 引用现成节点，更新文本和所选素材 |
 | 战斗结果 | `demo_result.tscn` | 文字、按钮位置及颜色 | `demo_result.gd` 根据 GameSession 更新 |
 | 2.5D 技术验证 | `prototypes/pingjiang_25d/pingjiang_25d_validation.tscn` | 完整 3D 道路、立面、碰撞、角色、摄像机和 QA HUD | 仍为独立原型，未成为正式四区地图 |
