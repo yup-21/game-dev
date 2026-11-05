@@ -1,0 +1,92 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/prologue/prologue_zone.gd" id="1_zone"]
+[ext_resource type="Script" path="res://scripts/prologue/prologue_portal.gd" id="2_gate"]
+[ext_resource type="Script" path="res://scripts/prologue/prologue_landmark.gd" id="3_clue"]
+
+[node name="MountainRoad" type="Node2D"]
+script = ExtResource("1_zone")
+zone_id = "mountain_road"
+zone_title = "雨夜·荒山古道"
+
+[node name="BlockoutArt" type="Node2D" parent="."]
+
+[node name="MountainShadow" type="Polygon2D" parent="BlockoutArt"]
+color = Color(0.08, 0.15, 0.15, 1)
+polygon = PackedVector2Array(0, 0, 1600, 0, 1600, 1000, 0, 1000)
+
+[node name="DarkVegetation" type="Polygon2D" parent="BlockoutArt"]
+color = Color(0.14, 0.22, 0.17, 1)
+polygon = PackedVector2Array(0, 0, 550, 0, 630, 205, 532, 436, 688, 630, 520, 820, 625, 1000, 0, 1000)
+
+[node name="WetRockSlope" type="Polygon2D" parent="BlockoutArt"]
+color = Color(0.18, 0.19, 0.18, 1)
+polygon = PackedVector2Array(1050, 0, 1600, 0, 1600, 1000, 1080, 1000, 1020, 790, 1110, 570, 1000, 370)
+
+[node name="WindingRoad" type="Polygon2D" parent="BlockoutArt"]
+color = Color(0.38, 0.36, 0.29, 1)
+polygon = PackedVector2Array(625, 65, 955, 65, 1045, 360, 1060, 610, 1090, 955, 560, 955, 670, 640, 570, 400)
+
+[node name="BrokenCart" type="Node2D" parent="."]
+position = Vector2(917, 604)
+
+[node name="CartWood" type="Polygon2D" parent="BrokenCart"]
+color = Color(0.26, 0.20, 0.12, 1)
+polygon = PackedVector2Array(-105, -86, 63, -102, 117, 2, -80, 19)
+
+[node name="CartCanopy" type="Polygon2D" parent="BrokenCart"]
+color = Color(0.19, 0.23, 0.21, 1)
+polygon = PackedVector2Array(-119, -105, -67, -151, 53, -135, 99, -82)
+
+[node name="Wheel" type="Polygon2D" parent="BrokenCart"]
+color = Color(0.13, 0.15, 0.14, 1)
+polygon = PackedVector2Array(-79, 10, -48, -9, -20, 10, -18, 44, -47, 57, -81, 40)
+
+[node name="InvestigationClue" type="Polygon2D" parent="BrokenCart"]
+color = Color(0.86, 0.64, 0.27, 0.75)
+polygon = PackedVector2Array(-18, 45, 12, 21, 40, 45, 10, 68)
+
+[node name="Navigation" type="Node2D" parent="."]
+
+[node name="Walkable" type="Polygon2D" parent="Navigation"]
+z_index = 20
+color = Color(0.2, 0.85, 0.64, 0.22)
+polygon = PackedVector2Array(650, 105, 942, 105, 1008, 340, 1035, 680, 1060, 915, 603, 915, 708, 680, 621, 405)
+
+[node name="Blockers" type="Node2D" parent="Navigation"]
+
+[node name="AbandonedCart" type="Polygon2D" parent="Navigation/Blockers"]
+visible = false
+polygon = PackedVector2Array(808, 451, 1030, 451, 1030, 620, 808, 620)
+
+[node name="Entries" type="Node2D" parent="."]
+
+[node name="FromCourtyard" type="Marker2D" parent="Entries"]
+position = Vector2(796, 270)
+
+[node name="FromBridge" type="Marker2D" parent="Entries"]
+position = Vector2(792, 735)
+
+[node name="Exits" type="Node2D" parent="."]
+
+[node name="ToCourtyard" type="Marker2D" parent="Exits"]
+position = Vector2(792, 146)
+script = ExtResource("2_gate")
+target_zone_id = "temple_courtyard"
+target_entry_id = "FromRoad"
+hint = "返回破庙前院"
+
+[node name="ToBridge" type="Marker2D" parent="Exits"]
+position = Vector2(797, 849)
+script = ExtResource("2_gate")
+target_zone_id = "broken_bridge"
+target_entry_id = "FromRoad"
+hint = "前往断桥"
+
+[node name="Landmarks" type="Node2D" parent="."]
+
+[node name="CartTraces" type="Marker2D" parent="Landmarks"]
+position = Vector2(822, 667)
+script = ExtResource("3_clue")
+landmark_id = "cart_traces"
+hint = "调查破车与新鲜刀痕"

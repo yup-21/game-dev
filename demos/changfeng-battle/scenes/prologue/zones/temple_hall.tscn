@@ -1,0 +1,127 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/prologue/prologue_zone.gd" id="1_zone"]
+[ext_resource type="Script" path="res://scripts/prologue/prologue_portal.gd" id="2_gate"]
+
+[node name="TempleHall" type="Node2D"]
+script = ExtResource("1_zone")
+zone_id = "temple_hall"
+zone_title = "破庙·内殿"
+
+[node name="Architecture" type="Node2D" parent="."]
+
+[node name="OuterDarkness" type="Polygon2D" parent="Architecture"]
+color = Color(0.075, 0.094, 0.096, 1)
+polygon = PackedVector2Array(0, 0, 1600, 0, 1600, 1000, 0, 1000)
+
+[node name="MossyFloor" type="Polygon2D" parent="Architecture"]
+color = Color(0.30, 0.29, 0.23, 1)
+polygon = PackedVector2Array(130, 205, 1470, 205, 1510, 945, 85, 945)
+
+[node name="FarWall" type="Polygon2D" parent="Architecture"]
+color = Color(0.17, 0.20, 0.18, 1)
+polygon = PackedVector2Array(85, 65, 1510, 65, 1470, 290, 120, 290)
+
+[node name="BrokenRoof" type="Polygon2D" parent="Architecture"]
+color = Color(0.09, 0.13, 0.13, 0.85)
+polygon = PackedVector2Array(0, 0, 1600, 0, 1530, 125, 135, 140)
+
+[node name="LeftPillar" type="Polygon2D" parent="Architecture"]
+color = Color(0.19, 0.18, 0.15, 1)
+polygon = PackedVector2Array(235, 210, 310, 210, 310, 640, 235, 640)
+
+[node name="RightPillar" type="Polygon2D" parent="Architecture"]
+color = Color(0.19, 0.18, 0.15, 1)
+polygon = PackedVector2Array(1320, 210, 1385, 210, 1385, 640, 1320, 640)
+
+[node name="StatuePlinth" type="Polygon2D" parent="Architecture"]
+color = Color(0.21, 0.24, 0.20, 1)
+polygon = PackedVector2Array(1090, 325, 1290, 325, 1310, 438, 1080, 438)
+
+[node name="ShatteredStatue" type="Polygon2D" parent="Architecture"]
+color = Color(0.43, 0.43, 0.36, 1)
+polygon = PackedVector2Array(1140, 320, 1127, 265, 1158, 203, 1194, 195, 1225, 237, 1200, 270, 1250, 330)
+
+[node name="FallenBeam" type="Polygon2D" parent="Architecture"]
+color = Color(0.22, 0.18, 0.13, 1)
+polygon = PackedVector2Array(190, 730, 490, 667, 503, 712, 205, 775)
+
+[node name="Campfire" type="Node2D" parent="."]
+position = Vector2(627, 575)
+
+[node name="AshAndStones" type="Polygon2D" parent="Campfire"]
+color = Color(0.12, 0.12, 0.10, 1)
+polygon = PackedVector2Array(-105, 37, -65, -15, 45, -23, 112, 30, 80, 67, -77, 67)
+
+[node name="GlowingEmbers" type="Polygon2D" parent="Campfire"]
+color = Color(0.83, 0.26, 0.10, 1)
+polygon = PackedVector2Array(-66, 20, -30, -1, 37, 0, 65, 20, 12, 40, -41, 38)
+
+[node name="Flame" type="Polygon2D" parent="Campfire"]
+color = Color(1, 0.69, 0.24, 0.97)
+polygon = PackedVector2Array(-39, 17, -20, -41, -2, -13, 12, -78, 30, -28, 40, 18, 15, 32, -16, 33)
+
+[node name="FireLight" type="Polygon2D" parent="Campfire"]
+z_index = -1
+color = Color(0.8, 0.45, 0.14, 0.13)
+polygon = PackedVector2Array(-275, -95, -165, -185, 128, -178, 270, -65, 222, 165, -180, 151)
+
+[node name="Navigation" type="Node2D" parent="."]
+
+[node name="Walkable" type="Polygon2D" parent="Navigation"]
+z_index = 20
+color = Color(0.2, 0.85, 0.63, 0.21)
+polygon = PackedVector2Array(185, 335, 1415, 335, 1415, 907, 185, 907)
+
+[node name="Blockers" type="Node2D" parent="Navigation"]
+
+[node name="FirePit" type="Polygon2D" parent="Navigation/Blockers"]
+visible = false
+polygon = PackedVector2Array(530, 534, 730, 534, 730, 643, 530, 643)
+
+[node name="StatueBase" type="Polygon2D" parent="Navigation/Blockers"]
+visible = false
+polygon = PackedVector2Array(1080, 335, 1310, 335, 1310, 438, 1080, 438)
+
+[node name="Beam" type="Polygon2D" parent="Navigation/Blockers"]
+visible = false
+polygon = PackedVector2Array(190, 675, 515, 675, 515, 780, 190, 780)
+
+[node name="Entries" type="Node2D" parent="."]
+
+[node name="WakeByFire" type="Marker2D" parent="Entries"]
+position = Vector2(862, 699)
+
+[node name="FromCourtyard" type="Marker2D" parent="Entries"]
+position = Vector2(825, 722)
+
+[node name="Exits" type="Node2D" parent="."]
+
+[node name="ToCourtyard" type="Marker2D" parent="Exits"]
+position = Vector2(800, 859)
+script = ExtResource("2_gate")
+target_zone_id = "temple_courtyard"
+target_entry_id = "FromHall"
+hint = "走出破庙内殿"
+
+[node name="Landmarks" type="Node2D" parent="."]
+
+[node name="AmbushActors" type="Node2D" parent="."]
+visible = false
+
+[node name="GhostMaskGuardA" type="Marker2D" parent="AmbushActors"]
+position = Vector2(1025, 615)
+
+[node name="GuardASilhouette" type="Polygon2D" parent="AmbushActors/GhostMaskGuardA"]
+color = Color(0.37, 0.12, 0.12, 1)
+polygon = PackedVector2Array(-31, 0, -37, -80, -29, -130, -13, -149, 13, -149, 28, -130, 40, -80, 28, 0)
+
+[node name="GhostMaskGuardB" type="Marker2D" parent="AmbushActors"]
+position = Vector2(1230, 713)
+
+[node name="GuardBSilhouette" type="Polygon2D" parent="AmbushActors/GhostMaskGuardB"]
+color = Color(0.33, 0.12, 0.12, 1)
+polygon = PackedVector2Array(-31, 0, -37, -80, -29, -130, -13, -149, 13, -149, 28, -130, 40, -80, 28, 0)
+
+[node name="YanShouchengHiding" type="Marker2D" parent="AmbushActors"]
+position = Vector2(1120, 435)

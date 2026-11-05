@@ -1,0 +1,75 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/prologue/prologue_zone.gd" id="1_zone"]
+[ext_resource type="Script" path="res://scripts/prologue/prologue_portal.gd" id="2_gate"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/ruined_temple/background.png" id="3_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/ruined_temple/ground.png" id="4_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/ruined_temple/foreground.png" id="5_front"]
+
+[node name="TempleCourtyard" type="Node2D"]
+script = ExtResource("1_zone")
+zone_id = "temple_courtyard"
+zone_title = "破庙·前院"
+
+[node name="PaintedLayers" type="Node2D" parent="."]
+
+[node name="Background" type="Sprite2D" parent="PaintedLayers"]
+texture = ExtResource("3_bg")
+centered = false
+
+[node name="Ground" type="Sprite2D" parent="PaintedLayers"]
+texture = ExtResource("4_ground")
+centered = false
+
+[node name="Foreground" type="Sprite2D" parent="PaintedLayers"]
+z_index = 17
+texture = ExtResource("5_front")
+centered = false
+
+[node name="Navigation" type="Node2D" parent="."]
+
+[node name="Walkable" type="Polygon2D" parent="Navigation"]
+z_index = 20
+color = Color(0.22, 0.8, 0.61, 0.22)
+polygon = PackedVector2Array(300, 260, 1290, 260, 1385, 760, 1230, 919, 370, 919, 220, 760)
+
+[node name="Blockers" type="Node2D" parent="Navigation"]
+
+[node name="RuinedWallLeft" type="Polygon2D" parent="Navigation/Blockers"]
+visible = false
+polygon = PackedVector2Array(305, 260, 450, 260, 425, 520, 310, 505)
+
+[node name="RuinedWallRight" type="Polygon2D" parent="Navigation/Blockers"]
+visible = false
+polygon = PackedVector2Array(1170, 260, 1290, 260, 1330, 505, 1220, 515)
+
+[node name="Entries" type="Node2D" parent="."]
+
+[node name="FromHall" type="Marker2D" parent="Entries"]
+position = Vector2(800, 585)
+
+[node name="FromRoad" type="Marker2D" parent="Entries"]
+position = Vector2(800, 730)
+
+[node name="Exits" type="Node2D" parent="."]
+
+[node name="ToHall" type="Marker2D" parent="Exits"]
+position = Vector2(800, 315)
+script = ExtResource("2_gate")
+target_zone_id = "temple_hall"
+target_entry_id = "FromCourtyard"
+hint = "返回破庙内殿"
+
+[node name="ToRoad" type="Marker2D" parent="Exits"]
+position = Vector2(805, 858)
+script = ExtResource("2_gate")
+target_zone_id = "mountain_road"
+target_entry_id = "FromCourtyard"
+hint = "沿荒山古道探索"
+
+[node name="Landmarks" type="Node2D" parent="."]
+
+[node name="StoryAnchors" type="Node2D" parent="."]
+
+[node name="HanXiaoForecourtBattle" type="Marker2D" parent="StoryAnchors"]
+position = Vector2(800, 672)
