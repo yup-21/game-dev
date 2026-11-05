@@ -6,9 +6,9 @@
 script = ExtResource("1_scene")
 
 [node name="Camera3D" type="Camera3D" parent="."]
-position = Vector3(0, 14, 26.5)
+position = Vector3(0, 10, 15.5)
 current = true
-fov = 50.0
+fov = 38.0
 near = 0.1
 far = 100.0
 
