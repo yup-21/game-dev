@@ -8,6 +8,8 @@
 >
 > 关联： [04 世界地图与副本](04-world-map-and-dungeons.md) · [第一幕详案](chapters/act-1-jiangnan.md) · [地理大志](world-gazetteer-and-regions.md) · [城镇比例尺规范](../../art-production/standards/TOWN_MAP_SCALE_PRODUCTION.md)
 
+> 当前四区 PR #123–#128 的集成进度与下一轮开发事项见 [平江府地图集成状态](pingjiang-map-integration-status.md)。
+
 ## 1. 设计定位与边界
 
 平江府是江南道第一幕的核心水都。城市表面为水陆双棋盘、商贾繁华的姑苏城；城西暗渠通向地下鬼市和活人血炉。主线体验依次覆盖入城调查、茶棚救人、结识顾清霜、搜集药引证据、鬼市潜入、血炉决战。
