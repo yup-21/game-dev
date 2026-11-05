@@ -16,14 +16,14 @@ const WALK_SPEED := 4.0
 const PLAYER_START_Z := ROAD_LENGTH * 0.5 - 5.0
 const PLAYER_LIMIT_Z := ROAD_LENGTH * 0.5 - 1.2
 const REFERENCE_Z := ROAD_LENGTH * 0.3
-const CAMERA_HEIGHT := 10.0
-const CAMERA_OFFSET_Z := 8.0
-const CAMERA_AIM_Z := -1.0
-const CAMERA_Z_MIN := -ROAD_LENGTH * 0.5 + 10.0
-const CAMERA_Z_MAX := ROAD_LENGTH * 0.5 + 6.5
+const CAMERA_HEIGHT := 8.0
+const CAMERA_OFFSET_Z := 6.4
+const CAMERA_AIM_Z := -0.8
+const CAMERA_Z_MIN := -ROAD_LENGTH * 0.5 + 8.0
+const CAMERA_Z_MAX := ROAD_LENGTH * 0.5 + 5.2
 const CAMERA_FOLLOW_SPEED := 5.0
-const ACTOR_DISPLAY_SCALE := 0.30 # Only the isolated perspective QA sprite, not the 2D actor contract.
-const ORTHOGRAPHIC_SIZE := 15.0
+const ACTOR_DISPLAY_SCALE := 0.20 # One-third smaller than 0.30; 2D actor contract is unchanged.
+const ORTHOGRAPHIC_SIZE := 12.0
 const FOOTPRINT_RADIUS := CombatScale.FOOTPRINT_RADIUS_UNITS
 const ACTOR_HEIGHT := CombatScale.ACTOR_HEIGHT_UNITS
 
@@ -38,6 +38,7 @@ func _ready() -> void:
     camera.position = Vector3(0.0, CAMERA_HEIGHT, PLAYER_START_Z + CAMERA_OFFSET_Z)
     camera.look_at(Vector3(0.0, 0.0, PLAYER_START_Z + CAMERA_AIM_Z), Vector3.UP)
     camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+    camera.size = ORTHOGRAPHIC_SIZE
     _build_street()
     _build_character()
     _build_hud()

@@ -2,6 +2,7 @@ extends SceneTree
 ## Isolated 3D render/scale/collision regression, never alters 2D map rules.
 const Scene = preload("res://prototypes/pingjiang_25d/pingjiang_25d_validation.tscn")
 const Scale = preload("res://scripts/combat_scale.gd")
+const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 var failures := 0
 
 func _initialize() -> void:
@@ -84,9 +85,18 @@ func _run() -> void:
         and is_equal_approx(Scale.actor_height_pixels(), 200.0)
         and is_equal_approx(scene.FOOTPRINT_RADIUS, 0.3),
         "existing combat scale stays authoritative")
-    _check(camera.fov < 40.0 and is_equal_approx(camera.position.y, scene.CAMERA_HEIGHT)
-        and scene.ACTOR_DISPLAY_SCALE < 0.5,
-        "prototype camera uses a narrower field and only its test sprites are downsized")
+    var visible_bounds: Rect2i = VisualScale._opaque_bounds(sprite.texture,
+        sprite.hframes, sprite.vframes, sprite.frame)
+    _check(is_equal_approx(scene.ACTOR_DISPLAY_SCALE, 0.20)
+        and is_equal_approx(sprite.pixel_size * float(visible_bounds.size.y),
+            scene.ACTOR_HEIGHT * scene.ACTOR_DISPLAY_SCALE),
+        "only the isolated prototype sprites are one-third smaller than the former 0.30 scale")
+    _check(is_equal_approx(camera.fov, 38.0)
+        and is_equal_approx(scene.CAMERA_HEIGHT, 8.0)
+        and is_equal_approx(scene.CAMERA_OFFSET_Z, 6.4)
+        and is_equal_approx(scene.ORTHOGRAPHIC_SIZE, 12.0)
+        and is_equal_approx(camera.size, scene.ORTHOGRAPHIC_SIZE),
+        "both camera projections use the closer, 20-percent tighter framing")
     player.position = Vector3(0.0, 0.5, scene.PLAYER_START_Z)
     camera.position = scene._camera_target_position()
     var north_screen := camera.unproject_position(Vector3(0.0, 0.0, -scene.ROAD_LENGTH * 0.5))
