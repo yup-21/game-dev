@@ -7,6 +7,7 @@ const EXTENSIONS := ["png", "webp", "jpg", "jpeg", "svg"]
 const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx", "character_folder"]
 const MANIFEST := "res://data/content_manifest.tres"
 const CombatScale = preload("res://scripts/combat_scale.gd")
+const SpriteAssembly = preload("res://addons/wuxia_art_importer/sprite_assembly.gd")
 
 
 ## Candidate art must have a full-size, safely contained idle reference.
@@ -346,12 +347,110 @@ static func candidate_frame_geometry_error(texture: Texture2D, cols: int, count_
         if occupied.has(frame):
             if not pixel_bounds.has_area():
                 return "有效帧为空：" + str(frame)
-            if pixel_bounds.position.x <= 0 or pixel_bounds.position.y <= 0 or \
-                    pixel_bounds.end.x >= fw or pixel_bounds.end.y >= fh:
-                return "候选帧触边、透明留白不足：" + str(frame)
+            if pixel_bounds.position.x < SpriteAssembly.MARGIN or \
+                    pixel_bounds.position.y < SpriteAssembly.MARGIN or \
+                    pixel_bounds.end.x > fw - SpriteAssembly.MARGIN or \
+                    pixel_bounds.end.y > fh - SpriteAssembly.MARGIN:
+                return "候选帧四边不足 8px 真透明留白：" + str(frame)
         elif pixel_bounds.has_area():
             return "未使用帧格存在像素：" + str(frame)
     return ""
+
+
+static func _composed_profile(template: WuxiaActorAnimationProfile, atlas: Texture2D,
+        assembly: Dictionary, fields: Dictionary) -> WuxiaActorAnimationProfile:
+    var profile := template.duplicate(true) as WuxiaActorAnimationProfile
+    profile.atlas = atlas
+    profile.columns = int(assembly["columns"])
+    profile.rows = int(assembly["rows"])
+    profile.feet_offset = fields.get("feet_offset", Vector2(0, -102))
+    profile.faces_left_unflipped = bool(fields.get("faces_left", false))
+    profile.action_fallbacks = {} # No legacy aliases or missing-action fallback.
+    profile.clips.clear()
+    for action in SpriteAssembly.ACTIONS:
+        var config: Dictionary = assembly["clips"][action]
+        var clip := WuxiaActorAnimationClip.new()
+        clip.action = action
+        clip.frames = config["frames"]
+        clip.loop = bool(config["loop"])
+        clip.loop_fps = float(config["fps"])
+        clip.frame_durations = config["durations"]
+        profile.clips.append(clip)
+    return profile
+
+
+## Explicit multi-source sheet assembly. Source images remain in art-production;
+## the new packed PNG and its fully authored twelve-action Profile are imported
+## together through the existing transactional review/rollback path.
+static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
+    if not target.begins_with("res://data/native/characters/") or not target.ends_with(".tres"):
+        return {"error": "请选择目标角色 Resource"}
+    var actor := ResourceLoader.load(target) as WuxiaCharacterDefinition
+    if actor == null:
+        return {"error": "目标角色 Resource 不存在"}
+    var source_definitions: Array = fields.get("composition_sources", [])
+    var sources: Array = []
+    for item in source_definitions:
+        var config: Dictionary = (item as Dictionary).duplicate(true)
+        var path := str(config.get("path", ""))
+        var details := inspect(path)
+        if not str(details.get("error", "")).is_empty():
+            return {"error": "源图：" + str(details["error"])}
+        var identity := _source_identity(path)
+        if identity.size() < 2 or identity[0] != "characters" or identity[1] != actor.content_id:
+            return {"error": "源图不属于所选角色：" + path}
+        var candidate := candidate_for_source(path)
+        if path.simplify_path().begins_with(production_root().path_join("candidates/")):
+            if candidate == null:
+                return {"error": "候选源图缺少独立 .tres：" + path}
+            var error: String = candidate.validate_source()
+            if not error.is_empty():
+                return {"error": error}
+            if candidate.columns <= 0 or candidate.rows <= 0:
+                return {"error": "候选源图尚未在 .tres 声明真实 C×R 网格：" + path}
+            if candidate.columns != int(config.get("columns", 0)) or \
+                    candidate.rows != int(config.get("rows", 0)):
+                return {"error": "源图网格与候选 Resource 声明不同：" + path}
+        config["texture"] = details["texture"]
+        sources.append(config)
+    var requested_cell := Vector2i(384, 288) if bool(fields.get("composition_tall", false)) \
+        else Vector2i(328, 256)
+    var assembly := SpriteAssembly.build(sources,
+        fields.get("composition_actions", {}), fields.get("composition_metadata", {}), requested_cell)
+    if not str(assembly.get("error", "")).is_empty():
+        return assembly
+    var template_path := str(fields.get("clip_profile_path", "")).strip_edges()
+    if not template_path.is_empty() and (not template_path.begins_with("res://data/") or \
+            template_path.contains("..") or not ResourceLoader.exists(template_path)):
+        return {"error": "动作 Profile 模板路径不可用"}
+    var template: WuxiaActorAnimationProfile = ResourceLoader.load(template_path) as WuxiaActorAnimationProfile \
+        if not template_path.is_empty() else actor.animation_profile
+    if template == null:
+        template = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
+    if template == null:
+        return {"error": "缺少动画 Profile 模板"}
+    var staged := _composed_profile(template, assembly["texture"], assembly, fields)
+    if not staged.valid_profile():
+        return {"error": "组合图集动作配置未通过原生 Profile 验证"}
+    var hash: String = assembly["sha256"]
+    var destination_path := "res://assets/imported/characters/" + actor.content_id + "/sprites/atlas.png"
+    var replaced := ""
+    if FileAccess.file_exists(destination_path) and FileAccess.get_sha256(destination_path) != hash:
+        if not bool(fields.get("versioned_replace", false)):
+            return {"error": "目标 Atlas 已存在且内容不同；请启用版本化替换"}
+        replaced = destination_path
+        destination_path = destination_path.get_basename() + "__" + hash.substr(0, 12) + ".png"
+        if FileAccess.file_exists(destination_path) and FileAccess.get_sha256(destination_path) != hash:
+            return {"error": "版本化图片哈希冲突"}
+    return {"error": "", "mode": "atlas", "composition": true, "target": target,
+        "owner": actor, "profile_path": "res://data/native/animations/" + actor.content_id + ".tres",
+        "template_path": template_path, "clip_profile_path": template_path,
+        "assembly": assembly, "feet_offset": fields.get("feet_offset", Vector2(0, -102)),
+        "faces_left": bool(fields.get("faces_left", false)),
+        "files": {"primary": {"path": str(source_definitions[0]["path"]), "destination": destination_path,
+            "sha256": hash, "generated_bytes": assembly["bytes"], "replaces": replaced}},
+        "current_binding": actor.sprite_sheet.resource_path if actor.sprite_sheet != null else "",
+        "next_binding": destination_path}
 
 
 ## One atomic plan for an existing character: portrait + shared Atlas and/or
@@ -470,6 +569,8 @@ static func plan_character_folder(folder: String, target: String, fields: Dictio
 static func plan(mode: String, source: String, target: String, fields: Dictionary) -> Dictionary:
     if mode == "character_folder":
         return plan_character_folder(source, target, fields)
+    if mode == "atlas" and bool(fields.get("composition_enabled", false)):
+        return plan_composition(target, fields)
     var result := {"error": "", "mode": mode, "target": target, "files": {}}
     if not MODES.has(mode):
         return {"error": "不支持的导入模式"}
@@ -587,6 +688,8 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             if profile == null:
                 return {"error": "动画 Profile 模板不是 WuxiaActorAnimationProfile"}
         else:
+            if not bool(fields.get("reuse_existing_clips", false)):
+                return {"error": "新 Atlas 必须通过自由装配指定十二动作帧序，或显式选择 Profile 模板；旧素材可勾选沿用已有帧配置"}
             profile = owner.get("animation_profile") as WuxiaActorAnimationProfile
             if profile == null:
                 profile = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
@@ -667,18 +770,25 @@ static func copy_images(files: Dictionary) -> String:
         var source := str(info["path"])
         var target := str(info["destination"])
         if FileAccess.file_exists(target):
-            if FileAccess.get_sha256(source) != FileAccess.get_sha256(target):
+            if str(info["sha256"]) != FileAccess.get_sha256(target):
                 return "文件内容发生变化，停止导入：" + target
             continue
         var absolute := ProjectSettings.globalize_path(target)
         var err := DirAccess.make_dir_recursive_absolute(absolute.get_base_dir())
         if err != OK:
             return "无法创建素材目录：" + str(err)
-        var source_absolute := ProjectSettings.globalize_path(source) if source.begins_with("res://") else source
-        err = DirAccess.copy_absolute(source_absolute, absolute)
+        if info.has("generated_bytes"):
+            var output := FileAccess.open(target, FileAccess.WRITE)
+            if output == null:
+                return "无法创建装配图集：" + target
+            output.store_buffer(info["generated_bytes"])
+            output.close()
+        else:
+            var source_absolute := ProjectSettings.globalize_path(source) if source.begins_with("res://") else source
+            err = DirAccess.copy_absolute(source_absolute, absolute)
         if err != OK:
             return "复制素材失败：" + str(err)
-        if FileAccess.get_sha256(source) != FileAccess.get_sha256(target):
+        if str(info["sha256"]) != FileAccess.get_sha256(target):
             return "复制后 SHA-256 不一致：" + target
     return ""
 
@@ -772,11 +882,16 @@ static func save_bindings(plan_data: Dictionary) -> String:
                     template = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
             if template == null:
                 return "动画 Profile 模板不可用"
-            var profile := template.duplicate(true) as WuxiaActorAnimationProfile
-            profile.atlas = textures["primary"]
-            profile.columns = int(plan_data["columns"])
-            profile.rows = int(plan_data["rows"])
-            profile.feet_offset = plan_data["feet_offset"]
+            var profile: WuxiaActorAnimationProfile
+            if bool(plan_data.get("composition", false)):
+                profile = _composed_profile(template, textures["primary"],
+                    plan_data["assembly"], plan_data)
+            else:
+                profile = template.duplicate(true) as WuxiaActorAnimationProfile
+                profile.atlas = textures["primary"]
+                profile.columns = int(plan_data["columns"])
+                profile.rows = int(plan_data["rows"])
+                profile.feet_offset = plan_data["feet_offset"]
             if float(plan_data.get("candidate_scale_override", 0.0)) > 0.0:
                 profile.auto_fit_height = false
                 profile.actor_scale = Vector2.ONE * float(plan_data["candidate_scale_override"])

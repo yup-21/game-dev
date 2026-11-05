@@ -6,6 +6,7 @@ const Service = preload("res://addons/wuxia_art_importer/art_import_service.gd")
 const Preview = preload("res://addons/wuxia_art_importer/art_preview.gd")
 const Export = preload("res://addons/wuxia_art_importer/art_export_service.gd")
 const Transaction = preload("res://addons/wuxia_art_importer/art_transaction_service.gd")
+const Assembly = preload("res://addons/wuxia_art_importer/sprite_assembly.gd")
 const LABELS := ["角色立绘", "角色动作 Atlas", "分层场景", "UI Atlas", "战斗 VFX", "整个角色目录"]
 const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx", "character_folder"]
 
@@ -27,12 +28,28 @@ var feet_x: SpinBox
 var feet_y: SpinBox
 var facing: CheckBox
 var clip_profile: LineEdit
+var legacy_reuse: CheckBox
 var atlas_rows: Array[Control] = []
 var vfx_controls: Array[Control] = []
 var vfx_columns: SpinBox
 var vfx_row_count: SpinBox
 var vfx_frame_indices: LineEdit
 var action_select: OptionButton
+var compose_enabled: CheckBox
+var compose_panel: VBoxContainer
+var compose_source_list: ItemList
+var compose_grid: CheckBox
+var compose_tall: CheckBox
+var compose_numbers: Dictionary = {}
+var compose_mapping: LineEdit
+var compose_loop: CheckBox
+var compose_fps: SpinBox
+var compose_durations: LineEdit
+var compose_sources: Array[Dictionary] = []
+var compose_previews: Dictionary = {}
+var compose_actions: Dictionary = {}
+var compose_metadata: Dictionary = {}
+var compose_editing: bool = false
 var preview: Control
 var info: Label
 var apply_button: Button
@@ -148,15 +165,21 @@ func _ready() -> void:
     clip_profile.placeholder_text = "res://data/.../animation_profile.tres（动作帧配置可选）"
     clip_profile.text_changed.connect(func(_value: String): _refresh_preview())
     atlas_rows.append(_labeled("原生动作帧 Profile 模板（可选）", clip_profile))
+    legacy_reuse = CheckBox.new()
+    legacy_reuse.text = "兼容旧图：明确沿用角色已有帧配置（不用于新图）"
+    legacy_reuse.toggled.connect(func(_value: bool): _refresh_preview())
+    body.add_child(legacy_reuse)
+    atlas_rows.append(legacy_reuse)
     var apply_candidate := Button.new()
     apply_candidate.text = "读取当前候选 .tres 参数"
     apply_candidate.pressed.connect(_apply_candidate_resource)
     body.add_child(apply_candidate)
     action_select = OptionButton.new()
-    for action in WuxiaActorAnimationProfile.REQUIRED_ACTIONS:
+    for action in WuxiaActorAnimationProfile.MODERN_REQUIRED_ACTIONS:
         action_select.add_item(action)
     atlas_rows.append(_labeled("动画预览", action_select))
     action_select.item_selected.connect(func(_index: int): _set_action())
+    _build_composer()
     vfx_columns = _vfx_number("VFX 列数", 1)
     vfx_row_count = _vfx_number("VFX 行数", 1)
     vfx_frame_indices = LineEdit.new()
@@ -169,6 +192,7 @@ func _ready() -> void:
     preview.custom_minimum_size = Vector2(0, 225)
     preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     body.add_child(preview)
+    preview.cell_clicked.connect(_on_grid_cell_clicked)
     info = Label.new()
     info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     body.add_child(info)
@@ -312,6 +336,243 @@ func _vfx_number(label: String, initial: float) -> SpinBox:
     return spin
 
 
+func _compose_number(key: String, label: String, initial: int, minimum: int = -4096,
+        maximum: int = 4096) -> void:
+    var spin := SpinBox.new()
+    spin.min_value = minimum
+    spin.max_value = maximum
+    spin.step = 1
+    spin.value = initial
+    compose_numbers[key] = spin
+    var row := HBoxContainer.new()
+    var caption := Label.new()
+    caption.text = label
+    caption.custom_minimum_size.x = 100
+    row.add_child(caption)
+    spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    row.add_child(spin)
+    compose_panel.add_child(row)
+    spin.value_changed.connect(func(_value: float): _geometry_changed())
+
+
+func _build_composer() -> void:
+    compose_enabled = CheckBox.new()
+    compose_enabled.text = "自由装配：多源图切格 + 十二动作映射（推荐新素材）"
+    body.add_child(compose_enabled)
+    compose_enabled.toggled.connect(func(_value: bool): _mode_changed())
+    compose_panel = VBoxContainer.new()
+    body.add_child(compose_panel)
+    var help := Label.new()
+    help.text = "从上方列表选择图片后添加。图编号从 0 起；格编号按行优先从 0 起。可点网格添加帧，或手输 0:0-7,1:2,0:9。"
+    help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    compose_panel.add_child(help)
+    compose_tall = CheckBox.new()
+    compose_tall.text = "高个档：输出 384×288 单格（默认普通档 328×256）"
+    compose_panel.add_child(compose_tall)
+    var add_source := Button.new()
+    add_source.text = "添加选中的源图集"
+    add_source.pressed.connect(_add_composition_source)
+    compose_panel.add_child(add_source)
+    compose_source_list = ItemList.new()
+    compose_source_list.custom_minimum_size.y = 92
+    compose_source_list.item_selected.connect(func(_index: int): _load_composition_geometry())
+    compose_panel.add_child(compose_source_list)
+    var remove_source := Button.new()
+    remove_source.text = "移除选中源图（之后的源图编号会重排）"
+    remove_source.pressed.connect(_remove_composition_source)
+    compose_panel.add_child(remove_source)
+    for item in [
+        ["columns", "源图列数", 5, 1, 64], ["rows", "源图行数", 5, 1, 64],
+        ["cell_width", "单格宽度", 328, 1, 4096],
+        ["cell_height", "单格高度", 256, 1, 4096],
+        ["origin_x", "网格起点 X", 0, -4096, 4096],
+        ["origin_y", "网格起点 Y", 0, -4096, 4096],
+        ["gap_x", "横向格距", 0, -4096, 4096],
+        ["gap_y", "纵向格距", 0, -4096, 4096],
+        ["selected_cell", "微调的格号", 0, 0, 4095],
+        ["local_x", "当前格偏移 X", 0, -4096, 4096],
+        ["local_y", "当前格偏移 Y", 0, -4096, 4096]]:
+        _compose_number(str(item[0]), str(item[1]), int(item[2]), int(item[3]), int(item[4]))
+    compose_grid = CheckBox.new()
+    compose_grid.text = "显示整图切格（取消可播放当前动作）"
+    compose_grid.button_pressed = true
+    compose_grid.toggled.connect(func(_value: bool): _refresh_preview())
+    compose_panel.add_child(compose_grid)
+    var append := Button.new()
+    append.text = "将当前格加入选中动作帧序"
+    append.pressed.connect(_append_selected_cell)
+    compose_panel.add_child(append)
+    compose_mapping = LineEdit.new()
+    compose_mapping.placeholder_text = "例如 0:0-7,1:0,1:4（可跨源图、乱序）"
+    compose_mapping.text_changed.connect(_mapping_changed)
+    compose_panel.add_child(_compose_labeled("当前动作的有序帧映射", compose_mapping))
+    compose_loop = CheckBox.new()
+    compose_loop.text = "循环播放"
+    compose_loop.toggled.connect(func(_value: bool): _metadata_changed())
+    compose_panel.add_child(compose_loop)
+    compose_fps = SpinBox.new()
+    compose_fps.min_value = 1.0
+    compose_fps.max_value = 60.0
+    compose_fps.step = 0.5
+    compose_fps.value_changed.connect(func(_value: float): _metadata_changed())
+    compose_panel.add_child(_compose_labeled("当前动作 FPS", compose_fps))
+    compose_durations = LineEdit.new()
+    compose_durations.placeholder_text = "逐帧秒数，例如 0.08,0.12,0.10（留空则使用 FPS）"
+    compose_durations.text_changed.connect(func(_value: String): _metadata_changed())
+    compose_panel.add_child(_compose_labeled("逐帧时长（可选）", compose_durations))
+    _load_action_fields()
+
+
+func _compose_labeled(label: String, control: Control) -> Control:
+    var column := VBoxContainer.new()
+    var caption := Label.new()
+    caption.text = label
+    column.add_child(caption)
+    column.add_child(control)
+    return column
+
+
+func _composition_index() -> int:
+    var selected := compose_source_list.get_selected_items()
+    return selected[0] if not selected.is_empty() else -1
+
+
+func _add_composition_source() -> void:
+    var path := _selected_source()
+    if path.is_empty() or compose_sources.size() >= 32:
+        info.text = "请选择源图（最多 32 张）"
+        return
+    for item in compose_sources:
+        if item["path"] == path:
+            info.text = "此源图已经添加"
+            return
+    var details := Service.inspect(path)
+    if not str(details.get("error", "")).is_empty():
+        info.text = str(details["error"])
+        return
+    compose_previews[path] = {"time": FileAccess.get_modified_time(path), "data": details}
+    var candidate := Service.candidate_for_source(path)
+    var cols := candidate.columns if candidate != null and candidate.columns > 0 else 5
+    var count_rows := candidate.rows if candidate != null and candidate.rows > 0 else 5
+    compose_sources.append({"path": path, "columns": cols, "rows": count_rows,
+        "cell_width": int(details["width"]) / cols, "cell_height": int(details["height"]) / count_rows,
+        "origin_x": 0, "origin_y": 0, "gap_x": 0, "gap_y": 0, "offsets": {}})
+    _refresh_composition_list()
+    compose_source_list.select(compose_sources.size() - 1)
+    _load_composition_geometry()
+
+
+func _refresh_composition_list() -> void:
+    compose_source_list.clear()
+    for i in range(compose_sources.size()):
+        compose_source_list.add_item("%d · %s" % [i, str(compose_sources[i]["path"])
+            .trim_prefix(Service.production_root() + "/")])
+
+
+func _remove_composition_source() -> void:
+    var index := _composition_index()
+    if index < 0:
+        return
+    compose_sources.remove_at(index)
+    # Existing mappings are deliberately left visible; invalid indices fail
+    # preflight until the artist explicitly reassigns them.
+    _refresh_composition_list()
+    if not compose_sources.is_empty():
+        compose_source_list.select(mini(index, compose_sources.size() - 1))
+    _load_composition_geometry()
+
+
+func _load_composition_geometry() -> void:
+    compose_editing = true
+    var index := _composition_index()
+    if index >= 0:
+        var source: Dictionary = compose_sources[index]
+        for key in ["columns", "rows", "cell_width", "cell_height", "origin_x", "origin_y", "gap_x", "gap_y"]:
+            compose_numbers[key].value = int(source[key])
+        compose_numbers["selected_cell"].value = 0
+        compose_numbers["local_x"].value = 0
+        compose_numbers["local_y"].value = 0
+    compose_editing = false
+    _refresh_preview()
+
+
+func _geometry_changed() -> void:
+    if compose_editing:
+        return
+    var index := _composition_index()
+    if index < 0:
+        return
+    var source: Dictionary = compose_sources[index]
+    for key in ["columns", "rows", "cell_width", "cell_height", "origin_x", "origin_y", "gap_x", "gap_y"]:
+        source[key] = int(compose_numbers[key].value)
+    var cell_index := int(compose_numbers["selected_cell"].value)
+    var offsets: Dictionary = source.get("offsets", {})
+    # Selecting another cell loads its saved local offset instead of carrying
+    # the previous cell's adjustment into the new cell.
+    if cell_index != int(source.get("editing_cell", 0)):
+        source["editing_cell"] = cell_index
+        var offset: Vector2i = offsets.get(cell_index, Vector2i.ZERO)
+        compose_editing = true
+        compose_numbers["local_x"].value = offset.x
+        compose_numbers["local_y"].value = offset.y
+        compose_editing = false
+    else:
+        var offset := Vector2i(int(compose_numbers["local_x"].value),
+            int(compose_numbers["local_y"].value))
+        if offset == Vector2i.ZERO:
+            offsets.erase(cell_index)
+        else:
+            offsets[cell_index] = offset
+        source["offsets"] = offsets
+    compose_sources[index] = source
+    _refresh_preview()
+
+
+func _action_name() -> String:
+    return action_select.get_item_text(action_select.selected) if action_select.selected >= 0 else "idle"
+
+
+func _load_action_fields() -> void:
+    compose_editing = true
+    var action := _action_name()
+    var config: Dictionary = compose_metadata.get(action, {})
+    compose_mapping.text = str(compose_actions.get(action, ""))
+    compose_loop.button_pressed = bool(config.get("loop", action in ["idle", "walk", "run"]))
+    compose_fps.value = float(config.get("fps", 12.0))
+    compose_durations.text = str(config.get("durations", ""))
+    compose_editing = false
+
+
+func _mapping_changed(value: String) -> void:
+    if compose_editing:
+        return
+    compose_actions[_action_name()] = value
+    _refresh_preview()
+
+
+func _metadata_changed() -> void:
+    if compose_editing:
+        return
+    compose_metadata[_action_name()] = {"loop": compose_loop.button_pressed,
+        "fps": compose_fps.value, "durations": compose_durations.text}
+    _refresh_preview()
+
+
+func _on_grid_cell_clicked(index: int) -> void:
+    compose_numbers["selected_cell"].value = index
+    _append_selected_cell()
+
+
+func _append_selected_cell() -> void:
+    var source_index := _composition_index()
+    if source_index < 0:
+        info.text = "请先选择一张已添加的源图"
+        return
+    var token := "%d:%d" % [source_index, int(compose_numbers["selected_cell"].value)]
+    compose_mapping.text = (compose_mapping.text + "," if not compose_mapping.text.is_empty() else "") + token
+    _mapping_changed(compose_mapping.text)
+
+
 func _mode() -> String:
     return MODES[kind.selected] if kind.selected >= 0 else "portrait"
 
@@ -358,7 +619,11 @@ func _mode_changed() -> void:
     for layer in extra_rows:
         extra_rows[layer].visible = mode == "scene"
     for control in atlas_rows:
-        control.visible = mode == "atlas" or (mode == "character_folder" and control == atlas_rows[-2])
+        control.visible = (mode == "atlas" and (not compose_enabled.button_pressed or
+            control not in [columns.get_parent(), rows.get_parent()])) or \
+            (mode == "character_folder" and control == clip_profile.get_parent())
+    compose_enabled.visible = mode == "atlas"
+    compose_panel.visible = mode == "atlas" and compose_enabled.button_pressed
     for control in vfx_controls:
         control.visible = mode == "vfx"
     _load_targets()
@@ -438,6 +703,12 @@ func _fields() -> Dictionary:
         "feet_offset": Vector2(feet_x.value, feet_y.value),
         "faces_left": facing.button_pressed,
         "clip_profile_path": clip_profile.text.strip_edges(),
+        "reuse_existing_clips": legacy_reuse.button_pressed,
+        "composition_enabled": _mode() == "atlas" and compose_enabled.button_pressed,
+        "composition_sources": compose_sources.duplicate(true),
+        "composition_actions": compose_actions.duplicate(true),
+        "composition_metadata": compose_metadata.duplicate(true),
+        "composition_tall": compose_tall.button_pressed,
         "versioned_replace": versioned.button_pressed,
         "ground": extras["ground"].text.strip_edges(),
         "foreground": extras["foreground"].text.strip_edges(),
@@ -475,6 +746,9 @@ func _apply_candidate_resource() -> void:
 
 func _refresh_preview() -> void:
     if preview == null:
+        return
+    if _mode() == "atlas" and compose_enabled.button_pressed:
+        _refresh_composition_preview()
         return
     if _mode() == "character_folder":
         var folder_plan := Service.plan_character_folder(character_folder.text.strip_edges(), _target(), _fields())
@@ -525,31 +799,124 @@ func _refresh_preview() -> void:
         preview.call("show_image", details["texture"])
 
 
+func _refresh_composition_preview() -> void:
+    if compose_sources.is_empty():
+        info.text = "自由装配：先从素材列表选择一张图，点击「添加选中的源图集」。"
+        return
+    var index := _composition_index()
+    if index < 0:
+        index = 0
+    var source: Dictionary = compose_sources[index]
+    var details := _compose_inspect(str(source["path"]))
+    if not str(details.get("error", "")).is_empty():
+        info.text = str(details["error"])
+        return
+    var parsed := Assembly.parse_mapping(str(compose_actions.get(_action_name(), "")),
+        compose_sources.size())
+    info.text = "源图 %d/%d · %sx%s · 已映射动作 %d/12；先逐帧核对，再执行导入预检。" % [
+        index, compose_sources.size(), details["width"], details["height"], compose_actions.size()]
+    if not str(parsed["error"]).is_empty():
+        info.text += "\n当前动作：" + str(parsed["error"])
+    preview.call("set_candidate_display_scale", 0.0)
+    if compose_grid.button_pressed or not str(parsed["error"]).is_empty():
+        preview.call("show_grid", details["texture"], source)
+        return
+    var refs: Array = parsed["frames"]
+    if current_frame >= refs.size():
+        current_frame = 0
+    _show_composition_frame(refs[current_frame])
+
+
+func _show_composition_frame(ref: Dictionary) -> void:
+    var source: Dictionary = compose_sources[int(ref["source"])]
+    var details := _compose_inspect(str(source["path"]))
+    if not str(details.get("error", "")).is_empty():
+        info.text = str(details["error"])
+        return
+    var rect := Assembly.cell_rect(source, int(ref["cell"]))
+    if not rect.has_area() or rect.position.x < 0 or rect.position.y < 0 or \
+            rect.end.x > int(details["width"]) or rect.end.y > int(details["height"]):
+        info.text = "当前动作帧超出源图，请校准网格"
+        return
+    preview.call("show_sliced_frame", details["texture"], rect,
+        Vector2(feet_x.value, feet_y.value))
+
+
+func _compose_inspect(path: String) -> Dictionary:
+    var changed_at := FileAccess.get_modified_time(path)
+    if compose_previews.has(path) and compose_previews[path]["time"] == changed_at:
+        return compose_previews[path]["data"]
+    var details := Service.inspect(path)
+    if str(details.get("error", "")).is_empty():
+        compose_previews[path] = {"time": changed_at, "data": details}
+    return details
+
+
 func _set_action() -> void:
-    var selected := action_select.get_item_text(action_select.selected) if action_select.selected >= 0 else "idle"
+    if compose_enabled.button_pressed and _mode() == "atlas":
+        current_frame = 0
+        _load_action_fields()
+        _refresh_composition_preview()
+        return
+    var selected := _action_name()
+    var profile := _preview_profile()
+    frames = PackedInt32Array()
+    var clip: WuxiaActorAnimationClip = profile.clip_for(selected) if profile != null else null
+    if clip != null and not clip.frames.is_empty():
+        frames = clip.frames
+        timer.wait_time = 1.0 / clip.loop_fps
+    current_frame = 0
+    if preview != null and not frames.is_empty():
+        preview.call("show_frame", frames[0])
+    elif preview != null:
+        preview.call("show_image", null)
+        info.text += "\n未配置动作 " + selected + "，不能沿用第 0 帧预览。"
+
+
+func _preview_profile() -> WuxiaActorAnimationProfile:
     var profile: WuxiaActorAnimationProfile = null
     if clip_profile != null and not clip_profile.text.strip_edges().is_empty() and \
             ResourceLoader.exists(clip_profile.text.strip_edges()):
         profile = ResourceLoader.load(clip_profile.text.strip_edges()) as WuxiaActorAnimationProfile
-    if profile == null and not _target().is_empty():
+    if profile == null and legacy_reuse.button_pressed and not _target().is_empty():
         var character := ResourceLoader.load(_target()) as WuxiaCharacterDefinition
         if character != null:
             profile = character.animation_profile
-    if profile == null:
-        profile = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
-    frames = PackedInt32Array([0])
-    var clip: WuxiaActorAnimationClip = profile.clip_for(selected) if profile != null else null
-    if clip != null and not clip.frames.is_empty():
-        frames = clip.frames
-        timer.wait_time = 1.0 / clip.loop_fps if clip.loop else 0.15
-    current_frame = 0
-    if preview != null:
-        preview.call("show_frame", frames[0])
+    return profile
 
 
 func _next_frame() -> void:
-    if _mode() != "atlas" or frames.is_empty() or preview == null:
+    if _mode() != "atlas" or preview == null:
         return
+    if compose_enabled.button_pressed:
+        if compose_grid.button_pressed:
+            return
+        var parsed := Assembly.parse_mapping(str(compose_actions.get(_action_name(), "")),
+            compose_sources.size())
+        if not str(parsed["error"]).is_empty():
+            return
+        var refs: Array = parsed["frames"]
+        var settings: Dictionary = compose_metadata.get(_action_name(), {})
+        var loop := bool(settings.get("loop", _action_name() in ["idle", "walk", "run"]))
+        if not loop and current_frame >= refs.size() - 1:
+            return
+        var duration_list: String = str(settings.get("durations", ""))
+        var times := duration_list.split(",", false)
+        if times.size() == refs.size() and times[current_frame].strip_edges().is_valid_float() and \
+                float(times[current_frame]) > 0:
+            timer.wait_time = float(times[current_frame])
+        else:
+            timer.wait_time = 1.0 / maxf(float(settings.get("fps", 12.0)), 1.0)
+        current_frame = (current_frame + 1) % refs.size()
+        _show_composition_frame(refs[current_frame])
+        return
+    if frames.is_empty():
+        return
+    if action_select.selected >= 0:
+        var profile := _preview_profile()
+        var clip: WuxiaActorAnimationClip = profile.clip_for(_action_name()) if profile != null else null
+        if clip != null and not clip.loop and current_frame >= frames.size() - 1:
+            return
     current_frame = (current_frame + 1) % frames.size()
     preview.call("show_frame", frames[current_frame])
 

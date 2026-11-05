@@ -76,7 +76,8 @@ func _initialize() -> void:
     var source: String = Importer.production_root().path_join("in-use/placeholders/characters/default.svg")
     var atlas: Dictionary = Importer.plan("atlas", source,
         "res://data/native/characters/shen_changfeng.tres",
-        {"columns": 6, "rows": 4, "versioned_replace": true})
+        {"columns": 6, "rows": 4, "versioned_replace": true,
+        "reuse_existing_clips": true})
     var ui: Dictionary = Importer.plan("ui_atlas", source, "", {"asset_id": "art.p2_probe"})
     var plans: Array[Dictionary] = [atlas, ui]
     if not Transaction.validate(plans).is_empty():
