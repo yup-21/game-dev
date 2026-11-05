@@ -3,6 +3,8 @@ extends SceneTree
 ## safe arrivals, atomic failure, camera bounds and original QA entries.
 const Bake = preload("res://scripts/map_bake.gd")
 const Scale = preload("res://scripts/combat_scale.gd")
+const VisualScale = preload("res://scripts/actor_visual_scale.gd")
+const ViewportShift = preload("res://scripts/world_viewport_offset.gd")
 var failures := 0
 
 func check(ok: bool, note: String) -> void:
@@ -25,6 +27,15 @@ func walk(scene: Node2D, points: Array) -> void:
                 break
         check(scene.player.position.distance_to(destination) <= 3.0,
             "can reach waypoint %s from real movement" % destination)
+
+func check_camera_bounds(scene: Node2D) -> void:
+    var region_size: Vector2 = scene.regions[scene.current_region_id]["size"]
+    var visible_size: Vector2 = ViewportShift.VIEWPORT_SIZE / scene.camera_zoom
+    var world_top_left: Vector2 = -scene.stage.position / scene.camera_zoom
+    check(world_top_left.x >= -0.01 and world_top_left.y >= -0.01
+        and world_top_left.x + visible_size.x <= region_size.x + 0.01
+        and world_top_left.y + visible_size.y <= region_size.y + 0.01,
+        "zoomed camera remains within %s world bounds" % scene.current_region_id)
 
 func capture(scene: Node2D, label: String) -> void:
     var folder := OS.get_environment("PINGJIANG_CAPTURE_DIR")
@@ -58,11 +69,26 @@ func _run() -> void:
     await process_frame
     scene.set_process(false)
     check(scene.current_region_id == "pingjiang_south_gate_qa", "starts at PJ-01 south")
+    check(is_equal_approx(scene.camera_zoom, 1.25)
+        and is_equal_approx(scene.actor_display_scale, 2.0 / 3.0)
+        and scene.stage.scale.is_equal_approx(Vector2(1.25, 1.25)),
+        "four-area scene alone uses 1.25x camera and two-thirds-size actor")
+    var sprite: Sprite2D = scene.actor_sprite
+    check(sprite != null, "four-area explorer uses the native actor Atlas")
+    if sprite != null:
+        var frame_bounds: Rect2i = VisualScale._opaque_bounds(sprite.texture,
+            sprite.hframes, sprite.vframes, sprite.frame)
+        check(absf(float(frame_bounds.size.y) * sprite.scale.y
+            - Scale.actor_height_pixels() * (2.0 / 3.0)) < 1.0,
+            "visible actor height is 133px in world space")
+    check_camera_bounds(scene)
     await capture(scene, "01_south_gate_south")
     walk(scene, [Vector2(800, 1000), Vector2(800, 80)])
+    check_camera_bounds(scene)
     await capture(scene, "02_south_gate_north")
     check(scene._activate_exit("north"), "PJ-01 north -> PJ-02 south")
     check(scene.current_region_id == "pingjiang_crossroads", "real PJ-02 mounted")
+    check_camera_bounds(scene)
     check(scene._nearby_exit().is_empty(), "PJ-02 safe arrival outside trigger")
     # The future north/east routes cannot silently load a test placeholder.
     walk(scene, [Vector2(800, 680), Vector2(780, 220)])
@@ -73,17 +99,31 @@ func _run() -> void:
     check(not scene._activate_exit("east") and scene.region_node == prior,
         "unbuilt east neighbour leaves active world intact")
     walk(scene, [Vector2(800, 680)])
+    # Simulate a screen click after the camera has panned and scaled the stage.
+    var clicked_world := Vector2(800, 680)
+    var click := InputEventMouseButton.new()
+    click.button_index = MOUSE_BUTTON_LEFT
+    click.pressed = true
+    click.position = ViewportShift.world_to_screen(clicked_world,
+        scene.stage.position, scene.camera_zoom)
+    scene._unhandled_input(click)
+    check(scene.last_world_click.distance_to(clicked_world) < 0.01
+        and scene.goal.distance_to(clicked_world) < 0.01,
+        "zoomed mouse click resolves to original map/world coordinates")
+    scene.goal = Vector2.INF
     await capture(scene, "03_crossroads")
     walk(scene, [Vector2(80, 680)])
     check(scene._activate_exit("west"), "PJ-02 west -> PJ-03 east")
     check(scene.current_region_id == "pingjiang_riverside_market" and scene._nearby_exit().is_empty(),
         "PJ-03 safe east arrival")
+    check_camera_bounds(scene)
     await capture(scene, "04_market_east")
     walk(scene, [Vector2(2400, 715), Vector2(2400, 895)])
     await capture(scene, "05_market_south")
     check(scene._activate_exit("south"), "PJ-03 south -> PJ-04 north")
     check(scene.current_region_id == "pingjiang_shen_house" and scene._nearby_exit().is_empty(),
         "PJ-04 safe north arrival")
+    check_camera_bounds(scene)
     walk(scene, [Vector2(850, 740)])
     await capture(scene, "06_shen_house")
     walk(scene, [Vector2(845, 338)])
@@ -99,7 +139,9 @@ func _run() -> void:
     for child in scene.stage.get_children():
         if child != scene.player:
             check(child == scene.region_node, "only one area mounted")
-    check(scene.stage.position == Vector2.ZERO, "PJ-01 north camera clamps at world top")
+    check_camera_bounds(scene)
+    check(is_zero_approx(scene.stage.position.y),
+        "PJ-01 north camera clamps at world top after zoom")
     scene.queue_free()
     await process_frame
     print("PINGJIANG_FOUR_AREA_PASS failures=%d" % failures)

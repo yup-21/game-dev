@@ -16,8 +16,10 @@ static func world_offset(focus: Vector2, world_size: Vector2,
         clampf(focus.y - view_size.y * 0.5, 0.0, available.y))
     return -top_left
 
-static func screen_to_world(screen: Vector2, stage_offset: Vector2) -> Vector2:
-    return screen - stage_offset
+static func screen_to_world(screen: Vector2, stage_offset: Vector2,
+        zoom: float = 1.0) -> Vector2:
+    return (screen - stage_offset) / zoom
 
-static func world_to_screen(point: Vector2, stage_offset: Vector2) -> Vector2:
-    return point + stage_offset
+static func world_to_screen(point: Vector2, stage_offset: Vector2,
+        zoom: float = 1.0) -> Vector2:
+    return point * zoom + stage_offset
