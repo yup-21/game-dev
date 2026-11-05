@@ -40,6 +40,10 @@ const REGIONS := {
 }
 
 @export var initial_region_id: String = "pingjiang_long_street_qa"
+## Presentation-only overrides for the four-area exploration entrance. Other
+## independent map QA scenes keep the existing 200px actor and 1:1 viewport.
+@export var actor_display_scale: float = 1.0
+@export var camera_zoom: float = 1.0
 
 ## Other map QA scenes may add dedicated regions without changing the original
 ## three-zone scrolling test or baking a second stitched world texture.
@@ -61,10 +65,14 @@ var last_screen_click: Vector2 = Vector2.ZERO
 var last_world_click: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
+    if actor_display_scale <= 0.0 or camera_zoom <= 0.0:
+        push_error("Pingjiang QA requires positive actor scale and camera zoom")
+        return
     regions = REGIONS.duplicate(true)
     regions.merge(_additional_regions(), true)
     stage = Node2D.new()
     stage.name = "ScrollingWorld"
+    stage.scale = Vector2.ONE * camera_zoom
     add_child(stage)
     player = Node2D.new()
     player.name = "ShenChangfeng"
@@ -79,7 +87,9 @@ func _ready() -> void:
     _load_actor_sprite()
     var nameplate := Label.new()
     nameplate.text = "沈长风"
-    nameplate.position = Vector2(-70, -248)
+    nameplate.position = Vector2(-70.0 / camera_zoom,
+        -CombatScale.actor_height_pixels() * actor_display_scale - 48.0 / camera_zoom)
+    nameplate.scale = Vector2.ONE / camera_zoom
     nameplate.size = Vector2(140, 28)
     nameplate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     nameplate.add_theme_color_override("font_color", Color(0.17, 0.26, 0.28))
@@ -208,7 +218,7 @@ func _add_exit_sign(parent: Node2D, marker: Dictionary) -> void:
 func _load_actor_sprite() -> void:
     actor_profile = load(ACTOR_PROFILE_PATH) as WuxiaActorAnimationProfile
     if actor_profile == null or not actor_profile.valid_profile():
-        push_warning("Existing actor atlas unavailable; using 200px test silhouette")
+        push_warning("Existing actor atlas unavailable; using explicitly scaled QA silhouette")
         var silhouette := Polygon2D.new()
         silhouette.color = Color(0.17, 0.34, 0.43)
         silhouette.polygon = PackedVector2Array([
@@ -216,6 +226,7 @@ func _load_actor_sprite() -> void:
             Vector2(-28, -170), Vector2(-15, -176), Vector2(-18, -200),
             Vector2(18, -200), Vector2(15, -176), Vector2(28, -170),
             Vector2(43, -137), Vector2(28, -88), Vector2(20, 0)])
+        silhouette.scale = Vector2.ONE * actor_display_scale
         player.add_child(silhouette)
         return
     actor_sprite = Sprite2D.new()
@@ -231,6 +242,7 @@ func _load_actor_sprite() -> void:
     VisualScale.fit(actor_sprite, actor_profile.actor_scale,
         CombatScale.actor_height_pixels(), actor_profile.feet_adjust, reference,
         actor_profile.auto_fit_height)
+    actor_sprite.scale *= actor_display_scale
 
 func _process(delta: float) -> void:
     if stage == null or player == null or bake == null:
@@ -312,14 +324,16 @@ func _update_camera_and_status() -> void:
         return
     var region: Dictionary = regions[current_region_id]
     var size: Vector2 = region["size"]
-    stage.position = ViewportShift.world_offset(player.position, size)
+    var visible_world_size := ViewportShift.VIEWPORT_SIZE / camera_zoom
+    stage.position = ViewportShift.world_offset(player.position, size, visible_world_size) * camera_zoom
     var nearby: Dictionary = _nearby_exit()
     var interaction: String = "靠近金色连接点按 E 换图" if nearby.is_empty() else "按 E 前往目标区域"
     if not nearby.is_empty() and not regions.has(str(nearby.get("target_zone_id", ""))):
         interaction = "规划连接 · 尚未开放"
-    status.text = "平江地图测试  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 角色 200px / 80px=u" % [
+    status.text = "平江地图测试  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 演示角色 %.0fpx / 80px=u · 镜头×%.2f" % [
         str(region["title"]), int(size.x), int(size.y), crossing_count, interaction,
-        player.position.x, player.position.y, stage.position.x, stage.position.y]
+        player.position.x, player.position.y, stage.position.x, stage.position.y,
+        CombatScale.actor_height_pixels() * actor_display_scale, camera_zoom]
 
 func _return_to_menu() -> void:
     get_tree().call_deferred("change_scene_to_file", "res://opening.tscn")
@@ -343,6 +357,6 @@ func _unhandled_input(event: InputEvent) -> void:
                 debug_line.visible = debug_visible
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         last_screen_click = event.position
-        last_world_click = ViewportShift.screen_to_world(last_screen_click, stage.position)
+        last_world_click = ViewportShift.screen_to_world(last_screen_click, stage.position, camera_zoom)
         if _walkable_world_point(last_world_click, CombatScale.footprint_radius_pixels()):
             goal = last_world_click
