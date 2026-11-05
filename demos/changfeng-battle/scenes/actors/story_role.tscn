@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/opening_role_sprite.gd" id="1_role"]
+
+[node name="StoryRole" type="Node2D"]
+script = ExtResource("1_role")
+
+[node name="FootShadow" type="Polygon2D" parent="."]
+color = Color(0.015, 0.06, 0.065, 0.22)
+polygon = PackedVector2Array(24, 0, 20.78, 5.22, 12, 8.73, 0, 10.08, -12, 8.73, -20.78, 5.22, -24, 0, -20.78, -5.22, -12, -8.73, 0, -10.08, 12, -8.73, 20.78, -5.22)
+
+[node name="BodySprite" type="Sprite2D" parent="."]
+texture_filter = 1
+
+[node name="NativeSpriteAnimation" type="AnimationPlayer" parent="BodySprite"]
+callback_mode_process = 2
+root_node = NodePath("..")

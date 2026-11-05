@@ -3,6 +3,7 @@ extends CanvasLayer
 ## authoritative for ALL tile footprints, mouse hits and character feet.
 const MapBake = preload("res://scripts/map_bake.gd")
 const CombatScale = preload("res://scripts/combat_scale.gd")
+const BattleActorScene = preload("res://scenes/actors/battle_actor.tscn")
 var bake
 var picture: TextureRect
 var actors: Dictionary = {}
@@ -150,31 +151,19 @@ func cell_from_screen(screen: Vector2, _board: Dictionary = {}) -> Vector2i:
 
 func add_actor(actor: Dictionary, atlas: Texture2D) -> Sprite2D:
     var id: int=int(actor.id)
-    var node := Node2D.new()
+    var node: Node2D = BattleActorScene.instantiate()
     node.name="Role_%d" % id
     node.position=point_for_cell(Vector2i(actor.cell))
     scene_root.add_child(node)
-    var foot := _ellipse(Color(0.35,0.87,0.68,0.50) if int(actor.team_id)==0 else Color(0.96,0.49,0.37,0.51),CombatScale.footprint_radius_pixels(),CombatScale.footprint_radius_pixels()*0.42)
-    foot.name="FootAnchor"
-    node.add_child(foot)
-    var sprite := Sprite2D.new()
-    sprite.name="ActionSprite"
+    var foot: Polygon2D = node.get_node("FootAnchor")
+    foot.color = Color(0.35,0.87,0.68,0.50) if int(actor.team_id)==0 else Color(0.96,0.49,0.37,0.51)
+    var sprite: Sprite2D = node.get_node("ActionSprite")
     sprite.texture=atlas
     sprite.hframes=6
     sprite.vframes=4
-    sprite.texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR
-    sprite.scale=Vector2(0.53,0.53)
-    sprite.offset=Vector2(0,-102)
-    node.add_child(sprite)
-    var nameplate := Label.new()
-    nameplate.name="RoleName"
+    var nameplate: Label = node.get_node("RoleName")
     nameplate.text=str(actor.name)
-    nameplate.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-    nameplate.position=Vector2(-88,-CombatScale.actor_height_pixels()-32.0)
-    nameplate.size=Vector2(176,26)
     nameplate.add_theme_color_override("font_color",Color("dcefe0") if int(actor.team_id)==0 else Color("f2c7b7"))
-    nameplate.add_theme_font_size_override("font_size",17)
-    node.add_child(nameplate)
     actors[id]=node
     lights[id]=0.0
     return sprite

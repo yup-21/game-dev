@@ -30,7 +30,10 @@ func configure(id: String) -> bool:
         load_error = "Unknown story character: " + character_id
         push_error(load_error)
         return false
-    name = "Role_" + character_id
+    # Authored instance paths are part of the editor contract; do not rename
+    # StoryRole and invalidate child paths inside StoryNPC/workbench scenes.
+    if name not in ["StoryRole", "StoryNPC"]:
+        name = "Role_" + character_id
     is_sheet = Art.uses_supplied_sheet_for_character(character_id)
     animation_profile = Art.animation_profile_for_character(character_id) if is_sheet else null
     var texture: Texture2D
@@ -55,8 +58,11 @@ func configure(id: String) -> bool:
         load_error = "No imported fallback available: " + character_id
         push_error(load_error)
         return false
-    body = Sprite2D.new()
-    body.name = "BodySprite"
+    body = get_node_or_null("BodySprite") as Sprite2D
+    if body == null:
+        body = Sprite2D.new()
+        body.name = "BodySprite"
+        add_child(body)
     body.texture = texture
     body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
     if is_sheet:
@@ -83,16 +89,18 @@ func configure(id: String) -> bool:
     VisualScale.fit(body, body.scale, CombatScale.actor_height_pixels(),
         animation_profile.feet_adjust if animation_profile != null else Vector2.ZERO,
         idle_frame, animation_profile.auto_fit_height if animation_profile != null else true)
-    foot_shadow = Polygon2D.new()
-    foot_shadow.name = "FootShadow"
+    foot_shadow = get_node_or_null("FootShadow") as Polygon2D
+    if foot_shadow == null:
+        foot_shadow = Polygon2D.new()
+        foot_shadow.name = "FootShadow"
+        add_child(foot_shadow)
     foot_shadow.color = Color(0.015,0.060,0.065,0.22)
-    var polygon := PackedVector2Array()
-    for i in range(24):
-        var theta := TAU * float(i)/24.0
-        polygon.append(Vector2(cos(theta)*CombatScale.footprint_radius_pixels(),sin(theta)*CombatScale.footprint_radius_pixels()*0.42))
-    foot_shadow.polygon = polygon
-    add_child(foot_shadow)
-    add_child(body)
+    if foot_shadow.polygon.is_empty():
+        var polygon := PackedVector2Array()
+        for i in range(24):
+            var theta := TAU * float(i)/24.0
+            polygon.append(Vector2(cos(theta)*CombatScale.footprint_radius_pixels(),sin(theta)*CombatScale.footprint_radius_pixels()*0.42))
+        foot_shadow.polygon = polygon
     if is_sheet:
         animation_player = SpriteClips.attach(body, Timeline.new(), animation_profile)
     has_real_sprite = true

@@ -16,11 +16,15 @@ const SINGLE_FRAMES := {"guard": 0, "hit": 1, "evade": 2,
 
 static func attach(sprite: Sprite2D, timeline: Variant,
         profile: WuxiaActorAnimationProfile = null) -> AnimationPlayer:
-    var player := AnimationPlayer.new()
-    player.name = "NativeSpriteAnimation"
+    var player: AnimationPlayer = sprite.get_node_or_null("NativeSpriteAnimation") as AnimationPlayer
+    if player == null:
+        player = AnimationPlayer.new()
+        player.name = "NativeSpriteAnimation"
+        sprite.add_child(player)
+    for registered in player.get_animation_library_list():
+        player.remove_animation_library(registered)
     player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
     player.root_node = NodePath("..")
-    sprite.add_child(player)
     var library := AnimationLibrary.new()
     var actions: Array = BASE_ACTIONS.duplicate() if profile == null else []
     if profile != null:

@@ -1,0 +1,44 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/imported/ui/ornaments/ctb_marker_frame.svg" id="1_rim"]
+
+[sub_resource type="StyleBoxFlat" id="MarkerStyle"]
+bg_color = Color(0.062745, 0.164706, 0.168627, 0.93)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[node name="ChargeMarker" type="Panel"]
+custom_minimum_size = Vector2(36, 36)
+offset_right = 36.0
+offset_bottom = 36.0
+mouse_filter = 0
+theme_override_styles/panel = SubResource("MarkerStyle")
+
+[node name="Portrait" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Rim" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("1_rim")
+expand_mode = 1
+stretch_mode = 0

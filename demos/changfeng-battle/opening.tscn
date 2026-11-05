@@ -1,7 +1,133 @@
-[gd_scene format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/opening_flow.gd" id="1_story"]
+
+[sub_resource type="Animation" id="CaptionFade"]
+resource_name = "fade_in"
+length = 0.8
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CinematicText:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.8), "transitions": PackedFloat32Array(1, 1), "update": 0, "values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]}
+
+[sub_resource type="AnimationLibrary" id="CinematicAnimations"]
+_data = {"fade_in": SubResource("CaptionFade")}
 
 [node name="Opening" type="Node2D" unique_id=1104709788]
 texture_filter = 2
 script = ExtResource("1_story")
+
+[node name="StoryCharacters" type="Node2D" parent="."]
+
+[node name="FirstActPaintedBackground" type="TextureRect" parent="."]
+visible = false
+z_index = -100
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="GroundArt" type="TextureRect" parent="."]
+visible = false
+z_index = -90
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="ForegroundOcclusionClip" type="Control" parent="."]
+visible = false
+z_index = 12
+offset_top = 106.0
+offset_right = 1600.0
+offset_bottom = 836.0
+mouse_filter = 2
+clip_contents = true
+
+[node name="ForegroundOcclusion" type="TextureRect" parent="ForegroundOcclusionClip"]
+offset_top = -106.0
+offset_right = 1600.0
+offset_bottom = 894.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="WeatherOverlayClip" type="Control" parent="."]
+visible = false
+z_index = 13
+offset_top = 106.0
+offset_right = 1600.0
+offset_bottom = 836.0
+mouse_filter = 2
+clip_contents = true
+
+[node name="WeatherOverlay" type="TextureRect" parent="WeatherOverlayClip"]
+offset_top = -106.0
+offset_right = 1600.0
+offset_bottom = 894.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="OpeningAmbience" type="AudioStreamPlayer" parent="."]
+bus = &"Master"
+
+[node name="CinematicOverlay" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="CinematicText" type="Control" parent="CinematicOverlay"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="CinematicOverlay/CinematicText"]
+layout_mode = 1
+anchor_left = 0.15
+anchor_top = 0.30
+anchor_right = 0.85
+anchor_bottom = 0.30
+offset_bottom = 62.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.772549, 0.631373, 0.419608, 1)
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Body" type="Label" parent="CinematicOverlay/CinematicText"]
+layout_mode = 1
+anchor_left = 0.1
+anchor_top = 0.41
+anchor_right = 0.9
+anchor_bottom = 0.41
+offset_bottom = 110.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.933333, 0.913725, 0.862745, 1)
+theme_override_font_sizes/font_size = 27
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Divider" type="Label" parent="CinematicOverlay/CinematicText"]
+layout_mode = 1
+anchor_left = 0.25
+anchor_top = 0.54
+anchor_right = 0.75
+anchor_bottom = 0.54
+offset_bottom = 45.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.89, 0.83, 0.64, 1)
+theme_override_font_sizes/font_size = 18
+text = "——  风雨入局  ——"
+horizontal_alignment = 1
+
+[node name="CinematicAnimations" type="AnimationPlayer" parent="CinematicOverlay"]
+libraries = {"": SubResource("CinematicAnimations")}

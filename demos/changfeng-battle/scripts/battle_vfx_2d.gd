@@ -1,6 +1,7 @@
 extends RefCounted
 ## Pure Sprite2D/CanvasItem effects. This class never mutates combat state.
 const Assets = preload("res://scripts/asset_registry.gd")
+const BurstScene = preload("res://scenes/vfx/combat_burst.tscn")
 var canvas: Node2D
 var bursts: Array = []
 var skill_scenes: Array = []
@@ -15,29 +16,22 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
         duration: float, size: float, source_event: String = "") -> void:
     if canvas == null:
         return
-    var root := Node2D.new()
+    var root: Node2D = BurstScene.instantiate()
     root.name = "WuxiaVFX2D_" + kind
     root.position = position + Vector2(0.0, -82.0)
     root.z_index = 150
     canvas.add_child(root)
 
-    var stroke := Line2D.new()
-    stroke.name = "MartialStroke"
-    stroke.antialiased = true
+    var stroke: Line2D = root.get_node("MartialStroke")
     stroke.width = (6.0 if kind in ["slash", "combo"] else 3.0) * size
     stroke.default_color = tint
     stroke.begin_cap_mode = Line2D.LINE_CAP_ROUND
     stroke.end_cap_mode = Line2D.LINE_CAP_ROUND
-    root.add_child(stroke)
-
-    var glow := Line2D.new()
-    glow.name = "SoftGlow"
-    glow.antialiased = true
+    var glow: Line2D = root.get_node("SoftGlow")
     glow.width = stroke.width * 3.4
     var glow_tint := tint
     glow_tint.a *= 0.24
     glow.default_color = glow_tint
-    root.add_child(glow)
 
     var path := PackedVector2Array()
     var count := 28
@@ -54,14 +48,12 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
     if kind in ["slash", "combo"]:
         # A second, offset cut distinguishes combo from a single attack.
         if kind == "combo":
-            var echo := Line2D.new()
-            echo.name = "ComboEcho"
-            echo.antialiased = true
+            var echo: Line2D = root.get_node("ComboEcho")
+            echo.visible = true
             echo.width = 2.5 * size
             echo.default_color = Color(1.0, 0.95, 0.76, 0.85)
             echo.points = path
             echo.position = Vector2(12.0, -12.0) * size
-            root.add_child(echo)
     else:
         stroke.points = path
         glow.points = path
@@ -89,8 +81,8 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
     var authored: Texture2D = native_assets.texture(str(authored_spec.get("id", ""))) if not authored_spec.is_empty() else null
     var authored_frames: PackedInt32Array = authored_spec.get("frame_indices", PackedInt32Array())
     if authored != null:
-        var sprite := Sprite2D.new()
-        sprite.name = "AuthoredVFX"
+        var sprite: Sprite2D = root.get_node("AuthoredVFX")
+        sprite.visible = true
         sprite.texture = authored
         sprite.hframes = int(authored_spec.get("columns", 1))
         sprite.vframes = int(authored_spec.get("rows", 1))
@@ -99,10 +91,9 @@ func _spawn_canvas(position: Vector2, kind: String, tint: Color,
         var longest := maxf(float(authored.get_width()) / float(sprite.hframes),
             float(authored.get_height()) / float(sprite.vframes))
         sprite.scale = Vector2.ONE * (100.0 * size / maxf(longest, 1.0))
-        root.add_child(sprite)
         # Authored textures replace, rather than stack on, geometric fallbacks.
         for extra in root.get_children():
-            if extra != sprite and extra is CanvasItem:
+            if extra != sprite and extra is Line2D:
                 extra.visible = false
     bursts.append({"node": root, "duration": duration, "left": duration,
         "kind": kind, "path": path, "size": size, "vfx_frames": authored_frames,

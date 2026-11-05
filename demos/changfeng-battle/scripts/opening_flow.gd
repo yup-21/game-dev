@@ -4,6 +4,8 @@ extends Node2D
 const Story = preload("res://scripts/opening_story.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const RoleSprite = preload("res://scripts/opening_role_sprite.gd")
+const StoryRoleScene = preload("res://scenes/actors/story_role.tscn")
+const StoryNPCScene = preload("res://scenes/actors/story_npc.tscn")
 const WorldViewport = preload("res://scripts/world_viewport_offset.gd")
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
@@ -96,6 +98,7 @@ var mouse_pos: Vector2 = Vector2(-100, -100)
 var buttons: Array = []
 var message: String = ""
 var message_left: float = 0.0
+var _cinematic_overlay_index := -1
 
 func _ready() -> void:
 	_load_chapter_content()
@@ -113,20 +116,20 @@ func _ready() -> void:
 		return
 	# In-world roles are actual Sprite2D nodes. Only painted scenery and
 	# interface text are still drawn by the opening canvas.
-	characters_layer = Node2D.new()
-	characters_layer.name = "StoryCharacters"
-	add_child(characters_layer)
-	player_sprite = RoleSprite.new()
+	characters_layer = get_node("StoryCharacters")
+	player_sprite = StoryRoleScene.instantiate()
 	if not player_sprite.configure("shen_changfeng"):
 		push_error("Cannot load Shen Changfeng story sprite")
 	characters_layer.add_child(player_sprite)
 	npc_sprites.clear()
 	for entry in _npcs():
-		var npc_sprite: Node2D = RoleSprite.new()
-		if not npc_sprite.configure(str(entry.get("character_id",""))):
+		var npc_sprite: Node2D = StoryNPCScene.instantiate()
+		if not npc_sprite.configure_npc(str(entry.get("character_id","")),
+				str(entry.get("trigger_id", "")), str(entry.get("talk_label", "交谈"))):
 			push_error("Cannot load story NPC sprite: " + str(entry.get("character_id","")))
 			npc_sprite.free()
 			continue
+		npc_sprite.interaction_requested.connect(_start_dialogue)
 		characters_layer.add_child(npc_sprite)
 		npc_sprites.append(npc_sprite)
 	escort_sprite = npc_sprites[0] if not npc_sprites.is_empty() else null
@@ -164,6 +167,7 @@ func _process(delta: float) -> void:
 			visible_characters = minf(float(str(line.get("text", "")).length()),visible_characters+delta*29.0)
 	if story.phase != "explore":
 		_sync_story_sprites(Vector2.ZERO,delta)
+	_sync_cinematic_overlay()
 	if temple_picture != null:
 		temple_picture.visible = story.phase in ["explore","dialogue","complete"] or (story.phase=="cinematic" and story.cinematic_index > 0)
 	if ground_picture != null:
@@ -173,6 +177,19 @@ func _process(delta: float) -> void:
 	if weather_clip != null:
 		weather_clip.visible = story.phase == "explore" and story_weather_enabled
 	queue_redraw()
+
+func _sync_cinematic_overlay() -> void:
+	var overlay: CanvasLayer = $CinematicOverlay
+	overlay.visible = story.phase == "cinematic"
+	if not overlay.visible:
+		_cinematic_overlay_index = -1
+		return
+	var beat: Dictionary = story.current_beat()
+	overlay.get_node("CinematicText/Caption").text = str(beat.get("caption", ""))
+	overlay.get_node("CinematicText/Body").text = str(beat.get("text", ""))
+	if _cinematic_overlay_index != story.cinematic_index:
+		_cinematic_overlay_index = story.cinematic_index
+		overlay.get_node("CinematicAnimations").play("fade_in")
 
 ## Painted story world, NPCs and gameplay share one scroll offset.
 ## HUD stays at 1600x1000. Mouse position uses the exact inverse mapping.
@@ -223,11 +240,13 @@ func _enter_new_game() -> void:
 	var session=_session()
 	if session!=null: session.start_new_game()
 	_load_chapter_content()
-	# The title has no active chapter. A New Game must rebind the selected
-	# native scene instead of retaining the title's legacy/fallback painting.
+	# Rebind the existing authored nodes; freeing them would destroy their
+	# editor-configured transforms and break the next chapter's layer lookup.
 	for layer in [temple_picture, ground_picture, foreground_clip, weather_clip]:
 		if layer != null:
-			layer.free()
+			layer.visible = false
+			if layer is TextureRect:
+				layer.texture = null
 	temple_picture = null
 	ground_picture = null
 	foreground_picture = null
@@ -355,7 +374,9 @@ func _input(event: InputEvent) -> void:
 				elif event.keycode in [KEY_ENTER,KEY_SPACE]: _action("continue")
 			"explore":
 				if event.keycode in [KEY_E, KEY_ENTER, KEY_SPACE]:
-					if _npc_distance() < 175.0: _action("talk")
+					if _npc_distance() < 175.0:
+						var chosen: Dictionary = _nearest_npc()
+						_start_dialogue(str(chosen.get("trigger_id", "")))
 					else:
 						message = "请先靠近人物，再按 E 交谈。"
 						message_left = 2.3
@@ -589,11 +610,6 @@ func _draw_cinematic() -> void:
 			if memory != null:
 				_cover_texture(memory,Rect2(0,0,1600,1000),Color(0.37,0.50,0.51,0.68))
 	_rain(clock)
-	var beat: Dictionary=story.current_beat()
-	var duration: float=float(beat.get("duration",4.0))
-	var opacity: float=clampf(minf(cinematic_elapsed/1.0,(duration-cinematic_elapsed)/0.7),0.0,1.0)
-	var caption: String=str(beat.get("caption",""))
-	var body: String=str(beat.get("text",""))
 	var drift: float = sin(cinematic_elapsed * 0.55) * 13.0
 	if story.cinematic_index==0 or not ResourceLoader.exists(background_path):
 		_paint_pavilion(Vector2(1120 + drift,752),0.98)
@@ -605,9 +621,7 @@ func _draw_cinematic() -> void:
 		_painted_portrait("老镖头",Rect2(1285,395,260,455),Color(1,1,1,0.70))
 	draw_rect(Rect2(0,0,1600,1000),Color(0.05,0.11,0.12,0.43))
 	_cinema_bars()
-	_center(Vector2(800,382),caption,32,Color(GOLD,opacity),true)
-	_center(Vector2(800,484),body,27,Color(PAPER,opacity))
-	_center(Vector2(800,556),"——  风雨入局  ——",18,Color(0.89,0.83,0.64,opacity))
+	# Caption/body/fade are editable Label and AnimationPlayer tracks in opening.tscn.
 	for index in range(story.data.cinematic.size()):
 		draw_circle(Vector2(765+(index-1)*35,875),4,GOLD if index==story.cinematic_index else Color(0.79,0.82,0.76,0.36))
 	_button(Rect2(1339,45,202,44),"跳过过场  Esc","skip",true)
@@ -663,8 +677,7 @@ func _load_temple_background() -> void:
 func _build_temple_picture() -> void:
 	if temple_backdrop == null:
 		return
-	temple_picture = TextureRect.new()
-	temple_picture.name = "FirstActPaintedBackground"
+	temple_picture = get_node("FirstActPaintedBackground") as TextureRect
 	temple_picture.texture = temple_backdrop
 	temple_picture.position = Vector2.ZERO
 	temple_picture.size = Vector2(story_world_size)
@@ -675,7 +688,6 @@ func _build_temple_picture() -> void:
 	temple_picture.z_index = -100
 	temple_picture.modulate = Color.WHITE
 	temple_picture.visible = false
-	add_child(temple_picture)
 	if story_art_profile != null:
 		ground_picture = _add_story_art_layer("GroundArt", story_art_profile.ground, -90)
 		foreground_picture = _add_story_art_layer("ForegroundOcclusion", story_art_profile.foreground, 12, true)
@@ -684,8 +696,11 @@ func _build_temple_picture() -> void:
 func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to_world: bool = false) -> TextureRect:
 	if texture == null:
 		return null
-	var image := TextureRect.new()
-	image.name = label
+	var native_path: String = label + "Clip/" + label if clip_to_world else label
+	var image: TextureRect = get_node_or_null(native_path) as TextureRect
+	if image == null:
+		push_error("Missing native story layer: " + native_path)
+		return null
 	image.texture = texture
 	image.position = Vector2.ZERO
 	image.size = Vector2(story_world_size)
@@ -695,8 +710,7 @@ func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if clip_to_world:
 		# Keep foreground and rain above feet, never over the chapter HUD.
-		var clip := Control.new()
-		clip.name = label + "Clip"
+		var clip: Control = get_node(label + "Clip") as Control
 		clip.position = Vector2(0,106)
 		clip.size = Vector2(1600,730)
 		clip.clip_contents = true
@@ -704,8 +718,6 @@ func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to
 		clip.z_index = depth
 		clip.visible = false
 		image.position = Vector2(0,-106)
-		clip.add_child(image)
-		add_child(clip)
 		if label == "WeatherOverlay":
 			weather_clip = clip
 		else:
@@ -713,7 +725,6 @@ func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to
 	else:
 		image.z_index = depth
 		image.visible = false
-		add_child(image)
 	return image
 
 

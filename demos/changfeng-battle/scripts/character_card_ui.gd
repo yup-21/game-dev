@@ -25,6 +25,9 @@ func _ready() -> void:
     set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     mouse_filter = Control.MOUSE_FILTER_STOP
     visible = false
+    if has_node("Backdrop"):
+        _bind_native_scene()
+        return
     var shade := ColorRect.new()
     shade.name = "Backdrop"
     shade.color = Color(0.015,0.06,0.07,0.82)
@@ -57,6 +60,7 @@ func _ready() -> void:
     var header := HBoxContainer.new()
     column.add_child(header)
     title_label = _label(header,"",27,UITheme.GOLD)
+    title_label.name = "DossierTitle"
     title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     var close := Button.new()
     close.name = "CloseCharacterCard"
@@ -86,6 +90,7 @@ func _ready() -> void:
     preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
     left.add_child(preview)
     art_label = _label(left,"",12,UITheme.MUTED)
+    art_label.name = "ArtDescription"
     art_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     var scroll := ScrollContainer.new()
     scroll.name = "RoleDetailsScroll"
@@ -98,7 +103,9 @@ func _ready() -> void:
     details.add_theme_constant_override("separation",13)
     scroll.add_child(details)
     identity_label = _label(details,"",16,UITheme.JADE)
+    identity_label.name = "Identity"
     bio_label = _label(details,"",15,UITheme.PAPER)
+    bio_label.name = "Biography"
     bio_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     _label(details,"已 学 武 学 · 切 换",19,UITheme.GOLD)
     schools_column = VBoxContainer.new()
@@ -107,12 +114,34 @@ func _ready() -> void:
     details.add_child(schools_column)
     _label(details,"当 前 招 式",19,UITheme.GOLD)
     martial_label = _label(details,"",14,UITheme.PAPER)
+    martial_label.name = "MartialDetails"
     martial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     _label(details,"气 血 · 属 性",19,UITheme.GOLD)
     stats_label = _label(details,"",15,UITheme.MUTED)
+    stats_label.name = "Stats"
     _label(details,"实 时 状 态 · 装 备",19,UITheme.GOLD)
     status_label = _label(details,"",14,UITheme.PAPER)
+    status_label.name = "StatusDetails"
     status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+func _bind_native_scene() -> void:
+    # In the authored PackedScene every panel, image and label is editable.
+    title_label = find_child("DossierTitle", true, false) as Label
+    identity_label = find_child("Identity", true, false) as Label
+    bio_label = find_child("Biography", true, false) as Label
+    martial_label = find_child("MartialDetails", true, false) as Label
+    schools_column = find_child("LearnedSchools", true, false) as VBoxContainer
+    stats_label = find_child("Stats", true, false) as Label
+    status_label = find_child("StatusDetails", true, false) as Label
+    art_label = find_child("ArtDescription", true, false) as Label
+    portrait = find_child("RolePortrait", true, false) as TextureRect
+    preview = find_child("SpritePreview", true, false) as TextureRect
+    var shade: ColorRect = get_node("Backdrop")
+    if not shade.gui_input.is_connected(_on_backdrop_input):
+        shade.gui_input.connect(_on_backdrop_input)
+    var close: Button = find_child("CloseCharacterCard", true, false) as Button
+    if not close.pressed.is_connected(close_card):
+        close.pressed.connect(close_card)
 
 func _label(parent: Node, value: String, font_size: int, color: Color) -> Label:
     var label := Label.new()

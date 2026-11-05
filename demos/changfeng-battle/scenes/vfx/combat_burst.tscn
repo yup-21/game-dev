@@ -1,0 +1,29 @@
+[gd_scene format=3]
+
+[node name="CombatBurst" type="Node2D"]
+z_index = 150
+
+[node name="MartialStroke" type="Line2D" parent="."]
+width = 6.0
+default_color = Color(0.7, 0.97, 0.92, 0.78)
+joint_mode = 1
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+
+[node name="SoftGlow" type="Line2D" parent="."]
+width = 20.4
+default_color = Color(0.7, 0.97, 0.92, 0.2)
+antialiased = true
+
+[node name="ComboEcho" type="Line2D" parent="."]
+visible = false
+width = 2.5
+default_color = Color(1, 0.95, 0.76, 0.85)
+antialiased = true
+
+[node name="AuthoredVFX" type="Sprite2D" parent="."]
+visible = false
+
+[node name="BurstAudio" type="AudioStreamPlayer2D" parent="."]
+volume_db = -8.0

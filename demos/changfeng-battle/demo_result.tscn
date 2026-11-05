@@ -1,6 +1,111 @@
-[gd_scene format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/demo_result.gd" id="1_result"]
 
+[sub_resource type="StyleBoxFlat" id="ResultPaperPanel"]
+bg_color = Color(0.972549, 0.952941, 0.901961, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.721569, 0.588235, 0.364706, 1)
+
 [node name="DemoResult" type="Node2D"]
 script = ExtResource("1_result")
+
+[node name="ResultUI" type="CanvasLayer" parent="."]
+
+[node name="Paper" type="ColorRect" parent="ResultUI"]
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+color = Color(0.929412, 0.905882, 0.843137, 1)
+
+[node name="ResultPanel" type="Panel" parent="ResultUI"]
+offset_left = 130.0
+offset_top = 95.0
+offset_right = 1470.0
+offset_bottom = 903.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("ResultPaperPanel")
+
+[node name="Chapter" type="Label" parent="ResultUI/ResultPanel"]
+offset_left = 140.0
+offset_top = 55.0
+offset_right = 1170.0
+offset_bottom = 114.0
+theme_override_colors/font_color = Color(0.141176, 0.231373, 0.231373, 1)
+theme_override_font_sizes/font_size = 46
+
+[node name="Outcome" type="Label" parent="ResultUI/ResultPanel"]
+offset_left = 140.0
+offset_top = 164.0
+offset_right = 1170.0
+offset_bottom = 225.0
+theme_override_font_sizes/font_size = 40
+
+[node name="Clue" type="Label" parent="ResultUI/ResultPanel"]
+offset_left = 140.0
+offset_top = 278.0
+offset_right = 1170.0
+offset_bottom = 318.0
+theme_override_colors/font_color = Color(0.141176, 0.231373, 0.231373, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="Decision" type="Label" parent="ResultUI/ResultPanel"]
+offset_left = 140.0
+offset_top = 336.0
+offset_right = 1170.0
+offset_bottom = 380.0
+theme_override_colors/font_color = Color(0.141176, 0.231373, 0.231373, 1)
+theme_override_font_sizes/font_size = 23
+
+[node name="Continuity" type="Label" parent="ResultUI/ResultPanel"]
+offset_left = 140.0
+offset_top = 395.0
+offset_right = 1170.0
+offset_bottom = 435.0
+theme_override_colors/font_color = Color(0.141176, 0.231373, 0.231373, 1)
+theme_override_font_sizes/font_size = 22
+text = "断桥前路仍有余波，队伍与物品状态会沿章节延续。"
+
+[node name="Equipment" type="Label" parent="ResultUI/ResultPanel"]
+offset_left = 140.0
+offset_top = 445.0
+offset_right = 1170.0
+offset_bottom = 491.0
+theme_override_colors/font_color = Color(0.141176, 0.231373, 0.231373, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="Completion" type="Label" parent="ResultUI/ResultPanel"]
+visible = false
+offset_left = 140.0
+offset_top = 493.0
+offset_right = 1170.0
+offset_bottom = 533.0
+theme_override_colors/font_color = Color(0.721569, 0.588235, 0.364706, 1)
+theme_override_font_sizes/font_size = 30
+text = "两幕试玩完成"
+
+[node name="PrimaryAction" type="Button" parent="ResultUI/ResultPanel"]
+offset_left = 140.0
+offset_top = 555.0
+offset_right = 520.0
+offset_bottom = 621.0
+theme_override_font_sizes/font_size = 25
+
+[node name="Retry" type="Button" parent="ResultUI/ResultPanel"]
+offset_left = 558.0
+offset_top = 555.0
+offset_right = 918.0
+offset_bottom = 621.0
+theme_override_font_sizes/font_size = 25
+text = "重新挑战"
+
+[node name="Menu" type="Button" parent="ResultUI/ResultPanel"]
+offset_left = 952.0
+offset_top = 555.0
+offset_right = 1252.0
+offset_bottom = 621.0
+theme_override_font_sizes/font_size = 25
+text = "主菜单"

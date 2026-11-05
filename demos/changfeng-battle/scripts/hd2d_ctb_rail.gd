@@ -2,6 +2,7 @@ extends Control
 ## Read-only CTB gauge track. The BattleModel/TurnManager owns all charge
 ## advancement; this control only projects published gauge values to pixels.
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
+const MarkerScene = preload("res://scenes/ui/ctb_marker.tscn")
 const CHARGE := 10000.0
 const TOP := 49.0
 const BOTTOM := 42.0
@@ -30,8 +31,10 @@ func _ready() -> void:
     _round_avatar_material = ShaderMaterial.new()
     _round_avatar_material.shader = round_shader
     resized.connect(func(): _layout_markers(true))
-    _caption("出手", true)
-    _caption("集气", false)
+    if not has_node("ReadyLabel"):
+        _caption("出手", true)
+    if not has_node("ChargeLabel"):
+        _caption("集气", false)
 
 func _caption(text_value: String, at_top: bool) -> void:
     var label := Label.new()
@@ -91,39 +94,15 @@ func set_state(actors: Array, priority_id: int) -> void:
     _layout_markers()
 
 func _make_marker(id: int, enemy: bool) -> Panel:
-    var frame := Panel.new()
+    var frame: Panel = MarkerScene.instantiate()
     frame.name = "Charge_%d" % id
     frame.custom_minimum_size = Vector2(PORTRAIT, PORTRAIT)
     frame.size = Vector2(PORTRAIT, PORTRAIT)
     frame.mouse_filter = Control.MOUSE_FILTER_STOP
-    var border := StyleBoxFlat.new()
-    border.bg_color = Color("102a2b", 0.93)
-    border.border_color = ENEMY if enemy else ALLY
-    border.set_border_width_all(0)
-    border.set_corner_radius_all(18)
-    frame.add_theme_stylebox_override("panel", border)
     frame.set_meta("actor_id", id)
-    var avatar := TextureRect.new()
-    avatar.name = "Portrait"
+    var avatar: TextureRect = frame.get_node("Portrait")
     avatar.texture = ArtCatalog.avatar(id, enemy)
-    avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-    avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
     avatar.material = _round_avatar_material
-    frame.add_child(avatar)
-    avatar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    avatar.offset_left = 2.0
-    avatar.offset_top = 2.0
-    avatar.offset_right = -2.0
-    avatar.offset_bottom = -2.0
-    var rim := TextureRect.new()
-    rim.name = "Rim"
-    rim.texture = MARKER_FRAME
-    rim.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    rim.stretch_mode = TextureRect.STRETCH_SCALE
-    rim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    frame.add_child(rim)
-    rim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     add_child(frame)
     return frame
 
@@ -189,7 +168,8 @@ func _draw() -> void:
     var cx := size.x * 0.5
     if bottom <= TOP:
         return
-    draw_texture_rect(RAIL_ART, Rect2(Vector2.ZERO, size), false)
+    if not has_node("RailPainting"):
+        draw_texture_rect(RAIL_ART, Rect2(Vector2.ZERO, size), false)
     draw_line(Vector2(cx, TOP), Vector2(cx, bottom), Color("ead1a0", 0.72), 1.5, true)
     for step in range(11):
         var y := lerpf(bottom, TOP, float(step) / 10.0)

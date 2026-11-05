@@ -35,12 +35,21 @@ var actor_elapsed := 0.0
 var status: Label
 
 func _ready() -> void:
-    camera.position = Vector3(0.0, CAMERA_HEIGHT, PLAYER_START_Z + CAMERA_OFFSET_Z)
-    camera.look_at(Vector3(0.0, 0.0, PLAYER_START_Z + CAMERA_AIM_Z), Vector3.UP)
-    camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-    _build_street()
-    _build_character()
-    _build_hud()
+    if not has_node("Street"):
+        _build_street()
+    if has_node("Player"):
+        player = get_node("Player") as CharacterBody3D
+        actor_sprite = player.get_node("ActorSprite") as Sprite3D
+    else:
+        _build_character()
+    if has_node("QAOverlay/Status"):
+        status = get_node("QAOverlay/Status") as Label
+    else:
+        _build_hud()
+    if not camera.has_meta("native_authoring_camera"):
+        camera.position = Vector3(0.0, CAMERA_HEIGHT, PLAYER_START_Z + CAMERA_OFFSET_Z)
+        camera.look_at(Vector3(0.0, 0.0, PLAYER_START_Z + CAMERA_AIM_Z), Vector3.UP)
+        camera.projection = Camera3D.PROJECTION_PERSPECTIVE
     _update_status()
 
 func _material(texture: Texture2D, tint: Color = Color.WHITE) -> StandardMaterial3D:

@@ -1,6 +1,7 @@
 extends SceneTree
 const StoryFixture = preload("res://checks/story_test_helper.gd")
-## Windowed result screen regression: the finish click must redraw its new controls.
+## Windowed result screen regression: the native Button must change into
+## the sole completion action without rebuilding the UI tree.
 var failed: int = 0
 
 func _initialize() -> void:
@@ -28,19 +29,21 @@ func run() -> void:
 	var view = load("res://demo_result.tscn").instantiate()
 	root.add_child(view)
 	await frames()
-	var finish_button: Dictionary = {}
-	for button in view.buttons:
-		if button.id=="finish": finish_button=button
-	check(not finish_button.is_empty(),"aftermath exposes the finish button")
-	if not finish_button.is_empty():
+	var panel: Control = view.get_node("ResultUI/ResultPanel")
+	var finish_button: Button = panel.get_node("PrimaryAction")
+	check(finish_button.text == "结束试玩", "aftermath exposes the native finish button")
+	if finish_button.text == "结束试玩":
 		var event = InputEventMouseButton.new()
-		event.position=finish_button.rect.get_center()
+		event.position=finish_button.get_global_rect().get_center()
 		event.button_index=MOUSE_BUTTON_LEFT
 		event.pressed=true
 		root.push_input(event,true)
 		await frames()
 		check(session.phase=="complete","finish click completes the demo")
-		check(view.buttons.size()==1 and view.buttons[0].id=="new","completion redraw replaces the old controls")
+		check(finish_button.text == "返回主菜单" and
+			panel.get_node("Retry").visible == false and
+			panel.get_node("Menu").visible == false,
+			"completion updates the existing native controls")
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://captures"))
 	check(root.get_texture().get_image().save_png("res://captures/demo-result-complete.png")==OK,"completion screenshot saved")
 	print("DEMO RESULT VISUAL FAILURES: ",failed)

@@ -1,0 +1,66 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/native_authoring_workbench.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/ruined_temple/legacy/story.webp" id="2_backdrop"]
+[ext_resource type="PackedScene" path="res://scenes/actors/battle_actor.tscn" id="3_actor"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/shen_changfeng/sprites/atlas.png" id="4_atlas"]
+[ext_resource type="PackedScene" path="res://scenes/actors/story_npc.tscn" id="5_npc"]
+[ext_resource type="PackedScene" path="res://scenes/story/interaction_point.tscn" id="6_interaction"]
+[ext_resource type="Texture2D" path="res://assets/imported/ui/common/jade_seal.svg" id="7_seal"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/escort_elder/story-poses/injured.png" id="8_npc_pose"]
+
+[node name="NativeAuthoringWorkbench" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="TempleBackdrop" type="TextureRect" parent="."]
+z_index = -100
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+texture = ExtResource("2_backdrop")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="BattleActor" parent="." instance=ExtResource("3_actor")]
+position = Vector2(650, 750)
+
+[node name="ActionSprite" parent="BattleActor" index="1"]
+texture = ExtResource("4_atlas")
+hframes = 6
+vframes = 4
+scale = Vector2(0.53, 0.53)
+
+[node name="RoleName" parent="BattleActor" index="2"]
+text = "沈长风 · 可拖拽角色"
+
+[node name="StoryNPC" parent="." instance=ExtResource("5_npc")]
+position = Vector2(1050, 710)
+talk_label = "与镖头交谈"
+
+[node name="BodySprite" parent="StoryNPC" index="1"]
+texture = ExtResource("8_npc_pose")
+offset = Vector2(0, -170)
+scale = Vector2(0.6, 0.6)
+
+[node name="InteractionPoint" parent="." instance=ExtResource("6_interaction")]
+position = Vector2(820, 745)
+interaction_id = &"workbench_fire"
+prompt_text = "查看篝火"
+
+[node name="Visual" parent="InteractionPoint" index="1"]
+texture = ExtResource("7_seal")
+scale = Vector2(0.45, 0.45)
+
+[node name="WorkbenchUI" type="CanvasLayer" parent="."]
+
+[node name="Hint" type="Label" parent="WorkbenchUI"]
+offset_left = 30.0
+offset_top = 24.0
+offset_right = 1550.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(1, 0.95, 0.79, 1)
+theme_override_font_sizes/font_size = 24
+
+[editable path="BattleActor"]
+[editable path="StoryNPC"]
+[editable path="InteractionPoint"]

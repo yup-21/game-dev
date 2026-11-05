@@ -21,10 +21,11 @@ var defeated_actors: Dictionary = {}
 
 func build(host: Node2D, story_encounter: bool, map_path: String,
         actors: Array, animation_driver: Variant) -> void:
-    camera = Camera2D.new()
-    camera.name = "BattleCamera2D"
-    camera.position = Vector2.ZERO
-    host.add_child(camera)
+    camera = host.get_node_or_null("BattleCamera2D") as Camera2D
+    if camera == null:
+        camera = Camera2D.new()
+        camera.name = "BattleCamera2D"
+        host.add_child(camera)
     camera.make_current()
     illustrated_map = IllustratedMap.new(story_encounter, map_path)
     host.add_child(illustrated_map)
