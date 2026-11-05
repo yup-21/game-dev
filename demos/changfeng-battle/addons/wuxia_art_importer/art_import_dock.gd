@@ -20,6 +20,8 @@ var id_row: Control
 var asset_id: LineEdit
 var event_row: Control
 var event_kind: LineEdit
+var native_scene: LineEdit
+var native_scene_row: Control
 var extra_rows: Dictionary = {}
 var extras: Dictionary = {}
 var columns: SpinBox
@@ -95,7 +97,7 @@ func _ready() -> void:
     add_child(body)
     _heading("Art Production Importer")
     var note := Label.new()
-    note.text = "仅编辑器使用；导入后绑定到原生 .tres，成为当前使用版本。"
+    note.text = "仅编辑器使用；素材绑定到 .tres。可选择同步已有 .tscn 的贴图，不覆盖手工布局。"
     note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     body.add_child(note)
 
@@ -151,6 +153,23 @@ func _ready() -> void:
         extra_rows[layer] = _labeled("场景 " + layer, row)
         extras[layer] = edit
         edit.text_changed.connect(func(_value: String): _refresh_preview())
+
+    native_scene = LineEdit.new()
+    native_scene.placeholder_text = "可选：res://scenes/.../地图.tscn（仅更新 Sprite2D.texture）"
+    native_scene.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    native_scene.text_changed.connect(func(_value: String): _refresh_preview())
+    var scene_controls := HBoxContainer.new()
+    scene_controls.add_child(native_scene)
+    var use_edited := Button.new()
+    use_edited.text = "当前场景"
+    use_edited.tooltip_text = "读取 Godot 编辑器当前打开的 .tscn 路径，不自动选择或覆写其他场景。"
+    use_edited.pressed.connect(func():
+        var edited := EditorInterface.get_edited_scene_root()
+        if edited != null:
+            native_scene.text = edited.scene_file_path
+            _refresh_preview())
+    scene_controls.add_child(use_edited)
+    native_scene_row = _labeled("原生地图 .tscn（显式选择）", scene_controls)
 
     columns = _number("Atlas 列数", 6, 1, 64)
     rows = _number("Atlas 行数", 4, 1, 64)
@@ -618,6 +637,7 @@ func _mode_changed() -> void:
     event_row.visible = mode == "vfx"
     for layer in extra_rows:
         extra_rows[layer].visible = mode == "scene"
+    native_scene_row.visible = mode == "scene"
     for control in atlas_rows:
         control.visible = (mode == "atlas" and (not compose_enabled.button_pressed or
             control not in [columns.get_parent(), rows.get_parent()])) or \
@@ -714,6 +734,7 @@ func _fields() -> Dictionary:
         "foreground": extras["foreground"].text.strip_edges(),
         "weather": extras["weather"].text.strip_edges(),
         "story_preview": extras["story_preview"].text.strip_edges(),
+        "native_scene_path": native_scene.text.strip_edges() if _mode() == "scene" else "",
     }
 
 
@@ -1014,6 +1035,9 @@ func _signature(plans: Array[Dictionary]) -> String:
             ])
         lines.append(str(plan_data.get("current_binding", "")) + " → " +
                      str(plan_data.get("next_binding", "")))
+        var native_path := str(plan_data.get("native_scene_path", ""))
+        if not native_path.is_empty():
+            lines.append(native_path + "|" + FileAccess.get_sha256(native_path))
     return "\n".join(lines)
 
 
@@ -1047,14 +1071,15 @@ func _review_entries(entries: Array[Dictionary]) -> void:
             if not str(item.get("replaces", "")).is_empty():
                 detail += " （保留旧图：" + str(item["replaces"]) + "）"
             destinations.append(detail)
-        descriptions.append("%s → %s\n原绑定：%s\n新绑定：%s\n图片：%s" % [
+        descriptions.append("%s → %s\n原绑定：%s\n新绑定：%s\n图片：%s\n原生场景：%s" % [
             str(plan_data["mode"]), str(plan_data["target"]),
             str(plan_data.get("current_binding", "（空）")),
-            str(plan_data.get("next_binding", "")), ", ".join(destinations)
+            str(plan_data.get("next_binding", "")), ", ".join(destinations),
+            str(plan_data.get("native_scene_path", "不修改 .tscn"))
         ])
     confirm.dialog_text = "批次 %s 项：\n\n%s\n\n%s" % [
         str(plans.size()), "\n\n".join(descriptions),
-        "开始前会为所有 .tres 建立事务备份；失败恢复 .tres，新图保留。\n" +
+        "开始前会为所有 .tres/选定的 .tscn 建立事务备份；失败恢复原文件，新图保留。\n" +
         "导入成功即成为 Resource 当前使用版本；版权及动画视觉验收仍需单独确认。"
     ]
     confirm.popup_centered_ratio(0.8)
@@ -1121,7 +1146,7 @@ func _apply() -> void:
     undo_import_button.disabled = false
     filesystem.scan()
     pending_entries.clear()
-    _finished("批次导入完成（%s 项）：原生 .tres 已更新；日志 %s" % [str(plans.size()), journal])
+    _finished("批次导入完成（%s 项）：已更新所选 .tres/.tscn；日志 %s" % [str(plans.size()), journal])
 
 
 func _abort_import(journal: String, reason: String) -> void:
@@ -1138,7 +1163,7 @@ func _undo_import() -> void:
         undo_import_button.disabled = true
         last_import_log = ""
         EditorInterface.get_resource_filesystem().scan()
-        info.text = "原始 .tres 已恢复；新导入图片未删除。重新打开 Inspector 可清除缓存。"
+        info.text = "原始 .tres/.tscn 已恢复；新导入图片未删除。重新打开场景可清除缓存。"
     else:
         info.text = "撤销失败：" + result
 

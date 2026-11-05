@@ -34,6 +34,16 @@
 - 当前已确认在用的角色素材仍是历史 6×4 图集；新增 5×5、12 动作的角色应先通过候选 `.tres` 审核后正式绑定。本次未替换任何原画/贴图。
 - 音频播放器为原生槽位，目前没有新音频导入；空 `AudioStream` 不会隐式播放替代声音。
 
+## 自研导入与地图编辑器
+
+- **Art Production Importer**：角色 Atlas/立绘仍绑定到唯一的 `WuxiaCharacterDefinition` 与 `WuxiaActorAnimationProfile`；运行时的 `Sprite2D/AnimationPlayer` 从 Profile 读取帧序，导入器不会把某个角色的贴图硬写进所有角色共用的 `.tscn`。
+- **分层场景导入**：默认只修改地图或章节的 `.tres` 和 `WuxiaSceneArtProfile`。如果已在 Godot 里建立原生地图场景，可在导入器的“原生地图 .tscn”栏显式填写路径，或打开该地图后点击“当前场景”自动填入路径；**随后先 Ctrl+S 保存并关闭该场景，再执行导入**，避免覆盖编辑器内尚未保存的微调。预检会核对根节点的 `source_map`、`Background/Ground` 原生 `Sprite2D` 以及可选层节点，仅替换指定层的 `texture`，**不会修改位置、比例、碰撞、出口、Marker**。缺少的可选图层需先在编辑器中创建。
+- **防覆盖和回退**：导入前确认弹窗显示将修改的 `.tscn`；导入事务同时备份 `.tres`、所选 `.tscn`，保存前复查文件哈希，自动失败或手动撤销都要求文件没有被后续修改。新导入图片保留，避免误删其他资源。
+- **Wuxia Map Editor**：在 Inspector 选旧 `WuxiaMapDefinition`，仍可使用多边形画笔编辑 Resource；选带 `source_map` 的原生地图根节点时切为只读检查模式。直接在 Godot 2D 视图修改 `WalkableArea/Boundary`、`Obstacles`、`Markers`、`Exits`；保存 `.tscn` 后，使用该根节点的“同步原生节点到地图 .tres”按钮更新旧消费者使用的 Resource。地图插件不会暗中用旧画笔覆盖原生几何。
+- **Art Exporter**：指定地图 Resource 导出时会沿原生地图根节点的 `source_map` 反向找到对应 `.tscn`，一同导出该场景及其贴图、Resource 依赖；“全部图片”模式仍仅导出实际使用的美术图片，不会把整套场景当成另一份运行时入口。
+
+相关无写入检查：`godot --headless --path demos/changfeng-battle --script res://checks/test_native_tool_adapters.gd`。
+
 ## 微调注意事项
 
 1. 修改角色相对 Sprite2D 的脚点/尺寸，先确认 `actor_visual_scale.gd`、动画 Profile 中的 `feet_offset`/`actor_scale` 会在运行时覆盖部分值；不要在两个地方各维护一份尺寸真值。
