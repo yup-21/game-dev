@@ -82,7 +82,7 @@ func configure(id: String) -> bool:
         body.offset = Vector2(0,-image_size.y*0.5)
         body.scale = Vector2.ONE * (CombatScale.actor_height_pixels() / image_size.y)
     var idle_frame: int = 0
-    if animation_profile != null:
+    if animation_profile != null and animation_profile.native_frames == null:
         var idle_clip: WuxiaActorAnimationClip = animation_profile.clip_for("idle")
         if idle_clip != null and not idle_clip.frames.is_empty():
             idle_frame = int(idle_clip.frames[0])

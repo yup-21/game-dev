@@ -1,7 +1,7 @@
 extends RefCounted
 ## R8: owns the painted battlefield, actor sprites, and visual movement paths.
 ## BattleModel still owns positions; these nodes only interpolate committed events.
-const IllustratedMap = preload("res://scripts/illustrated_battle_map.gd")
+const IllustratedMapScene = preload("res://scenes/maps/illustrated_battle_map.tscn")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const Facing = preload("res://scripts/actor_facing.gd")
 const VisualScale = preload("res://scripts/actor_visual_scale.gd")
@@ -27,8 +27,12 @@ func build(host: Node2D, story_encounter: bool, map_path: String,
         camera.name = "BattleCamera2D"
         host.add_child(camera)
     camera.make_current()
-    illustrated_map = IllustratedMap.new(story_encounter, map_path)
-    host.add_child(illustrated_map)
+    illustrated_map = host.get_node_or_null("IllustratedBattleMap") as CanvasLayer
+    if illustrated_map == null:
+        # Non-battle test hosts still get exactly the same editor-authored map.
+        illustrated_map = IllustratedMapScene.instantiate()
+        host.add_child(illustrated_map)
+    illustrated_map.configure(map_path)
     if illustrated_map.bake != null and illustrated_map.bake.error.is_empty():
         map_world_size = illustrated_map.bake.viewport_size
     for actor in actors:
@@ -56,7 +60,7 @@ func add_actor(actor: Dictionary, animation_driver: Variant) -> void:
         sprite.offset = profile.feet_offset
         sprite.scale = profile.actor_scale
     var idle_frame: int = 0
-    if profile != null:
+    if profile != null and profile.native_frames == null:
         var idle_clip: WuxiaActorAnimationClip = profile.clip_for("idle")
         if idle_clip != null and not idle_clip.frames.is_empty():
             idle_frame = int(idle_clip.frames[0])

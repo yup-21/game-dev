@@ -61,12 +61,15 @@ func _run() -> void:
         push_error("HD2D_STARTUP: actor Sprite2D missing")
         quit(1)
         return
-    if hero.hframes != 6 or hero.vframes != 4 or foe.hframes != 6 or foe.vframes != 4:
-        push_error("HD2D_STARTUP: 6x4 illustrated atlas missing")
+    var hero_native: AnimatedSprite2D = hero.get_node_or_null("NativeFrames")
+    var foe_native: AnimatedSprite2D = foe.get_node_or_null("NativeFrames")
+    if (hero_native == null or hero_native.sprite_frames == null or
+            foe_native == null or foe_native.sprite_frames == null):
+        push_error("HD2D_STARTUP: approved native SpriteFrames missing")
         quit(1)
         return
-    var texture: Texture2D = hero.texture
-    var rival_texture: Texture2D = foe.texture
+    var texture: Texture2D = hero_native.sprite_frames.get_frame_texture("idle", 0)
+    var rival_texture: Texture2D = foe_native.sprite_frames.get_frame_texture("idle", 0)
     if texture == null or rival_texture == null:
         push_error("HD2D_STARTUP: illustrated atlas is not an image texture")
         quit(1)
@@ -77,7 +80,7 @@ func _run() -> void:
         push_error("HD2D_STARTUP: illustrated atlas image is empty")
         quit(1)
         return
-    if image.get_size() != Vector2i(1536, 1024) or rival_image.get_size() != Vector2i(1536, 1024):
+    if image.get_size() != Vector2i(256, 256) or rival_image.get_size() != Vector2i(256, 256):
         push_error("HD2D_STARTUP: 256x256 supplied pose atlas frames expected")
         quit(1)
         return
@@ -93,7 +96,8 @@ func _run() -> void:
     driver.call("play", 0, "attack")
     driver.call("update", 0.16, {})
     var hero_profile: WuxiaActorAnimationProfile = Art.animation_profile_for_character("shen_changfeng")
-    if hero_profile == null or not hero_profile.clip_for("attack").frames.has(hero.frame):
+    if (hero_profile == null or hero_native.animation != "attack" or
+            hero_native.frame >= hero_native.sprite_frames.get_frame_count("attack")):
         push_error("HD2D_STARTUP: attack animation frame not selected")
         quit(1)
         return
@@ -105,7 +109,8 @@ func _run() -> void:
         quit(1)
         return
     driver.call("update", 0.65, {})
-    if not hero_profile.clip_for("hit").frames.has(hero.frame):
+    if (hero_native.animation != "hit" or
+            hero_native.frame >= hero_native.sprite_frames.get_frame_count("hit")):
         push_error("HD2D_STARTUP: hit reaction did not follow attack")
         quit(1)
         return
@@ -130,7 +135,7 @@ func _run() -> void:
         return
     vfx.call("clear")
 
-    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 supplied_sprites=6x4_256x256")
+    print("HD2D_STARTUP_PASS actors=", snapshot.actors.size(), " grid=15x10 native_spriteframes=256x256")
     quit(0)
 
 func _actor_sprite(scene: Node, actor_id: int) -> Sprite2D:

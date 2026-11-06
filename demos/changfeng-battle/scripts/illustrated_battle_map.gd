@@ -4,6 +4,11 @@ extends CanvasLayer
 const MapBake = preload("res://scripts/map_bake.gd")
 const CombatScale = preload("res://scripts/combat_scale.gd")
 const BattleActorScene = preload("res://scenes/actors/battle_actor.tscn")
+## Art calibration is still owned by the map Resource. These optional nudges
+## are saved on the PackedScene and are editable without touching battle rules.
+@export var illustration_nudge: Vector2 = Vector2.ZERO
+@export_range(0.25, 4.0, 0.01) var illustration_scale: float = 1.0
+@export_range(-180.0, 180.0, 0.1) var illustration_rotation_degrees: float = 0.0
 var bake
 var picture: TextureRect
 var actors: Dictionary = {}
@@ -13,27 +18,16 @@ var selection: Polygon2D
 var scene_root: Node2D
 var debug_grid: Node2D
 
-func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH) -> void:
-    layer = -10
-    name = "IllustratedBattleMap"
+func configure(map_path: String = MapBake.DEFAULT_PATH) -> void:
     bake = MapBake.new(map_path if not map_path.is_empty() else MapBake.DEFAULT_PATH)
     if not bake.error.is_empty():
         push_error("Map projection failed: " + bake.error)
         return
-    scene_root = Node2D.new()
-    scene_root.name = "FlatBattle"
-    add_child(scene_root)
-    picture = TextureRect.new()
-    picture.name = "FullPaintedTerrain"
-    picture.size = bake.viewport_size * bake.image_scale
-    picture.position = (bake.viewport_size - picture.size) * 0.5
-    picture.pivot_offset = picture.size * 0.5
-    # Rotate only the illustration to level the slant of the wooden bridge.
-    # Gameplay cells remain rectangular and parallel to the screen axes.
-    picture.rotation_degrees = bake.image_rotation_degrees
-    picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    picture.stretch_mode = TextureRect.STRETCH_SCALE
-    picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    scene_root = get_node("FlatBattle") as Node2D
+    var art_group: Node2D = scene_root.get_node("ArtCalibration") as Node2D
+    picture = art_group.get_node("FullPaintedTerrain") as TextureRect
+    # All four painted layers exist in the .tscn for Godot visual editing.
+    # An encounter selects textures, never creates or replaces authored nodes.
     if bake.scene_art != null:
         picture.texture = bake.scene_art.background
     else:
@@ -41,18 +35,33 @@ func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH)
     if picture.texture == null:
         push_error("Required battle map artwork missing: " + bake.image_path)
         return
-    picture.z_index = -10
-    scene_root.add_child(picture)
-    if bake.scene_art != null:
-        _paint_layer("GroundArt", bake.scene_art.ground, -8)
-        _paint_layer("ForegroundOcclusion", bake.scene_art.foreground, 110)
-        _paint_layer("WeatherOverlay", bake.scene_art.weather, 120)
-
-    debug_grid = Node2D.new()
-    debug_grid.name = "BakedGridDebug"
-    debug_grid.visible = false
-    debug_grid.z_index = 150
-    scene_root.add_child(debug_grid)
+    for name in ["FullPaintedTerrain", "GroundArt", "ForegroundOcclusion", "WeatherOverlay"]:
+        var layer_node: TextureRect = art_group.get_node(name) as TextureRect
+        var texture: Texture2D = picture.texture
+        if name != "FullPaintedTerrain":
+            texture = null
+            if bake.scene_art != null:
+                match name:
+                    "GroundArt": texture = bake.scene_art.ground
+                    "ForegroundOcclusion": texture = bake.scene_art.foreground
+                    "WeatherOverlay": texture = bake.scene_art.weather
+        layer_node.texture = texture
+        layer_node.visible = texture != null
+    # The projection Resource determines the overall calibration, while each
+    # child TextureRect keeps its Godot-authored position, size and pivot.
+    var reference_size := Vector2(1600, 1000)
+    var painted_size: Vector2 = bake.viewport_size * bake.image_scale * illustration_scale
+    art_group.scale = painted_size / reference_size
+    art_group.rotation_degrees = bake.image_rotation_degrees + illustration_rotation_degrees
+    var centre: Vector2 = bake.viewport_size * 0.5 + illustration_nudge
+    art_group.position = centre - (painted_size * 0.5).rotated(deg_to_rad(art_group.rotation_degrees))
+    debug_grid = scene_root.get_node("BakedGridDebug") as Node2D
+    var marker_layer: Node2D = scene_root.get_node("LegalMarkers") as Node2D
+    for generated in debug_grid.get_children():
+        generated.free()
+    for generated in marker_layer.get_children():
+        generated.free()
+    marks.clear()
     if bake.polygon_mode and not bake.walkable_outline.is_empty():
         var contour := Line2D.new()
         contour.name = "PaintedWalkableBoundary"
@@ -91,44 +100,15 @@ func _init(_story_battle: bool = false, map_path: String = MapBake.DEFAULT_PATH)
             bake.step*0.43,Vector2(-bake.step.x*0.43,bake.step.y*0.43)])
         marker.color = Color(0.39,0.97,0.69,0.25)
         marker.visible = false
-        scene_root.add_child(marker)
+        marker_layer.add_child(marker)
         marks[cell] = marker
-    selection = _ellipse(Color(0.37,0.97,0.73,0.52),32,14)
-    selection.name = "MoveCursor"
-    selection.z_index = 140
+    selection = scene_root.get_node("MoveCursor") as Polygon2D
     selection.visible = false
-    scene_root.add_child(selection)
-
-func _paint_layer(label: String, texture: Texture2D, depth: int) -> void:
-    if texture == null:
-        return
-    var overlay := TextureRect.new()
-    overlay.name = label
-    overlay.texture = texture
-    overlay.size = picture.size
-    overlay.position = picture.position
-    overlay.pivot_offset = picture.pivot_offset
-    overlay.rotation_degrees = picture.rotation_degrees
-    overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    overlay.stretch_mode = TextureRect.STRETCH_SCALE
-    overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    overlay.z_index = depth
-    scene_root.add_child(overlay)
 
 func set_weather_enabled(enabled: bool) -> void:
-    var overlay := scene_root.get_node_or_null("WeatherOverlay") if scene_root != null else null
+    var overlay := scene_root.get_node_or_null("ArtCalibration/WeatherOverlay") if scene_root != null else null
     if overlay != null:
         overlay.visible = enabled
-
-func _ellipse(color: Color, rx: float, ry: float) -> Polygon2D:
-    var node := Polygon2D.new()
-    node.color=color
-    var points := PackedVector2Array()
-    for i in range(24):
-        var theta := TAU * float(i)/24.0
-        points.append(Vector2(cos(theta)*rx,sin(theta)*ry))
-    node.polygon=points
-    return node
 
 func set_debug_grid(enabled: bool) -> void:
     if debug_grid != null:
@@ -175,7 +155,14 @@ func update_actor(id: int, grid: Vector2, frame: int, flip: bool, alive: bool) -
     node.visible=alive
     node.z_index=clampi(roundi(node.position.y/20.0),0,100)
     var sprite: Sprite2D=node.get_node("ActionSprite") as Sprite2D
-    sprite.frame=frame
+    var native: AnimatedSprite2D = sprite.get_node_or_null("NativeFrames")
+    if native != null and native.sprite_frames != null:
+        var count: int = native.sprite_frames.get_frame_count(native.animation)
+        if count > 0:
+            native.frame = clampi(frame, 0, count - 1)
+        native.flip_h = flip
+    else:
+        sprite.frame=frame
     sprite.flip_h=flip
     sprite.modulate=Color(1.0,0.88,0.65) if float(lights.get(id,0.0))>0 else Color.WHITE
 

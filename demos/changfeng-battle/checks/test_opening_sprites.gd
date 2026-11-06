@@ -42,15 +42,18 @@ func _run() -> void:
         and elder.character_id=="escort_elder"
         and str(registry.get_profile(elder.character_id).name)=="老镖头",
         "both character identities resolve from CharacterRegistry")
-    _check(hero.has_real_sprite and hero.is_sheet and hero.body.hframes==6
-        and hero.body.vframes==4 and Art.uses_supplied_sheet(0),
-        "hero uses existing imported 6x4 martial sprite sheet")
+    var native: AnimatedSprite2D = hero.body.get_node_or_null("NativeFrames")
+    _check(hero.has_real_sprite and hero.is_sheet and native != null
+        and native.sprite_frames != null and native.sprite_frames.has_animation("idle")
+        and Art.uses_supplied_sheet(0),
+        "hero uses editor-authored SpriteFrames from the existing approved atlas")
     _check(elder.has_real_sprite and not elder.is_sheet
         and elder.body.texture==Art.story_pose_for_character("escort_elder")
         and elder.body.material==null
         and elder.body.frame_coords==Vector2i.ZERO,
         "injured elder uses dedicated transparent story pose, no generated model")
-    var hero_ink := VisualScale._opaque_bounds(hero.body.texture,6,4,1)
+    var hero_ink := VisualScale._opaque_bounds(
+        hero.animation_profile.idle_atlas(), 1, 1, 0)
     var elder_ink := VisualScale._opaque_bounds(elder.body.texture,1,1)
     if hero_ink.size.y >= 16 and hero_ink.size.y < 245 and \
             elder_ink.size.y >= 16 and elder_ink.size.y < int(elder.body.texture.get_height()*0.96):
@@ -76,14 +79,14 @@ func _run() -> void:
     var start: Vector2=Vector2(350,705)
     _check(hero.position==start and elder.position==Vector2(1050,570),
         "player and NPC keep precise world feet anchors")
-    var tex = hero.body.texture
+    var frames = native.sprite_frames
     var authored: WuxiaActorAnimationProfile = Art.animation_profile_for_character("shen_changfeng")
     var expected_east_flip: bool = authored.faces_left_unflipped if authored != null else true
     hero.set_motion(Vector2.RIGHT,0.15)
     _check(hero.animation_player is AnimationPlayer
-        and hero.animation_player.current_animation == "move"
-        and hero.walking and (authored == null or authored.clip_for("move").frames.has(hero.body.frame))
-        and hero.body.flip_h == expected_east_flip and hero.body.texture==tex,
+        and hero.animation_player.current_animation == "walk"
+        and hero.walking and native.animation == "walk"
+        and hero.body.flip_h == expected_east_flip and native.sprite_frames == frames,
         "eastward walking follows the authored profile direction and move frames")
     hero.set_motion(Vector2.LEFT,0.14)
     _check(hero.body.flip_h != expected_east_flip,"westward walking mirrors the authored facing")
@@ -93,7 +96,7 @@ func _run() -> void:
         "wounded elder remains a deliberate static pose")
     hero.set_motion(Vector2.ZERO,0.10)
     _check(not hero.walking and hero.animation_player.current_animation == "idle"
-        and hero.body.frame_coords==Vector2i(1,0),
+        and native.animation == "idle" and native.frame == 0,
         "idle restores authored side stance and never invents new frames")
     opening.player_pos=Vector2(1040,580)
     opening.call("_sync_story_sprites",Vector2.ZERO,0.0)

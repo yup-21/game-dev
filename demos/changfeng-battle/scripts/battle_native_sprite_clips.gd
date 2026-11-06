@@ -52,7 +52,8 @@ static func attach(sprite: Sprite2D, timeline: Variant,
         var semantic: String = semantic_for(str(state))
         var duration: float = timeline.duration_for(semantic, fallback_duration_for(semantic))
         if native != null:
-            library.add_animation(str(state), _native_clip(native, str(state), sprite.scale))
+            library.add_animation(str(state), _native_clip(native, str(state), sprite.scale,
+                profile.resolved_clip_for(str(state)) if profile != null else null))
         elif profile != null:
             var authored: WuxiaActorAnimationClip = profile.resolved_clip_for(str(state))
             if authored == null:
@@ -88,7 +89,7 @@ static func _attach_native_visual(sprite: Sprite2D, frames: SpriteFrames) -> voi
 
 
 static func _native_clip(frames: SpriteFrames, action: String,
-        base_scale: Vector2) -> Animation:
+        base_scale: Vector2, legacy_pose: WuxiaActorAnimationClip = null) -> Animation:
     var animation := Animation.new()
     var duration := 0.0
     for index in range(frames.get_frame_count(action)):
@@ -102,6 +103,17 @@ static func _native_clip(frames: SpriteFrames, action: String,
         var baseline: Variant = base_scale if property_name == "scale" else (
             0.0 if property_name == "rotation" else Vector2.ZERO)
         animation.track_insert_key(track, 0.0, baseline)
+    # SpriteFrames owns pixels and timing. Retain any approved per-frame
+    # local foot/root offsets on AnimationPlayer's independent pose track.
+    if legacy_pose != null and not legacy_pose.root_offsets.is_empty() and \
+            legacy_pose.root_offsets.size() == frames.get_frame_count(action):
+        var position_track := animation.find_track(NodePath(".:position"), Animation.TYPE_VALUE)
+        var elapsed := 0.0
+        for index in range(frames.get_frame_count(action)):
+            animation.track_insert_key(position_track, elapsed,
+                legacy_pose.root_offsets[index])
+            elapsed += frames.get_frame_duration(action, index) / \
+                frames.get_animation_speed(action)
     return animation
 
 static func _value_track(animation: Animation, property_name: String,

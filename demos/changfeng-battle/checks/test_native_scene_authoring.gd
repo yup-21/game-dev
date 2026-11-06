@@ -6,6 +6,7 @@ const PATHS := [
     "res://scenes/actors/story_npc.tscn",
     "res://scenes/story/interaction_point.tscn",
     "res://scenes/vfx/combat_burst.tscn",
+    "res://scenes/maps/illustrated_battle_map.tscn",
     "res://scenes/ui/battle_hud.tscn",
     "res://scenes/ui/character_card.tscn",
     "res://scenes/ui/battle_card.tscn",
@@ -44,8 +45,12 @@ func _run() -> void:
         "The battle camera must be an authored Camera2D")
     _require(battle.get_node_or_null("BattleAmbience") is AudioStreamPlayer,
         "The battle ambience must be an authored audio slot")
+    _require(battle.get_node_or_null("IllustratedBattleMap/FlatBattle/ArtCalibration/FullPaintedTerrain") is TextureRect,
+        "The formal illustrated battle map must be a native scene instance")
     _require(battle.get_node_or_null("WuxiaCombatHUD/UnifiedHUD/ChargeRail/RailPainting") is TextureRect,
         "The CTB rail art must be editable")
+    _require(battle.get_node_or_null("WuxiaCombatHUD/UnifiedHUD/ChargeRail/TrackShaft") is Line2D,
+        "The CTB rail shaft must be authorable as a Line2D")
     battle.free()
 
     var actor: Node = _load_scene("res://scenes/actors/battle_actor.tscn")
@@ -68,6 +73,9 @@ func _run() -> void:
         burst.get_node_or_null("AuthoredVFX") is Sprite2D and
         burst.get_node_or_null("BurstAudio") is AudioStreamPlayer2D,
         "VFX scene must expose native line, atlas and audio nodes")
+    _require(burst.get_node_or_null("Shards/Ray0") is Line2D and
+        burst.get_node_or_null("RingShape") is Line2D,
+        "VFX fallback geometry must be editable scene content")
     burst.free()
 
     var card: Node = _load_scene("res://scenes/ui/battle_card.tscn")

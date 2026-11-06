@@ -4,6 +4,8 @@
 [ext_resource type="Texture2D" path="res://assets/imported/ui/ornaments/ctb_rail.svg" id="2_rail"]
 
 [node name="ChargeRail" type="Control"]
+offset_right = 108.0
+offset_bottom = 700.0
 mouse_filter = 2
 script = ExtResource("1_script")
 
@@ -18,6 +20,80 @@ mouse_filter = 2
 texture = ExtResource("2_rail")
 expand_mode = 1
 stretch_mode = 0
+
+[node name="TrackShaft" type="Line2D" parent="."]
+width = 1.5
+default_color = Color(0.918, 0.82, 0.627, 0.72)
+antialiased = true
+
+[node name="Ticks" type="Node2D" parent="."]
+
+[node name="Tick0" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick1" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick2" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick3" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick4" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick5" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick6" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick7" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick8" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick9" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
+[node name="Tick10" type="Line2D" parent="Ticks"]
+points = PackedVector2Array(-5, 0, 5, 0)
+width = 1.0
+default_color = Color(0.718, 0.792, 0.745, 0.36)
+antialiased = true
+
 
 [node name="ReadyLabel" type="Label" parent="."]
 layout_mode = 1

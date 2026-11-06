@@ -51,6 +51,8 @@ jobs:
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_startup.gd
       - name: Validate editor-authored scenes, UI, NPC, VFX and 2.5D nodes
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_native_scene_authoring.gd
+      - name: Validate six approved SpriteFrames, battle map, CTB and authored VFX closure
+        run: godot --headless --path demos/changfeng-battle --script res://checks/test_native_visual_closure.gd
       - name: Validate native map editor and art import bindings without mutating assets
         run: godot --headless --path demos/changfeng-battle --script res://checks/test_native_tool_adapters.gd
       - name: Validate runtime art provenance and image atlas dimensions

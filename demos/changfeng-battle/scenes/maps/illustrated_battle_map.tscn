@@ -1,0 +1,59 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/illustrated_battle_map.gd" id="1_map"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/background.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/ground.png" id="3_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/foreground.png" id="4_foreground"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/weather.png" id="5_weather"]
+
+[node name="IllustratedBattleMap" type="CanvasLayer"]
+layer = -10
+script = ExtResource("1_map")
+
+[node name="FlatBattle" type="Node2D" parent="."]
+
+[node name="ArtCalibration" type="Node2D" parent="FlatBattle"]
+
+[node name="FullPaintedTerrain" type="TextureRect" parent="FlatBattle/ArtCalibration"]
+z_index = -10
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+
+[node name="GroundArt" type="TextureRect" parent="FlatBattle/ArtCalibration"]
+z_index = -8
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+texture = ExtResource("3_ground")
+expand_mode = 1
+
+[node name="ForegroundOcclusion" type="TextureRect" parent="FlatBattle/ArtCalibration"]
+z_index = 110
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+texture = ExtResource("4_foreground")
+expand_mode = 1
+
+[node name="WeatherOverlay" type="TextureRect" parent="FlatBattle/ArtCalibration"]
+z_index = 120
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+texture = ExtResource("5_weather")
+expand_mode = 1
+
+[node name="LegalMarkers" type="Node2D" parent="FlatBattle"]
+
+[node name="MoveCursor" type="Polygon2D" parent="FlatBattle"]
+visible = false
+z_index = 140
+color = Color(0.37, 0.97, 0.73, 0.52)
+polygon = PackedVector2Array(32, 0, 30.91, 3.62, 27.71, 7, 22.63, 9.9, 16, 12.12, 8.28, 13.52, 0, 14, -8.28, 13.52, -16, 12.12, -22.63, 9.9, -27.71, 7, -30.91, 3.62, -32, 0, -30.91, -3.62, -27.71, -7, -22.63, -9.9, -16, -12.12, -8.28, -13.52, 0, -14, 8.28, -13.52, 16, -12.12, 22.63, -9.9, 27.71, -7, 30.91, -3.62)
+
+[node name="BakedGridDebug" type="Node2D" parent="FlatBattle"]
+visible = false
+z_index = 150
