@@ -104,7 +104,8 @@ func configure(id: String) -> bool:
     if is_sheet:
         animation_player = SpriteClips.attach(body, Timeline.new(), animation_profile)
         var native: AnimatedSprite2D = body.get_node_or_null("NativeFrames") as AnimatedSprite2D
-        if native != null:
+        if native != null and animation_profile != null and \
+                animation_profile.native_frames != null and native.sprite_frames != null:
             native.flip_h = body.flip_h
             native.play("idle")
     has_real_sprite = true
@@ -118,11 +119,13 @@ func set_motion(motion: Vector2, delta: float) -> void:
         var source_faces_left: bool = bool(body.get_meta("faces_left_unflipped", false))
         body.flip_h = motion.x > 0.0 if source_faces_left else motion.x < 0.0
     var native: AnimatedSprite2D = body.get_node_or_null("NativeFrames") as AnimatedSprite2D
-    var state: String = ("walk" if walking else "idle") if native != null else \
-        ("move" if walking else "idle")
-    if native != null and native.animation != state:
-        native.play(state)
-    if native != null:
+    var native_active := native != null and animation_profile != null and \
+        animation_profile.native_frames != null and native.sprite_frames != null
+    var state: String = "move" if walking else "idle"
+    if native_active:
+        state = "walk" if walking and native.sprite_frames.has_animation("walk") else "idle"
+        if native.animation != state or not native.is_playing():
+            native.play(state)
         native.flip_h = body.flip_h
     if animation_player.current_animation != state:
         animation_player.play(state)
