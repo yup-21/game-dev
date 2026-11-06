@@ -1,5 +1,7 @@
 # Godot 原生编辑收口：角色、战斗地图、HUD、VFX
 
+完整编辑权与规则边界请先看 [《Godot 原生内容开发规范 V2》](../../../docs/GODOT_NATIVE_AUTHORING_STANDARD.md)；本页是已经完成原生场景的可视化操作清单，不表示所有历史内容都已迁移。
+
 用 Godot 4 打开 `demos/changfeng-battle/project.godot`，在「文件系统」面板打开下面的资源即可编辑。**F6** 运行当前场景作局部预览，**F5** 进入完整战斗验证跨系统绑定。
 
 | 部位 | Godot 原生入口 | 编辑方式 | 运行时权责 |
