@@ -1,6 +1,6 @@
 extends SceneTree
-## Independent art contract. Can run without candidate archive in normal CI;
-## PROLOGUE_REQUIRE_ART=1 makes imported high-res layers mandatory.
+## Four-zone art contract. PR includes aligned WebP images; optional local lossless PNGs.
+## PROLOGUE_REQUIRE_ART=1 makes all 6 usable texture layers mandatory.
 
 var failures := 0
 
@@ -45,11 +45,15 @@ func _run() -> void:
 				"Architecture" if scene_id == "temple_hall" else "BlockoutArt").visible,
 				"candidate art replaces blockout visuals: " + scene_id)
 			for role in ["background", "ground", "foreground"]:
-				var texture := load(
-					"res://assets/candidates/prologue/%s/%s.png" % [scene_id, role]
-				) as Texture2D
-				check(texture != null and texture.get_size() == Vector2(1600,1000),
-					"aligned 1600x1000 candidate texture: " + scene_id + "/" + role)
+				var committed_webp := (
+					"res://assets/candidates/prologue/%s/%s.webp" % [scene_id, role])
+				check(ResourceLoader.exists(committed_webp),
+					"candidate art binary exists in PR: " + committed_webp)
+				var sprite := zone.get_node_or_null(
+					"PaintedLayers/" + role.capitalize()) as Sprite2D
+				check(sprite != null and sprite.texture != null
+					and sprite.texture.get_size() == Vector2(1600,1000),
+					"aligned 1600x1000 bound candidate layer: " + scene_id + "/" + role)
 		preview.queue_free()
 		await process_frame
 
