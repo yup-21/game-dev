@@ -42,6 +42,9 @@ func _run() -> void:
         check(str(result.get("error", "")).is_empty(), "native .tres transaction commits: " + \
             str(result.get("error", "")))
         if str(result.get("error", "")).is_empty():
+            var profile_text := FileAccess.get_file_as_string(str(result["profile_path"]))
+            check(profile_text.contains(str(result["frames_path"])),
+                "profile references an external editable SpriteFrames.tres")
             var imported := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_REPLACE) as WuxiaCharacterDefinition
             check(imported.animation_profile != null and imported.animation_profile.native_frames != null,
                 "character .tres now points to SpriteFrames")

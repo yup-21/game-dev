@@ -249,13 +249,23 @@ static func apply(plan_data: Dictionary) -> Dictionary:
                 failure = "无法创建原生 Resource 目录"
             elif ResourceSaver.save(frames, str(plan_data["native_frames_path"])) != OK:
                 failure = "无法保存 SpriteFrames.tres"
-            elif ResourceSaver.save(profile, str(plan_data["profile_path"])) != OK:
-                failure = "无法保存 AnimationProfile.tres"
             else:
-                var updated: WuxiaCharacterDefinition = char.duplicate(true) as WuxiaCharacterDefinition
-                updated.animation_profile = profile
-                if ResourceSaver.save(updated, str(plan_data["target"])) != OK:
-                    failure = "无法更新角色原生 Resource"
+                # Rebind the persisted external Resource, otherwise Godot embeds
+                # an independent SpriteFrames subresource in the profile.
+                var persisted: SpriteFrames = ResourceLoader.load(
+                    str(plan_data["native_frames_path"]), "SpriteFrames",
+                    ResourceLoader.CACHE_MODE_REPLACE) as SpriteFrames
+                if persisted == null:
+                    failure = "无法重新加载独立 SpriteFrames.tres"
+                else:
+                    profile.native_frames = persisted
+                    if ResourceSaver.save(profile, str(plan_data["profile_path"])) != OK:
+                        failure = "无法保存 AnimationProfile.tres"
+                    else:
+                        var updated: WuxiaCharacterDefinition = char.duplicate(true) as WuxiaCharacterDefinition
+                        updated.animation_profile = profile
+                        if ResourceSaver.save(updated, str(plan_data["target"])) != OK:
+                            failure = "无法更新角色原生 Resource"
     if failure.is_empty():
         failure = Transaction.commit(log_path)
     if not failure.is_empty():
