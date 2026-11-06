@@ -21,7 +21,7 @@ func _sync_with_zone() -> void:
 	if imported_layer_count != 3:
 		for role in ["background", "ground", "foreground"]:
 			missing_layers.append(
-				"res://assets/candidates/prologue/%s/%s.png" % [scene_id, role])
+				"res://assets/candidates/prologue/%s/%s.(png|webp)" % [scene_id, role])
 	var navigation := native_zone.get_node_or_null("Navigation/Walkable") as CanvasItem
 	if navigation != null:
 		navigation.visible = show_walkable_guides
