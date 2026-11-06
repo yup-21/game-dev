@@ -58,12 +58,16 @@ func _run() -> void:
 		["temple_courtyard", "ruined_temple"],
 		["broken_bridge", "rainy_bridge"]
 	]:
-		var zone := load(
+		var official_packed: PackedScene = load(
 			"res://scenes/prologue/zones/%s.tscn" % spec[0]
-		).instantiate()
+		) as PackedScene
+		check(official_packed != null, "official zone scene found: " + str(spec[0]))
+		if official_packed == null:
+			continue
+		var zone: Node2D = official_packed.instantiate()
 		root.add_child(zone)
 		await process_frame
-		var paintings := zone.get_node("PaintedLayers")
+		var paintings: Node2D = zone.get_node("PaintedLayers") as Node2D
 		for role in ["Background", "Ground", "Foreground"]:
 			var sprite := paintings.get_node_or_null(role) as Sprite2D
 			check(sprite != null and sprite.texture != null
