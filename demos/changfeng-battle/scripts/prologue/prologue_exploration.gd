@@ -27,6 +27,7 @@ var profile: WuxiaActorAnimationProfile
 var animation_time: float = 0.0
 var show_navigation: bool = false
 var notice: String = ""
+var fire_animation_time: float = 0.0
 
 func _ready() -> void:
 	current_zone = zone_host.get_child(0)
@@ -37,6 +38,16 @@ func _ready() -> void:
 	_setup_avatar()
 	_apply_zone_state()
 	_update_interface()
+
+func _process(delta: float) -> void:
+	# Small, local QA visual cue. Formal combat/story VFX remain unchanged.
+	if current_zone == null:
+		return
+	var flame := current_zone.get_node_or_null("Campfire/Flame") as Polygon2D
+	if flame != null:
+		fire_animation_time += delta
+		flame.scale.y = 0.93 + 0.07 * sin(fire_animation_time * 8.3)
+
 
 func _setup_avatar() -> void:
 	profile = load(ACTOR_PROFILE_PATH) as WuxiaActorAnimationProfile
@@ -100,7 +111,13 @@ func interact() -> bool:
 	var landmark: Marker2D = _closest_marker("Landmarks")
 	if landmark != null and not progress.discovered_landmarks.has(landmark.landmark_id):
 		progress.discover(landmark.landmark_id)
-		notice = "已经查看：" + landmark.hint + "。回到破庙看看。"
+		match landmark.landmark_id:
+			"campfire":
+				notice = "篝火尚暖，破瓦外的秋雨仍未停。"
+			"guardian_statue":
+				notice = "断臂金刚像静坐在阴影里，佛前尽是旧尘。"
+			_:
+				notice = "已经查看：" + landmark.hint + "。回到破庙看看。"
 		_update_interface()
 		return true
 	var gate: Marker2D = _closest_marker("Exits")
@@ -143,6 +160,14 @@ func _apply_zone_state() -> void:
 	var enemies := current_zone.get_node_or_null("AmbushActors")
 	if enemies != null:
 		enemies.visible = progress.ambush_started
+	# The same safe first-room becomes an uneasy scene on the explored return.
+	for part in ["Flame", "GlowingEmbers", "FireLight"]:
+		var fire_part := current_zone.get_node_or_null("Campfire/" + part) as CanvasItem
+		if fire_part != null:
+			var opacity := 1.0
+			if progress.ambush_started:
+				opacity = 0.22 if part == "FireLight" else 0.38
+			fire_part.modulate.a = opacity
 	current_zone.walkable.visible = show_navigation
 	# Centered 1600×1000 blockouts retain the same world scale across zones.
 	camera.limit_left = 0
