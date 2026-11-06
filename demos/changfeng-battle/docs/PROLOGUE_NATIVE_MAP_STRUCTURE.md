@@ -44,7 +44,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_prolog
 
 两张美术母版已按 **1600×1000** 生成并拆为同画布的背景、地面与前景三层。为避免 AI 独立分层产生不对位，本轮采用**从同一母版按遮罩分割**的方法，构建后的 `preview.png` 必须逐像素还原 `master.png`；真实动态篝火与雨雾仍需单独开发。
 
-完整高分辨率 PNG 尚未上传到 GitHub，本 PR 的新增内容是可复用的构建工具、验收工作单、独立原生预览入口和自动结构测试。图层需要从单独交付的候选素材包导入；**缺图时预览器应自动保留原灰盒**，不得被误认为艺术验收通过。
+PR #141 已上传八个 1600×1000 WebP 二进制文件（两张场景各三层，加两张母版），并有可复用构建工具、验收工作单和原生预览入口。无损 PNG 仍在独立交付的候选原画包中；**缺任意完整三层时会回退原灰盒**，不得把自动加载等同于人工美术验收通过。
 
 将原始 `雨夜残寺篝火.png` 和 `雨中竹山古道与破车.png` 放在同一目录，在仓库根目录执行：
 
@@ -76,14 +76,14 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_prolog
 
 | 地图 | 场景 | 分层图片来源 |
 | --- | --- | --- |
-| 破庙内殿 | `zones/temple_hall.tscn` | 通过 `prologue_zone.gd` 自动加载 `res://assets/candidates/prologue/temple_hall/{background,ground,foreground}.png` |
+| 破庙内殿 | `zones/temple_hall.tscn` | 通过 `prologue_zone.gd` 自动加载 `res://assets/candidates/prologue/temple_hall/{background,ground,foreground}.webp`（导入无损 PNG 后优先 PNG） |
 | 破庙前院 | `zones/temple_courtyard.tscn` | 正式复用 `res://assets/imported/scenes/ruined_temple/` 的背景/地面/前景 |
-| 荒山古道 | `zones/mountain_road.tscn` | 自动加载 `res://assets/candidates/prologue/mountain_road/{background,ground,foreground}.png` |
+| 荒山古道 | `zones/mountain_road.tscn` | 自动加载 `res://assets/candidates/prologue/mountain_road/{background,ground,foreground}.webp`（导入无损 PNG 后优先 PNG） |
 | 断桥 | `zones/broken_bridge.tscn` | 正式复用 `res://assets/imported/scenes/rainy_bridge/` 的背景/地面/前景 |
 
 内殿、古道必须同时存在 **全部三张 1600×1000** 图片才切换到绘制版本；任何一张缺失或尺寸错误，`prologue_zone.gd` 均保留原生可玩灰盒，**不会显示部分贴图**。图层绘制层级为背景 0、地面 1、前景 17；角色 z=15，篝火效果 z=12；碰撞与 `Marker2D` 不被图片替代，仍可原生编辑。古道绘制启用时自动隐藏重复灰盒破车。
 
-**高清 PNG 的交付限制：** 图片已生成并打成独立可解压补丁，但不在 GitHub PR #141 的 Git 对象中。只有将二进制 PNG 提交进本分支后，拉取 PR 才能直接看到新美术。
+**资源已入 PR：** 两张场景的八张 WebP（各三层 + 母版）已进入 GitHub，拉取分支即可预览。原始无损 PNG 单独随艺术素材包交付，尚未纳入 Git 对象；WebP 为高质量有损运行时版本。
 
 先把已交付的 `prologue_art_pr141_dropin.zip` 解压到仓库根目录，或使用原始 `prologue_scene_art_candidates_v01.zip` 运行：
 
@@ -99,4 +99,4 @@ godot --headless --path demos/changfeng-battle \
   --script res://checks/test_prologue_native_scenes.gd
 ```
 
-验收完成后可再由仓库推送这批二进制图片，确保 PR 真正自带全部资源。候选美术**尚未通过人物脚点与前景遮挡的实机人工验收**，正式 Chapter/Story 引用暂不改变。
+PR 已自带六张 WebP 分层贴图；如需留存无损 PNG 也可额外提交源文件。候选美术**尚未通过人物脚点与前景遮挡的实机人工验收**，正式 Chapter/Story 引用暂不改变。
