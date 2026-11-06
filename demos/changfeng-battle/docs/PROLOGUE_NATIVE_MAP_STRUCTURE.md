@@ -68,3 +68,35 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_prolog
 ```
 
 候选美术的单独审核依据见 `art-production/candidates/scenes/prologue_temple_hall/WORK_ORDER.md` 与 `art-production/candidates/scenes/prologue_mountain_road/WORK_ORDER.md`。碰撞和人物脚点仍由原生区域节点控制，**候选贴图仅用于预览，不直接写入正式 WuxiaMapDefinition 或 SceneArtProfile**。
+
+
+## 四张地图美术绑定与候选资源交付（第三阶段）
+
+**已存在于 GitHub PR #141 的原生场景绑定：**
+
+| 地图 | 场景 | 分层图片来源 |
+| --- | --- | --- |
+| 破庙内殿 | `zones/temple_hall.tscn` | 通过 `prologue_zone.gd` 自动加载 `res://assets/candidates/prologue/temple_hall/{background,ground,foreground}.png` |
+| 破庙前院 | `zones/temple_courtyard.tscn` | 正式复用 `res://assets/imported/scenes/ruined_temple/` 的背景/地面/前景 |
+| 荒山古道 | `zones/mountain_road.tscn` | 自动加载 `res://assets/candidates/prologue/mountain_road/{background,ground,foreground}.png` |
+| 断桥 | `zones/broken_bridge.tscn` | 正式复用 `res://assets/imported/scenes/rainy_bridge/` 的背景/地面/前景 |
+
+内殿、古道必须同时存在 **全部三张 1600×1000** 图片才切换到绘制版本；任何一张缺失或尺寸错误，`prologue_zone.gd` 均保留原生可玩灰盒，**不会显示部分贴图**。图层绘制层级为背景 0、地面 1、前景 17；角色 z=15，篝火效果 z=12；碰撞与 `Marker2D` 不被图片替代，仍可原生编辑。古道绘制启用时自动隐藏重复灰盒破车。
+
+**高清 PNG 的交付限制：** 图片已生成并打成独立可解压补丁，但不在 GitHub PR #141 的 Git 对象中。只有将二进制 PNG 提交进本分支后，拉取 PR 才能直接看到新美术。
+
+先把已交付的 `prologue_art_pr141_dropin.zip` 解压到仓库根目录，或使用原始 `prologue_scene_art_candidates_v01.zip` 运行：
+
+```sh
+python art-production/tools/import_prologue_candidate_package.py \
+  --package /path/to/prologue_scene_art_candidates_v01.zip
+python art-production/tools/import_prologue_candidate_package.py \
+  --package /path/to/prologue_scene_art_candidates_v01.zip --check
+godot --headless --path demos/changfeng-battle --editor --import --quit
+PROLOGUE_REQUIRE_ART=1 godot --headless --path demos/changfeng-battle \
+  --script res://checks/test_prologue_candidate_art.gd
+godot --headless --path demos/changfeng-battle \
+  --script res://checks/test_prologue_native_scenes.gd
+```
+
+验收完成后可再由仓库推送这批二进制图片，确保 PR 真正自带全部资源。候选美术**尚未通过人物脚点与前景遮挡的实机人工验收**，正式 Chapter/Story 引用暂不改变。
