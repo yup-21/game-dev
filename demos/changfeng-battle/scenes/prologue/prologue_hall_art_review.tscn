@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/prologue/prologue_candidate_art_review.gd" id="1_review"]
+[ext_resource type="PackedScene" path="res://scenes/prologue/zones/temple_hall.tscn" id="2_zone"]
+
+[node name="PrologueHallArtReview" type="Node2D"]
+script = ExtResource("1_review")
+scene_id = "temple_hall"
+
+[node name="NativeZone" parent="." instance=ExtResource("2_zone")]
