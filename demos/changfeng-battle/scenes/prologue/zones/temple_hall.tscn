@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/prologue/prologue_zone.gd" id="1_zone"]
 [ext_resource type="Script" path="res://scripts/prologue/prologue_portal.gd" id="2_gate"]
+[ext_resource type="Script" path="res://scripts/prologue/prologue_landmark.gd" id="3_clue"]
 
 [node name="TempleHall" type="Node2D"]
 script = ExtResource("1_zone")
@@ -105,6 +106,21 @@ target_entry_id = "FromHall"
 hint = "走出破庙内殿"
 
 [node name="Landmarks" type="Node2D" parent="."]
+
+[node name="CampfireObservation" type="Marker2D" parent="Landmarks"]
+position = Vector2(784, 703)
+script = ExtResource("3_clue")
+landmark_id = "campfire"
+hint = "查看篝火"
+interaction_radius = 120.0
+
+[node name="BrokenGuardian" type="Marker2D" parent="Landmarks"]
+position = Vector2(1050, 548)
+script = ExtResource("3_clue")
+landmark_id = "guardian_statue"
+hint = "观察断臂金刚像"
+interaction_radius = 135.0
+
 
 [node name="AmbushActors" type="Node2D" parent="."]
 visible = false
