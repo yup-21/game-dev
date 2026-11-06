@@ -19,7 +19,7 @@ from PIL import Image
 REPO = Path(__file__).resolve().parents[2]
 SOURCES = REPO / "art-production/candidates"
 DEST = REPO / "demos/changfeng-battle/data/art_candidates"
-EXTENSIONS = {".png", ".webp", ".jpg", ".jpeg", ".svg"}
+EXTENSIONS = {".png", ".webp", ".jpg", ".jpeg", ".svg", ".gif"}
 GRID = re.compile(r"(?:^|_)([1-9][0-9]?)x([1-9][0-9]?)(?:_|$)")
 SCRIPT = 'res://scripts/content/art_candidate_definition.gd'
 
