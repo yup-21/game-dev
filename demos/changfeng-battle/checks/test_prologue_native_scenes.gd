@@ -90,6 +90,9 @@ func _run() -> void:
 		and not scene.current_zone.get_node("AmbushActors").visible, "enemies initially hidden")
 	check(not scene.current_zone.permits_foot(Vector2(630, 580)), "campfire has authored obstacle")
 	check(not scene.current_zone.permits_foot(Vector2(1180, 382)), "statue has authored obstacle")
+	check(scene.interact(), "player may inspect campfire on first spawn")
+	check(scene.progress.discovered_landmarks.has("campfire"), "campfire observation recorded")
+	check(not scene.progress.explored_deep_outside, "indoor investigation cannot complete outside milestone")
 	check(not scene.follow_portal("nonexistent"), "cannot take nonexistent exit")
 	check(not scene.follow_portal("ToCourtyard"), "cannot activate a distant exit")
 	walk_by_input(scene, Vector2(800, 859))
@@ -115,6 +118,8 @@ func _run() -> void:
 	check(scene.progress.ambush_started and scene.progress.revealed_count == 1,
 		"return reveals ambush exactly once")
 	check(scene.current_zone.get_node("AmbushActors").visible, "two guards and elder scene anchors visible")
+	check(scene.current_zone.get_node("Campfire/Flame").modulate.a < 0.5,
+		"return ambience visibly dims the campfire")
 	await capture("04_hall_ambush")
 	check(scene.current_zone.get_node("AmbushActors/GhostMaskGuardA") is Marker2D
 		and scene.current_zone.get_node("AmbushActors/GhostMaskGuardB") is Marker2D
