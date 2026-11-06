@@ -16,7 +16,7 @@ func _sync_with_zone() -> void:
 	var native_zone := get_node_or_null("NativeZone") as Node2D
 	if native_zone == null:
 		return
-	imported_layer_count = native_zone.painted_layer_count
+	imported_layer_count = int(native_zone.get("painted_layer_count"))
 	missing_layers.clear()
 	if imported_layer_count != 3:
 		for role in ["background", "ground", "foreground"]:
