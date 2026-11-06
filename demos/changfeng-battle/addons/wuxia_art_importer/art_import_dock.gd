@@ -39,6 +39,9 @@ var compose_enabled: CheckBox
 var compose_panel: VBoxContainer
 var compose_source_list: ItemList
 var compose_grid: CheckBox
+var compose_preview: Control
+var compose_status: Label
+var compose_playing: bool = false
 var compose_tall: CheckBox
 var compose_numbers: Dictionary = {}
 var compose_mapping: LineEdit
@@ -192,7 +195,6 @@ func _ready() -> void:
     preview.custom_minimum_size = Vector2(0, 225)
     preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     body.add_child(preview)
-    preview.cell_clicked.connect(_on_grid_cell_clicked)
     info = Label.new()
     info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     body.add_child(info)
@@ -377,6 +379,25 @@ func _build_composer() -> void:
     compose_source_list.custom_minimum_size.y = 92
     compose_source_list.item_selected.connect(func(_index: int): _load_composition_geometry())
     compose_panel.add_child(compose_source_list)
+    var preview_caption := Label.new()
+    preview_caption.text = "切格与动作预览（可点击格位追加当前动作帧）"
+    compose_panel.add_child(preview_caption)
+    compose_preview = Preview.new()
+    compose_preview.custom_minimum_size = Vector2(0, 240)
+    compose_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    compose_preview.cell_clicked.connect(_on_grid_cell_clicked)
+    compose_panel.add_child(compose_preview)
+    compose_status = Label.new()
+    compose_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    compose_panel.add_child(compose_status)
+    var playback_buttons := GridContainer.new()
+    playback_buttons.columns = 3
+    for caption in ["查看网格", "播放动作", "暂停", "上一帧", "下一帧"]:
+        var button := Button.new()
+        button.text = caption
+        button.pressed.connect(_composition_control.bind(caption))
+        playback_buttons.add_child(button)
+    compose_panel.add_child(playback_buttons)
     var remove_source := Button.new()
     remove_source.text = "移除选中源图（之后的源图编号会重排）"
     remove_source.pressed.connect(_remove_composition_source)
@@ -394,7 +415,7 @@ func _build_composer() -> void:
         ["local_y", "当前格偏移 Y", 0, -4096, 4096]]:
         _compose_number(str(item[0]), str(item[1]), int(item[2]), int(item[3]), int(item[4]))
     compose_grid = CheckBox.new()
-    compose_grid.text = "显示整图切格（取消可播放当前动作）"
+    compose_grid.text = "显示整图切格（取消后显示当前动作帧）"
     compose_grid.button_pressed = true
     compose_grid.toggled.connect(func(_value: bool): _refresh_preview())
     compose_panel.add_child(compose_grid)
@@ -454,9 +475,16 @@ func _add_composition_source() -> void:
     var candidate := Service.candidate_for_source(path)
     var cols := candidate.columns if candidate != null and candidate.columns > 0 else 5
     var count_rows := candidate.rows if candidate != null and candidate.rows > 0 else 5
+    var existing_size: Vector2i = candidate.grid_cell_size if candidate != null else Vector2i.ZERO
+    var original_size := Vector2i(int(details["width"]) / cols, int(details["height"]) / count_rows)
+    var cell_size: Vector2i = existing_size if existing_size != Vector2i.ZERO else original_size
+    var origin: Vector2i = candidate.grid_origin if candidate != null else Vector2i.ZERO
+    var gap: Vector2i = candidate.grid_gap if candidate != null else Vector2i.ZERO
+    var offsets: Dictionary = candidate.grid_cell_offsets.duplicate(true) if candidate != null else {}
     compose_sources.append({"path": path, "columns": cols, "rows": count_rows,
-        "cell_width": int(details["width"]) / cols, "cell_height": int(details["height"]) / count_rows,
-        "origin_x": 0, "origin_y": 0, "gap_x": 0, "gap_y": 0, "offsets": {}})
+        "cell_width": cell_size.x, "cell_height": cell_size.y,
+        "origin_x": origin.x, "origin_y": origin.y,
+        "gap_x": gap.x, "gap_y": gap.y, "offsets": offsets})
     _refresh_composition_list()
     compose_source_list.select(compose_sources.size() - 1)
     _load_composition_geometry()
@@ -550,6 +578,37 @@ func _mapping_changed(value: String) -> void:
     _refresh_preview()
 
 
+func _composition_control(action: String) -> void:
+    match action:
+        "查看网格":
+            compose_playing = false
+            compose_grid.button_pressed = true
+        "播放动作":
+            current_frame = 0
+            compose_grid.button_pressed = false
+            compose_playing = true
+            timer.start()
+        "暂停":
+            compose_playing = false
+        "上一帧":
+            compose_playing = false
+            _step_composition(-1)
+        "下一帧":
+            compose_playing = false
+            _step_composition(1)
+    _refresh_preview()
+
+
+func _step_composition(direction: int) -> void:
+    var parsed := Assembly.parse_mapping(str(compose_actions.get(_action_name(), "")),
+        compose_sources.size())
+    if not str(parsed["error"]).is_empty():
+        return
+    var refs: Array = parsed["frames"]
+    compose_grid.button_pressed = false
+    current_frame = clampi(current_frame + direction, 0, refs.size() - 1)
+
+
 func _metadata_changed() -> void:
     if compose_editing:
         return
@@ -624,6 +683,7 @@ func _mode_changed() -> void:
             (mode == "character_folder" and control == clip_profile.get_parent())
     compose_enabled.visible = mode == "atlas"
     compose_panel.visible = mode == "atlas" and compose_enabled.button_pressed
+    preview.visible = not (mode == "atlas" and compose_enabled.button_pressed)
     for control in vfx_controls:
         control.visible = mode == "vfx"
     _load_targets()
@@ -801,7 +861,8 @@ func _refresh_preview() -> void:
 
 func _refresh_composition_preview() -> void:
     if compose_sources.is_empty():
-        info.text = "自由装配：先从素材列表选择一张图，点击「添加选中的源图集」。"
+        _composition_message("自由装配：先选择一张图片，点击「添加选中的源图集」。")
+        compose_preview.call("show_image", null)
         return
     var index := _composition_index()
     if index < 0:
@@ -809,36 +870,46 @@ func _refresh_composition_preview() -> void:
     var source: Dictionary = compose_sources[index]
     var details := _compose_inspect(str(source["path"]))
     if not str(details.get("error", "")).is_empty():
-        info.text = str(details["error"])
+        _composition_message(str(details["error"]))
         return
     var parsed := Assembly.parse_mapping(str(compose_actions.get(_action_name(), "")),
         compose_sources.size())
-    info.text = "源图 %d/%d · %sx%s · 已映射动作 %d/12；先逐帧核对，再执行导入预检。" % [
+    var message := "源图 %d/%d · %sx%s · 已映射动作 %d/12；先逐帧核对，再执行导入预检。" % [
         index, compose_sources.size(), details["width"], details["height"], compose_actions.size()]
     if not str(parsed["error"]).is_empty():
-        info.text += "\n当前动作：" + str(parsed["error"])
-    preview.call("set_candidate_display_scale", 0.0)
+        message += "\n当前动作尚无播放帧：" + str(parsed["error"])
+    else:
+        var refs: Array = parsed["frames"]
+        current_frame = clampi(current_frame, 0, refs.size() - 1)
+        message += "\n%s · 第 %d/%d 帧 · %s" % [_action_name(),
+            current_frame + 1, refs.size(),
+            "播放中" if compose_playing and not compose_grid.button_pressed else "暂停/切格"]
+    _composition_message(message)
+    compose_preview.call("set_candidate_display_scale", 0.0)
     if compose_grid.button_pressed or not str(parsed["error"]).is_empty():
-        preview.call("show_grid", details["texture"], source)
+        compose_preview.call("show_grid", details["texture"], source)
         return
     var refs: Array = parsed["frames"]
-    if current_frame >= refs.size():
-        current_frame = 0
     _show_composition_frame(refs[current_frame])
+
+
+func _composition_message(value: String) -> void:
+    info.text = value
+    compose_status.text = value
 
 
 func _show_composition_frame(ref: Dictionary) -> void:
     var source: Dictionary = compose_sources[int(ref["source"])]
     var details := _compose_inspect(str(source["path"]))
     if not str(details.get("error", "")).is_empty():
-        info.text = str(details["error"])
+        _composition_message(str(details["error"]))
         return
     var rect := Assembly.cell_rect(source, int(ref["cell"]))
     if not rect.has_area() or rect.position.x < 0 or rect.position.y < 0 or \
             rect.end.x > int(details["width"]) or rect.end.y > int(details["height"]):
-        info.text = "当前动作帧超出源图，请校准网格"
+        _composition_message("当前动作帧超出源图，请校准网格")
         return
-    preview.call("show_sliced_frame", details["texture"], rect,
+    compose_preview.call("show_sliced_frame", details["texture"], rect,
         Vector2(feet_x.value, feet_y.value))
 
 
@@ -889,7 +960,7 @@ func _next_frame() -> void:
     if _mode() != "atlas" or preview == null:
         return
     if compose_enabled.button_pressed:
-        if compose_grid.button_pressed:
+        if compose_grid.button_pressed or not compose_playing:
             return
         var parsed := Assembly.parse_mapping(str(compose_actions.get(_action_name(), "")),
             compose_sources.size())
@@ -899,6 +970,8 @@ func _next_frame() -> void:
         var settings: Dictionary = compose_metadata.get(_action_name(), {})
         var loop := bool(settings.get("loop", _action_name() in ["idle", "walk", "run"]))
         if not loop and current_frame >= refs.size() - 1:
+            compose_playing = false
+            _refresh_composition_preview()
             return
         var duration_list: String = str(settings.get("durations", ""))
         var times := duration_list.split(",", false)
@@ -908,7 +981,7 @@ func _next_frame() -> void:
         else:
             timer.wait_time = 1.0 / maxf(float(settings.get("fps", 12.0)), 1.0)
         current_frame = (current_frame + 1) % refs.size()
-        _show_composition_frame(refs[current_frame])
+        _refresh_composition_preview()
         return
     if frames.is_empty():
         return
@@ -1004,6 +1077,9 @@ func _signature(plans: Array[Dictionary]) -> String:
         var template := str(plan_data.get("template_path", ""))
         if not template.is_empty():
             lines.append(template + "|" + FileAccess.get_sha256(template))
+        for update in plan_data.get("candidate_updates", []):
+            var candidate_path := str(update["resource_path"])
+            lines.append(candidate_path + "|" + FileAccess.get_sha256(candidate_path))
         var keys: Array = plan_data["files"].keys()
         keys.sort()
         for key in keys:
@@ -1034,7 +1110,10 @@ func _review_entries(entries: Array[Dictionary]) -> void:
         return
     var result: Dictionary = _gather_plans(entries)
     if not str(result["error"]).is_empty():
-        info.text = "导入检查失败：" + str(result["error"])
+        if _mode() == "atlas" and compose_enabled.button_pressed:
+            _composition_message("导入检查失败：" + str(result["error"]))
+        else:
+            info.text = "导入检查失败：" + str(result["error"])
         return
     var plans: Array[Dictionary] = result["plans"]
     pending_entries = entries.duplicate(true)
@@ -1047,10 +1126,13 @@ func _review_entries(entries: Array[Dictionary]) -> void:
             if not str(item.get("replaces", "")).is_empty():
                 detail += " （保留旧图：" + str(item["replaces"]) + "）"
             destinations.append(detail)
-        descriptions.append("%s → %s\n原绑定：%s\n新绑定：%s\n图片：%s" % [
+        var updates: Array = plan_data.get("candidate_updates", [])
+        var update_note := "\n将同步保存 %d 个候选 .tres 网格元数据（事务可回退）" % updates.size() \
+            if not updates.is_empty() else ""
+        descriptions.append("%s → %s\n原绑定：%s\n新绑定：%s\n图片：%s%s" % [
             str(plan_data["mode"]), str(plan_data["target"]),
             str(plan_data.get("current_binding", "（空）")),
-            str(plan_data.get("next_binding", "")), ", ".join(destinations)
+            str(plan_data.get("next_binding", "")), ", ".join(destinations), update_note
         ])
     confirm.dialog_text = "批次 %s 项：\n\n%s\n\n%s" % [
         str(plans.size()), "\n\n".join(descriptions),
@@ -1252,4 +1334,7 @@ func _finished(message: String) -> void:
     busy = false
     apply_button.disabled = false
     queue_review_button.disabled = queue.is_empty()
-    info.text = message
+    if _mode() == "atlas" and compose_enabled.button_pressed:
+        _composition_message(message)
+    else:
+        info.text = message

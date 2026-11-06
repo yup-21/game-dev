@@ -194,7 +194,8 @@ func _initialize() -> void:
         _fail("Cannot find a source for the visual grid editor")
         return
     dock._add_composition_source()
-    if dock.compose_sources.size() != 1 or dock.preview.mode != "grid":
+    if dock.compose_sources.size() != 1 or dock.compose_preview.mode != "grid" or \
+            not dock.compose_preview.visible:
         _fail("Composer did not add a source and show the grid")
         return
     dock._on_grid_cell_clicked(3)
@@ -205,10 +206,17 @@ func _initialize() -> void:
     if dock.compose_sources[0]["offsets"].get(3, Vector2i.ZERO) != Vector2i(2, 0):
         _fail("Per-cell grid adjustment was not retained")
         return
-    dock.compose_grid.button_pressed = false
-    dock._refresh_preview()
-    if dock.preview.mode != "slice":
+    dock._composition_control("播放动作")
+    if dock.compose_preview.mode != "slice" or not dock.compose_playing:
         _fail("Action preview is not using the authored source-frame mapping")
+        return
+    dock._composition_control("暂停")
+    if dock.compose_playing:
+        _fail("Animation preview pause did not stop playback")
+        return
+    dock._composition_control("查看网格")
+    if dock.compose_preview.mode != "grid":
+        _fail("Animation preview could not return to the source grid")
         return
     dock.kind.select(5)
     dock._mode_changed()

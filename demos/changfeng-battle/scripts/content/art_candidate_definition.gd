@@ -14,6 +14,12 @@ const CombatScale = preload("res://scripts/combat_scale.gd")
 ## 0 means not yet measured, not a hidden 1x1 default.
 @export_range(0, 64) var columns: int = 0
 @export_range(0, 64) var rows: int = 0
+## Explicitly calibrated source-grid geometry. Zero cell size keeps historical
+## divisible-grid metadata readable; AI originals need not be divisible.
+@export var grid_origin: Vector2i = Vector2i.ZERO
+@export var grid_cell_size: Vector2i = Vector2i.ZERO
+@export var grid_gap: Vector2i = Vector2i.ZERO
+@export var grid_cell_offsets: Dictionary = {}
 @export var action_id: String = ""
 @export var frame_indices: PackedInt32Array = PackedInt32Array()
 ## Optional authored clips for multi-action sheets. Unlike a runtime Profile,
@@ -55,9 +61,23 @@ func validate_source() -> String:
         return "Candidate pixel dimensions changed: " + source_path
     if (columns == 0) != (rows == 0):
         return "Incomplete candidate atlas grid: " + source_path
-    if columns > 0 and (source_pixel_size.x % columns != 0 \
-            or source_pixel_size.y % rows != 0):
-        return "Candidate image not divisible by declared grid: " + source_path
+    if columns > 0:
+        if grid_cell_size == Vector2i.ZERO:
+            if source_pixel_size.x % columns != 0 or source_pixel_size.y % rows != 0:
+                return "Candidate image not divisible by declared grid: " + source_path
+        else:
+            if grid_cell_size.x <= 0 or grid_cell_size.y <= 0:
+                return "Invalid candidate cell size: " + source_path
+            for index in range(columns * rows):
+                var offset: Variant = grid_cell_offsets.get(index, Vector2i.ZERO)
+                if not offset is Vector2i:
+                    return "Invalid candidate cell offset: " + source_path
+                var cell_offset: Vector2i = offset
+                var origin: Vector2i = grid_origin + Vector2i(index % columns, index / columns) * \
+                    (grid_cell_size + grid_gap) + cell_offset
+                if origin.x < 0 or origin.y < 0 or origin.x + grid_cell_size.x > source_pixel_size.x \
+                        or origin.y + grid_cell_size.y > source_pixel_size.y:
+                    return "Candidate grid cell exceeds source canvas: " + source_path
     if not frame_indices.is_empty():
         if columns == 0:
             return "Frame indices require an explicit candidate grid: " + source_path
