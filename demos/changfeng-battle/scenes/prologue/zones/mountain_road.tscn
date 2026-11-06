@@ -28,7 +28,7 @@ color = Color(0.38, 0.36, 0.29, 1)
 polygon = PackedVector2Array(625, 65, 955, 65, 1045, 360, 1060, 610, 1090, 955, 560, 955, 670, 640, 570, 400)
 
 [node name="BrokenCart" type="Node2D" parent="."]
-position = Vector2(917, 604)
+position = Vector2(1155, 480)
 
 [node name="CartWood" type="Polygon2D" parent="BrokenCart"]
 color = Color(0.26, 0.20, 0.12, 1)
@@ -43,6 +43,7 @@ color = Color(0.13, 0.15, 0.14, 1)
 polygon = PackedVector2Array(-79, 10, -48, -9, -20, 10, -18, 44, -47, 57, -81, 40)
 
 [node name="InvestigationClue" type="Polygon2D" parent="BrokenCart"]
+position = Vector2(-333, 187)
 color = Color(0.86, 0.64, 0.27, 0.75)
 polygon = PackedVector2Array(-18, 45, 12, 21, 40, 45, 10, 68)
 
@@ -57,7 +58,7 @@ polygon = PackedVector2Array(650, 105, 942, 105, 1008, 340, 1035, 680, 1060, 915
 
 [node name="AbandonedCart" type="Polygon2D" parent="Navigation/Blockers"]
 visible = false
-polygon = PackedVector2Array(808, 451, 1030, 451, 1030, 620, 808, 620)
+polygon = PackedVector2Array(978, 355, 1088, 283, 1385, 304, 1409, 570, 1290, 625, 981, 590)
 
 [node name="Entries" type="Node2D" parent="."]
 
