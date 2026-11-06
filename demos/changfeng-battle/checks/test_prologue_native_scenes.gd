@@ -78,6 +78,9 @@ func _run() -> void:
 		for gate in zone.get_node("Exits").get_children():
 			check(zone_files.has(gate.target_zone_id) and not gate.target_entry_id.is_empty(),
 				"resolved connection: " + zone_id + "/" + gate.name)
+		if zone_id == "mountain_road":
+			check(not zone.permits_foot(Vector2(1000, 520)), "cart corner is blocked")
+			check(zone.permits_foot(Vector2(750, 560)), "west bypass remains walkable")
 		zone.free()
 
 	var scene: Node2D = load("res://scenes/prologue/prologue_exploration.tscn").instantiate()
