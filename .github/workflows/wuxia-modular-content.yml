@@ -76,6 +76,8 @@ jobs:
         run: PROLOGUE_REQUIRE_ART=1 timeout --signal=TERM 60s godot --headless --path demos/changfeng-battle --script res://checks/test_prologue_candidate_art.gd
       - name: Verify categorized art paths and in-use mirrors
         run: python3 art-production/tools/inventory_assets.py --check
+      - name: Verify candidate preview is excluded from in-use inventory
+        run: python3 art-production/tools/test_inventory_assets.py
       - name: Verify modifier script parses and initializes
         run: timeout --signal=TERM 30s godot --headless --path demos/changfeng-battle --script res://checks/test_modifier_bootstrap.gd
       - name: R18 native Resource authoring contracts
