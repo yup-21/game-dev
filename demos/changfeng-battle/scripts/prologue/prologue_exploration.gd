@@ -167,7 +167,9 @@ func _apply_zone_state() -> void:
 			var opacity := 1.0
 			if progress.ambush_started:
 				opacity = 0.22 if part == "FireLight" else 0.38
-			fire_part.modulate.a = opacity
+			var tint: Color = fire_part.modulate
+			tint.a = opacity
+			fire_part.modulate = tint
 	current_zone.walkable.visible = show_navigation
 	# Centered 1600×1000 blockouts retain the same world scale across zones.
 	camera.limit_left = 0
