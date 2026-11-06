@@ -36,6 +36,12 @@ func _run() -> void:
 			"never partially apply candidate layers: " + scene_id)
 		check(int(zone.get("painted_layer_count")) == preview.imported_layer_count,
 			"preview reuses native scene art (no duplicate sprites): " + scene_id)
+		var art_path := (
+			"res://data/art_candidates/scenes/prologue_%s/scene_art_v01.tres" % scene_id)
+		var art := load(art_path) as WuxiaSceneArtProfile
+		check(art != null and art.valid_for(Vector2i(1600, 1000))
+			and art.foreground != null,
+			"native candidate SceneArtProfile validates: " + art_path)
 		if required:
 			check(preview.imported_layer_count == 3,
 				"mandatory raster layers imported: " + scene_id)
