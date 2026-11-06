@@ -39,3 +39,32 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_prolog
 ```
 
 正式接入顺序：确认内殿／山路两张美术 → 为四张地图建立／校准正式 `WuxiaMapDefinition` 与 SceneArtProfile → 把退出／调查／返庙状态挂到章节原生 Story 事件 → 驱动严守诚对话与战斗遭遇 → 继续制作烟水渡。正式 Resource 应保持单一配置来源，**不要把这套 QA 状态直接写回正式章节数据**。
+
+## 新增内殿／古道候选美术预览（PR #141 第二阶段）
+
+两张美术母版已按 **1600×1000** 生成并拆为同画布的背景、地面与前景三层。为避免 AI 独立分层产生不对位，本轮采用**从同一母版按遮罩分割**的方法，构建后的 `preview.png` 必须逐像素还原 `master.png`；真实动态篝火与雨雾仍需单独开发。
+
+完整高分辨率 PNG 尚未上传到 GitHub，本 PR 的新增内容是可复用的构建工具、验收工作单、独立原生预览入口和自动结构测试。图层需要从单独交付的候选素材包导入；**缺图时预览器应自动保留原灰盒**，不得被误认为艺术验收通过。
+
+将原始 `雨夜残寺篝火.png` 和 `雨中竹山古道与破车.png` 放在同一目录，在仓库根目录执行：
+
+```sh
+python art-production/tools/build_prologue_candidate_layers.py \
+  --source-root /path/to/masters \
+  --out demos/changfeng-battle/assets/candidates/prologue
+```
+
+Godot 预览入口：
+
+- `res://scenes/prologue/prologue_hall_art_review.tscn`
+- `res://scenes/prologue/prologue_road_art_review.tscn`
+
+测试命令：
+
+```sh
+godot --headless --path demos/changfeng-battle --editor --import --quit
+godot --headless --path demos/changfeng-battle --script res://checks/test_prologue_candidate_art.gd
+godot --headless --path demos/changfeng-battle --script res://checks/test_prologue_native_scenes.gd
+```
+
+候选美术的单独审核依据见 `art-production/candidates/scenes/prologue_temple_hall/WORK_ORDER.md` 与 `art-production/candidates/scenes/prologue_mountain_road/WORK_ORDER.md`。碰撞和人物脚点仍由原生区域节点控制，**候选贴图仅用于预览，不直接写入正式 WuxiaMapDefinition 或 SceneArtProfile**。
