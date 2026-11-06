@@ -30,6 +30,16 @@ func _load_painted_candidate() -> void:
 	# Prefer lossless PNG when imported locally. Remote PR carries aligned
 	# high-quality WebP in all three layers; never combine mixed partial sets.
 	for extension in [".png", ".webp"]:
+		if extension == ".webp":
+			# WebP authoring is declared in the native SceneArtProfile Resource,
+			# not only hidden in hardcoded file paths.
+			var art_path := (
+				"res://data/art_candidates/scenes/prologue_%s/scene_art_v01.tres" % zone_id)
+			if ResourceLoader.exists(art_path):
+				var art := load(art_path) as WuxiaSceneArtProfile
+				if art != null and art.valid_for(Vector2i(1600, 1000)) and art.foreground != null:
+					textures = [art.background, art.ground, art.foreground]
+					break
 		var candidate: Array[Texture2D] = []
 		for role in ART_LAYERS:
 			var file_path: String = ART_FOLDER + zone_id + "/" + role + extension
