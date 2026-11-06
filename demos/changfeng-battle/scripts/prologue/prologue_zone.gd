@@ -38,7 +38,9 @@ func _load_painted_candidate() -> void:
 			if ResourceLoader.exists(art_path):
 				var art := load(art_path) as WuxiaSceneArtProfile
 				if art != null and art.valid_for(Vector2i(1600, 1000)) and art.foreground != null:
-					textures = [art.background, art.ground, art.foreground]
+					textures.append(art.background)
+					textures.append(art.ground)
+					textures.append(art.foreground)
 					break
 		var candidate: Array[Texture2D] = []
 		for role in ART_LAYERS:
