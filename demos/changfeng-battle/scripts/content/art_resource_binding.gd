@@ -62,7 +62,7 @@ static func apply(definition: Resource) -> String:
         problem = _bind(definition, "static_pose", root + "story-poses/default")
         if not problem.is_empty():
             return problem
-        if definition.animation_profile != null:
+        if definition.animation_profile != null and definition.animation_profile.native_frames == null:
             problem = _bind(definition.animation_profile, "atlas", root + "sprites/atlas", true)
             if not problem.is_empty():
                 return problem

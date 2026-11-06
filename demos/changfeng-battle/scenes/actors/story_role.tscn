@@ -12,6 +12,10 @@ polygon = PackedVector2Array(24, 0, 20.78, 5.22, 12, 8.73, 0, 10.08, -12, 8.73, 
 [node name="BodySprite" type="Sprite2D" parent="."]
 texture_filter = 1
 
+[node name="NativeFrames" type="AnimatedSprite2D" parent="BodySprite"]
+texture_filter = 1
+offset = Vector2(0, -102)
+
 [node name="NativeSpriteAnimation" type="AnimationPlayer" parent="BodySprite"]
 callback_mode_process = 2
 root_node = NodePath("..")

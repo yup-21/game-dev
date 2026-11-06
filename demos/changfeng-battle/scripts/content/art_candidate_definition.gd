@@ -48,10 +48,22 @@ func validate_source() -> String:
     var path: String = source_absolute_path()
     if path.is_empty() or not FileAccess.file_exists(path):
         return "Missing candidate source: " + source_path
-    var image: Image = Image.load_from_file(path)
-    if image == null or image.is_empty():
-        return "Unreadable candidate image: " + source_path
-    if Vector2i(image.get_size()) != source_pixel_size:
+    var measured := Vector2i.ZERO
+    if path.get_extension().to_lower() == "gif":
+        var file := FileAccess.open(path, FileAccess.READ)
+        if file == null or file.get_length() < 13 or \
+                file.get_buffer(6).get_string_from_ascii() not in ["GIF87a", "GIF89a"]:
+            return "Unreadable candidate GIF: " + source_path
+        measured = Vector2i(file.get_16(), file.get_16())
+        if asset_kind != "sprite" or columns != 0 or rows != 0 or \
+                action_id.is_empty() or not action_id.is_valid_identifier():
+            return "GIF candidate must declare action_id and use no atlas grid: " + source_path
+    else:
+        var image: Image = Image.load_from_file(path)
+        if image == null or image.is_empty():
+            return "Unreadable candidate image: " + source_path
+        measured = Vector2i(image.get_size())
+    if measured != source_pixel_size:
         return "Candidate pixel dimensions changed: " + source_path
     if (columns == 0) != (rows == 0):
         return "Incomplete candidate atlas grid: " + source_path

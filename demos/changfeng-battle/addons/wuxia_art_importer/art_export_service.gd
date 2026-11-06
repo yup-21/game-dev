@@ -98,6 +98,14 @@ static func _collect_native_images(resource: Resource, paths: Dictionary) -> voi
     elif resource is WuxiaActorAnimationProfile:
         var profile: WuxiaActorAnimationProfile = resource as WuxiaActorAnimationProfile
         _add_texture(paths, profile.atlas)
+        if profile.native_frames != null:
+            for action in profile.native_frames.get_animation_names():
+                for index in range(profile.native_frames.get_frame_count(action)):
+                    var texture: Texture2D = profile.native_frames.get_frame_texture(action, index)
+                    if texture is AtlasTexture:
+                        _add_texture(paths, (texture as AtlasTexture).atlas)
+                    else:
+                        _add_texture(paths, texture)
         for entry in profile.clips:
             if entry is WuxiaActorAnimationClip:
                 var clip: WuxiaActorAnimationClip = entry as WuxiaActorAnimationClip

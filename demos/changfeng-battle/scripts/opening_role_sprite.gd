@@ -39,7 +39,7 @@ func configure(id: String) -> bool:
     var texture: Texture2D
     if is_sheet:
         if animation_profile != null:
-            texture = animation_profile.atlas
+            texture = animation_profile.idle_atlas()
         # Story-only NPCs have no battle actor ID. Read the live native card;
         # battle actors retain the verified animation profile.
         if texture == null and int(role.battle_actor_id) < 0:
@@ -71,8 +71,8 @@ func configure(id: String) -> bool:
         body.flip_h = bool(body.get_meta("faces_left_unflipped")) # Initial look east
     body.centered = true
     if is_sheet:
-        body.hframes = animation_profile.columns if animation_profile != null else ANIMATION_COLUMNS
-        body.vframes = animation_profile.rows if animation_profile != null else ANIMATION_ROWS
+        body.hframes = animation_profile.idle_columns() if animation_profile != null else ANIMATION_COLUMNS
+        body.vframes = animation_profile.idle_rows() if animation_profile != null else ANIMATION_ROWS
         body.offset = animation_profile.feet_offset if animation_profile != null else Vector2(0,-128)
         body.scale = animation_profile.actor_scale if animation_profile != null else Vector2(120.0/256.0,130.0/256.0)
     else:
@@ -103,6 +103,10 @@ func configure(id: String) -> bool:
         foot_shadow.polygon = polygon
     if is_sheet:
         animation_player = SpriteClips.attach(body, Timeline.new(), animation_profile)
+        var native: AnimatedSprite2D = body.get_node_or_null("NativeFrames") as AnimatedSprite2D
+        if native != null:
+            native.flip_h = body.flip_h
+            native.play("idle")
     has_real_sprite = true
     return true
 
@@ -113,7 +117,13 @@ func set_motion(motion: Vector2, delta: float) -> void:
     if walking and absf(motion.x) > 0.05:
         var source_faces_left: bool = bool(body.get_meta("faces_left_unflipped", false))
         body.flip_h = motion.x > 0.0 if source_faces_left else motion.x < 0.0
-    var state: String = "move" if walking else "idle"
+    var native: AnimatedSprite2D = body.get_node_or_null("NativeFrames") as AnimatedSprite2D
+    var state: String = ("walk" if walking else "idle") if native != null else \
+        ("move" if walking else "idle")
+    if native != null and native.animation != state:
+        native.play(state)
+    if native != null:
+        native.flip_h = body.flip_h
     if animation_player.current_animation != state:
         animation_player.play(state)
     # AnimationPlayer is the sole owner of the frame and pose tracks.

@@ -86,6 +86,8 @@ static func _resource_paths(plans: Array[Dictionary]) -> Array[String]:
         paths[str(plan["target"])] = true
         if plan.has("profile_path"):
             paths[str(plan["profile_path"])] = true
+        if plan.has("native_frames_path"):
+            paths[str(plan["native_frames_path"])] = true
         if plan.has("native_scene_path"):
             paths[str(plan["native_scene_path"])] = true
         if str(plan["mode"]) in ["ui_atlas", "vfx"]:
