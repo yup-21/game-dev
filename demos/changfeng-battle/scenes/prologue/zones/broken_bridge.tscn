@@ -1,0 +1,57 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/prologue/prologue_zone.gd" id="1_zone"]
+[ext_resource type="Script" path="res://scripts/prologue/prologue_portal.gd" id="2_gate"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/background.png" id="3_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/ground.png" id="4_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/foreground.png" id="5_front"]
+
+[node name="BrokenBridge" type="Node2D"]
+script = ExtResource("1_zone")
+zone_id = "broken_bridge"
+zone_title = "山涧·断桥"
+
+[node name="PaintedLayers" type="Node2D" parent="."]
+
+[node name="Background" type="Sprite2D" parent="PaintedLayers"]
+texture = ExtResource("3_bg")
+centered = false
+
+[node name="Ground" type="Sprite2D" parent="PaintedLayers"]
+texture = ExtResource("4_ground")
+centered = false
+
+[node name="Foreground" type="Sprite2D" parent="PaintedLayers"]
+z_index = 17
+texture = ExtResource("5_front")
+centered = false
+
+[node name="Navigation" type="Node2D" parent="."]
+
+[node name="Walkable" type="Polygon2D" parent="Navigation"]
+z_index = 20
+color = Color(0.22, 0.83, 0.62, 0.2)
+polygon = PackedVector2Array(88, 350, 225, 351, 375, 352, 525, 353, 675, 354, 825, 355, 975, 356, 1125, 357, 1275, 358, 1425, 359, 1512, 360, 1512, 478, 1425, 479, 1275, 480, 1125, 481, 975, 482, 825, 483, 675, 484, 525, 485, 375, 486, 225, 487, 88, 487)
+
+[node name="Blockers" type="Node2D" parent="Navigation"]
+
+[node name="Entries" type="Node2D" parent="."]
+
+[node name="FromRoad" type="Marker2D" parent="Entries"]
+position = Vector2(273, 415)
+
+[node name="Exits" type="Node2D" parent="."]
+
+[node name="ToRoad" type="Marker2D" parent="Exits"]
+position = Vector2(111, 420)
+script = ExtResource("2_gate")
+target_zone_id = "mountain_road"
+target_entry_id = "FromBridge"
+hint = "折返荒山古道"
+
+[node name="Landmarks" type="Node2D" parent="."]
+
+[node name="StoryAnchors" type="Node2D" parent="."]
+
+[node name="FutureFerryTrailNotConnected" type="Marker2D" parent="StoryAnchors"]
+position = Vector2(1415, 418)

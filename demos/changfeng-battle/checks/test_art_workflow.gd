@@ -14,6 +14,10 @@ func _initialize() -> void:
     if not str(everything.get("error", "")).is_empty():
         _fail("All export preflight: " + str(everything["error"]))
         return
+    for item in everything["entries"]:
+        if str(item["source"]).begins_with("res://assets/candidates/"):
+            _fail("Candidate preview leaked into the live art export")
+            return
     var count := 0
     for item in everything["entries"]:
         count += 1

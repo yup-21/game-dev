@@ -13,10 +13,18 @@ OUT = ROOT / "art-production/inventory"
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
 REF = re.compile(r"""res://assets/[^"'\s)\],}]+""")
 TEXT_EXTS = {".gd", ".tres", ".tscn", ".godot", ".cfg"}
-IGNORE = ("checks/", "data/templates/", "data/art_previews/", "addons/", "assets/", ".godot/")
+IGNORE = (
+    "checks/", "data/templates/", "data/art_previews/", "data/art_candidates/",
+    "addons/", "assets/", ".godot/",
+)
 
 
 def current_bindings() -> dict[str, list[str]]:
+    """Find in-use references, excluding isolated candidate review resources.
+
+    Candidate .tres files may be loaded by standalone QA scenes, but are not
+    Content Manifest bindings and must not be classified as in-use artwork.
+    """
     refs: dict[str, set[str]] = {}
     for path in sorted(GAME.rglob("*")):
         if not path.is_file() or path.suffix not in TEXT_EXTS:
