@@ -27,15 +27,24 @@ func _load_painted_candidate() -> void:
 	if zone_id not in ["temple_hall", "mountain_road"]:
 		return
 	var textures: Array[Texture2D] = []
-	for role in ART_LAYERS:
-		var file_path: String = ART_FOLDER + zone_id + "/" + role + ".png"
-		if not ResourceLoader.exists(file_path):
-			return
-		var tex := load(file_path) as Texture2D
-		if tex == null or tex.get_size() != ART_SIZE:
-			push_warning("Invalid prologue candidate texture (must be 1600x1000): " + file_path)
-			return
-		textures.append(tex)
+	# Prefer lossless PNG when imported locally. Remote PR carries aligned
+	# high-quality WebP in all three layers; never combine mixed partial sets.
+	for extension in [".png", ".webp"]:
+		var candidate: Array[Texture2D] = []
+		for role in ART_LAYERS:
+			var file_path: String = ART_FOLDER + zone_id + "/" + role + extension
+			if not ResourceLoader.exists(file_path):
+				break
+			var tex := load(file_path) as Texture2D
+			if tex == null or tex.get_size() != ART_SIZE:
+				push_warning("Invalid prologue candidate texture (must be 1600x1000): " + file_path)
+				break
+			candidate.append(tex)
+		if candidate.size() == 3:
+			textures = candidate
+			break
+	if textures.size() != 3:
+		return
 	var holder := get_node_or_null("PaintedLayers") as Node2D
 	if holder == null:
 		holder = Node2D.new()
