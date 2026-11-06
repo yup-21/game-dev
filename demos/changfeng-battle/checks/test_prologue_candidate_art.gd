@@ -64,7 +64,7 @@ func _run() -> void:
 		check(official_packed != null, "official zone scene found: " + str(spec[0]))
 		if official_packed == null:
 			continue
-		var zone: Node2D = official_packed.instantiate()
+		var zone: Node2D = official_packed.instantiate() as Node2D
 		root.add_child(zone)
 		await process_frame
 		var paintings: Node2D = zone.get_node("PaintedLayers") as Node2D
