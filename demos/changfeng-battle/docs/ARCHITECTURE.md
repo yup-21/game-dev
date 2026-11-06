@@ -3,7 +3,7 @@
 > 当前正式入口：`opening.tscn` → `battle_hd2d.tscn`；R1–R41 已经经由 PR #67–#70 合入 `main`。
 > 实现状态以代码与 CI 为准；本文件区分已接入模块与仍在演进的边界。
 
-> **R41 当前状态（2026-11-01）**：所有正式内容只从 `data/content_manifest.tres` 加载，包含武学、角色、装备、技法、章节、遭遇、GRID/FREE 地图和动作时间轴。仓库中的历史 `data/**/*.json`、旧武学 ID 映射 Resource、解析器及旧格式对照测试均已移除。自定义内容也必须使用 `.tres` manifest 和强类型 Resource。R40 已统一快捷/剧情入口、动画与空间服务。下文有关 JSON 索引的 R11–R15 文字仅是历史设计记录，**不是可使用的当前接口**。参阅 [R41 审计](R41_NATIVE_ONLY_CLOSURE.md) 和 [原生 Resource 指南](../../../docs/changfeng-native-authoring.md)。
+> **R41 内容注册基础（2026-11-01）**：所有正式**内容定义**只从 `data/content_manifest.tres` 加载，包含武学、角色、装备、技法、章节、遭遇、GRID/FREE 地图和动作时间轴；表现层可使用原生 `.tscn`，动画可使用 `SpriteFrames.tres`。仓库中的历史 `data/**/*.json`、旧武学 ID 映射 Resource、解析器及旧格式对照测试均已移除。R11–R15 中的 JSON 索引描述仅是历史记录。跨领域编辑权以 [Godot 原生内容开发规范 V2](../../../docs/GODOT_NATIVE_AUTHORING_STANDARD.md) 为准；具体操作参阅 [原生内容制作指南](../../../docs/changfeng-native-authoring.md)。
 
 ## 运行结构
 

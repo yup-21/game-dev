@@ -7,7 +7,7 @@ description: "为《长风浮生录》制作或审核战斗 HUD、CTB 跑轴、�
 
 ## 设计准则
 
-- 读取 art-production/standards/ART_PRODUCTION_STANDARD.md；按需读取 art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md 的 UI、卡面与物品图标章节。
+- 读取 art-production/standards/ART_PRODUCTION_STANDARD.md 与 [Godot 原生内容开发规范 V2](../../../docs/GODOT_NATIVE_AUTHORING_STANDARD.md) 的 HUD/UI 编辑权；按需读取 art-production/prompts/ART_STYLE_AI_PROMPTS_V1.md 的 UI、卡面与物品图标章节。
 - UI 风格使用宣纸、漆木、青铜与少量温金；低装饰密度、信息优先。战斗区域必须突出，右侧 CTB 头像跑轴和底部扇形可交互手牌的功能不可丢失。
 - 保持现有卡面兼容；不要因为生成新卡框而重复制作已存在的卡牌主体或改变战斗规则。
 - Agent 先决定图标／卡画／UI 具体类别、**目标像素尺寸 `{dimensions}`**、唯一交互状态 `{interaction_state}`（仅 UI）与素材细节，再把 `ART_STYLE_AI_PROMPTS_V1.md` §7–9 对应短模板全部展开并附参考图；每次只请求一个状态，不让模型自行选版式或状态。九宫格、点击区域、状态切换与可读性通过 Godot 验证，不当作绘图模型的长篇指令。
@@ -15,7 +15,7 @@ description: "为《长风浮生录》制作或审核战斗 HUD、CTB 跑轴、�
 ## 分类制作
 
 1. **HUD 分件**：分开输出卡槽底板、可伸缩卡框、角色头像框、CTB 轴底纹与标记、状态徽记、按钮、面板九宫格切片。每个交互元件按需设计 idle、hover、pressed、disabled、selected 状态，不把状态硬画进一张完整截图。
-2. **可编排 UI**：文字、数值、进度条、计时、CTB 头像位置与动态效果由 Godot Control/Animation 播放；素材不得烧录文字、演示卡片、伪造数值或用整图阻挡鼠标点击。
+2. **可编排 UI**：在 Godot 原生 `Control`／`Theme` 场景（如 `scenes/ui/battle_hud.tscn`、`ctb_rail.tscn`、`ctb_marker.tscn`）编辑容器、锚点、九宫格切片和动画；文字、数值、进度条、计时、CTB 头像位置由运行时数据驱动。素材不得烧录文字、演示卡片、伪造数值或用整图阻挡鼠标点击；不要在脚本里重新生成可由场景直接编辑的静态布局。
 3. **物品图标**：每件物品单体斜侧视角、统一光源和留白，真实透明 Alpha。512×512 母版与 128/64 像素导出仅是待冻结候选基线；重点验收 64px 辨识度。稀有度框、数量和装备槽不烘焙到图标。
 4. **武学卡画**：武学插画、卡框和文字独立；同一招式使用统一主体画，派生版本优先局部特效叠层。768×1024 竖幅仅是候选建议，以当前 UI 控件裁切和可读性为准。
 5. **一致性**：角色头像使用同一身份设定与立绘参考；所有 UI 元件与地图、VFX 同屏审查对比度和色彩，不能使用商业游戏 UI 图案或现成商标。
@@ -25,4 +25,4 @@ description: "为《长风浮生录》制作或审核战斗 HUD、CTB 跑轴、�
 - 每个资产复制 art-production/templates/asset-work-order.md 到 art-production/candidates/<asset-type>/<asset-id>/WORK_ORDER.md；保存来源、权限、原图、可编辑母版、版本及生成记录。
 - 在 Godot 内以 1600×1000 和 1440×900 检查实际点击区域、CTB 运行、手牌扇形展开、鼠标反馈、头像/状态可读性和不同背景下的对比度。
 - 检查 Alpha、尺寸、九宫格伸缩边界、图标缩放和资源引用；未导入的方案仍为 candidate，导入并绑定到正式 UI Resource 后成为 in_use，技术合格不代表视觉／权属审核通过。
-- 交付可独立复用的透明分件、预览截图、工作单与审核结论；不得用概念完整 UI 图代替可交互组件。
+- 交付可独立复用的透明分件、已绑定的可编辑 `.tscn`／`Theme` 或明确的 Control 节点引用、预览截图、工作单与审核结论；导入器更换分件不得重建 UI 节点或覆盖手工布局，不得用概念完整 UI 图代替可交互组件。

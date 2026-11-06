@@ -1,5 +1,7 @@
 # 角色动作原生化：GIF → SpriteFrames（分阶段接入）
 
+适用范围和**唯一编辑真源**见 [《Godot 原生内容开发规范 V2》](../../../docs/GODOT_NATIVE_AUTHORING_STANDARD.md)。此页只描述 GIF 输入分支；5×5 AI 混合图集仍按对应制作合同逐格校验后再转换，不是此 Dock 的自动动作识别能力。
+
 该编辑器扩展接入 `wuxia_art_importer` 右下方的 **Native GIF** Dock。
 每个动作对应一张透明 GIF；正式动作的帧序、FPS、循环和逐帧时长现在可保存在 Godot 原生 `SpriteFrames.tres`。
 对旧的 6×4 / 5×5 / 任意 C×R Atlas 不作强制替换，现有 `WuxiaActorAnimationClip` 仍可继续播放。
@@ -18,6 +20,7 @@
 ## 关键边界
 
 - 新 `SpriteFrames.tres` 是 GIF 路径的动作帧序唯一来源，不再同时维护一套 Clip 绝对帧号；Profile 继续保留视觉缩放、脚点等元数据。
+- 已迁移的六位角色已有 `data/native/sprite_frames/<id>.tres`；本 Dock 的新输出路径为 `data/native/animations/<id>_frames.tres`，两者均可以作为 Profile 的 `native_frames` 引用。**不得按路径猜资源版本并覆盖已有编辑成果**。
 - `SpriteFrames` 可以只导入当前需要的动作。战斗事件请求缺失动作时明确报错，不做九动作或十二动作的隐式替代。
 - 旧角色的 `.tres` 与运行时图集保持兼容；新 GIF 必须经过人工视觉/权属批准后才应该绑定为正式 `in_use`，通过程序检查不等于获批准。此工具的“确认导入”仅是执行操作确认，**不等同于美术批准**。
 - 旧图集和新版本 PNG 不自动删除。撤销采用既有 Art Transaction 日志恢复角色、Profile 和 SpriteFrames `.tres`；如果资源后来被手动修改，哈希保护会拒绝覆盖。
