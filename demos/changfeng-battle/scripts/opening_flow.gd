@@ -4,6 +4,8 @@ extends Node2D
 const Story = preload("res://scripts/opening_story.gd")
 const ArtCatalog = preload("res://scripts/hd2d_art_catalog.gd")
 const RoleSprite = preload("res://scripts/opening_role_sprite.gd")
+const StoryRoleScene = preload("res://scenes/actors/story_role.tscn")
+const StoryNPCScene = preload("res://scenes/actors/story_npc.tscn")
 const WorldViewport = preload("res://scripts/world_viewport_offset.gd")
 const PAPER = Color("eee9dc")
 const INK = Color("233c3c")
@@ -92,10 +94,10 @@ var characters_layer: Node2D
 var player_sprite: Node2D
 var escort_sprite: Node2D
 var npc_sprites: Array[Node2D] = []
-var mouse_pos: Vector2 = Vector2(-100, -100)
-var buttons: Array = []
 var message: String = ""
 var message_left: float = 0.0
+var _dialogue_portrait_speaker: String = ""
+var _cinematic_overlay_index := -1
 
 func _ready() -> void:
 	_load_chapter_content()
@@ -113,33 +115,95 @@ func _ready() -> void:
 		return
 	# In-world roles are actual Sprite2D nodes. Only painted scenery and
 	# interface text are still drawn by the opening canvas.
-	characters_layer = Node2D.new()
-	characters_layer.name = "StoryCharacters"
-	add_child(characters_layer)
-	player_sprite = RoleSprite.new()
+	characters_layer = get_node("StoryCharacters")
+	player_sprite = StoryRoleScene.instantiate()
 	if not player_sprite.configure("shen_changfeng"):
 		push_error("Cannot load Shen Changfeng story sprite")
 	characters_layer.add_child(player_sprite)
 	npc_sprites.clear()
 	for entry in _npcs():
-		var npc_sprite: Node2D = RoleSprite.new()
-		if not npc_sprite.configure(str(entry.get("character_id",""))):
+		var npc_sprite: Node2D = StoryNPCScene.instantiate()
+		if not npc_sprite.configure_npc(str(entry.get("character_id","")),
+				str(entry.get("trigger_id", "")), str(entry.get("talk_label", "交谈"))):
 			push_error("Cannot load story NPC sprite: " + str(entry.get("character_id","")))
 			npc_sprite.free()
 			continue
+		npc_sprite.interaction_requested.connect(_start_dialogue)
 		characters_layer.add_child(npc_sprite)
 		npc_sprites.append(npc_sprite)
 	escort_sprite = npc_sprites[0] if not npc_sprites.is_empty() else null
 	_sync_story_sprites(Vector2.ZERO,0.0)
+	_bind_native_menu()
+	_bind_native_story_ui()
 	print("CHANGFENG_OPENING_READY chapter=", story.data.id)
 	if "--opening-visual-check" in OS.get_cmdline_user_args():
 		call_deferred("_run_visual_check")
+
+func _bind_native_menu() -> void:
+	# Buttons live in opening.tscn and remain editable in the Inspector.
+	for node in $NativeMenuUI/MenuControls.get_children():
+		if node is Button:
+			var action: String = str(node.get_meta("action", ""))
+			if not action.is_empty():
+				node.pressed.connect(_action.bind(action))
+
+func _bind_native_story_ui() -> void:
+	$ExploreUI/ExploreHUD/TalkButton.pressed.connect(_start_dialogue)
+	$DialogueUI/Continue.pressed.connect(_dialogue_next)
+	for index in range(3):
+		var choice: Button = $DialogueUI.get_node("Choice%d" % (index + 1))
+		choice.pressed.connect(_dialogue_choice.bind(index))
+	$CompleteUI/BeginBattle.pressed.connect(_action.bind("story_battle"))
+	$CompleteUI/BackToMenu.pressed.connect(_action.bind("menu"))
+	$CinematicOverlay/CinematicSkip.pressed.connect(_action.bind("skip"))
+
+func _sync_native_story_ui() -> void:
+	$ExploreUI.visible = story.phase == "explore"
+	$DialogueUI.visible = story.phase == "dialogue"
+	$CompleteUI.visible = story.phase == "complete"
+	if story.phase == "explore":
+		var nearest: Dictionary = _nearest_npc()
+		var talk: Button = $ExploreUI/ExploreHUD/TalkButton
+		talk.visible = _npc_distance() < 175.0 and not nearest.is_empty()
+		if talk.visible:
+			talk.text = "E  " + str(nearest.get("talk_label", "交谈"))
+		$ExploreUI/ExploreHUD/ChapterName.text = _scene_text("title", "第一幕 · 雨夜残镖")
+		$ExploreUI/ExploreHUD/Location.text = _scene_text("place", "荒道破庙 / 暮秋 · 三更")
+		$ExploreUI/ExploreHUD/Prompt.text = _scene_text("prompt", "沿官道走近镖车，查探伤者。")
+		$ExploreUI/ExploreHUD/Message.text = message if message_left > 0.0 else ""
+	elif story.phase == "dialogue":
+		var node: Dictionary = story.current_dialogue()
+		var speaker: String = str(node.get("speaker", ""))
+		$DialogueUI/Speaker.text = speaker
+		if _dialogue_portrait_speaker != speaker:
+			_dialogue_portrait_speaker = speaker
+			$DialogueUI/Portrait.texture = ArtCatalog.portrait(speaker) if not speaker.is_empty() else null
+		var whole: String = str(node.get("text", ""))
+		$DialogueUI/Body.text = whole.substr(0, mini(whole.length(), int(visible_characters)))
+		var complete: bool = int(visible_characters) >= whole.length()
+		var choices: Array = _visible_choices() if complete else []
+		$DialogueUI/Continue.visible = complete and choices.is_empty()
+		$DialogueUI/Hint.text = ("空格 / 回车 / 点击继续" if choices.is_empty() else "选择一项继续") \
+			if complete else "点击显示全文  ▸"
+		for index in range(3):
+			var choice: Button = $DialogueUI.get_node("Choice%d" % (index + 1))
+			choice.visible = complete and index < choices.size()
+			if choice.visible:
+				choice.text = "%d  %s" % [index + 1, str(choices[index].text)]
+	elif story.phase == "complete":
+		$CompleteUI/Title.text = _scene_text("complete_title", "江 湖 初 入")
+		$CompleteUI/Reward.text = _scene_text("reward_label", "《太虚引气残篇》")
+		$CompleteUI/Caption.text = _scene_text("complete_caption", "一卷无名绢帛，一场未完的血案。")
+		$CompleteUI/Subtitle.text = _scene_text("complete_subtitle", "你尚不知道，它将牵出多少江湖恩怨。")
+		$CompleteUI/Notice.text = _scene_text("complete_text", "远处的马蹄声越来越近……")
+		$CompleteUI/BeginBattle.text = _scene_text("battle_label", "迎战追兵 · 继续序章")
 
 func _run_visual_check() -> void:
 	var check=load("res://checks/opening_visual_check.gd").new()
 	await check.run(self)
 
 func _process(delta: float) -> void:
+	$NativeMenuUI.visible = story.phase == "menu"
 	clock += delta
 	if message_left > 0: message_left = maxf(0.0, message_left-delta)
 	match story.phase:
@@ -164,6 +228,8 @@ func _process(delta: float) -> void:
 			visible_characters = minf(float(str(line.get("text", "")).length()),visible_characters+delta*29.0)
 	if story.phase != "explore":
 		_sync_story_sprites(Vector2.ZERO,delta)
+	_sync_cinematic_overlay()
+	_sync_native_story_ui()
 	if temple_picture != null:
 		temple_picture.visible = story.phase in ["explore","dialogue","complete"] or (story.phase=="cinematic" and story.cinematic_index > 0)
 	if ground_picture != null:
@@ -173,6 +239,19 @@ func _process(delta: float) -> void:
 	if weather_clip != null:
 		weather_clip.visible = story.phase == "explore" and story_weather_enabled
 	queue_redraw()
+
+func _sync_cinematic_overlay() -> void:
+	var overlay: CanvasLayer = $CinematicOverlay
+	overlay.visible = story.phase == "cinematic"
+	if not overlay.visible:
+		_cinematic_overlay_index = -1
+		return
+	var beat: Dictionary = story.current_beat()
+	overlay.get_node("CinematicText/Caption").text = str(beat.get("caption", ""))
+	overlay.get_node("CinematicText/Body").text = str(beat.get("text", ""))
+	if _cinematic_overlay_index != story.cinematic_index:
+		_cinematic_overlay_index = story.cinematic_index
+		overlay.get_node("CinematicAnimations").play("fade_in")
 
 ## Painted story world, NPCs and gameplay share one scroll offset.
 ## HUD stays at 1600x1000. Mouse position uses the exact inverse mapping.
@@ -223,11 +302,13 @@ func _enter_new_game() -> void:
 	var session=_session()
 	if session!=null: session.start_new_game()
 	_load_chapter_content()
-	# The title has no active chapter. A New Game must rebind the selected
-	# native scene instead of retaining the title's legacy/fallback painting.
+	# Rebind the existing authored nodes; freeing them would destroy their
+	# editor-configured transforms and break the next chapter's layer lookup.
 	for layer in [temple_picture, ground_picture, foreground_clip, weather_clip]:
 		if layer != null:
-			layer.free()
+			layer.visible = false
+			if layer is TextureRect:
+				layer.texture = null
 	temple_picture = null
 	ground_picture = null
 	foreground_picture = null
@@ -342,7 +423,6 @@ func _action(action: String) -> void:
 			if action.begins_with("choice:"): _dialogue_choice(int(action.substr(7)))
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion: mouse_pos = event.position
 	if event is InputEventKey and event.pressed and not event.echo:
 		match story.phase:
 			"menu":
@@ -359,7 +439,9 @@ func _input(event: InputEvent) -> void:
 				elif event.keycode in [KEY_ENTER,KEY_SPACE]: _action("continue")
 			"explore":
 				if event.keycode in [KEY_E, KEY_ENTER, KEY_SPACE]:
-					if _npc_distance() < 175.0: _action("talk")
+					if _npc_distance() < 175.0:
+						var chosen: Dictionary = _nearest_npc()
+						_start_dialogue(str(chosen.get("trigger_id", "")))
 					else:
 						message = "请先靠近人物，再按 E 交谈。"
 						message_left = 2.3
@@ -373,10 +455,21 @@ func _input(event: InputEvent) -> void:
 			"complete":
 				if event.keycode in [KEY_ENTER,KEY_SPACE]: _action("story_battle")
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		for button in buttons:
-			if button.rect.has_point(event.position):
-				_action(str(button.action))
+		# _input runs before GUI dispatch: do not advance the story when
+		# an editor-authored Button is the intended receiver of this click.
+		if story.phase in ["menu", "complete"]:
+			return
+		if story.phase == "cinematic" and $CinematicOverlay/CinematicSkip.get_global_rect().has_point(event.position):
+			return
+		if story.phase == "explore":
+			var talk_button: Button = $ExploreUI/ExploreHUD/TalkButton
+			if talk_button.visible and talk_button.get_global_rect().has_point(event.position):
 				return
+		if story.phase == "dialogue":
+			for ui_button in [$DialogueUI/Continue, $DialogueUI/Choice1,
+					$DialogueUI/Choice2, $DialogueUI/Choice3]:
+				if ui_button.visible and ui_button.get_global_rect().has_point(event.position):
+					return
 		match story.phase:
 			"cinematic": _action("continue")
 			"explore":
@@ -389,11 +482,6 @@ func _input(event: InputEvent) -> void:
 func _text(pos: Vector2, value: String, size: int = 19, color: Color = INK, calligraphy: bool = false) -> void:
 	draw_string(title_font if calligraphy else ui_font,pos,value,HORIZONTAL_ALIGNMENT_LEFT,-1,size,color)
 
-func _center(pos: Vector2, value: String, size: int, color: Color = INK, calligraphy: bool = false) -> void:
-	var font: Font=title_font if calligraphy else ui_font
-	var width: float=font.get_string_size(value,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x
-	_text(pos-Vector2(width/2.0,0),value,size,color,calligraphy)
-
 func _polygon(vertices: Array, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array(vertices),color)
 
@@ -402,35 +490,6 @@ func _panel(rect: Rect2, bg: Color, border: Color = Color.TRANSPARENT) -> void:
 	draw_rect(rect,bg)
 	if border.a > 0: draw_rect(rect,border,false,2)
 	draw_line(rect.position+Vector2(14,12),rect.position+Vector2(rect.size.x-14,12),Color(GOLD,0.36),1)
-
-func _button(rect: Rect2, caption: String, action: String, dark: bool = false) -> void:
-	var hovered: bool=rect.has_point(mouse_pos)
-	var color: Color=(Color("264842") if dark else Color("ede8d7"))
-	if hovered: color=color.lightened(0.12)
-	_panel(rect,color,GOLD if hovered else Color("a79b7c"))
-	# Clean vector-styled command strip; no small pixel button texture.
-	draw_rect(Rect2(rect.position+Vector2(8,8),Vector2(4,rect.size.y-16)),Color(GOLD,0.84))
-	draw_line(rect.position+Vector2(21,rect.size.y-9),
-		rect.position+Vector2(rect.size.x-16,rect.size.y-9),Color(GOLD,0.18),1)
-	_center(rect.position+Vector2(rect.size.x/2,rect.size.y/2+8),caption,22,PAPER if dark else INK,true)
-	if hovered: draw_rect(rect.grow(3),Color(GOLD,0.47),false,1.5)
-	buttons.append({"rect":rect,"action":action})
-
-func _wrapped(value: String, pos: Vector2, max_width: float, size: int, color: Color, line_gap: float = 37.0) -> void:
-	var line: String=""
-	var row: int=0
-	for ch in value:
-		if ch == "\n":
-			_text(pos+Vector2(0,row*line_gap),line,size,color)
-			line=""
-			row+=1
-			continue
-		if not line.is_empty() and ui_font.get_string_size(line+ch,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x>max_width:
-			_text(pos+Vector2(0,row*line_gap),line,size,color)
-			line=""
-			row+=1
-		line+=ch
-	if not line.is_empty(): _text(pos+Vector2(0,row*line_gap),line,size,color)
 
 func _sky(t: float, bleak: bool = false) -> void:
 	var top: Color=Color("263b3b") if bleak else Color("5d7772")
@@ -563,24 +622,10 @@ func _draw_menu() -> void:
 	_panel(Rect2(855,91,510,813),Color(0.07,0.15,0.15,0.62),Color(GOLD,0.7))
 	_painted_portrait("沈长风",Rect2(865,101,490,792))
 	draw_circle(Vector2(800,370),105,Color(0.93,0.86,0.67,0.10))
-	_text(Vector2(132,250),"MORTAL DAO  /  江 湖 浮 生",19,GOLD)
-	_text(Vector2(118,384),"长风浮生录",77,PAPER,true)
 	draw_line(Vector2(126,424),Vector2(618,424),GOLD,2)
-	_text(Vector2(132,482),"英雄无百岁，刀剑不饶人。",23,Color("e1dcc7"),true)
-	_text(Vector2(135,524),"由武入道 · 逆天改命",17,Color("bbcfc3"))
+	# Interactive title/menu typography is in the native CanvasLayer.
 	# The scene QA entry is independent of the prologue and battle session.
 	# Old duel and party scenes are intentionally absent from player menus.
-	_button(Rect2(137,560,391,57),"初入江湖 · 新游戏","start",true)
-	_button(Rect2(137,623,391,57),"进入战斗 · HD-2D","hd2d",true)
-	_button(Rect2(137,686,391,57),"P · 平江双区跳转测试","pingjiang_qa",true)
-	_button(Rect2(137,749,391,57),"V · 纵向四千滚屏测试","pingjiang_vertical_qa",true)
-	_button(Rect2(137,812,190,57),"T · 2.5D 透视","pingjiang_25d_qa",true)
-	_button(Rect2(338,812,190,57),"G · PJ-01 南门","pingjiang_south_gate_qa",true)
-	_button(Rect2(137,875,190,50),"H · 沈家旧宅","shen_house_qa",true)
-	_button(Rect2(338,875,190,50),"J · 平江四区","pingjiang_exploration",true)
-	_button(Rect2(137,933,190,38),"K · 序幕地图","prologue_native_qa",true)
-	_button(Rect2(338,933,190,38),"退出游戏","quit",true)
-	_text(Vector2(138,990),"序章演示 · 原创非像素插画 · 暮秋雨夜",13,Color("c3c9b6"))
 
 func _draw_cinematic() -> void:
 	# First beat is a memory of the destroyed school; the later rain
@@ -594,11 +639,6 @@ func _draw_cinematic() -> void:
 			if memory != null:
 				_cover_texture(memory,Rect2(0,0,1600,1000),Color(0.37,0.50,0.51,0.68))
 	_rain(clock)
-	var beat: Dictionary=story.current_beat()
-	var duration: float=float(beat.get("duration",4.0))
-	var opacity: float=clampf(minf(cinematic_elapsed/1.0,(duration-cinematic_elapsed)/0.7),0.0,1.0)
-	var caption: String=str(beat.get("caption",""))
-	var body: String=str(beat.get("text",""))
 	var drift: float = sin(cinematic_elapsed * 0.55) * 13.0
 	if story.cinematic_index==0 or not ResourceLoader.exists(background_path):
 		_paint_pavilion(Vector2(1120 + drift,752),0.98)
@@ -610,13 +650,10 @@ func _draw_cinematic() -> void:
 		_painted_portrait("老镖头",Rect2(1285,395,260,455),Color(1,1,1,0.70))
 	draw_rect(Rect2(0,0,1600,1000),Color(0.05,0.11,0.12,0.43))
 	_cinema_bars()
-	_center(Vector2(800,382),caption,32,Color(GOLD,opacity),true)
-	_center(Vector2(800,484),body,27,Color(PAPER,opacity))
-	_center(Vector2(800,556),"——  风雨入局  ——",18,Color(0.89,0.83,0.64,opacity))
+	# Caption/body/fade are editable Label and AnimationPlayer tracks in opening.tscn.
 	for index in range(story.data.cinematic.size()):
 		draw_circle(Vector2(765+(index-1)*35,875),4,GOLD if index==story.cinematic_index else Color(0.79,0.82,0.76,0.36))
-	_button(Rect2(1339,45,202,44),"跳过过场  Esc","skip",true)
-	_text(Vector2(621,939),"空格 / 点击继续",15,Color("dadbd1"))
+	# Skip and hint are native Controls in the CinematicOverlay.
 
 ## The generated painting is the entire walkable world, never a wallpaper
 ## behind a second programmatic road/carriage. Character sprites are separate.
@@ -668,8 +705,7 @@ func _load_temple_background() -> void:
 func _build_temple_picture() -> void:
 	if temple_backdrop == null:
 		return
-	temple_picture = TextureRect.new()
-	temple_picture.name = "FirstActPaintedBackground"
+	temple_picture = get_node("FirstActPaintedBackground") as TextureRect
 	temple_picture.texture = temple_backdrop
 	temple_picture.position = Vector2.ZERO
 	temple_picture.size = Vector2(story_world_size)
@@ -680,7 +716,6 @@ func _build_temple_picture() -> void:
 	temple_picture.z_index = -100
 	temple_picture.modulate = Color.WHITE
 	temple_picture.visible = false
-	add_child(temple_picture)
 	if story_art_profile != null:
 		ground_picture = _add_story_art_layer("GroundArt", story_art_profile.ground, -90)
 		foreground_picture = _add_story_art_layer("ForegroundOcclusion", story_art_profile.foreground, 12, true)
@@ -689,8 +724,11 @@ func _build_temple_picture() -> void:
 func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to_world: bool = false) -> TextureRect:
 	if texture == null:
 		return null
-	var image := TextureRect.new()
-	image.name = label
+	var native_path: String = label + "Clip/" + label if clip_to_world else label
+	var image: TextureRect = get_node_or_null(native_path) as TextureRect
+	if image == null:
+		push_error("Missing native story layer: " + native_path)
+		return null
 	image.texture = texture
 	image.position = Vector2.ZERO
 	image.size = Vector2(story_world_size)
@@ -700,8 +738,7 @@ func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if clip_to_world:
 		# Keep foreground and rain above feet, never over the chapter HUD.
-		var clip := Control.new()
-		clip.name = label + "Clip"
+		var clip: Control = get_node(label + "Clip") as Control
 		clip.position = Vector2(0,106)
 		clip.size = Vector2(1600,730)
 		clip.clip_contents = true
@@ -709,8 +746,6 @@ func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to
 		clip.z_index = depth
 		clip.visible = false
 		image.position = Vector2(0,-106)
-		clip.add_child(image)
-		add_child(clip)
 		if label == "WeatherOverlay":
 			weather_clip = clip
 		else:
@@ -718,7 +753,6 @@ func _add_story_art_layer(label: String, texture: Texture2D, depth: int, clip_to
 	else:
 		image.z_index = depth
 		image.visible = false
-		add_child(image)
 	return image
 
 
@@ -746,70 +780,33 @@ func _paint_exploration() -> void:
 
 func _draw_explore() -> void:
 	_paint_exploration()
-	draw_rect(Rect2(0,0,1600,106),Color(0.05,0.10,0.12,0.77))
-	_text(Vector2(62,67),_scene_text("title","第一幕 · 雨夜残镖"),36,PAPER,true)
-	_text(Vector2(1090,65),_scene_text("place","荒道破庙 / 暮秋 · 三更"),17,GOLD)
 	var nearest: Dictionary = _nearest_npc()
-	var near: bool = _npc_distance() < 175.0
-	if near and not nearest.is_empty():
-		draw_arc(_npc_point(nearest)+story_stage_offset+Vector2(0,-14),75,0,TAU,48,Color(GOLD,0.65+sin(clock*3.0)*0.20),2,true)
-		_button(Rect2(850,363,440,54),"E  "+str(nearest.get("talk_label","交谈")),"talk",true)
+	if _npc_distance() < 175.0 and not nearest.is_empty():
+		draw_arc(_npc_point(nearest) + story_stage_offset + Vector2(0, -14),
+			75, 0, TAU, 48, Color(GOLD, 0.65 + sin(clock * 3.0) * 0.20), 2, true)
 	else:
 		for entry in _npcs():
-			_text(_npc_point(entry)+story_stage_offset+Vector2(-85,-110),str(entry.get("talk_label","交谈")),16,Color("e1d2ac"))
-	_panel(Rect2(76,837,1448,125),Color(0.13,0.22,0.20,0.91),Color(GOLD,0.75))
-	_text(Vector2(112,881),_scene_text("prompt","沿官道走近镖车，查探伤者。"),23,PAPER,true)
-	_text(Vector2(114,920),"WASD / 方向键移动   ·   靠近后按 E 交谈",15,Color("d5c8aa"))
-	if message_left>0: _text(Vector2(120,810),message,18,GOLD)
+			_text(_npc_point(entry) + story_stage_offset + Vector2(-85, -110),
+				str(entry.get("talk_label", "交谈")), 16, Color("e1d2ac"))
+	# All viewport HUD text and TalkButton are native in ExploreUI.
 
 func _draw_dialogue() -> void:
 	_draw_explore_backdrop()
-	var node: Dictionary=story.current_dialogue()
-	var speaker: String=str(node.get("speaker",""))
-	var full_text: String=str(node.get("text",""))
-	draw_rect(Rect2(0,0,1600,1000),Color(0.07,0.12,0.12,0.29))
-	_panel(Rect2(124,665,1352,292),Color("eae3cf"),GOLD)
-	# Classic wuxia character frame / nameplate.
-	_panel(Rect2(153,574,227,308),Color("38534c"),GOLD)
-	_painted_portrait(speaker,Rect2(161,582,211,291))
-	_panel(Rect2(385,628,264,63),Color("25483f"),GOLD)
-	_center(Vector2(517,671),speaker,27,PAPER,true)
-	var clipped: String=full_text.substr(0,mini(full_text.length(),int(visible_characters)))
-	_wrapped(clipped,Vector2(419,740),983,25,INK,39)
-	if int(visible_characters)>=full_text.length():
-		var choices: Array=_visible_choices()
-		if choices.is_empty():
-			_button(Rect2(1241,886,201,50),"继续  ▶","next",true)
-			_text(Vector2(422,922),"空格 / 回车 / 点击继续",15,Color("8b795b"))
-		else:
-			for i in range(choices.size()):
-				_button(Rect2(784,864+i*55,642,48),"%d  %s" % [i+1,str(choices[i].text)],"choice:"+str(i),true)
-	else:
-		_text(Vector2(1281,911),"点击显示全文  ▸",16,Color("968262"))
+	# Speaker, portrait, typewriter text and choice Buttons live in DialogueUI.
 
 func _draw_explore_backdrop() -> void:
 	_paint_exploration()
 
 func _draw_complete() -> void:
 	if not _temple_background():
-		_sky(clock,true)
-		_carriage(Vector2(1090,650))
-	_rain(clock,90)
-	draw_rect(Rect2(0,0,1600,1000),Color(0.05,0.12,0.12,0.40))
-	_panel(Rect2(235,180,1130,696),Color("e9e4d6"),GOLD)
-	_center(Vector2(800,290),_scene_text("complete_title","江 湖 初 入"),39,INK,true)
-	draw_line(Vector2(446,324),Vector2(1154,324),Color(GOLD,0.55),2)
-	_center(Vector2(800,400),_scene_text("reward_label","《太虚引气残篇》"),32,RED,true)
-	_center(Vector2(800,470),_scene_text("complete_caption","一卷无名绢帛，一场未完的血案。"),24,INK,true)
-	_center(Vector2(800,525),_scene_text("complete_subtitle","你尚不知道，它将牵出多少江湖恩怨。"),20,INK)
-	_center(Vector2(800,579),_scene_text("complete_text","远处的马蹄声越来越近……"),19,Color("846d4e"))
-	# The story encounter always opens the same illustrated multi-actor battle.
-	_button(Rect2(430,655,742,74),_scene_text("battle_label","迎战追兵 · 继续序章"),"story_battle",true)
-	_button(Rect2(626,774,350,56),"返回主菜单","menu",true)
+		_sky(clock, true)
+		_carriage(Vector2(1090, 650))
+	_rain(clock, 90)
+	draw_rect(Rect2(0, 0, 1600, 1000), Color(0.05, 0.12, 0.12, 0.40))
+	# Completion actions and typography live in CompleteUI.
 
 func _draw() -> void:
 	if ui_font==null or story.load_error!="": return
-	buttons.clear()
 	match story.phase:
 		"menu": _draw_menu()
 		"cinematic": _draw_cinematic()

@@ -34,7 +34,7 @@ func _load_painted_candidate() -> void:
 			# WebP authoring is declared in the native SceneArtProfile Resource,
 			# not only hidden in hardcoded file paths.
 			var art_path := (
-				"res://data/art_candidates/scenes/prologue_%s/scene_art_v01.tres" % zone_id)
+				"res://data/native/scene_art/prologue_%s.tres" % zone_id)
 			if ResourceLoader.exists(art_path):
 				var art := load(art_path) as WuxiaSceneArtProfile
 				if art != null and art.valid_for(Vector2i(1600, 1000)) and art.foreground != null:

@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/native_interaction_point.gd" id="1_interaction"]
+
+[sub_resource type="CircleShape2D" id="Reach"]
+radius = 56.0
+
+[node name="InteractionPoint" type="Area2D"]
+script = ExtResource("1_interaction")
+collision_layer = 0
+collision_mask = 1
+
+[node name="ReachCollider" type="CollisionShape2D" parent="."]
+shape = SubResource("Reach")
+
+[node name="Visual" type="Sprite2D" parent="."]
+centered = true
+
+[node name="Prompt" type="Label" parent="."]
+visible = false
+offset_left = -90.0
+offset_top = -85.0
+offset_right = 90.0
+offset_bottom = -56.0
+horizontal_alignment = 1
+
+[node name="InteractionAudio" type="AudioStreamPlayer2D" parent="."]

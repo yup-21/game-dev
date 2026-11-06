@@ -24,11 +24,14 @@ func register_actor(id: int, sprite: Sprite2D, initial_facing: Vector2i = Vector
     sprite.hframes = profile.idle_columns() if profile != null else 6
     sprite.vframes = profile.idle_rows() if profile != null else 4
     var player: AnimationPlayer = NativeClips.attach(sprite, action_timeline, profile)
+    var native: AnimatedSprite2D = sprite.get_node_or_null("NativeFrames") as AnimatedSprite2D
     tracks[id] = {"sprite": sprite, "player": player, "state": "idle", "elapsed": 0.0,
         "duration": 1.0, "loop": true, "facing": initial,
         "horizontal": horizontal, "artwork_left": artwork_left,
-        "base_scale": sprite.scale, "defeated": false}
+        "base_scale": sprite.scale, "defeated": false, "native": native}
     sprite.flip_h = (horizontal == Facing.EAST) if artwork_left else (horizontal == Facing.WEST)
+    if native != null:
+        native.flip_h = sprite.flip_h
 
 func set_facing(id: int, facing: Vector2i) -> void:
     if not tracks.has(id): return
@@ -44,6 +47,9 @@ func set_facing(id: int, facing: Vector2i) -> void:
         var horizontal: Vector2i = Vector2i(track.horizontal)
         var artwork_left: bool = bool(track.artwork_left)
         sprite.flip_h = (horizontal == Facing.EAST) if artwork_left else (horizontal == Facing.WEST)
+        var native: AnimatedSprite2D = track.get("native") as AnimatedSprite2D
+        if native != null:
+            native.flip_h = sprite.flip_h
 
 func facing_for(id: int) -> Vector2i:
     return Vector2i(tracks[id].facing) if tracks.has(id) else Facing.EAST
@@ -70,6 +76,41 @@ func play(id: int, state: String, duration: float = -1.0) -> void:
         player.get_animation(state).length / maxf(0.01, float(track.duration)))
     player.play(state)
     player.advance(0.0)
+    var native: AnimatedSprite2D = track.get("native") as AnimatedSprite2D
+    if native != null:
+        native.animation = state
+        native.pause()
+        _seek_native(track)
+
+
+## Match native SpriteFrames timing to the presentation window without letting
+## a second animation clock compete with the authoritative action timeline.
+func _seek_native(track: Dictionary) -> void:
+    var node: AnimatedSprite2D = track.get("native") as AnimatedSprite2D
+    if node == null or node.sprite_frames == null:
+        return
+    var frames: SpriteFrames = node.sprite_frames
+    var action: String = str(track.state)
+    if not frames.has_animation(action):
+        return
+    var count: int = frames.get_frame_count(action)
+    if count == 0:
+        return
+    var fps: float = frames.get_animation_speed(action)
+    var seconds: float = 0.0
+    for i in range(count):
+        seconds += frames.get_frame_duration(action, i) / fps
+    if seconds <= 0.0:
+        return
+    var elapsed: float = float(track.elapsed)
+    var at: float = fposmod(elapsed, seconds) if bool(track.loop) else \
+        minf(seconds - 0.000001, elapsed * seconds / maxf(0.01, float(track.duration)))
+    for i in range(count):
+        var span: float = frames.get_frame_duration(action, i) / fps
+        if at < span or i == count - 1:
+            node.set_frame_and_progress(i, clampf(at / span, 0.0, 1.0))
+            return
+        at -= span
 
 func enqueue_defeat(id: int) -> void:
     if not tracks.has(id) or bool(tracks[id].defeated):
@@ -230,6 +271,7 @@ func update(delta: float, moving: Dictionary = {}) -> void:
             if is_instance_valid(fallen_player):
                 fallen_player.advance(minf(dt, maxf(0.0,
                     float(track.duration) - float(track.elapsed) + dt)))
+            _seek_native(track)
             tracks[id] = track
             continue
         if not bool(track.loop) and state != "idle" and \
@@ -245,6 +287,7 @@ func update(delta: float, moving: Dictionary = {}) -> void:
         var player: AnimationPlayer = track.player
         if is_instance_valid(player):
             player.advance(dt)
+        _seek_native(track)
 
 func reset() -> void:
     timeline.clear()

@@ -36,8 +36,9 @@ func _run() -> void:
         scene.get_node_or_null("WuxiaScenery")==null and
         scene.get_node_or_null("Ground_6_4")==null,
         "no procedural 3D terrain or distant background is constructed")
-    _check(painted.actors.size()==2 and painted.actors[0].get_node("ActionSprite").texture!=null,
-        "duel actors are visual 2D Sprite2D nodes with real atlas")
+    var idle_visual: AnimatedSprite2D = painted.actors[0].get_node("ActionSprite/NativeFrames")
+    _check(painted.actors.size()==2 and idle_visual.sprite_frames != null,
+        "duel actors use imported native SpriteFrames")
     var left: Vector2=painted.point_for_cell(Vector2i(6,4))
     var bridge_point: Vector2=painted.point_for_cell(Vector2i(7,4))
     var right: Vector2=painted.point_for_cell(Vector2i(8,4))
@@ -55,16 +56,16 @@ func _run() -> void:
     _check(painted.cell_from_screen(Vector2(1550,40),model.state.terrain)==Vector2i(-1,-1),
         "non-playable off-map art does not resolve to movement")
     var hero = painted.actors[0].get_node("ActionSprite") as Sprite2D
-    _check(hero.hframes==6 and hero.vframes==4,
-        "2D actor preserves original action atlas frame convention")
+    _check(hero.hframes==1 and hero.vframes==1 and idle_visual.sprite_frames.has_animation("attack"),
+        "2D actor uses editable native frames while preserving source atlas")
     _check(painted.bake.tiles.size()==150
         and painted.bake.image_rotation_degrees==0.0
         and painted.bake.scene_art != null,
         "150 game tiles are retained under the pixel-aligned layered bridge")
     var seq = model.state.revision
     painted.update_actor(0,Vector2(6,4),13,false,true)
-    _check(hero.frame==13 and model.state.revision==seq,
-        "visual animation updates sprite without modifying the model")
+    _check(idle_visual.frame==0 and model.state.revision==seq,
+        "visual update never moves the battle model or corrupts native frame bounds")
     scene.queue_free()
     await process_frame
     var session=root.get_node_or_null("GameSession")

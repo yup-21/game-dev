@@ -15,7 +15,7 @@ func _exit_tree() -> void:
         dock = null
 
 func _handles(object: Object) -> bool:
-    return object is WuxiaMapDefinition
+    return object is WuxiaMapDefinition or Dock.is_native_map(object)
 
 func _edit(object: Object) -> void:
     if dock != null:

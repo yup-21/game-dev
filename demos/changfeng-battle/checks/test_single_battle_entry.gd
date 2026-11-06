@@ -16,8 +16,14 @@ func _check(condition: bool, description: String) -> void:
 
 func _actions(view: Node) -> Array:
     var result: Array = []
-    for button in view.get("buttons"):
-        result.append(str(button.get("action", "")))
+    if str(view.get("story").phase) == "menu":
+        for node in view.get_node("NativeMenuUI/MenuControls").get_children():
+            if node is Button:
+                result.append(str(node.get_meta("action", "")))
+    elif str(view.get("story").phase) == "complete":
+        for node in view.get_node("CompleteUI").get_children():
+            if node is Button:
+                result.append(str(node.get_meta("action", "")))
     return result
 
 func _run() -> void:
@@ -39,13 +45,17 @@ func _run() -> void:
         "pingjiang_25d_qa", "pingjiang_south_gate_qa", "shen_house_qa", "pingjiang_exploration", "prologue_native_qa", "quit"]
         and menu_actions.count("hd2d") == 1,
         "main menu keeps one HD-2D battle and six isolated QA entries plus four-area exploration, without duel/party variants")
-    var menu_buttons: Array = view.get("buttons")
+    var menu_buttons: Array = []
+    for node in view.get_node("NativeMenuUI/MenuControls").get_children():
+        if node is Button:
+            menu_buttons.append(node)
     for i in range(menu_buttons.size()):
-        var rect: Rect2 = menu_buttons[i]["rect"]
+        var rect: Rect2 = menu_buttons[i].get_rect()
         _check(Rect2(0, 0, 1600, 1000).encloses(rect), "menu button stays within viewport")
         for j in range(i + 1, menu_buttons.size()):
-            _check(not rect.intersects(menu_buttons[j]["rect"]),
-                "menu hit areas do not overlap: %s / %s" % [menu_buttons[i]["action"], menu_buttons[j]["action"]])
+            _check(not rect.intersects(menu_buttons[j].get_rect()),
+                "menu hit areas do not overlap: %s / %s" % [
+                    menu_buttons[i].get_meta("action", ""), menu_buttons[j].get_meta("action", "")])
     view.get("story").set("phase", "complete")
     view.queue_redraw()
     await process_frame

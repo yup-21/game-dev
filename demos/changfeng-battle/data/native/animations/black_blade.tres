@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="WuxiaActorAnimationProfile" load_steps=13 format=3]
+[gd_resource type="Resource" script_class="WuxiaActorAnimationProfile" load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/content/actor_animation_profile.gd" id="1_profile"]
 [ext_resource type="Script" path="res://scripts/content/actor_animation_clip.gd" id="2_clip"]
 [ext_resource type="Texture2D" path="res://assets/imported/characters/black_blade/sprites/atlas.png" id="3_preview"]
+[ext_resource type="SpriteFrames" path="res://data/native/sprite_frames/black_blade.tres" id="4_frames"]
 
 [sub_resource type="Resource" id="Idle"]
 script = ExtResource("2_clip")
@@ -58,6 +59,7 @@ frame_durations = PackedFloat32Array(0.5, 0.5)
 [resource]
 script = ExtResource("1_profile")
 atlas = ExtResource("3_preview")
+native_frames = ExtResource("4_frames")
 columns = 6
 rows = 4
 feet_offset = Vector2(0, -102)

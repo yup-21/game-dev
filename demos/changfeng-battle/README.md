@@ -251,3 +251,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_hd2d_i
 - [如何扩展 Buff、武学、角色、装备和物品](docs/MODULAR_CONTENT_GUIDE.md)
 - [遗留场景与测试保护](docs/LEGACY_COMPAT.md)
 - [素材来源、引用与遗留审计](docs/REFACTOR_ASSET_AUDIT.md)
+
+## Godot 原生可视化编辑与场景测试
+
+场景布局、角色、VFX、卡牌 HUD 与 2.5D 原型的编辑入口，以及 F6 单场景测试方式，参见 [原生场景编辑指南](docs/NATIVE_AUTHORING.md)。

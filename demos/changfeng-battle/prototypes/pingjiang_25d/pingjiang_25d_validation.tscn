@@ -1,17 +1,266 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://prototypes/pingjiang_25d/pingjiang_25d_validation.gd" id="1_scene"]
+[ext_resource type="Texture2D" path="res://prototypes/pingjiang_25d/stone_road.svg" id="2_xyqny"]
+[ext_resource type="Texture2D" path="res://prototypes/pingjiang_25d/house_facade.svg" id="3_3q18r"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/shen_changfeng/sprites/atlas.png" id="4_gixpr"]
 
-[node name="Pingjiang25DValidation" type="Node3D"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5mjk2"]
+shading_mode = 0
+albedo_color = Color(0.36, 0.43, 0.36, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_lqpj0"]
+size = Vector2(20, 25)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e3os7"]
+shading_mode = 0
+albedo_texture = ExtResource("2_xyqny")
+uv1_scale = Vector3(1, 5, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ate38"]
+size = Vector2(5, 25)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sni0f"]
+shading_mode = 0
+albedo_texture = ExtResource("2_xyqny")
+uv1_scale = Vector3(4, 1, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ntvwb"]
+size = Vector2(20, 5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jlekl"]
+size = Vector3(20, 0.12, 25)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5xwul"]
+cull_mode = 2
+shading_mode = 0
+albedo_texture = ExtResource("3_3q18r")
+
+[sub_resource type="QuadMesh" id="QuadMesh_yu81e"]
+size = Vector2(5.5, 3.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_u8bkw"]
+size = Vector3(5.5, 3.3, 0.16)
+
+[sub_resource type="QuadMesh" id="QuadMesh_6n5jc"]
+size = Vector2(5.5, 3.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_xpjt7"]
+size = Vector3(5.5, 3.3, 0.16)
+
+[sub_resource type="QuadMesh" id="QuadMesh_4si6e"]
+size = Vector2(5.5, 3.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_k0jxc"]
+size = Vector3(5.5, 3.3, 0.16)
+
+[sub_resource type="QuadMesh" id="QuadMesh_hjk84"]
+size = Vector2(5.5, 3.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vnqla"]
+size = Vector3(5.5, 3.3, 0.16)
+
+[sub_resource type="QuadMesh" id="QuadMesh_47frx"]
+size = Vector2(5.5, 3.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3xogr"]
+size = Vector3(5.5, 3.3, 0.16)
+
+[sub_resource type="QuadMesh" id="QuadMesh_f416i"]
+size = Vector2(5.5, 3.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mqhid"]
+size = Vector3(5.5, 3.3, 0.16)
+
+[sub_resource type="QuadMesh" id="QuadMesh_r8re6"]
+size = Vector2(5.5, 3.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wyedf"]
+size = Vector3(5.5, 3.3, 0.16)
+
+[sub_resource type="QuadMesh" id="QuadMesh_cmi52"]
+size = Vector2(5.5, 3.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_js4j1"]
+size = Vector3(5.5, 3.3, 0.16)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_5xsxh"]
+radius = 0.3
+height = 1.0
+
+[node name="Pingjiang25DValidation" type="Node3D" unique_id=395649065]
 script = ExtResource("1_scene")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-position = Vector3(0, 10, 15.5)
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1740095776]
+transform = Transform3D(1, 0, 0, 0, 0.66896474, 0.7432941, 0, -0.7432941, 0.66896474, 0, 10, 15.5)
 current = true
 fov = 38.0
 near = 0.1
 far = 100.0
+metadata/native_authoring_camera = true
 
-[node name="Sun" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-50, -25, 0)
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=638868254]
+transform = Transform3D(0.90630776, 0.3237444, -0.2716538, 0, 0.64278764, 0.76604444, 0.42261827, -0.69427204, 0.5825634, 0, 0, 0)
 light_energy = 0.8
+
+[node name="Street" type="Node3D" parent="." unique_id=958346919]
+
+[node name="MapGround" type="MeshInstance3D" parent="Street" unique_id=1882953040]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.025, 0)
+material_override = SubResource("StandardMaterial3D_5mjk2")
+mesh = SubResource("PlaneMesh_lqpj0")
+
+[node name="TexturedRoad" type="MeshInstance3D" parent="Street" unique_id=823600711]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.001, 0)
+material_override = SubResource("StandardMaterial3D_e3os7")
+mesh = SubResource("PlaneMesh_ate38")
+
+[node name="CrossStreet" type="MeshInstance3D" parent="Street" unique_id=1488658199]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.003, 0)
+material_override = SubResource("StandardMaterial3D_sni0f")
+mesh = SubResource("PlaneMesh_ntvwb")
+
+[node name="RoadCollider" type="StaticBody3D" parent="Street" unique_id=1986321397]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/RoadCollider" unique_id=73231086]
+shape = SubResource("BoxShape3D_jlekl")
+
+[node name="SideFacade_W_N" type="StaticBody3D" parent="Street" unique_id=629977640]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -3.25, 1.65, -8.2)
+
+[node name="FacadePlane" type="MeshInstance3D" parent="Street/SideFacade_W_N" unique_id=739944103]
+material_override = SubResource("StandardMaterial3D_5xwul")
+mesh = SubResource("QuadMesh_yu81e")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/SideFacade_W_N" unique_id=2107196860]
+shape = SubResource("BoxShape3D_u8bkw")
+
+[node name="CrossFacade_N_W" type="StaticBody3D" parent="Street" unique_id=133117856]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2, 1.65, -3.25)
+
+[node name="FacadePlane" type="MeshInstance3D" parent="Street/CrossFacade_N_W" unique_id=1303031573]
+material_override = SubResource("StandardMaterial3D_5xwul")
+mesh = SubResource("QuadMesh_6n5jc")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/CrossFacade_N_W" unique_id=1607500023]
+shape = SubResource("BoxShape3D_xpjt7")
+
+[node name="SideFacade_W_S" type="StaticBody3D" parent="Street" unique_id=1459103847]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -3.25, 1.65, 8.2)
+
+[node name="FacadePlane" type="MeshInstance3D" parent="Street/SideFacade_W_S" unique_id=1105516388]
+material_override = SubResource("StandardMaterial3D_5xwul")
+mesh = SubResource("QuadMesh_4si6e")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/SideFacade_W_S" unique_id=822253283]
+shape = SubResource("BoxShape3D_k0jxc")
+
+[node name="CrossFacade_N_E" type="StaticBody3D" parent="Street" unique_id=2086447978]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.2, 1.65, -3.25)
+
+[node name="FacadePlane" type="MeshInstance3D" parent="Street/CrossFacade_N_E" unique_id=115649126]
+material_override = SubResource("StandardMaterial3D_5xwul")
+mesh = SubResource("QuadMesh_hjk84")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/CrossFacade_N_E" unique_id=722725945]
+shape = SubResource("BoxShape3D_vnqla")
+
+[node name="SideFacade_E_N" type="StaticBody3D" parent="Street" unique_id=2036059711]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 3.25, 1.65, -8.2)
+
+[node name="FacadePlane" type="MeshInstance3D" parent="Street/SideFacade_E_N" unique_id=1662571124]
+material_override = SubResource("StandardMaterial3D_5xwul")
+mesh = SubResource("QuadMesh_47frx")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/SideFacade_E_N" unique_id=1764524621]
+shape = SubResource("BoxShape3D_3xogr")
+
+[node name="CrossFacade_S_W" type="StaticBody3D" parent="Street" unique_id=857004552]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.2, 1.65, 3.25)
+
+[node name="FacadePlane" type="MeshInstance3D" parent="Street/CrossFacade_S_W" unique_id=236102083]
+material_override = SubResource("StandardMaterial3D_5xwul")
+mesh = SubResource("QuadMesh_f416i")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/CrossFacade_S_W" unique_id=576749686]
+shape = SubResource("BoxShape3D_mqhid")
+
+[node name="SideFacade_E_S" type="StaticBody3D" parent="Street" unique_id=1993492615]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 3.25, 1.65, 8.2)
+
+[node name="FacadePlane" type="MeshInstance3D" parent="Street/SideFacade_E_S" unique_id=1648115566]
+material_override = SubResource("StandardMaterial3D_5xwul")
+mesh = SubResource("QuadMesh_r8re6")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/SideFacade_E_S" unique_id=1110690608]
+shape = SubResource("BoxShape3D_wyedf")
+
+[node name="CrossFacade_S_E" type="StaticBody3D" parent="Street" unique_id=334155618]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 6.2, 1.65, 3.25)
+
+[node name="FacadePlane" type="MeshInstance3D" parent="Street/CrossFacade_S_E" unique_id=1063856913]
+material_override = SubResource("StandardMaterial3D_5xwul")
+mesh = SubResource("QuadMesh_cmi52")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Street/CrossFacade_S_E" unique_id=1629214946]
+shape = SubResource("BoxShape3D_js4j1")
+
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1411041353]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 7.5)
+
+[node name="FootprintCollider" type="CollisionShape3D" parent="Player" unique_id=1872206213]
+shape = SubResource("CapsuleShape3D_5xsxh")
+
+[node name="ActorSprite" type="Sprite3D" parent="Player" unique_id=686162716]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0034246538, 0)
+pixel_size = 0.0051369863
+billboard = 1
+alpha_cut = 1
+texture = ExtResource("4_gixpr")
+hframes = 6
+vframes = 4
+frame = 1
+
+[node name="FarReference" type="Node3D" parent="." unique_id=491773244]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3, 0, -7.5)
+
+[node name="@Sprite3D@2" type="Sprite3D" parent="FarReference" unique_id=1510442682]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50342464, 0)
+modulate = Color(0.7, 0.89, 0.95, 0.75)
+pixel_size = 0.0051369863
+billboard = 1
+alpha_cut = 1
+texture = ExtResource("4_gixpr")
+hframes = 6
+vframes = 4
+frame = 1
+
+[node name="NearReference" type="Node3D" parent="." unique_id=1643307302]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3, 0, 7.5)
+
+[node name="@Sprite3D@3" type="Sprite3D" parent="NearReference" unique_id=1090515301]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50342464, 0)
+modulate = Color(0.7, 0.89, 0.95, 0.75)
+pixel_size = 0.0051369863
+billboard = 1
+alpha_cut = 1
+texture = ExtResource("4_gixpr")
+hframes = 6
+vframes = 4
+frame = 1
+
+[node name="QAOverlay" type="CanvasLayer" parent="." unique_id=331095587]
+
+[node name="Status" type="Label" parent="QAOverlay" unique_id=1160538351]
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 24.0
+offset_bottom = 18.0
+theme_override_colors/font_color = Color(0.94, 0.95, 0.86, 1)
+theme_override_colors/font_shadow_color = Color(0.03, 0.06, 0.07, 1)
+theme_override_font_sizes/font_size = 22
+text = "平江府 2.5D 十字街 · 透视 · 地图 1600×2000 px (20×25u)
+四向路口 · 贴图立面/无房顶 · WASD/方向键 · P 投影 · R 复位 · Esc 返回
+位置 Z: 7.5 u  镜头 Z: 15.5 u  角色画面高: 56 px
+同尺寸参照：远 49 px / 近 56 px"

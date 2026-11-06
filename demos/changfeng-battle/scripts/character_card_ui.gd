@@ -25,102 +25,29 @@ func _ready() -> void:
     set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     mouse_filter = Control.MOUSE_FILTER_STOP
     visible = false
-    var shade := ColorRect.new()
-    shade.name = "Backdrop"
-    shade.color = Color(0.015,0.06,0.07,0.82)
-    add_child(shade)
-    shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    shade.mouse_filter = Control.MOUSE_FILTER_STOP
-    shade.gui_input.connect(_on_backdrop_input)
-    var panel := Panel.new()
-    panel.name = "Dossier"
-    add_child(panel)
-    panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-    panel.offset_left = -490
-    panel.offset_right = 490
-    panel.offset_top = -325
-    panel.offset_bottom = 325
-    var style := StyleBoxFlat.new()
-    style.bg_color = Color("132b2c")
-    style.border_color = Color("9eae94",0.36)
-    style.set_border_width_all(1)
-    style.set_corner_radius_all(12)
-    panel.add_theme_stylebox_override("panel",style)
-    var margin := MarginContainer.new()
-    panel.add_child(margin)
-    margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    for side in ["left","right","top","bottom"]:
-        margin.add_theme_constant_override("margin_"+side,20)
-    var column := VBoxContainer.new()
-    column.add_theme_constant_override("separation",12)
-    margin.add_child(column)
-    var header := HBoxContainer.new()
-    column.add_child(header)
-    title_label = _label(header,"",27,UITheme.GOLD)
-    title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    var close := Button.new()
-    close.name = "CloseCharacterCard"
-    close.text = "收起  ×"
-    UITheme.apply_button(close)
-    header.add_child(close)
-    close.pressed.connect(close_card)
-    column.add_child(HSeparator.new())
-    var content := HBoxContainer.new()
-    content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    content.add_theme_constant_override("separation",25)
-    column.add_child(content)
-    var left := VBoxContainer.new()
-    left.custom_minimum_size.x = 236
-    left.add_theme_constant_override("separation",10)
-    content.add_child(left)
-    portrait = TextureRect.new()
-    portrait.name = "RolePortrait"
-    portrait.custom_minimum_size = Vector2(232,368)
-    portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-    left.add_child(portrait)
-    preview = TextureRect.new()
-    preview.name = "SpritePreview"
-    preview.custom_minimum_size = Vector2(100,94)
-    preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-    preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-    left.add_child(preview)
-    art_label = _label(left,"",12,UITheme.MUTED)
-    art_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    var scroll := ScrollContainer.new()
-    scroll.name = "RoleDetailsScroll"
-    scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    content.add_child(scroll)
-    var details := VBoxContainer.new()
-    details.name = "RoleDetails"
-    details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    details.add_theme_constant_override("separation",13)
-    scroll.add_child(details)
-    identity_label = _label(details,"",16,UITheme.JADE)
-    bio_label = _label(details,"",15,UITheme.PAPER)
-    bio_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    _label(details,"已 学 武 学 · 切 换",19,UITheme.GOLD)
-    schools_column = VBoxContainer.new()
-    schools_column.name = "LearnedSchools"
-    schools_column.add_theme_constant_override("separation",6)
-    details.add_child(schools_column)
-    _label(details,"当 前 招 式",19,UITheme.GOLD)
-    martial_label = _label(details,"",14,UITheme.PAPER)
-    martial_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    _label(details,"气 血 · 属 性",19,UITheme.GOLD)
-    stats_label = _label(details,"",15,UITheme.MUTED)
-    _label(details,"实 时 状 态 · 装 备",19,UITheme.GOLD)
-    status_label = _label(details,"",14,UITheme.PAPER)
-    status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    if not has_node("Backdrop"):
+        push_error("Character dossier must be instantiated from scenes/ui/character_card.tscn")
+        return
+    _bind_native_scene()
 
-func _label(parent: Node, value: String, font_size: int, color: Color) -> Label:
-    var label := Label.new()
-    label.text = value
-    label.add_theme_font_size_override("font_size",font_size)
-    label.add_theme_color_override("font_color",color)
-    parent.add_child(label)
-    return label
+func _bind_native_scene() -> void:
+    # In the authored PackedScene every panel, image and label is editable.
+    title_label = find_child("DossierTitle", true, false) as Label
+    identity_label = find_child("Identity", true, false) as Label
+    bio_label = find_child("Biography", true, false) as Label
+    martial_label = find_child("MartialDetails", true, false) as Label
+    schools_column = find_child("LearnedSchools", true, false) as VBoxContainer
+    stats_label = find_child("Stats", true, false) as Label
+    status_label = find_child("StatusDetails", true, false) as Label
+    art_label = find_child("ArtDescription", true, false) as Label
+    portrait = find_child("RolePortrait", true, false) as TextureRect
+    preview = find_child("SpritePreview", true, false) as TextureRect
+    var shade: ColorRect = get_node("Backdrop")
+    if not shade.gui_input.is_connected(_on_backdrop_input):
+        shade.gui_input.connect(_on_backdrop_input)
+    var close: Button = find_child("CloseCharacterCard", true, false) as Button
+    if not close.pressed.is_connected(close_card):
+        close.pressed.connect(close_card)
 
 func _on_backdrop_input(event: InputEvent) -> void:
     if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -147,11 +74,19 @@ func open_actor(battle_model, id: int) -> bool:
     identity_label.text = "%s · %s · %s" % [str(definition.role),str(definition.faction),str(definition.weapon)]
     bio_label.text = str(definition.biography) + "\n\n性情 · " + str(definition.personality)
     portrait.texture = Art.portrait_for_character(str(definition.id))
-    var frame := AtlasTexture.new()
     var sheet: Texture2D = Art.sheet_for_character(str(definition.id),actor.team_id!=0)
-    frame.atlas = sheet
-    frame.region = Rect2(0,0,sheet.get_width()/6.0,sheet.get_height()/4.0)
-    preview.texture = frame
+    var profile := Art.animation_profile_for_character(str(definition.id))
+    if profile != null and profile.native_frames != null:
+        # SpriteFrames already supplies a cropped frame; never slice it again.
+        preview.texture = sheet
+    else:
+        var frame := AtlasTexture.new()
+        frame.atlas = sheet
+        var columns: int = profile.idle_columns() if profile != null else 6
+        var rows: int = profile.idle_rows() if profile != null else 4
+        frame.region = Rect2(0, 0, sheet.get_width() / float(columns),
+            sheet.get_height() / float(rows))
+        preview.texture = frame
     art_label.text = ("角色立绘已接入" if portrait.texture != null else "精细立绘待制作") + "\n动作素材：" + str(definition.art.sheet_quality)
     for child in schools_column.get_children():
         child.queue_free()

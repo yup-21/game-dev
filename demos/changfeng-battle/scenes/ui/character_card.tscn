@@ -1,0 +1,227 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/character_card_ui.gd" id="1_hb02x"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1b1wn"]
+bg_color = Color(0.07450981, 0.16862746, 0.17254902, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.61960787, 0.68235296, 0.5803922, 0.36)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x8tbm"]
+content_margin_left = 14.0
+content_margin_top = 7.0
+content_margin_right = 14.0
+content_margin_bottom = 7.0
+bg_color = Color(0.078431375, 0.18039216, 0.1882353, 0.09)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3vxox"]
+content_margin_left = 14.0
+content_margin_top = 7.0
+content_margin_right = 14.0
+content_margin_bottom = 7.0
+bg_color = Color(0.20392157, 0.36078432, 0.32156864, 0.5)
+border_width_bottom = 1
+border_color = Color(0.827451, 0.7176471, 0.49411765, 0.59)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dhryq"]
+content_margin_left = 14.0
+content_margin_top = 7.0
+content_margin_right = 14.0
+content_margin_bottom = 7.0
+bg_color = Color(0.20392157, 0.36078432, 0.32156864, 0.5)
+border_width_bottom = 1
+border_color = Color(0.827451, 0.7176471, 0.49411765, 0.59)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3apsi"]
+content_margin_left = 14.0
+content_margin_top = 7.0
+content_margin_right = 14.0
+content_margin_bottom = 7.0
+bg_color = Color(0.078431375, 0.18039216, 0.1882353, 0.09)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g2ulh"]
+
+[node name="CharacterCardOverlay" type="Control" unique_id=246451217]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_hb02x")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1898668025]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.015, 0.06, 0.07, 0.82)
+
+[node name="Dossier" type="Panel" parent="." unique_id=509368637]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -490.0
+offset_top = -325.0
+offset_right = 490.0
+offset_bottom = 325.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1b1wn")
+
+[node name="@MarginContainer@3" type="MarginContainer" parent="Dossier" unique_id=658533111]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="@VBoxContainer@4" type="VBoxContainer" parent="Dossier/@MarginContainer@3" unique_id=1918384952]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="@HBoxContainer@5" type="HBoxContainer" parent="Dossier/@MarginContainer@3/@VBoxContainer@4" unique_id=1866702450]
+layout_mode = 2
+
+[node name="DossierTitle" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@5" unique_id=323144245]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8745098, 0.7607843, 0.5411765, 1)
+theme_override_font_sizes/font_size = 27
+
+[node name="CloseCharacterCard" type="Button" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@5" unique_id=927465273]
+custom_minimum_size = Vector2(104, 30)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9254902, 0.85490197, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.29803923, 0.39607844, 0.36862746, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_x8tbm")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_3vxox")
+theme_override_styles/hover = SubResource("StyleBoxFlat_dhryq")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_3apsi")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_g2ulh")
+text = "收起  ×"
+
+[node name="@HSeparator@7" type="HSeparator" parent="Dossier/@MarginContainer@3/@VBoxContainer@4" unique_id=1677243420]
+layout_mode = 2
+
+[node name="@HBoxContainer@8" type="HBoxContainer" parent="Dossier/@MarginContainer@3/@VBoxContainer@4" unique_id=1720204123]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 25
+
+[node name="@VBoxContainer@9" type="VBoxContainer" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8" unique_id=298000243]
+custom_minimum_size = Vector2(236, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RolePortrait" type="TextureRect" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/@VBoxContainer@9" unique_id=1953767677]
+custom_minimum_size = Vector2(232, 368)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SpritePreview" type="TextureRect" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/@VBoxContainer@9" unique_id=1563032638]
+custom_minimum_size = Vector2(100, 94)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ArtDescription" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/@VBoxContainer@9" unique_id=1087629096]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7254902, 0.80784315, 0.7607843, 1)
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+
+[node name="RoleDetailsScroll" type="ScrollContainer" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8" unique_id=699328696]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RoleDetails" type="VBoxContainer" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll" unique_id=1568709844]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 13
+
+[node name="Identity" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=1135659630]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5294118, 0.8156863, 0.72156864, 1)
+theme_override_font_sizes/font_size = 16
+
+[node name="Biography" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=1671538874]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9254902, 0.85490197, 1)
+theme_override_font_sizes/font_size = 15
+autowrap_mode = 3
+
+[node name="@Label@15" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=1857067427]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8745098, 0.7607843, 0.5411765, 1)
+theme_override_font_sizes/font_size = 19
+text = "已 学 武 学 · 切 换"
+
+[node name="LearnedSchools" type="VBoxContainer" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=298728092]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="@Label@16" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=1513078189]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8745098, 0.7607843, 0.5411765, 1)
+theme_override_font_sizes/font_size = 19
+text = "当 前 招 式"
+
+[node name="MartialDetails" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=979422371]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9254902, 0.85490197, 1)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+
+[node name="@Label@18" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=658574112]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8745098, 0.7607843, 0.5411765, 1)
+theme_override_font_sizes/font_size = 19
+text = "气 血 · 属 性"
+
+[node name="Stats" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=1498208042]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7254902, 0.80784315, 0.7607843, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="@Label@20" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=1135382946]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8745098, 0.7607843, 0.5411765, 1)
+theme_override_font_sizes/font_size = 19
+text = "实 时 状 态 · 装 备"
+
+[node name="StatusDetails" type="Label" parent="Dossier/@MarginContainer@3/@VBoxContainer@4/@HBoxContainer@8/RoleDetailsScroll/RoleDetails" unique_id=2146721578]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9490196, 0.9254902, 0.85490197, 1)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3

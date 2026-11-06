@@ -2,6 +2,8 @@
 
 本仓库收录《长风浮生录》的可运行原型、技术说明与验证资料。
 
+新内容请先看 [Godot 原生内容开发规范 V2](docs/GODOT_NATIVE_AUTHORING_STANDARD.md)，再按 [原生内容制作操作指南](docs/changfeng-native-authoring.md) 和 [Godot 编辑器场景清单](demos/changfeng-battle/docs/NATIVE_AUTHORING.md) 创建角色、地图、HUD 与特效；美术源图生产仍遵守 [正式美术规范](art-production/standards/ART_PRODUCTION_STANDARD.md)。
+
 ## 当前 Demo：断桥听风
 
 [打开 Demo 目录](demos/changfeng-battle) · [操作与规则](demos/changfeng-battle/README.md) · [战斗机制与框架详细说明](demos/changfeng-battle/docs/tingfeng-engine.md) · [验证记录](demos/changfeng-battle/reports/validation.md)

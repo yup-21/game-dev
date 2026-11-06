@@ -14,6 +14,13 @@ static func _inside(path: String, root: String) -> bool:
     return path.simplify_path().begins_with(root.simplify_path() + "/")
 
 
+static func _managed_resource(path: String) -> bool:
+    if path.contains(".."):
+        return false
+    return (path.begins_with("res://data/") and path.ends_with(".tres")) or \
+        (path.begins_with("res://scenes/") and path.ends_with(".tscn"))
+
+
 static func _write(path: String, value: Dictionary) -> String:
     if DirAccess.make_dir_recursive_absolute(path.get_base_dir()) != OK:
         return "无法创建事务目录"
@@ -38,6 +45,7 @@ static func validate(plans: Array[Dictionary]) -> String:
     var targets: Dictionary = {}
     var logical_targets: Dictionary = {}
     var images: Dictionary = {}
+    var native_scenes: Dictionary = {}
     for plan in plans:
         if not str(plan.get("error", "")).is_empty():
             return str(plan["error"])
@@ -53,6 +61,14 @@ static func validate(plans: Array[Dictionary]) -> String:
                     str(logical_targets[target_path]) in ["vfx", "ui_atlas", "character_folder"]:
                 return "同一 Resource 不允许混合 UI/VFX 或冲突目标：" + target_path
         logical_targets[target_path] = str(plan.get("mode", ""))
+        var native_path := str(plan.get("native_scene_path", ""))
+        if not native_path.is_empty():
+            if str(plan.get("mode", "")) != "scene" or not _managed_resource(native_path) or \
+                    not native_path.ends_with(".tscn") or native_scenes.has(native_path):
+                return "原生场景路径无效或批次中重复：" + native_path
+            if FileAccess.get_sha256(native_path) != str(plan.get("native_scene_sha256", "")):
+                return "原生场景自预检后被修改：" + native_path
+            native_scenes[native_path] = true
         for item in plan.get("files", {}).values():
             var path := str(item.get("destination", ""))
             var source_hash := str(item.get("sha256", ""))
@@ -72,6 +88,10 @@ static func _resource_paths(plans: Array[Dictionary]) -> Array[String]:
             paths[str(plan["profile_path"])] = true
         for item in plan.get("candidate_updates", []):
             paths[str(item["resource_path"])] = true
+        if plan.has("native_frames_path"):
+            paths[str(plan["native_frames_path"])] = true
+        if plan.has("native_scene_path"):
+            paths[str(plan["native_scene_path"])] = true
         if str(plan["mode"]) in ["ui_atlas", "vfx"]:
             paths[MANIFEST] = true
     var sorted: Array[String] = []
@@ -91,13 +111,13 @@ static func begin(plans: Array[Dictionary]) -> Dictionary:
         return {"error": "事务备份目录创建失败"}
     var resources: Array[Dictionary] = []
     for path in _resource_paths(plans):
-        if not path.begins_with("res://data/") or ".." in path:
+        if not _managed_resource(path):
             return {"error": "拒绝备份非内容 Resource：" + path}
         var absolute := ProjectSettings.globalize_path(path)
         var exists := FileAccess.file_exists(path)
         var before := ""
         if exists:
-            before = journal.path_join("before/" + str(resources.size()) + ".tres")
+            before = journal.path_join("before/" + str(resources.size()) + "." + path.get_extension())
             if DirAccess.make_dir_recursive_absolute(before.get_base_dir()) != OK:
                 return {"error": "无法创建事务备份路径"}
             if DirAccess.copy_absolute(absolute, before) != OK:
@@ -155,7 +175,7 @@ static func rollback(log_path: String, failed_during_apply: bool = false) -> Str
     # Preflight all paths before restoring any file.
     for item in record.get("resources", []):
         var path := str(item.get("path", ""))
-        if not path.begins_with("res://data/") or ".." in path:
+        if not _managed_resource(path):
             return "事务 Resource 路径越界"
         if state == "committed" and FileAccess.get_sha256(path) != str(item["after_sha256"]):
             return "Resource 已被后续修改，拒绝覆盖：" + path
@@ -178,5 +198,5 @@ static func rollback(log_path: String, failed_during_apply: bool = false) -> Str
             if DirAccess.rename_absolute(absolute, safe) != OK:
                 return "无法移动新增 Resource：" + path
     record["state"] = "failed_rolled_back" if failed_during_apply else "rolled_back"
-    record["error"] = "未删除新图片；仅恢复 .tres。若 Inspector 仍显示旧缓存，请重新打开 Resource。"
+    record["error"] = "未删除新图片；已恢复 .tres/.tscn。若 Inspector 仍显示旧缓存，请重新打开场景。"
     return _write(log_path, record)
