@@ -29,11 +29,11 @@ var markers: Dictionary = {}
 var area_bounds: Rect2 = Rect2()
 var error: String = ""
 
-func _init(path: String = DEFAULT_PATH) -> void:
+func _init(path: String = DEFAULT_PATH, native_override: WuxiaMapDefinition = null) -> void:
     if not path.ends_with(".tres") or not ResourceLoader.exists(path):
         error = "Native map Resource missing: " + path
         return
-    var grid_resource: Resource = ResourceLoader.load(path)
+    var grid_resource: Resource = native_override if native_override != null else ResourceLoader.load(path)
     if grid_resource is WuxiaGridMapDefinition or grid_resource is WuxiaMapDefinition:
         var authored = grid_resource.get("scene_art") as WuxiaSceneArtProfile
         if authored != null:
@@ -44,7 +44,7 @@ func _init(path: String = DEFAULT_PATH) -> void:
     if grid_resource is WuxiaGridMapDefinition:
         _load_grid_record(grid_resource.to_record(), path)
     elif grid_resource is WuxiaMapDefinition:
-        _load_native(path)
+        _load_native(path, native_override)
     else:
         error = "Invalid native map Resource: " + path
 
@@ -150,8 +150,8 @@ func baked_terrain() -> Dictionary:
 ## R23: a freeform painted polygon map also supplies a conservative 15x10
 ## Conservative GRID terrain index for painted maps; FREE collision uses
 ## the original authored polygon geometry.
-func _load_native(path: String) -> void:
-    var resource: Resource = ResourceLoader.load(path) if ResourceLoader.exists(path) else null
+func _load_native(path: String, native_override: WuxiaMapDefinition = null) -> void:
+    var resource: Resource = native_override if native_override != null else ResourceLoader.load(path)
     if not resource is WuxiaMapDefinition:
         error = "Missing or invalid native map: " + path
         return

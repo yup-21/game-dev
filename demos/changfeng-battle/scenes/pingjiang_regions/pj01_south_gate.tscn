@@ -1,0 +1,112 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/native_map_region.gd" id="1_62e34"]
+[ext_resource type="Resource" path="res://data/maps/pingjiang_south_gate_qa.tres" id="2_4ixij"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_south_gate_qa/background.png" id="3_q4xk8"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_south_gate_qa/ground.png" id="4_poq5g"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_south_gate_qa/foreground.png" id="5_yok7s"]
+[ext_resource type="Script" path="res://scripts/native_map_obstacle.gd" id="6_f1rox"]
+[ext_resource type="Script" path="res://scripts/native_map_marker.gd" id="7_aigtx"]
+[ext_resource type="Script" path="res://scripts/native_map_exit.gd" id="8_da8va"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f0xe2"]
+radius = 90.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_30rfw"]
+radius = 90.0
+
+[node name="pingjiang_south_gate_qa" type="Node2D" unique_id=844606021]
+script = ExtResource("1_62e34")
+source_map = ExtResource("2_4ixij")
+
+[node name="Background" type="Sprite2D" parent="." unique_id=1931933271]
+z_index = -100
+texture = ExtResource("3_q4xk8")
+centered = false
+
+[node name="Ground" type="Sprite2D" parent="." unique_id=792854846]
+z_index = -90
+texture = ExtResource("4_poq5g")
+centered = false
+
+[node name="Foreground" type="Sprite2D" parent="." unique_id=583118065]
+z_index = 110
+texture = ExtResource("5_yok7s")
+centered = false
+
+[node name="WalkableArea" type="Area2D" parent="." unique_id=871369007]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+
+[node name="Boundary" type="CollisionPolygon2D" parent="WalkableArea" unique_id=1854128283]
+polygon = PackedVector2Array(620, 40, 980, 40, 980, 1960, 620, 1960)
+disabled = true
+
+[node name="Obstacles" type="Node2D" parent="." unique_id=629273443]
+
+[node name="Obstacle_01" type="StaticBody2D" parent="Obstacles" unique_id=1349981462]
+script = ExtResource("6_f1rox")
+terrain_kind = "water"
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Obstacles/Obstacle_01" unique_id=785361298]
+polygon = PackedVector2Array(1, 1100, 600, 1100, 600, 1540, 1, 1540)
+
+[node name="Obstacle_02" type="StaticBody2D" parent="Obstacles" unique_id=196580405]
+script = ExtResource("6_f1rox")
+terrain_kind = "water"
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Obstacles/Obstacle_02" unique_id=24325459]
+polygon = PackedVector2Array(1000, 1100, 1599, 1100, 1599, 1540, 1000, 1540)
+
+[node name="Markers" type="Node2D" parent="." unique_id=1631021276]
+
+[node name="from_north" type="Marker2D" parent="Markers" unique_id=188786832]
+position = Vector2(800, 250)
+script = ExtResource("7_aigtx")
+
+[node name="from_south" type="Marker2D" parent="Markers" unique_id=1673781732]
+position = Vector2(800, 1750)
+script = ExtResource("7_aigtx")
+
+[node name="checkpoint" type="Marker2D" parent="Markers" unique_id=224650964]
+position = Vector2(918, 975)
+script = ExtResource("7_aigtx")
+marker_kind = "story_trigger"
+radius = 58.0
+
+[node name="notice_board" type="Marker2D" parent="Markers" unique_id=2131337343]
+position = Vector2(675, 1740)
+script = ExtResource("7_aigtx")
+marker_kind = "story_trigger"
+radius = 58.0
+
+[node name="Exits" type="Node2D" parent="." unique_id=2107037840]
+
+[node name="north" type="Area2D" parent="Exits" unique_id=1451915194]
+position = Vector2(800, 80)
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("8_da8va")
+target_zone_id = "pingjiang_crossroads"
+target_entry_id = "from_south"
+
+[node name="Radius" type="CollisionShape2D" parent="Exits/north" unique_id=716330549]
+shape = SubResource("CircleShape2D_f0xe2")
+
+[node name="south" type="Area2D" parent="Exits" unique_id=658437753]
+position = Vector2(800, 1920)
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("8_da8va")
+exit_side = "south"
+target_zone_id = "pingjiang_wild_road_connector_qa"
+target_entry_id = "from_north"
+
+[node name="Radius" type="CollisionShape2D" parent="Exits/south" unique_id=768350495]
+shape = SubResource("CircleShape2D_30rfw")

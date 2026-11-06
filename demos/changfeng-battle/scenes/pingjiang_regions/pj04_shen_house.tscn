@@ -1,0 +1,129 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/native_map_region.gd" id="1_s32wf"]
+[ext_resource type="Resource" path="res://data/maps/pingjiang_shen_house.tres" id="2_fq81x"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_shen_house/background.png" id="3_vgvam"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_shen_house/ground.png" id="4_4ndl1"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/pingjiang_shen_house/foreground.png" id="5_0jnnl"]
+[ext_resource type="Script" path="res://scripts/native_map_obstacle.gd" id="6_r5bfp"]
+[ext_resource type="Script" path="res://scripts/native_map_marker.gd" id="7_e7p3p"]
+[ext_resource type="Script" path="res://scripts/native_map_exit.gd" id="8_8yet1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_kfuki"]
+radius = 78.0
+
+[node name="pingjiang_shen_house" type="Node2D" unique_id=2061788513]
+script = ExtResource("1_s32wf")
+source_map = ExtResource("2_fq81x")
+
+[node name="Background" type="Sprite2D" parent="." unique_id=618244194]
+z_index = -100
+texture = ExtResource("3_vgvam")
+centered = false
+
+[node name="Ground" type="Sprite2D" parent="." unique_id=1283275884]
+z_index = -90
+texture = ExtResource("4_4ndl1")
+centered = false
+
+[node name="Foreground" type="Sprite2D" parent="." unique_id=202617359]
+z_index = 110
+texture = ExtResource("5_0jnnl")
+centered = false
+
+[node name="WalkableArea" type="Area2D" parent="." unique_id=1387320165]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+
+[node name="Boundary" type="CollisionPolygon2D" parent="WalkableArea" unique_id=99086219]
+polygon = PackedVector2Array(730, 290, 960, 290, 979, 510, 1370, 510, 1555, 650, 1570, 955, 55, 955, 55, 580, 172, 548, 685, 530, 704, 494)
+disabled = true
+
+[node name="Obstacles" type="Node2D" parent="." unique_id=319068413]
+
+[node name="Obstacle_01" type="StaticBody2D" parent="Obstacles" unique_id=151173720]
+script = ExtResource("6_r5bfp")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Obstacles/Obstacle_01" unique_id=1203379459]
+polygon = PackedVector2Array(183, 487, 671, 487, 672, 514, 595, 526, 530, 547, 232, 547, 184, 524)
+
+[node name="Obstacle_02" type="StaticBody2D" parent="Obstacles" unique_id=579230553]
+script = ExtResource("6_r5bfp")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Obstacles/Obstacle_02" unique_id=465265715]
+polygon = PackedVector2Array(1011, 472, 1103, 472, 1110, 525, 1027, 536, 1006, 510)
+
+[node name="Obstacle_03" type="StaticBody2D" parent="Obstacles" unique_id=1520316522]
+script = ExtResource("6_r5bfp")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Obstacles/Obstacle_03" unique_id=543336727]
+polygon = PackedVector2Array(1125, 466, 1214, 466, 1227, 537, 1132, 545, 1118, 512)
+
+[node name="Obstacle_04" type="StaticBody2D" parent="Obstacles" unique_id=5302032]
+script = ExtResource("6_r5bfp")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Obstacles/Obstacle_04" unique_id=2049487426]
+polygon = PackedVector2Array(1443, 478, 1552, 477, 1587, 515, 1587, 624, 1555, 646, 1423, 636, 1398, 585, 1407, 521)
+
+[node name="Markers" type="Node2D" parent="." unique_id=1352902411]
+
+[node name="player_start" type="Marker2D" parent="Markers" unique_id=2064652659]
+position = Vector2(800, 740)
+script = ExtResource("7_e7p3p")
+
+[node name="from_north" type="Marker2D" parent="Markers" unique_id=1449246398]
+position = Vector2(850, 565)
+script = ExtResource("7_e7p3p")
+
+[node name="house_door" type="Marker2D" parent="Markers" unique_id=1875801186]
+position = Vector2(335, 583)
+script = ExtResource("7_e7p3p")
+marker_kind = "story_trigger"
+radius = 95.0
+
+[node name="sword_case" type="Marker2D" parent="Markers" unique_id=609065170]
+position = Vector2(578, 582)
+script = ExtResource("7_e7p3p")
+marker_kind = "story_trigger"
+radius = 85.0
+
+[node name="practice_posts" type="Marker2D" parent="Markers" unique_id=619290080]
+position = Vector2(1138, 595)
+script = ExtResource("7_e7p3p")
+marker_kind = "story_trigger"
+radius = 88.0
+
+[node name="hidden_compartment" type="Marker2D" parent="Markers" unique_id=372345125]
+position = Vector2(1350, 555)
+script = ExtResource("7_e7p3p")
+marker_kind = "story_trigger"
+radius = 72.0
+
+[node name="well" type="Marker2D" parent="Markers" unique_id=1605257116]
+position = Vector2(1360, 690)
+script = ExtResource("7_e7p3p")
+marker_kind = "story_trigger"
+radius = 84.0
+
+[node name="save_point" type="Marker2D" parent="Markers" unique_id=184486140]
+position = Vector2(466, 638)
+script = ExtResource("7_e7p3p")
+marker_kind = "story_trigger"
+radius = 80.0
+
+[node name="Exits" type="Node2D" parent="." unique_id=387401833]
+
+[node name="north" type="Area2D" parent="Exits" unique_id=1692887838]
+position = Vector2(845, 338)
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("8_8yet1")
+target_zone_id = "pingjiang_riverside_market"
+target_entry_id = "from_south"
+
+[node name="Radius" type="CollisionShape2D" parent="Exits/north" unique_id=1287195875]
+shape = SubResource("CircleShape2D_kfuki")
