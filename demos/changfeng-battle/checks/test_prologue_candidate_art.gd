@@ -24,17 +24,17 @@ func _run() -> void:
 		check(packed != null, "preview scene exists: " + scene_id)
 		if packed == null:
 			continue
-		var preview: Node2D = packed.instantiate()
+		var preview = packed.instantiate()
 		root.add_child(preview)
 		await process_frame
 
-		var zone := preview.get_node("NativeZone") as Node2D
+		var zone = preview.get_node("NativeZone")
 		check(zone != null, "editable native zone: " + scene_id)
 		check(preview.get_node_or_null("ArtReviewStatus") is Label,
 			"review label: " + scene_id)
-		check(preview.imported_layer_count in [0, 3],
+		check(int(preview.get("imported_layer_count")) in [0, 3],
 			"never partially apply candidate layers: " + scene_id)
-		check(zone.painted_layer_count == preview.imported_layer_count,
+		check(int(zone.get("painted_layer_count")) == preview.imported_layer_count,
 			"preview reuses native scene art (no duplicate sprites): " + scene_id)
 		if required:
 			check(preview.imported_layer_count == 3,
