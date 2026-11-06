@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "status": "candidate",
+  "package_id": "prologue_character_gifs_v01",
+  "delivery_contract": {
+    "format": "independent_transparent_gif_per_action",
+    "frames_per_action": 6,
+    "mixed_5x5_sheet": false,
+    "runtime_binding": false
+  },
+  "characters": [
+    {
+      "id": "han_xiao",
+      "display_name": "韩啸",
+      "frame_size_px": [
+        384,
+        288
+      ],
+      "portrait": "art-production/candidates/characters/han_xiao/baseline/portrait_han_xiao_fullbody_v01.webp",
+      "actions": [
+        {
+          "action_id": "idle",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/idle/sprite_han_xiao_idle_v01.gif"
+        },
+        {
+          "action_id": "walk",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/walk/sprite_han_xiao_walk_v01.gif"
+        },
+        {
+          "action_id": "run",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/run/sprite_han_xiao_run_v01.gif"
+        },
+        {
+          "action_id": "attack1",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/attack1/sprite_han_xiao_attack1_v01.gif"
+        },
+        {
+          "action_id": "attack2",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/attack2/sprite_han_xiao_attack2_v01.gif"
+        },
+        {
+          "action_id": "attack3",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/attack3/sprite_han_xiao_attack3_v01.gif"
+        },
+        {
+          "action_id": "attack4",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/attack4/sprite_han_xiao_attack4_v01.gif"
+        },
+        {
+          "action_id": "skill",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/skill/sprite_han_xiao_skill_v01.gif"
+        },
+        {
+          "action_id": "evade",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/evade/sprite_han_xiao_evade_v01.gif"
+        },
+        {
+          "action_id": "guard",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/guard/sprite_han_xiao_guard_v01.gif"
+        },
+        {
+          "action_id": "hit",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/hit/sprite_han_xiao_hit_v01.gif"
+        },
+        {
+          "action_id": "defeat",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/han_xiao/actions/defeat/sprite_han_xiao_defeat_v01.gif"
+        }
+      ]
+    },
+    {
+      "id": "ghost_mask_guard",
+      "display_name": "鬼面刀卫",
+      "frame_size_px": [
+        328,
+        256
+      ],
+      "portrait": "art-production/candidates/characters/ghost_mask_guard/baseline/portrait_ghost_mask_guard_fullbody_v01.webp",
+      "actions": [
+        {
+          "action_id": "idle",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/idle/sprite_ghost_mask_guard_idle_v01.gif"
+        },
+        {
+          "action_id": "walk",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/walk/sprite_ghost_mask_guard_walk_v01.gif"
+        },
+        {
+          "action_id": "run",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/run/sprite_ghost_mask_guard_run_v01.gif"
+        },
+        {
+          "action_id": "attack1",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/attack1/sprite_ghost_mask_guard_attack1_v01.gif"
+        },
+        {
+          "action_id": "attack2",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/attack2/sprite_ghost_mask_guard_attack2_v01.gif"
+        },
+        {
+          "action_id": "attack3",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/attack3/sprite_ghost_mask_guard_attack3_v01.gif"
+        },
+        {
+          "action_id": "attack4",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/attack4/sprite_ghost_mask_guard_attack4_v01.gif"
+        },
+        {
+          "action_id": "skill",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/skill/sprite_ghost_mask_guard_skill_v01.gif"
+        },
+        {
+          "action_id": "evade",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/evade/sprite_ghost_mask_guard_evade_v01.gif"
+        },
+        {
+          "action_id": "guard",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/guard/sprite_ghost_mask_guard_guard_v01.gif"
+        },
+        {
+          "action_id": "hit",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/hit/sprite_ghost_mask_guard_hit_v01.gif"
+        },
+        {
+          "action_id": "defeat",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ghost_mask_guard/actions/defeat/sprite_ghost_mask_guard_defeat_v01.gif"
+        }
+      ]
+    },
+    {
+      "id": "yan_shoucheng",
+      "display_name": "严守诚",
+      "frame_size_px": [
+        328,
+        256
+      ],
+      "portrait": "art-production/candidates/characters/yan_shoucheng/baseline/portrait_yan_shoucheng_fullbody_v01.webp",
+      "actions": [
+        {
+          "action_id": "hurt_breathe",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/yan_shoucheng/actions/hurt_breathe/sprite_yan_shoucheng_hurt_breathe_v01.gif"
+        },
+        {
+          "action_id": "cough_blood",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/yan_shoucheng/actions/cough_blood/sprite_yan_shoucheng_cough_blood_v01.gif"
+        },
+        {
+          "action_id": "show_scroll",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/yan_shoucheng/actions/show_scroll/sprite_yan_shoucheng_show_scroll_v01.gif"
+        },
+        {
+          "action_id": "handover_scroll",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/yan_shoucheng/actions/handover_scroll/sprite_yan_shoucheng_handover_scroll_v01.gif"
+        },
+        {
+          "action_id": "death",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/yan_shoucheng/actions/death/sprite_yan_shoucheng_death_v01.gif"
+        }
+      ]
+    },
+    {
+      "id": "ferryman_zhang",
+      "display_name": "摆渡老张",
+      "frame_size_px": [
+        328,
+        256
+      ],
+      "portrait": "art-production/candidates/characters/ferryman_zhang/baseline/portrait_ferryman_zhang_fullbody_v01.webp",
+      "actions": [
+        {
+          "action_id": "idle",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ferryman_zhang/actions/idle/sprite_ferryman_zhang_idle_v01.gif"
+        },
+        {
+          "action_id": "pole_row",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ferryman_zhang/actions/pole_row/sprite_ferryman_zhang_pole_row_v01.gif"
+        },
+        {
+          "action_id": "greet",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ferryman_zhang/actions/greet/sprite_ferryman_zhang_greet_v01.gif"
+        },
+        {
+          "action_id": "farewell",
+          "frames": 6,
+          "gif": "art-production/candidates/characters/ferryman_zhang/actions/farewell/sprite_ferryman_zhang_farewell_v01.gif"
+        }
+      ]
+    }
+  ]
+}
