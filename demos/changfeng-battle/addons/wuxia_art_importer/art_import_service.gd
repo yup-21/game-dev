@@ -8,6 +8,7 @@ const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx", "character_fold
 const MANIFEST := "res://data/content_manifest.tres"
 const CombatScale = preload("res://scripts/combat_scale.gd")
 const SpriteAssembly = preload("res://addons/wuxia_art_importer/sprite_assembly.gd")
+const NativeScene = preload("res://addons/wuxia_art_importer/native_scene_binding.gd")
 
 
 ## Candidate art must have a full-size, safely contained idle reference.
@@ -765,6 +766,21 @@ static func plan(mode: String, source: String, target: String, fields: Dictionar
             result["files"][layer] = check
         var scene_id := str(owner.get("content_id")) + ("_story" if owner is WuxiaChapterDefinition else "")
         result["profile_path"] = "res://data/native/scene_art/" + scene_id + ".tres"
+        # Native map scenes are separately hand-authored. Never find/overwrite
+        # one by filename convention; an artist must choose the .tscn explicitly.
+        var native_path := str(fields.get("native_scene_path", "")).strip_edges()
+        if not native_path.is_empty():
+            if not owner is WuxiaMapDefinition:
+                return {"error": "只有 WuxiaMapDefinition 可同步原生地图；章节/网格请在编辑器手动绑定"}
+            var required_layers: Array = []
+            for key in ["primary", "ground", "foreground", "weather"]:
+                if result["files"].has(key):
+                    required_layers.append("background" if key == "primary" else key)
+            var scene_check := NativeScene.inspect(native_path, owner, required_layers)
+            if not str(scene_check.get("error", "")).is_empty():
+                return scene_check
+            result["native_scene_path"] = native_path
+            result["native_scene_sha256"] = str(scene_check["sha256"])
     if mode in ["vfx", "ui_atlas"] and ResourceLoader.exists(str(result["target"])):
         var old_asset := ResourceLoader.load(str(result["target"])) as WuxiaAssetDefinition
         if old_asset != null and old_asset.resource != null:
@@ -979,6 +995,15 @@ static func save_bindings(plan_data: Dictionary) -> String:
             map.image_rotation_degrees = 0.0
             map.image_scale = 1.0
         var map_error := _save(map, target)
+        if not map_error.is_empty():
+            return map_error
+        if plan_data.has("native_scene_path"):
+            var native_layers := {"background": textures["primary"], "ground": textures["ground"]}
+            for optional in ["foreground", "weather"]:
+                if textures.has(optional):
+                    native_layers[optional] = textures[optional]
+            map_error = NativeScene.save(str(plan_data["native_scene_path"]), map,
+                native_layers, str(plan_data["native_scene_sha256"]))
         if map_error.is_empty():
             map.emit_changed()
         return map_error

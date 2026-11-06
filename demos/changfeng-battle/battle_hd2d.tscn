@@ -1,6 +1,17 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/hd2d_battle.gd" id="1_hd2d"]
+[ext_resource type="PackedScene" path="res://scenes/ui/battle_hud.tscn" id="2_hud"]
+[ext_resource type="PackedScene" path="res://scenes/maps/illustrated_battle_map.tscn" id="3_map"]
 
 [node name="HD2DBattle" type="Node2D"]
 script = ExtResource("1_hd2d")
+
+[node name="IllustratedBattleMap" parent="." instance=ExtResource("3_map")]
+
+[node name="WuxiaCombatHUD" parent="." instance=ExtResource("2_hud")]
+
+[node name="BattleCamera2D" type="Camera2D" parent="."]
+current = true
+
+[node name="BattleAmbience" type="AudioStreamPlayer" parent="."]

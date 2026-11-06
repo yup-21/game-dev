@@ -25,7 +25,9 @@ func _run() -> void:
         sprite.texture = Art.sheet_for_actor(0) if actor_id == 0 else Fallback.ACTOR_SHEET
         sprite.scale = Vector2(0.75, 0.75) if actor_id == 0 else Vector2.ONE
         host.add_child(sprite)
-        driver.register_actor(actor_id, sprite)
+        var profile: WuxiaActorAnimationProfile = \
+            Art.animation_profile_for_character("shen_changfeng") if actor_id == 0 else null
+        driver.register_actor(actor_id, sprite, Vector2i.RIGHT, profile)
         var player: AnimationPlayer = sprite.get_node_or_null("NativeSpriteAnimation") as AnimationPlayer
         check(player != null, "actor %d has an AnimationPlayer child" % actor_id)
         if player == null:
@@ -36,26 +38,33 @@ func _run() -> void:
             check(player.has_animation(state), "native animation exists: %s" % state)
         var attack: Animation = player.get_animation("attack")
         var frame_track: int = attack.find_track(NodePath(".:frame"), Animation.TYPE_VALUE)
-        check(frame_track >= 0 and
-            attack.value_track_get_update_mode(frame_track) == Animation.UPDATE_DISCRETE,
-            "frame is a discrete engine animation track")
+        if actor_id == 0:
+            var native: AnimatedSprite2D = sprite.get_node_or_null("NativeFrames")
+            check(frame_track < 0 and native != null and native.sprite_frames == profile.native_frames,
+                "approved character frame ordering is owned only by SpriteFrames")
+        else:
+            check(frame_track >= 0 and
+                attack.value_track_get_update_mode(frame_track) == Animation.UPDATE_DISCRETE,
+                "legacy fallback frame is a discrete AnimationPlayer track")
         check(attack.find_track(NodePath(".:scale"), Animation.TYPE_VALUE) >= 0 and
             attack.find_track(NodePath(".:rotation"), Animation.TYPE_VALUE) >= 0 and
             attack.find_track(NodePath(".:position"), Animation.TYPE_VALUE) >= 0,
             "pose accents and cosmetic root motion use native transform tracks")
-        check(sprite.hframes == 6 and sprite.vframes == 4,
-            "original and fallback art preserve the 6x4 atlas contract")
+        check(sprite.hframes == (1 if actor_id == 0 else 6) and \
+            sprite.vframes == (1 if actor_id == 0 else 4),
+            "native character frames and unmigrated fallback are independently supported")
     driver.play(0, "attack")
     driver.update(0.22)
     var original_sprite: Sprite2D = host.get_child(0) as Sprite2D
-    check(original_sprite.frame >= 12 and original_sprite.frame < 18,
-        "attack frames are advanced by AnimationPlayer")
-    check(original_sprite.scale != Vector2(0.75, 0.75) and
-        absf(original_sprite.rotation) > 0.01,
-        "native tracks animate the authored scale and tilt")
+    var animation: AnimatedSprite2D = original_sprite.get_node("NativeFrames")
+    check(animation.animation == "attack" and animation.frame > 0,
+        "approved attack frames advance through native SpriteFrames")
+    check(original_sprite.scale == Vector2(0.75, 0.75) and
+        absf(original_sprite.rotation) < 0.01,
+        "native frames do not invent unauthorised procedural pose accents")
     driver.update(1.0)
     check(str(driver.tracks[0].state) == "idle" and
-        original_sprite.frame < 6 and
+        animation.animation == "idle" and animation.frame == 0 and
         original_sprite.scale.is_equal_approx(Vector2(0.75, 0.75)),
         "finished action resets the original scale and idle pose")
     driver.play(1, "move")

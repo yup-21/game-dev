@@ -97,8 +97,10 @@ static func avatar_for_character(character_id: String, enemy: bool = false) -> T
     var sheet := sheet_for_character(character_id,enemy)
     if sheet == null:
         return null
-    atlas.atlas = sheet
     var authored_profile: WuxiaActorAnimationProfile = animation_profile_for_character(character_id)
+    if authored_profile != null and authored_profile.native_frames != null:
+        return sheet
+    atlas.atlas = sheet
     var columns: int = authored_profile.columns if authored_profile != null else COLS
     var rows: int = authored_profile.rows if authored_profile != null else ROWS
     atlas.region = Rect2(Vector2.ZERO, Vector2(sheet.get_width()/float(columns), sheet.get_height()/float(rows)))
@@ -121,7 +123,8 @@ static func sheet_faces_left(actor_id: int) -> bool:
 
 static func uses_supplied_sheet_for_character(character_id: String) -> bool:
     var card := _character_card(character_id)
-    return card != null and card.sprite_sheet != null
+    return card != null and (card.sprite_sheet != null or \
+        (card.animation_profile != null and card.animation_profile.native_frames != null))
 
 
 static func uses_supplied_sheet(actor_id: int) -> bool:

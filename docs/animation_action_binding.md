@@ -1,29 +1,31 @@
 # 角色逐帧动画与技能表现绑定
 
-本说明面向 Godot 原生 `.tres` 内容制作。战斗规则由 `BattleModel / CombatResolver` 决定；动画、根位移和 VFX 均不写入规则位置、判定盒、伤害或无敌窗口。
+本说明面向 Godot 原生动画内容制作，遵循 [Godot 原生内容开发规范 V2](GODOT_NATIVE_AUTHORING_STANDARD.md)。战斗规则由 `BattleModel / CombatResolver` 决定；动画、局部根位移和 VFX 均不写入规则位置、判定盒、伤害或无敌窗口。
 
 ## 动作资源合同
 
-角色的 `WuxiaActorAnimationProfile.clips` 是可扩展动作库。新角色使用下面十二个动作 ID：
+新角色优先将动作库放入 `WuxiaActorAnimationProfile.native_frames` 引用的 `SpriteFrames.tres`，帧序、FPS、逐帧时长及循环只在 SpriteFrames 编辑；Profile 保存脚点、缩放和朝向。**仅当 `native_frames` 为空时**，旧 `WuxiaActorAnimationProfile.clips` 才是图集的帧序来源。新角色使用下面十二个动作 ID：
 
 | ID | 含义 | 行为 |
 | --- | --- | --- |
 | `idle` | 待机 | 循环 |
 | `walk` | 行走 | 循环 |
 | `run` | 跑步 | 循环 |
-| `attack1` | 直刺 | 单次 |
-| `attack2` | 下劈 | 单次 |
-| `attack3` | 横斩 | 单次 |
-| `attack4` | 蓄力重击 | 单次 |
+| `attack1` | 该角色武器的第一攻击变体 | 单次 |
+| `attack2` | 该角色武器的第二攻击变体 | 单次 |
+| `attack3` | 该角色武器的第三攻击变体 | 单次 |
+| `attack4` | 该角色武器的第四攻击变体 | 单次 |
 | `skill` | 专属技能姿态 | 单次 |
 | `evade` | 向后闪避 | 单次 |
 | `guard` | 格挡 | 单次 |
 | `hit` | 受击 | 单次 |
 | `defeat` | 倒地 | 单次、终帧保持 |
 
-动作名称不再受固定枚举限制。可添加 `attack5`、`attack6` 或其他小写标识符；不需修改播放器。新角色必须含全部十二项；旧版九动作 `idle/move/attack/guard/hit/evade/skill/combo/defeat` 仍受支持，`walk/run` 会回退至 `move`，`attack1–4` 会回退至 `attack`。旧资源不会被批量改写。
+动作名称不受固定枚举限制，可添加 `attack5`、`attack6` 或其他小写合法标识符；新增角色的**美术生产验收**仍需要上述十二项。逐动作 GIF 可先导入当前阶段用到的动作（至少 `idle`），缺失的动作不可伪称已完成。旧版九动作 `idle/move/attack/guard/hit/evade/skill/combo/defeat` 仍受支持；旧 Atlas 的 `walk/run` → `move`、`attack1–4` → `attack` **仅在 `action_fallbacks` 显式配置并有效时**兼容，不存在自动回退；`native_frames` 路径不使用旧 Clip 的隐式映射。旧资源不会被批量改写。
 
-每个 `WuxiaActorAnimationClip` 有：
+六位已迁移角色的 `data/native/sprite_frames/<id>.tres` 可直接在 Godot 编辑；Native GIF Dock 新导入的资源位于 `data/native/animations/<id>_frames.tres`。两种路径都由 `native_frames` 显式引用，不能为了统一目录重复生成或覆盖已经微调的动画。逐动作 GIF 细则见 [Native GIF 导入指南](../demos/changfeng-battle/docs/NATIVE_ANIMATION_IMPORT.md)。
+
+未提供 `native_frames` 的历史 Atlas 使用以下 `WuxiaActorAnimationClip` 字段（**不适用于已使用 SpriteFrames 的角色**）：
 
 - `action`：唯一动作 ID。
 - `atlas`：可选独立透明图集。留空时使用 Profile 的共享 `atlas`。
@@ -35,7 +37,7 @@
 
 同一 Profile 下每个动作的 **单格像素尺寸必须一致**，以保证不同图集切换时角色比例不跳动；允许每组图集具有不同的总宽高、行数和列数。全体动作仍需脚底地线、落脚点、角色形体和武器数量一致。
 
-新模板：`res://data/templates/actor_animation_profile_12_actions.tres`。模板为 **接口验证占位图**，复用旧 SVG 帧，不是十二套正式美术，也未覆盖任何正在使用的素材。
+历史 Atlas 模板：`res://data/templates/actor_animation_profile_12_actions.tres`。模板为 **接口验证占位图**，复用旧 SVG 帧，不是十二套正式美术，也未覆盖任何正在使用的素材。新动画应在 Godot SpriteFrames 面板预览并保存真实帧序。
 
 ## 技能与招式绑定
 

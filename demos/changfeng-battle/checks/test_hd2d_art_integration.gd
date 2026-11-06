@@ -21,7 +21,9 @@ func _run() -> void:
         if not Catalog.uses_supplied_sheet(actor_id):
             _fail("no art mapping for actor %d" % actor_id)
             return
-        var texture: Texture2D = Catalog.sheet_for_actor(actor_id, actor_id > 3)
+        # Formal native SpriteFrames retains the approved source sheet, but
+        # Catalog.sheet_for_actor now returns its already cropped idle frame.
+        var texture: Texture2D = profile.atlas if profile != null else Catalog.sheet_for_actor(actor_id, actor_id > 3)
         var image: Image = texture.get_image()
         var columns: int = profile.columns if profile != null else 6
         var rows: int = profile.rows if profile != null else 4
@@ -80,15 +82,14 @@ func _run() -> void:
         return
     for actor_id in [0, 1, 2, 3, 4, 5]:
         var sprite: Sprite2D = battle_map.actors[actor_id].get_node_or_null("ActionSprite") as Sprite2D
-        if sprite == null or sprite.texture != Catalog.sheet_for_actor(actor_id, actor_id > 3):
-            _fail("story actor %d is not displaying the supplied atlas" % actor_id)
-            return
+        var native: AnimatedSprite2D = sprite.get_node_or_null("NativeFrames") if sprite != null else null
         var character_id: String = str(characters.for_actor(actor_id).get("id", ""))
         var profile: WuxiaActorAnimationProfile = Catalog.animation_profile_for_character(character_id)
-        var cols: int = profile.columns if profile != null else 6
-        var rows: int = profile.rows if profile != null else 4
-        if sprite.hframes != cols or sprite.vframes != rows:
-            _fail("animation frame layout does not match profile for actor %d" % actor_id)
+        if sprite == null or profile == null or native == null or native.sprite_frames != profile.native_frames:
+            _fail("story actor %d is not displaying approved SpriteFrames" % actor_id)
+            return
+        if sprite.hframes != 1 or sprite.vframes != 1 or not native.sprite_frames.has_animation("idle"):
+            _fail("native animation setup invalid for actor %d" % actor_id)
             return
     if battle.get("model").state.seed != session.encounter_seed():
         _fail("presentation changed authoritative encounter seed")
@@ -105,5 +106,5 @@ func _run() -> void:
             _fail("story battle screenshot could not be saved")
             return
         print("HD2D_CAPTURE ", ProjectSettings.globalize_path(path))
-    print("HD2D_ART_PASS 6 pose sheets, 3 portraits, 3 scenery assets, 2D bridge and 6 actors")
+    print("HD2D_ART_PASS 6 SpriteFrames backed by approved sheets, 3 portraits, 3 scenery assets, 2D bridge and 6 actors")
     quit(0)

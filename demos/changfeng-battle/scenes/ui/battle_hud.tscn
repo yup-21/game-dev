@@ -1,0 +1,327 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/imported/ui/overlays/veil_top.svg" id="1_top"]
+[ext_resource type="Texture2D" path="res://assets/imported/ui/ornaments/chapter_filagree.svg" id="2_filigree"]
+[ext_resource type="Texture2D" path="res://assets/imported/ui/overlays/veil_left.svg" id="3_left"]
+[ext_resource type="Texture2D" path="res://assets/imported/ui/overlays/veil_right.svg" id="4_right"]
+[ext_resource type="Texture2D" path="res://assets/imported/ui/ornaments/hand_fan_tray.svg" id="5_hand"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ctb_rail.tscn" id="6_ctb"]
+[ext_resource type="PackedScene" path="res://scenes/ui/character_card.tscn" id="7_card"]
+
+[node name="WuxiaCombatHUD" type="CanvasLayer"]
+
+[node name="UnifiedHUD" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ChapterRibbon" type="Control" parent="UnifiedHUD"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 61.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="TopVeil" type="TextureRect" parent="UnifiedHUD/ChapterRibbon"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("1_top")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="TitleFiligree" type="TextureRect" parent="UnifiedHUD/ChapterRibbon"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 0.0
+offset_right = 300.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = ExtResource("2_filigree")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="Heading" type="Label" parent="UnifiedHUD/ChapterRibbon"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 8.0
+offset_bottom = 43.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.933333, 0.913725, 0.862745, 1)
+theme_override_font_sizes/font_size = 23
+text = "断桥听风"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="UnifiedHUD/ChapterRibbon"]
+layout_mode = 1
+offset_left = 15.0
+offset_top = 13.0
+offset_right = 510.0
+offset_bottom = 47.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="Phase" type="Label" parent="UnifiedHUD/ChapterRibbon"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -460.0
+offset_top = 15.0
+offset_right = -285.0
+offset_bottom = 42.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.772549, 0.631373, 0.419608, 1)
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 2
+
+[node name="AutoBattleToggle" type="Button" parent="UnifiedHUD/ChapterRibbon"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -138.0
+offset_top = 11.0
+offset_right = -12.0
+offset_bottom = 45.0
+tooltip_text = "托管我方行动；按 A 随时恢复手动"
+text = "自动战斗 · 关"
+
+[node name="BattleSpatialModeToggle" type="Button" parent="UnifiedHUD/ChapterRibbon"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -280.0
+offset_top = 11.0
+offset_right = -145.0
+offset_bottom = 45.0
+tooltip_text = "网格 / 无网格双模式；按 M 切换（行动阶段生效）"
+
+[node name="Help" type="Label" parent="UnifiedHUD/ChapterRibbon"]
+visible = false
+text = "M 切换网格/无网格 · P 显示路径 · 左键落点或点敌自动接近 · C 角色卡 · Space 收势"
+
+[node name="FloatingRoster" type="Control" parent="UnifiedHUD"]
+layout_mode = 1
+offset_top = 75.0
+offset_right = 214.0
+offset_bottom = 459.0
+mouse_filter = 2
+
+[node name="LeftVeil" type="TextureRect" parent="UnifiedHUD/FloatingRoster"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_left")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="RosterHeading" type="Label" parent="UnifiedHUD/FloatingRoster"]
+layout_mode = 0
+offset_left = 13.0
+offset_top = 10.0
+offset_right = 193.0
+offset_bottom = 33.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.772549, 0.631373, 0.419608, 1)
+theme_override_font_sizes/font_size = 13
+text = "江湖同行"
+
+[node name="RosterScroll" type="ScrollContainer" parent="UnifiedHUD/FloatingRoster"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 37.0
+offset_right = -9.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="ActorList" type="VBoxContainer" parent="UnifiedHUD/FloatingRoster/RosterScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="ContextActions" type="Control" parent="UnifiedHUD"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -336.0
+offset_top = -538.0
+offset_right = -126.0
+offset_bottom = -265.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="RightVeil" type="TextureRect" parent="UnifiedHUD/ContextActions"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_right")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="ClashDetails" type="Label" parent="UnifiedHUD/ContextActions"]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 10.0
+offset_right = 201.0
+offset_bottom = 72.0
+theme_override_colors/font_color = Color(0.933333, 0.913725, 0.862745, 1)
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+
+[node name="ContextScroll" type="ScrollContainer" parent="UnifiedHUD/ContextActions"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 11.0
+offset_top = 76.0
+offset_right = -9.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="CommandActions" type="VBoxContainer" parent="UnifiedHUD/ContextActions/ContextScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="HandStage" type="Control" parent="UnifiedHUD"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -255.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="FanTray" type="TextureRect" parent="UnifiedHUD/HandStage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_hand")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="HandTitle" type="Label" parent="UnifiedHUD/HandStage"]
+layout_mode = 1
+offset_left = 28.0
+offset_top = 11.0
+offset_right = 110.0
+offset_bottom = 36.0
+theme_override_colors/font_color = Color(0.772549, 0.631373, 0.419608, 1)
+theme_override_font_sizes/font_size = 15
+text = "武 学"
+
+[node name="HandInstruction" type="Label" parent="UnifiedHUD/HandStage"]
+layout_mode = 1
+anchor_right = 1.0
+offset_left = 112.0
+offset_top = 13.0
+offset_right = -140.0
+offset_bottom = 40.0
+theme_override_colors/font_color = Color(0.7, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 11
+text = "选一式，点目标；右键取消。"
+
+[node name="HandScroll" type="ScrollContainer" parent="UnifiedHUD/HandStage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 75.0
+offset_top = 38.0
+offset_right = -128.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 1
+vertical_scroll_mode = 0
+
+[node name="CardActions" type="HBoxContainer" parent="UnifiedHUD/HandStage/HandScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -12
+alignment = 1
+
+[node name="ChargeRail" parent="UnifiedHUD" instance=ExtResource("6_ctb")]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -116.0
+offset_top = 63.0
+offset_right = -8.0
+offset_bottom = -131.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="CharacterCardOverlay" parent="UnifiedHUD" instance=ExtResource("7_card")]
+
+[node name="IntroTitle" type="Label" parent="UnifiedHUD"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -160.0
+offset_right = 320.0
+offset_bottom = -84.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.933333, 0.913725, 0.862745, 1)
+theme_override_font_sizes/font_size = 54
+text = "断 桥 听 风"
+horizontal_alignment = 1
+
+[node name="IntroSubtitle" type="Label" parent="UnifiedHUD"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -90.0
+offset_right = 320.0
+offset_bottom = -45.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.772549, 0.631373, 0.419608, 1)
+theme_override_font_sizes/font_size = 20
+text = "一剑试江湖   ·   水墨武学 / 立体战场"
+horizontal_alignment = 1

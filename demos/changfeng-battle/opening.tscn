@@ -1,7 +1,715 @@
-[gd_scene format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/opening_flow.gd" id="1_story"]
+
+[sub_resource type="Animation" id="CaptionFade"]
+resource_name = "fade_in"
+length = 0.8
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CinematicText:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.8), "transitions": PackedFloat32Array(1, 1), "update": 0, "values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]}
+
+[sub_resource type="AnimationLibrary" id="CinematicAnimations"]
+_data = {"fade_in": SubResource("CaptionFade")}
+
+
+[sub_resource type="StyleBoxFlat" id="TitleMenuNormal"]
+bg_color = Color(0.14902, 0.282353, 0.258824, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.721569, 0.588235, 0.364706, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_left = 6
+corner_radius_bottom_right = 6
+
+[sub_resource type="StyleBoxFlat" id="TitleMenuHover"]
+bg_color = Color(0.21, 0.37, 0.33, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.73, 0.46, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_left = 6
+corner_radius_bottom_right = 6
+
+
+[sub_resource type="StyleBoxFlat" id="StoryPaper"]
+bg_color = Color(0.91765, 0.886275, 0.811765, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.721569, 0.588235, 0.364706, 1)
+
+[sub_resource type="StyleBoxFlat" id="StoryDark"]
+bg_color = Color(0.14, 0.28, 0.25, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.721569, 0.588235, 0.364706, 1)
+
+[sub_resource type="StyleBoxFlat" id="StoryAction"]
+bg_color = Color(0.14902, 0.282353, 0.258824, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.721569, 0.588235, 0.364706, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
+[sub_resource type="StyleBoxFlat" id="StoryActionHover"]
+bg_color = Color(0.23, 0.38, 0.35, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.78, 0.51, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
 
 [node name="Opening" type="Node2D" unique_id=1104709788]
 texture_filter = 2
 script = ExtResource("1_story")
+
+[node name="StoryCharacters" type="Node2D" parent="."]
+
+[node name="FirstActPaintedBackground" type="TextureRect" parent="."]
+visible = false
+z_index = -100
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="GroundArt" type="TextureRect" parent="."]
+visible = false
+z_index = -90
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="ForegroundOcclusionClip" type="Control" parent="."]
+visible = false
+z_index = 12
+offset_top = 106.0
+offset_right = 1600.0
+offset_bottom = 836.0
+mouse_filter = 2
+clip_contents = true
+
+[node name="ForegroundOcclusion" type="TextureRect" parent="ForegroundOcclusionClip"]
+offset_top = -106.0
+offset_right = 1600.0
+offset_bottom = 894.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="WeatherOverlayClip" type="Control" parent="."]
+visible = false
+z_index = 13
+offset_top = 106.0
+offset_right = 1600.0
+offset_bottom = 836.0
+mouse_filter = 2
+clip_contents = true
+
+[node name="WeatherOverlay" type="TextureRect" parent="WeatherOverlayClip"]
+offset_top = -106.0
+offset_right = 1600.0
+offset_bottom = 894.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+
+[node name="OpeningAmbience" type="AudioStreamPlayer" parent="."]
+bus = &"Master"
+
+[node name="CinematicOverlay" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="CinematicText" type="Control" parent="CinematicOverlay"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Caption" type="Label" parent="CinematicOverlay/CinematicText"]
+layout_mode = 1
+anchor_left = 0.15
+anchor_top = 0.30
+anchor_right = 0.85
+anchor_bottom = 0.30
+offset_bottom = 62.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.772549, 0.631373, 0.419608, 1)
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Body" type="Label" parent="CinematicOverlay/CinematicText"]
+layout_mode = 1
+anchor_left = 0.1
+anchor_top = 0.41
+anchor_right = 0.9
+anchor_bottom = 0.41
+offset_bottom = 110.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.933333, 0.913725, 0.862745, 1)
+theme_override_font_sizes/font_size = 27
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Divider" type="Label" parent="CinematicOverlay/CinematicText"]
+layout_mode = 1
+anchor_left = 0.25
+anchor_top = 0.54
+anchor_right = 0.75
+anchor_bottom = 0.54
+offset_bottom = 45.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.89, 0.83, 0.64, 1)
+theme_override_font_sizes/font_size = 18
+text = "——  风雨入局  ——"
+horizontal_alignment = 1
+
+[node name="CinematicAnimations" type="AnimationPlayer" parent="CinematicOverlay"]
+libraries = {"": SubResource("CinematicAnimations")}
+
+[node name="NativeMenuUI" type="CanvasLayer" parent="."]
+
+[node name="MenuControls" type="Control" parent="NativeMenuUI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="MenuEyebrow" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 132.0
+offset_top = 222.0
+offset_right = 612.0
+offset_bottom = 255.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7725, 0.6313, 0.4196, 1)
+theme_override_font_sizes/font_size = 19
+text = "MORTAL DAO  /  江 湖 浮 生"
+
+[node name="MenuTitle" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 118.0
+offset_top = 292.0
+offset_right = 665.0
+offset_bottom = 399.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 77
+text = "长风浮生录"
+
+[node name="MenuMotto" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 132.0
+offset_top = 446.0
+offset_right = 645.0
+offset_bottom = 488.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.882, 0.863, 0.78, 1)
+theme_override_font_sizes/font_size = 23
+text = "英雄无百岁，刀剑不饶人。"
+
+[node name="MenuSubtitle" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 135.0
+offset_top = 502.0
+offset_right = 645.0
+offset_bottom = 535.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7333, 0.812, 0.765, 1)
+theme_override_font_sizes/font_size = 17
+text = "由武入道 · 逆天改命"
+
+[node name="MenuFooter" type="Label" parent="NativeMenuUI/MenuControls"]
+offset_left = 138.0
+offset_top = 971.0
+offset_right = 620.0
+offset_bottom = 1000.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7647, 0.7882, 0.7137, 1)
+theme_override_font_sizes/font_size = 13
+text = "序章演示 · 原创非像素插画 · 暮秋雨夜"
+
+[node name="Start" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 560.0
+offset_right = 528.0
+offset_bottom = 617.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "初入江湖 · 新游戏"
+metadata/action = "start"
+
+[node name="QuickBattle" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 623.0
+offset_right = 528.0
+offset_bottom = 680.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "进入战斗 · HD-2D"
+metadata/action = "hd2d"
+
+[node name="PingjiangQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 686.0
+offset_right = 528.0
+offset_bottom = 743.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "P · 平江双区跳转测试"
+metadata/action = "pingjiang_qa"
+
+[node name="VerticalQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 749.0
+offset_right = 528.0
+offset_bottom = 806.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "V · 纵向四千滚屏测试"
+metadata/action = "pingjiang_vertical_qa"
+
+[node name="PerspectiveQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 812.0
+offset_right = 327.0
+offset_bottom = 869.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "T · 2.5D 透视"
+metadata/action = "pingjiang_25d_qa"
+
+[node name="SouthGateQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 338.0
+offset_top = 812.0
+offset_right = 528.0
+offset_bottom = 869.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "G · PJ-01 南门"
+metadata/action = "pingjiang_south_gate_qa"
+
+[node name="HouseQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 875.0
+offset_right = 327.0
+offset_bottom = 925.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "H · 沈家旧宅"
+metadata/action = "shen_house_qa"
+
+[node name="FourDistrictQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 338.0
+offset_top = 875.0
+offset_right = 528.0
+offset_bottom = 925.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "J · 平江四区"
+metadata/action = "pingjiang_exploration"
+
+[node name="PrologueQA" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 137.0
+offset_top = 933.0
+offset_right = 327.0
+offset_bottom = 971.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "K · 序幕地图"
+metadata/action = "prologue_native_qa"
+
+[node name="Quit" type="Button" parent="NativeMenuUI/MenuControls"]
+offset_left = 338.0
+offset_top = 933.0
+offset_right = 528.0
+offset_bottom = 971.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("TitleMenuNormal")
+theme_override_styles/hover = SubResource("TitleMenuHover")
+theme_override_styles/pressed = SubResource("TitleMenuHover")
+text = "退出游戏"
+metadata/action = "quit"
+
+[node name="ExploreUI" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="ExploreHUD" type="Control" parent="ExploreUI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="HeaderShade" type="ColorRect" parent="ExploreUI/ExploreHUD"]
+offset_right = 1600.0
+offset_bottom = 106.0
+mouse_filter = 2
+color = Color(0.05, 0.10, 0.12, 0.77)
+
+[node name="PromptPanel" type="Panel" parent="ExploreUI/ExploreHUD"]
+offset_left = 76.0
+offset_top = 837.0
+offset_right = 1524.0
+offset_bottom = 962.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StoryDark")
+
+[node name="ChapterName" type="Label" parent="ExploreUI/ExploreHUD"]
+offset_left = 62.0
+offset_top = 29.0
+offset_right = 932.0
+offset_bottom = 91.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 36
+text = "第一幕 · 雨夜残镖"
+
+[node name="Location" type="Label" parent="ExploreUI/ExploreHUD"]
+offset_left = 1090.0
+offset_top = 38.0
+offset_right = 1510.0
+offset_bottom = 83.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7725, 0.6313, 0.4196, 1)
+theme_override_font_sizes/font_size = 17
+text = "荒道破庙 / 暮秋 · 三更"
+
+[node name="Prompt" type="Label" parent="ExploreUI/ExploreHUD"]
+offset_left = 112.0
+offset_top = 848.0
+offset_right = 1457.0
+offset_bottom = 893.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 23
+text = "沿官道走近镖车，查探伤者。"
+
+[node name="Instructions" type="Label" parent="ExploreUI/ExploreHUD"]
+offset_left = 114.0
+offset_top = 897.0
+offset_right = 1464.0
+offset_bottom = 932.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.83, 0.78, 0.66, 1)
+theme_override_font_sizes/font_size = 15
+text = "WASD / 方向键移动   ·   靠近后按 E 交谈"
+
+[node name="Message" type="Label" parent="ExploreUI/ExploreHUD"]
+offset_left = 120.0
+offset_top = 770.0
+offset_right = 1320.0
+offset_bottom = 810.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.7725, 0.6313, 0.4196, 1)
+theme_override_font_sizes/font_size = 18
+text = ""
+
+[node name="TalkButton" type="Button" parent="ExploreUI/ExploreHUD"]
+offset_left = 850.0
+offset_top = 363.0
+offset_right = 1290.0
+offset_bottom = 417.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StoryAction")
+theme_override_styles/hover = SubResource("StoryActionHover")
+theme_override_styles/pressed = SubResource("StoryActionHover")
+text = "E  与镖头交谈"
+visible = false
+
+[node name="DialogueUI" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="Shade" type="ColorRect" parent="DialogueUI"]
+offset_right = 1600.0
+offset_bottom = 1000.0
+mouse_filter = 2
+color = Color(0.07, 0.12, 0.12, 0.29)
+
+[node name="PaperPanel" type="Panel" parent="DialogueUI"]
+offset_left = 124.0
+offset_top = 665.0
+offset_right = 1476.0
+offset_bottom = 957.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StoryPaper")
+
+[node name="PortraitPanel" type="Panel" parent="DialogueUI"]
+offset_left = 153.0
+offset_top = 574.0
+offset_right = 380.0
+offset_bottom = 882.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StoryDark")
+
+[node name="Portrait" type="TextureRect" parent="DialogueUI"]
+offset_left = 161.0
+offset_top = 582.0
+offset_right = 372.0
+offset_bottom = 873.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SpeakerPlate" type="Panel" parent="DialogueUI"]
+offset_left = 385.0
+offset_top = 628.0
+offset_right = 649.0
+offset_bottom = 691.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StoryDark")
+
+[node name="Speaker" type="Label" parent="DialogueUI"]
+offset_left = 390.0
+offset_top = 640.0
+offset_right = 644.0
+offset_bottom = 686.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 27
+text = ""
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="DialogueUI"]
+offset_left = 419.0
+offset_top = 707.0
+offset_right = 1402.0
+offset_bottom = 872.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.1412, 0.2314, 0.2314, 1)
+theme_override_font_sizes/font_size = 25
+text = ""
+autowrap_mode = 3
+
+[node name="Hint" type="Label" parent="DialogueUI"]
+offset_left = 422.0
+offset_top = 902.0
+offset_right = 1236.0
+offset_bottom = 937.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.55, 0.47, 0.36, 1)
+theme_override_font_sizes/font_size = 15
+text = "空格 / 回车 / 点击继续"
+
+[node name="Continue" type="Button" parent="DialogueUI"]
+offset_left = 1241.0
+offset_top = 886.0
+offset_right = 1442.0
+offset_bottom = 936.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StoryAction")
+theme_override_styles/hover = SubResource("StoryActionHover")
+theme_override_styles/pressed = SubResource("StoryActionHover")
+text = "继续  ▶"
+visible = false
+
+[node name="Choice1" type="Button" parent="DialogueUI"]
+offset_left = 784.0
+offset_top = 789.0
+offset_right = 1426.0
+offset_bottom = 837.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StoryAction")
+theme_override_styles/hover = SubResource("StoryActionHover")
+theme_override_styles/pressed = SubResource("StoryActionHover")
+text = "1  选择"
+visible = false
+
+[node name="Choice2" type="Button" parent="DialogueUI"]
+offset_left = 784.0
+offset_top = 844.0
+offset_right = 1426.0
+offset_bottom = 892.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StoryAction")
+theme_override_styles/hover = SubResource("StoryActionHover")
+theme_override_styles/pressed = SubResource("StoryActionHover")
+text = "2  选择"
+visible = false
+
+[node name="Choice3" type="Button" parent="DialogueUI"]
+offset_left = 784.0
+offset_top = 899.0
+offset_right = 1426.0
+offset_bottom = 947.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StoryAction")
+theme_override_styles/hover = SubResource("StoryActionHover")
+theme_override_styles/pressed = SubResource("StoryActionHover")
+text = "3  选择"
+visible = false
+
+[node name="CompleteUI" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="CompletePanel" type="Panel" parent="CompleteUI"]
+offset_left = 235.0
+offset_top = 180.0
+offset_right = 1365.0
+offset_bottom = 876.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StoryPaper")
+
+[node name="Title" type="Label" parent="CompleteUI"]
+offset_left = 440.0
+offset_top = 240.0
+offset_right = 1160.0
+offset_bottom = 305.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.1412, 0.2314, 0.2314, 1)
+theme_override_font_sizes/font_size = 39
+text = "江 湖 初 入"
+horizontal_alignment = 1
+
+[node name="Reward" type="Label" parent="CompleteUI"]
+offset_left = 400.0
+offset_top = 350.0
+offset_right = 1200.0
+offset_bottom = 416.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.6667, 0.3333, 0.2823, 1)
+theme_override_font_sizes/font_size = 32
+text = "《太虚引气残篇》"
+horizontal_alignment = 1
+
+[node name="Caption" type="Label" parent="CompleteUI"]
+offset_left = 310.0
+offset_top = 424.0
+offset_right = 1290.0
+offset_bottom = 485.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.1412, 0.2314, 0.2314, 1)
+theme_override_font_sizes/font_size = 24
+text = "一卷无名绢帛，一场未完的血案。"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="CompleteUI"]
+offset_left = 310.0
+offset_top = 486.0
+offset_right = 1290.0
+offset_bottom = 540.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.1412, 0.2314, 0.2314, 1)
+theme_override_font_sizes/font_size = 20
+text = "你尚不知道，它将牵出多少江湖恩怨。"
+horizontal_alignment = 1
+
+[node name="Notice" type="Label" parent="CompleteUI"]
+offset_left = 310.0
+offset_top = 545.0
+offset_right = 1290.0
+offset_bottom = 590.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.52, 0.427, 0.306, 1)
+theme_override_font_sizes/font_size = 19
+text = "远处的马蹄声越来越近……"
+horizontal_alignment = 1
+
+[node name="BeginBattle" type="Button" parent="CompleteUI"]
+offset_left = 430.0
+offset_top = 655.0
+offset_right = 1172.0
+offset_bottom = 729.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StoryAction")
+theme_override_styles/hover = SubResource("StoryActionHover")
+theme_override_styles/pressed = SubResource("StoryActionHover")
+text = "迎战追兵 · 继续序章"
+metadata/action = "story_battle"
+
+[node name="BackToMenu" type="Button" parent="CompleteUI"]
+offset_left = 626.0
+offset_top = 774.0
+offset_right = 976.0
+offset_bottom = 830.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StoryAction")
+theme_override_styles/hover = SubResource("StoryActionHover")
+theme_override_styles/pressed = SubResource("StoryActionHover")
+text = "返回主菜单"
+metadata/action = "menu"
+
+[node name="CinematicSkip" type="Button" parent="CinematicOverlay"]
+offset_left = 1339.0
+offset_top = 45.0
+offset_right = 1541.0
+offset_bottom = 89.0
+theme_override_colors/font_color = Color(0.9333, 0.9137, 0.8627, 1)
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("StoryAction")
+theme_override_styles/hover = SubResource("StoryActionHover")
+theme_override_styles/pressed = SubResource("StoryActionHover")
+text = "跳过过场  Esc"
+
+[node name="CinematicHint" type="Label" parent="CinematicOverlay"]
+offset_left = 621.0
+offset_top = 915.0
+offset_right = 1071.0
+offset_bottom = 957.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.8549, 0.8588, 0.8196, 1)
+theme_override_font_sizes/font_size = 15
+text = "空格 / 点击继续"

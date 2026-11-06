@@ -14,6 +14,9 @@ const MODERN_REQUIRED_ACTIONS := ["idle", "walk", "run", "attack1", "attack2",
 const BASE_ACTIONS := MODERN_REQUIRED_ACTIONS
 
 @export var atlas: Texture2D
+## Preferred authorable animation source. Each action and its frame timing live in
+## Godot SpriteFrames; legacy Clip indices are read only when this is empty.
+@export var native_frames: SpriteFrames
 @export_range(1, 64) var columns: int = 6
 @export_range(1, 64) var rows: int = 4
 @export var reference_height_units: float = CombatScale.ACTOR_HEIGHT_UNITS
@@ -41,6 +44,22 @@ func valid_profile() -> bool:
             or not is_finite(reference_height_units) \
             or absf(reference_height_units - CombatScale.ACTOR_HEIGHT_UNITS) > 0.001:
         return false
+    if native_frames != null:
+        if not native_frames.has_animation("idle") or \
+                native_frames.get_frame_count("idle") == 0:
+            return false
+        for action in native_frames.get_animation_names():
+            if not action.is_valid_identifier() or action != action.to_lower() or \
+                    native_frames.get_frame_count(action) < 1 or \
+                    native_frames.get_frame_count(action) > 256 or \
+                    not is_finite(native_frames.get_animation_speed(action)) or \
+                    native_frames.get_animation_speed(action) <= 0:
+                return false
+            for index in range(native_frames.get_frame_count(action)):
+                if native_frames.get_frame_texture(action, index) == null or \
+                        native_frames.get_frame_duration(action, index) <= 0.0:
+                    return false
+        return true
     var seen: Dictionary = {}
     var expected_cell := Vector2i.ZERO
     for entry in clips:
@@ -102,13 +121,20 @@ func resolved_clip_for(action: String) -> WuxiaActorAnimationClip:
     return clip_for(str(action_fallbacks[action]))
 
 func idle_atlas() -> Texture2D:
+    if native_frames != null and native_frames.has_animation("idle") and \
+            native_frames.get_frame_count("idle") > 0:
+        return native_frames.get_frame_texture("idle", 0)
     var idle: WuxiaActorAnimationClip = clip_for("idle")
     return idle.effective_atlas(atlas) if idle != null else atlas
 
 func idle_columns() -> int:
+    if native_frames != null:
+        return 1
     var idle: WuxiaActorAnimationClip = clip_for("idle")
     return idle.effective_columns(columns) if idle != null else columns
 
 func idle_rows() -> int:
+    if native_frames != null:
+        return 1
     var idle: WuxiaActorAnimationClip = clip_for("idle")
     return idle.effective_rows(rows) if idle != null else rows

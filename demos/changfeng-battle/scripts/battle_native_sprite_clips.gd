@@ -16,14 +16,27 @@ const SINGLE_FRAMES := {"guard": 0, "hit": 1, "evade": 2,
 
 static func attach(sprite: Sprite2D, timeline: Variant,
         profile: WuxiaActorAnimationProfile = null) -> AnimationPlayer:
-    var player := AnimationPlayer.new()
-    player.name = "NativeSpriteAnimation"
+    var player: AnimationPlayer = sprite.get_node_or_null("NativeSpriteAnimation") as AnimationPlayer
+    if player == null:
+        player = AnimationPlayer.new()
+        player.name = "NativeSpriteAnimation"
+        sprite.add_child(player)
     player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
     player.root_node = NodePath("..")
-    sprite.add_child(player)
+    if player.has_animation_library(""):
+        # Never erase an artist-authored AnimationLibrary on an instanced scene.
+        if profile != null and profile.native_frames != null and player.has_animation("idle"):
+            _attach_native_visual(sprite, profile.native_frames)
+            return player
+        player.remove_animation_library("")
     var library := AnimationLibrary.new()
+    var native: SpriteFrames = profile.native_frames if profile != null else null
     var actions: Array = BASE_ACTIONS.duplicate() if profile == null else []
-    if profile != null:
+    if native != null:
+        for action in native.get_animation_names():
+            actions.append(action)
+        _attach_native_visual(sprite, native)
+    elif profile != null:
         if not profile.valid_profile():
             push_error("Invalid animation profile Resource: " + str(profile.resource_path))
             return player
@@ -38,7 +51,10 @@ static func attach(sprite: Sprite2D, timeline: Variant,
     for state in actions:
         var semantic: String = semantic_for(str(state))
         var duration: float = timeline.duration_for(semantic, fallback_duration_for(semantic))
-        if profile != null:
+        if native != null:
+            library.add_animation(str(state), _native_clip(native, str(state), sprite.scale,
+                profile.resolved_clip_for(str(state)) if profile != null else null))
+        elif profile != null:
             var authored: WuxiaActorAnimationClip = profile.resolved_clip_for(str(state))
             if authored == null:
                 push_error("Unresolved configured action: " + str(state) + " (" + str(profile.resource_path) + ")")
@@ -55,6 +71,50 @@ static func attach(sprite: Sprite2D, timeline: Variant,
     else:
         push_error("Missing idle animation in profile: " + str(profile.resource_path))
     return player
+
+
+static func _attach_native_visual(sprite: Sprite2D, frames: SpriteFrames) -> void:
+    var animated: AnimatedSprite2D = sprite.get_node_or_null("NativeFrames") as AnimatedSprite2D
+    if animated == null:
+        animated = AnimatedSprite2D.new()
+        animated.name = "NativeFrames"
+        sprite.add_child(animated)
+        animated.offset = sprite.offset
+        animated.texture_filter = sprite.texture_filter
+    animated.sprite_frames = frames
+    animated.animation = "idle"
+    # The driver seeks native frames at deterministic presentation timestamps.
+    animated.pause()
+    sprite.texture = null
+
+
+static func _native_clip(frames: SpriteFrames, action: String,
+        base_scale: Vector2, legacy_pose: WuxiaActorAnimationClip = null) -> Animation:
+    var animation := Animation.new()
+    var duration := 0.0
+    for index in range(frames.get_frame_count(action)):
+        duration += frames.get_frame_duration(action, index) / frames.get_animation_speed(action)
+    animation.length = maxf(0.01, duration)
+    animation.loop_mode = Animation.LOOP_LINEAR if frames.get_animation_loop(action) else Animation.LOOP_NONE
+    # SpriteFrames owns pixels, order and frame durations. AnimationPlayer owns
+    # optional local pose/root changes, never duplicates those frame indices.
+    for property_name in ["scale", "rotation", "position"]:
+        var track: int = _value_track(animation, property_name)
+        var baseline: Variant = base_scale if property_name == "scale" else (
+            0.0 if property_name == "rotation" else Vector2.ZERO)
+        animation.track_insert_key(track, 0.0, baseline)
+    # SpriteFrames owns pixels and timing. Retain any approved per-frame
+    # local foot/root offsets on AnimationPlayer's independent pose track.
+    if legacy_pose != null and not legacy_pose.root_offsets.is_empty() and \
+            legacy_pose.root_offsets.size() == frames.get_frame_count(action):
+        var position_track := animation.find_track(NodePath(".:position"), Animation.TYPE_VALUE)
+        var elapsed := 0.0
+        for index in range(frames.get_frame_count(action)):
+            animation.track_insert_key(position_track, elapsed,
+                legacy_pose.root_offsets[index])
+            elapsed += frames.get_frame_duration(action, index) / \
+                frames.get_animation_speed(action)
+    return animation
 
 static func _value_track(animation: Animation, property_name: String,
         discrete: bool = false) -> int:

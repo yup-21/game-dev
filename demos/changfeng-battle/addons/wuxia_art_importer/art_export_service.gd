@@ -103,6 +103,14 @@ static func _collect_native_images(resource: Resource, paths: Dictionary) -> voi
     elif resource is WuxiaActorAnimationProfile:
         var profile: WuxiaActorAnimationProfile = resource as WuxiaActorAnimationProfile
         _add_texture(paths, profile.atlas)
+        if profile.native_frames != null:
+            for action in profile.native_frames.get_animation_names():
+                for index in range(profile.native_frames.get_frame_count(action)):
+                    var texture: Texture2D = profile.native_frames.get_frame_texture(action, index)
+                    if texture is AtlasTexture:
+                        _add_texture(paths, (texture as AtlasTexture).atlas)
+                    else:
+                        _add_texture(paths, texture)
         for entry in profile.clips:
             if entry is WuxiaActorAnimationClip:
                 var clip: WuxiaActorAnimationClip = entry as WuxiaActorAnimationClip
@@ -156,6 +164,21 @@ static func _resource_graph(first: String) -> Dictionary:
     return {"images": images.keys(), "resources": resources.keys(), "truncated": not queue.is_empty()}
 
 
+## A native map .tscn points *to* the canonical WuxiaMapDefinition, not vice
+## versa. Follow the reverse link only for explicit scene exports, otherwise
+## exporting the Map Resource would silently omit its editable scene layout.
+static func native_map_scenes(map_path: String) -> Array[String]:
+    var files: Array[String] = []
+    _collect("res://scenes", files, ["tscn"])
+    var result: Array[String] = []
+    for path in files:
+        var content := _read_text(path)
+        if content.contains("source_map =") and content.contains('path="' + map_path + '"'):
+            result.append(path)
+    result.sort()
+    return result
+
+
 static func destination(source: String, is_resource: bool = false) -> String:
     if is_resource:
         return production_root().path_join("in-use/resources/" + source.trim_prefix("res://"))
@@ -196,9 +219,19 @@ static func plan(kind: String, resource_path: String = "", allow_replace: bool =
         var graph := _resource_graph(resource_path)
         if graph["truncated"]:
             return {"error": "Resource 依赖超过 512 个，拒绝不完整导出"}
+        if kind == "scene" and source is WuxiaMapDefinition:
+            for native_path in native_map_scenes(resource_path):
+                var native_graph := _resource_graph(native_path)
+                if native_graph["truncated"]:
+                    return {"error": "原生场景依赖超过 512 个，拒绝不完整导出"}
+                graph["images"].append_array(native_graph["images"])
+                graph["resources"].append_array(native_graph["resources"])
         for image in graph["images"]:
             image_paths.append(str(image))
+        var unique_resources: Dictionary = {}
         for metadata in graph["resources"]:
+            unique_resources[metadata] = true
+        for metadata in unique_resources:
             var dependency_path: String = str(metadata)
             resource_paths.append(dependency_path)
             if dependency_path == resource_path:

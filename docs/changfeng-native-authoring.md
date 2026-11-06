@@ -1,6 +1,6 @@
-# 长风战斗 Demo · 唯一正式内容制作指南
+# 长风浮生录 · Godot 原生内容制作操作指南
 
-本指南是项目**当前唯一的内容注册流程**。打开 Godot 4 项目 `demos/changfeng-battle/project.godot`，使用 Inspector 编辑或复制 `.tres` Resource；正式内容由 `res://data/content_manifest.tres` 显式引用。角色、门派、招式、章节、剧情、遭遇、Buff、物品均不通过 JSON/目录扫描加载。历史 R18–R41 文档只用于查阅迁移过程，不是制作步骤。
+本指南负责**内容登记操作**；各类资源的编辑真源以 [Godot 原生内容开发规范 V2](GODOT_NATIVE_AUTHORING_STANDARD.md) 为准。打开 Godot 4 项目 `demos/changfeng-battle/project.godot`，使用 Inspector 编辑或复制 `.tres` Resource，使用场景编辑器编辑已有的原生 `.tscn`。正式内容由 `res://data/content_manifest.tres` 显式引用；角色、门派、招式、章节、剧情、遭遇、Buff、物品均不通过 JSON/目录扫描加载。历史 R18–R41 文档只用于查阅迁移过程，不是制作步骤。
 
 ## 可复制的现成模板
 
@@ -19,7 +19,7 @@
 
 保存到 `data/native/characters/<id>.tres`，设置 `display_name`、`school_id`、`learned_schools`、`attributes` 四维（`STR/AGI/CON/MND`）、`passives` 和需要的 `starting_items`。初始装备子资源类型为 `WuxiaStartingItemDefinition`，`item_id` 必须是已注册物品，词条必须匹配装备槽。一个场景内的角色身份由 `character_id` 指定；`battle_actor_id=-1` 表示不预留默认战斗 actor 槽位，剧情、招募后仍可在遭遇中使用。
 
-`portrait`、`sprite_sheet` 使用 Godot 导入的 `Texture2D`，推荐角色图集 6 列 × 4 行；正式资源缺失时使用独立 fallback，不能因此将候选美术自动标记为批准。添加角色后，`CharacterFactory` 创建 `CharacterRuntime`；不需要修改 `CharacterRegistry` 或 `GameSession`。参照 `data/native/characters/r24_lan_chen.tres`。
+`portrait`、历史 `sprite_sheet` 可引用 Godot 导入的 `Texture2D`；**6×4 仅用于存量兼容，不是新素材默认规格**。新角色按美术规范准备 12 组动作，可用 5×5 AI Sheet 切片或逐动作 GIF 候选，最终优先通过 `WuxiaActorAnimationProfile.native_frames` 引用 `SpriteFrames.tres`，在 Godot 原生动画面板微调帧序与时长；Profile 仍统一管理脚点与缩放。操作见 [GIF 导入指南](../demos/changfeng-battle/docs/NATIVE_ANIMATION_IMPORT.md)。必需正式资源缺失应加载报错，不能静默换占位或将候选素材自动视为批准。添加角色后，`CharacterFactory` 创建 `CharacterRuntime`；不需要修改 `CharacterRegistry` 或 `GameSession`。参照 `data/native/characters/r24_lan_chen.tres`。
 
 ## 武学（`WuxiaSchoolDefinition` + `WuxiaSkillDefinition`）
 
@@ -50,7 +50,7 @@
 
 ## 地图、表现及素材权属
 
-地图使用原生 `WuxiaGridMapDefinition` / `WuxiaMapDefinition`，通过 Godot 的多边形地图画笔编辑边界、障碍和标记；保存到 `data/maps/` 并加入 `content_manifest.tres.maps`，遭遇按已注册地图引用。角色纹理、场景与 VFX 可通过 `WuxiaAssetDefinition` 登记；美术 `candidate / approved` 状态与版权依据必须单独审核。`assets/production_manifest.json` 只保存离线素材来源/审核信息，**不是**可加载的游戏内容配置，也不会进入发行包。
+地图定义仍使用 `WuxiaGridMapDefinition` / `WuxiaMapDefinition`，保存到 `data/maps/` 并加入 `content_manifest.tres.maps`，遭遇按已注册地图引用。**编辑方式按类型区分**：已迁移的探索区域在原生 `.tscn` 里修改 `WalkableArea/Boundary`、`Obstacles`、`Markers`、`Exits`，再显式同步快照到地图 `.tres`；尚未迁移的地图才继续用旧 Resource 画笔。战斗地图的**合法区域／站位**仍编辑地图 `.tres`，而 `scenes/maps/illustrated_battle_map.tscn` 用于图层、遮挡与视觉校准。角色纹理、场景与 VFX 可通过 `WuxiaAssetDefinition` 及实际场景引用绑定。素材状态只有 `candidate / in_use`；**视觉／权属批准是工作单的审核结论**，不是第三个状态。`assets/production_manifest.json` 仅记录离线素材来源/审核信息，不是可加载游戏内容。
 
 ## 验证与人工验收
 

@@ -91,7 +91,9 @@ func _run() -> void:
         root.add_child(sprite)
         var player: AnimationPlayer = NativeClips.attach(sprite,Timeline.new(),pose)
         player.advance(1.25)
-        if sprite.frame != 1 or absf(sprite.rotation) > 0.001:
+        var native: AnimatedSprite2D = sprite.get_node_or_null("NativeFrames")
+        if native == null or native.sprite_frames != pose.native_frames or \
+                native.animation != "idle" or native.frame != 0 or absf(sprite.rotation) > 0.001:
             _fail("idle reintroduces a turn/sway: " + id)
             return
         sprite.queue_free()
@@ -128,23 +130,25 @@ func _run() -> void:
         _fail("live battle does not render the new bridge background")
         return
     for layer_name in ["GroundArt", "ForegroundOcclusion", "WeatherOverlay"]:
-        if painted.scene_root.get_node_or_null(layer_name) == null:
+        if painted.scene_root.get_node_or_null("ArtCalibration/" + layer_name) == null:
             _fail("live battle lacks scene layer: " + layer_name)
             return
     for pair in [[0, "shen_changfeng"], [1, "pursuer_captain"]]:
         var sprite: Sprite2D = painted.actors[pair[0]].get_node_or_null("ActionSprite")
         var profile: WuxiaActorAnimationProfile = Art.animation_profile_for_character(pair[1])
-        if sprite == null or sprite.texture != profile.atlas or sprite.scale.x <= 0.0 or not is_equal_approx(sprite.scale.x,sprite.scale.y):
-            _fail("live battle sprite is not using candidate atlas: " + pair[1])
+        if sprite == null or sprite.scale.x <= 0.0 or not is_equal_approx(sprite.scale.x,sprite.scale.y):
+            _fail("live battle sprite scale is invalid: " + pair[1])
             return
-        if sprite.frame != 1:
+        var native_sprite: AnimatedSprite2D = sprite.get_node_or_null("NativeFrames")
+        if native_sprite == null or native_sprite.sprite_frames != profile.native_frames or \
+                native_sprite.sprite_frames.get_frame_count("idle") != 1:
             _fail("live battle did not display the authored side-facing idle: " + pair[1])
             return
     painted.set_weather_enabled(false)
-    if painted.scene_root.get_node("WeatherOverlay").visible:
+    if painted.scene_root.get_node("ArtCalibration/WeatherOverlay").visible:
         _fail("weather must be independently switchable")
         return
     battle.queue_free()
     await process_frame
-    print("ART_RUNTIME_INTEGRATION_OK: two live atlas profiles, two portraits, four scene layers")
+    print("ART_RUNTIME_INTEGRATION_OK: two live SpriteFrames profiles, two portraits, four scene layers")
     quit(0)

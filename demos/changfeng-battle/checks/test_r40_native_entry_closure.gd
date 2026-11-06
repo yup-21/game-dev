@@ -63,12 +63,14 @@ func _run() -> void:
         and sprite.animation_player.has_animation("move"),
         "story sprite animation is owned by AnimationPlayer")
     sprite.set_motion(Vector2.RIGHT,0.15)
-    check(sprite.animation_player.current_animation=="move"
-        and Art.animation_profile_for_character("shen_changfeng").clip_for("move").frames.has(sprite.body.frame),
-        "motion advances authored native move track")
+    var native_sprite: AnimatedSprite2D = sprite.body.get_node_or_null("NativeFrames")
+    check(sprite.animation_player.current_animation=="walk"
+        and native_sprite != null and native_sprite.animation == "walk" and
+        native_sprite.sprite_frames == Art.animation_profile_for_character("shen_changfeng").native_frames,
+        "motion advances approved Godot SpriteFrames walk track")
     sprite.set_motion(Vector2.ZERO,0.0)
     check(sprite.animation_player.current_animation=="idle"
-        and Art.animation_profile_for_character("shen_changfeng").clip_for("idle").frames.has(sprite.body.frame),
+        and native_sprite.animation == "idle" and native_sprite.frame == 0,
         "idle uses authored native track, not a script frame counter")
     sprite.free()
     check(not FileAccess.file_exists("res://scripts/battle_spatial_waypoint.gd"),

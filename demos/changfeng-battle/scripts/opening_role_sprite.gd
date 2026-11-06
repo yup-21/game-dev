@@ -30,13 +30,16 @@ func configure(id: String) -> bool:
         load_error = "Unknown story character: " + character_id
         push_error(load_error)
         return false
-    name = "Role_" + character_id
+    # Authored instance paths are part of the editor contract; do not rename
+    # StoryRole and invalidate child paths inside StoryNPC/workbench scenes.
+    if name not in ["StoryRole", "StoryNPC"]:
+        name = "Role_" + character_id
     is_sheet = Art.uses_supplied_sheet_for_character(character_id)
     animation_profile = Art.animation_profile_for_character(character_id) if is_sheet else null
     var texture: Texture2D
     if is_sheet:
         if animation_profile != null:
-            texture = animation_profile.atlas
+            texture = animation_profile.idle_atlas()
         # Story-only NPCs have no battle actor ID. Read the live native card;
         # battle actors retain the verified animation profile.
         if texture == null and int(role.battle_actor_id) < 0:
@@ -55,8 +58,11 @@ func configure(id: String) -> bool:
         load_error = "No imported fallback available: " + character_id
         push_error(load_error)
         return false
-    body = Sprite2D.new()
-    body.name = "BodySprite"
+    body = get_node_or_null("BodySprite") as Sprite2D
+    if body == null:
+        body = Sprite2D.new()
+        body.name = "BodySprite"
+        add_child(body)
     body.texture = texture
     body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
     if is_sheet:
@@ -65,8 +71,8 @@ func configure(id: String) -> bool:
         body.flip_h = bool(body.get_meta("faces_left_unflipped")) # Initial look east
     body.centered = true
     if is_sheet:
-        body.hframes = animation_profile.columns if animation_profile != null else ANIMATION_COLUMNS
-        body.vframes = animation_profile.rows if animation_profile != null else ANIMATION_ROWS
+        body.hframes = animation_profile.idle_columns() if animation_profile != null else ANIMATION_COLUMNS
+        body.vframes = animation_profile.idle_rows() if animation_profile != null else ANIMATION_ROWS
         body.offset = animation_profile.feet_offset if animation_profile != null else Vector2(0,-128)
         body.scale = animation_profile.actor_scale if animation_profile != null else Vector2(120.0/256.0,130.0/256.0)
     else:
@@ -76,25 +82,32 @@ func configure(id: String) -> bool:
         body.offset = Vector2(0,-image_size.y*0.5)
         body.scale = Vector2.ONE * (CombatScale.actor_height_pixels() / image_size.y)
     var idle_frame: int = 0
-    if animation_profile != null:
+    if animation_profile != null and animation_profile.native_frames == null:
         var idle_clip: WuxiaActorAnimationClip = animation_profile.clip_for("idle")
         if idle_clip != null and not idle_clip.frames.is_empty():
             idle_frame = int(idle_clip.frames[0])
     VisualScale.fit(body, body.scale, CombatScale.actor_height_pixels(),
         animation_profile.feet_adjust if animation_profile != null else Vector2.ZERO,
         idle_frame, animation_profile.auto_fit_height if animation_profile != null else true)
-    foot_shadow = Polygon2D.new()
-    foot_shadow.name = "FootShadow"
+    foot_shadow = get_node_or_null("FootShadow") as Polygon2D
+    if foot_shadow == null:
+        foot_shadow = Polygon2D.new()
+        foot_shadow.name = "FootShadow"
+        add_child(foot_shadow)
     foot_shadow.color = Color(0.015,0.060,0.065,0.22)
-    var polygon := PackedVector2Array()
-    for i in range(24):
-        var theta := TAU * float(i)/24.0
-        polygon.append(Vector2(cos(theta)*CombatScale.footprint_radius_pixels(),sin(theta)*CombatScale.footprint_radius_pixels()*0.42))
-    foot_shadow.polygon = polygon
-    add_child(foot_shadow)
-    add_child(body)
+    if foot_shadow.polygon.is_empty():
+        var polygon := PackedVector2Array()
+        for i in range(24):
+            var theta := TAU * float(i)/24.0
+            polygon.append(Vector2(cos(theta)*CombatScale.footprint_radius_pixels(),sin(theta)*CombatScale.footprint_radius_pixels()*0.42))
+        foot_shadow.polygon = polygon
     if is_sheet:
         animation_player = SpriteClips.attach(body, Timeline.new(), animation_profile)
+        var native: AnimatedSprite2D = body.get_node_or_null("NativeFrames") as AnimatedSprite2D
+        if native != null and animation_profile != null and \
+                animation_profile.native_frames != null and native.sprite_frames != null:
+            native.flip_h = body.flip_h
+            native.play("idle")
     has_real_sprite = true
     return true
 
@@ -105,7 +118,15 @@ func set_motion(motion: Vector2, delta: float) -> void:
     if walking and absf(motion.x) > 0.05:
         var source_faces_left: bool = bool(body.get_meta("faces_left_unflipped", false))
         body.flip_h = motion.x > 0.0 if source_faces_left else motion.x < 0.0
+    var native: AnimatedSprite2D = body.get_node_or_null("NativeFrames") as AnimatedSprite2D
+    var native_active := native != null and animation_profile != null and \
+        animation_profile.native_frames != null and native.sprite_frames != null
     var state: String = "move" if walking else "idle"
+    if native_active:
+        state = "walk" if walking and native.sprite_frames.has_animation("walk") else "idle"
+        if native.animation != state or not native.is_playing():
+            native.play(state)
+        native.flip_h = body.flip_h
     if animation_player.current_animation != state:
         animation_player.play(state)
     # AnimationPlayer is the sole owner of the frame and pose tracks.
