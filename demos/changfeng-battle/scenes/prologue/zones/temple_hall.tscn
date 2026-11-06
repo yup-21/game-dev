@@ -78,7 +78,7 @@ polygon = PackedVector2Array(185, 335, 1415, 335, 1415, 907, 185, 907)
 
 [node name="FirePit" type="Polygon2D" parent="Navigation/Blockers"]
 visible = false
-polygon = PackedVector2Array(530, 534, 730, 534, 730, 643, 530, 643)
+polygon = PackedVector2Array(470, 435, 740, 435, 740, 635, 470, 635)
 
 [node name="StatueBase" type="Polygon2D" parent="Navigation/Blockers"]
 visible = false
