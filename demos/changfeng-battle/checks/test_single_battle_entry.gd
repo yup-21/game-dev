@@ -36,9 +36,9 @@ func _run() -> void:
     await process_frame
     var menu_actions := _actions(view)
     _check(menu_actions == ["start", "hd2d", "pingjiang_qa", "pingjiang_vertical_qa",
-        "pingjiang_25d_qa", "pingjiang_south_gate_qa", "shen_house_qa", "pingjiang_exploration", "quit"]
+        "pingjiang_25d_qa", "pingjiang_south_gate_qa", "shen_house_qa", "pingjiang_exploration", "prologue_native_qa", "quit"]
         and menu_actions.count("hd2d") == 1,
-        "main menu keeps one HD-2D battle and five isolated map QA entries plus four-area exploration, without duel/party variants")
+        "main menu keeps one HD-2D battle and six isolated QA entries plus four-area exploration, without duel/party variants")
     var menu_buttons: Array = view.get("buttons")
     for i in range(menu_buttons.size()):
         var rect: Rect2 = menu_buttons[i]["rect"]
@@ -63,7 +63,8 @@ func _run() -> void:
     for qa in [
         ["pingjiang_south_gate_qa", "KEY_G", "res://scenes/pingjiang_south_gate_qa.tscn"],
         ["shen_house_qa", "KEY_H", "res://scenes/pingjiang_shen_house_qa.tscn"],
-        ["pingjiang_exploration", "KEY_J", "res://scenes/pingjiang_exploration.tscn"]]:
+        ["pingjiang_exploration", "KEY_J", "res://scenes/pingjiang_exploration.tscn"],
+        ["prologue_native_qa", "KEY_K", "res://scenes/prologue/prologue_exploration.tscn"]]:
         _check(load(qa[2]) is PackedScene and opening_code.contains('"' + qa[0] + '"')
             and opening_code.contains(qa[1]) and opening_code.contains(qa[2]),
             "title retains isolated map QA shortcut for " + qa[0])
