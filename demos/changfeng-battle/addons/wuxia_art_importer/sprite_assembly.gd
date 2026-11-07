@@ -34,7 +34,7 @@ static func parse_mapping(value: String, source_count: int) -> Dictionary:
     return {"error": "", "frames": result}
 
 
-static func cell_rect(source: Dictionary, index: int) -> Rect2i:
+static func grid_rect(source: Dictionary, index: int) -> Rect2i:
     var cols := int(source.get("columns", 0))
     var rows := int(source.get("rows", 0))
     if cols <= 0 or rows <= 0 or index < 0 or index >= cols * rows:
@@ -45,6 +45,13 @@ static func cell_rect(source: Dictionary, index: int) -> Rect2i:
     var offsets: Dictionary = source.get("offsets", {})
     var local: Vector2i = offsets.get(index, Vector2i.ZERO)
     return Rect2i(origin + Vector2i(index % cols, index / cols) * (cell + spacing) + local, cell)
+
+
+static func cell_rect(source: Dictionary, index: int) -> Rect2i:
+    var default_rect := grid_rect(source, index)
+    if not default_rect.has_area():
+        return default_rect
+    return source.get("rects", {}).get(index, default_rect)
 
 
 static func _validate_source(source: Dictionary) -> String:
@@ -58,12 +65,61 @@ static func _validate_source(source: Dictionary) -> String:
         return "图集纹理或切格几何配置无效"
     if texture.get_image().detect_alpha() == Image.ALPHA_NONE:
         return "角色动作源图缺少透明通道"
+    for field in ["rects", "canvas_offsets", "masks"]:
+        var overrides: Dictionary = source.get(field, {})
+        for key in overrides:
+            if not key is int or key < 0 or key >= cols * rows or \
+                    (field == "rects" and not overrides[key] is Rect2i) or \
+                    (field == "canvas_offsets" and not overrides[key] is Vector2i) or \
+                    (field == "masks" and (not overrides[key] is PackedVector2Array or \
+                        overrides[key].size() < 3)):
+                return "逐帧裁切或输出偏移配置无效"
     for index in range(cols * rows):
         var rect := cell_rect(source, index)
-        if rect.position.x < 0 or rect.position.y < 0 or \
+        if not rect.has_area() or rect.position.x < 0 or rect.position.y < 0 or \
                 rect.end.x > texture.get_width() or rect.end.y > texture.get_height():
             return "格位超出源图：" + str(index)
     return ""
+
+
+## Even-odd scanline fill. Preserve original Alpha inside the hand-drawn
+## outline, set RGBA to transparent outside it. No texture modifications occur
+## outside the returned cropped image.
+static func mask_frame(frame_image: Image, rect: Rect2i, points: PackedVector2Array) -> Dictionary:
+    if points.size() < 3 or points.size() > 2048:
+        return {"error": "描边蒙版需要 3..2048 个点"}
+    var polygon := PackedVector2Array()
+    for point in points:
+        if not is_finite(point.x) or not is_finite(point.y) or \
+                point.x < rect.position.x or point.y < rect.position.y or \
+                point.x > rect.end.x or point.y > rect.end.y:
+            return {"error": "描边点超出当前矩形裁切范围"}
+        polygon.append(point - Vector2(rect.position))
+    var rgba: Image = frame_image.duplicate()
+    rgba.convert(Image.FORMAT_RGBA8)
+    var data: PackedByteArray = rgba.get_data()
+    for y in range(rgba.get_height()):
+        var scan_y := float(y) + 0.5
+        var crossings: Array[float] = []
+        for p in range(polygon.size()):
+            var a := polygon[p]
+            var b := polygon[(p + 1) % polygon.size()]
+            if (a.y <= scan_y and b.y > scan_y) or (b.y <= scan_y and a.y > scan_y):
+                crossings.append(a.x + (scan_y - a.y) * (b.x - a.x) / (b.y - a.y))
+        crossings.sort()
+        var span := 0
+        for x in range(rgba.get_width()):
+            var scan_x := float(x) + 0.5
+            while span < crossings.size() and scan_x >= crossings[span]:
+                span += 1
+            if span % 2 == 0:
+                var offset: int = (y * rgba.get_width() + x) * 4
+                data[offset] = 0
+                data[offset + 1] = 0
+                data[offset + 2] = 0
+                data[offset + 3] = 0
+    return {"error": "", "image": Image.create_from_data(
+        rgba.get_width(), rgba.get_height(), false, Image.FORMAT_RGBA8, data)}
 
 
 static func _validate_frame(image: Image, rect: Rect2i, label: String) -> String:
@@ -91,7 +147,8 @@ static func _durations(value: String, count: int) -> Dictionary:
 
 
 ## sources: [{texture, columns, rows, cell_width, cell_height, origin_x/y,
-##            gap_x/y, offsets: {absolute_cell_index: Vector2i}}]
+##            gap_x/y, offsets, rects: {index: Rect2i},
+##            canvas_offsets: {index: Vector2i}, masks: {index: PackedVector2Array}}]
 ## mappings: {action_id: "source_number:cell[-cell],..."}
 static func build(sources: Array, mappings: Dictionary, metadata: Dictionary,
         target_cell: Vector2i = Vector2i.ZERO) -> Dictionary:
@@ -107,8 +164,13 @@ static func build(sources: Array, mappings: Dictionary, metadata: Dictionary,
         var cell := Vector2i(int(source["cell_width"]), int(source["cell_height"]))
         if base_size == Vector2i.ZERO:
             base_size = cell
-        elif base_size != cell:
-            return {"error": "多图的单格像素尺寸必须一致；先按统一比例与透明补边标准化源图"}
+        else:
+            base_size = Vector2i(maxi(base_size.x, cell.x), maxi(base_size.y, cell.y))
+        # All source frames use a single physical pixel-to-output scale, even
+        # if their manually authored crop dimensions differ.
+        for rect in source.get("rects", {}).values():
+            base_size = Vector2i(maxi(base_size.x, rect.size.x),
+                maxi(base_size.y, rect.size.y))
         source_images.append((source["texture"] as Texture2D).get_image())
 
     var sequence: Array[Dictionary] = []
@@ -134,12 +196,21 @@ static func build(sources: Array, mappings: Dictionary, metadata: Dictionary,
             var rect := cell_rect(source, index)
             if not rect.has_area():
                 return {"error": "%s：源图 %d 不存在格 %d" % [action, source_index, index]}
-            var error := _validate_frame(source_images[source_index], rect,
+            var cropped := source_images[source_index].get_region(rect)
+            var points: PackedVector2Array = source.get("masks", {}).get(index, PackedVector2Array())
+            if not points.is_empty():
+                var masked := mask_frame(cropped, rect, points)
+                if not str(masked.get("error", "")).is_empty():
+                    return {"error": "%s 源图 %d 格 %d：%s" % [action, source_index,
+                        index, masked["error"]]}
+                cropped = masked["image"]
+            var error := _validate_frame(cropped, Rect2i(Vector2i.ZERO, rect.size),
                 "%s 源图 %d 格 %d" % [action, source_index, index])
             if not error.is_empty():
                 return {"error": error}
             frames.append(sequence.size())
-            sequence.append({"source": source_index, "cell": index, "rect": rect})
+            sequence.append({"source": source_index, "cell": index, "rect": rect,
+                "image": cropped})
         clips[action] = {"frames": frames, "fps": fps, "loop": looping,
             "durations": times["values"]}
     if sequence.size() > 512:
@@ -149,8 +220,9 @@ static func build(sources: Array, mappings: Dictionary, metadata: Dictionary,
         target_cell = base_size
     if target_cell.x < 16 or target_cell.y < 16 or target_cell.x > 4096 or target_cell.y > 4096:
         return {"error": "目标单格像素无效"}
-    # One common isotropic factor for all sources and all frames, followed by
-    # identical transparent padding. No per-frame alpha trim/centering/scaling.
+    # One common isotropic factor for all sources and frames. Center each
+    # *authored crop canvas*, never its alpha content. Artist offsets preserve
+    # the intended shared footpoint when rectangles have different dimensions.
     var factor := minf(float(target_cell.x) / float(base_size.x),
         float(target_cell.y) / float(base_size.y))
     var scaled_size := Vector2i(maxi(1, roundi(float(base_size.x) * factor)),
@@ -163,11 +235,24 @@ static func build(sources: Array, mappings: Dictionary, metadata: Dictionary,
     output.fill(Color.TRANSPARENT)
     for n in range(sequence.size()):
         var part: Dictionary = sequence[n]
-        var frame_image: Image = source_images[int(part["source"])].get_region(part["rect"])
-        if scaled_size != base_size:
-            frame_image.resize(scaled_size.x, scaled_size.y, Image.INTERPOLATE_LANCZOS)
-        var dest := Vector2i(n % output_columns, n / output_columns) * target_cell + padding
-        output.blit_rect(frame_image, Rect2i(Vector2i.ZERO, scaled_size), dest)
+        var frame_image: Image = part["image"]
+        var rect: Rect2i = part["rect"]
+        var frame_size := Vector2i(maxi(1, roundi(rect.size.x * factor)),
+            maxi(1, roundi(rect.size.y * factor)))
+        if frame_size != rect.size:
+            frame_image.resize(frame_size.x, frame_size.y, Image.INTERPOLATE_LANCZOS)
+        var source: Dictionary = sources[int(part["source"])]
+        var authored_offset: Vector2i = source.get("canvas_offsets", {}).get(int(part["cell"]), Vector2i.ZERO)
+        var canvas_position := (base_size - rect.size) / 2 + authored_offset
+        var placement := Vector2i(roundi(canvas_position.x * factor),
+            roundi(canvas_position.y * factor))
+        var dest := Vector2i(n % output_columns, n / output_columns) * target_cell + padding + placement
+        var bounds := Rect2i(Vector2i(n % output_columns, n / output_columns) * target_cell,
+            target_cell)
+        if dest.x < bounds.position.x or dest.y < bounds.position.y or \
+                dest.x + frame_size.x > bounds.end.x or dest.y + frame_size.y > bounds.end.y:
+            return {"error": "第 %d 帧在标准画布内越界；请调整输出定位" % n}
+        output.blit_rect(frame_image, Rect2i(Vector2i.ZERO, frame_size), dest)
         var final_rect := Rect2i(Vector2i(n % output_columns, n / output_columns) * target_cell,
             target_cell)
         var final_error := _validate_frame(output, final_rect, "标准化后第 %d 帧" % n)

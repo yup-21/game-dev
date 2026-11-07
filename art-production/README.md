@@ -25,7 +25,7 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 - [逐帧/视频/3D 渲染统一质量合同](standards/SPRITE_ANIMATION_QA.md)：集中列出身份变形、侧视角、承重脚、根位移、断剑/越格、Alpha 闪烁、真实补帧、Atlas 装配及 Godot 实速验收的返工闸门。
 - 角色生成时调用 `skills/wuxia-character-art`，审核和原生资源接入调用 `skills/wuxia-asset-pipeline`；已有脚点编辑器仍负责候选标注与无损打包。
-- 默认先**逐动作规划实际帧数**。**AI Sheet 路径**将各动作连续填入固定 5×5（25 格）批次，普通档标准化后单格 **328×256px**／整图 **1640×1280px**，高个档 384×288／1920×1440；先验 5×5 布局，再统一等比缩放／补透明边距并机械拆格。**逐动作 GIF 路径**每动作一份完整透明 GIF，按单帧 W×H 与真实时长验收，不用 5×5 网格。合格帧优先经已验证的工具或 Godot 编辑器交付 `SpriteFrames.tres`；当前旧 Atlas 导入器仍可交付 Clip 兼容资源，不能宣称混合 Sheet 已支持自动导出 SpriteFrames。角色／武器越格、帧序或 Alpha 边距错误仍需返工，不能拉伸／紧裁；视频提帧与脚点自动语义识别尚未真实验收。
+- 默认先**逐动作规划实际帧数**。**AI Sheet 路径**将各动作连续填入固定 5×5（25 格）批次，普通档标准化后单格 **328×256px**／整图 **1640×1280px**，高个档 384×288／1920×1440；先验 5×5 布局，再统一等比缩放／补透明边距并机械拆格。**逐动作 GIF 路径**每动作一份完整透明 GIF，按单帧 W×H 与真实时长验收，不用 5×5 网格。合格的混合 Sheet 可在 **Art Production → 自由装配** 中逐帧校准坐标与矩形、手绘套索/多边形抠图、统一等比标准化，自动生成 `SpriteFrames.tres`；可显式选择旧 Clip 兼容输出。逐动作 GIF 则由 Native GIF Dock 转换为 SpriteFrames。角色／武器越格、帧序或 Alpha 边距错误仍需返工，不能拉伸／紧裁；视频提帧与脚点自动语义识别尚未真实验收。
 
 ## 目录组织
 
@@ -68,6 +68,6 @@ Skills 的 `SKILL.md` 遵循 Agent Skills 的 `name` / `description` YAML frontm
 
 ## Godot 原生素材导入与导出
 
-Godot 编辑器内的 **Art Production** Dock 提供图像导出、Atlas 与场景分层导入、批次预检、版本化替换及事务回退；**Native GIF** Dock 将逐动作 GIF 转成原生 `SpriteFrames.tres`。正式内容通过 `.tres`、已绑定的 `.tscn` 和 Content Manifest 运行，离线清单不充当内容定义；编辑权见 [V2 规范](../docs/GODOT_NATIVE_AUTHORING_STANDARD.md)。
+Godot 编辑器内的 **Art Production** Dock 提供图像导出、自由矩形/轮廓抠图、Atlas → 原生 `SpriteFrames.tres`、场景分层导入、批次预检、版本化替换及事务回退；**Native GIF** Dock 将逐动作 GIF 转成原生 `SpriteFrames.tres`。正式内容通过 `.tres`、已绑定的 `.tscn` 和 Content Manifest 运行，离线清单不充当内容定义；编辑权见 [V2 规范](../docs/GODOT_NATIVE_AUTHORING_STANDARD.md)。
 
 参见 [Godot 导入/导出指南](tools/GODOT_IMPORTER.md)。导入且绑定到正式 Resource 的图片就是当前使用版本；候选原稿仍在 `candidates/`，不会随导入改名。Asset Resource 标记为 `runtime`，表示已接入，不代表动作、脚点或权属已审核。所有正式必需引用必须可解析，不能靠隐式旧图或占位回退。导出 Dock 会补齐按语义文件名自动绑定的图片，`inventory_assets.py` 仅负责静态引用库存。
