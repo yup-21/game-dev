@@ -3,6 +3,8 @@ extends Control
 ## Lightweight editor preview. No gameplay state or Resource writes.
 
 signal cell_clicked(index: int)
+signal crop_drawn(index: int, region: Rect2i)
+signal mask_drawn(index: int, outline: PackedVector2Array)
 
 var mode: String = "image"
 var picture: Texture2D
@@ -15,7 +17,42 @@ var map_resource: Resource
 var candidate_display_scale: float = 0.0
 var grid_source: Dictionary = {}
 var crop_rect: Rect2i = Rect2i()
+var edit_mode: String = "select"
+var drag_start: Vector2 = Vector2.ZERO
+var drag_end: Vector2 = Vector2.ZERO
+var dragging: bool = false
+var trace_points := PackedVector2Array()
+var trace_cell: int = -1
+var grid_zoom: float = 1.0
+var focus_cell: int = -1
+var grid_pan := Vector2.ZERO
+var panning: bool = false
 const Assembly = preload("res://addons/wuxia_art_importer/sprite_assembly.gd")
+
+
+func _ready() -> void:
+    clip_contents = true
+
+
+func set_grid_zoom(value: float, cell_index: int) -> void:
+    if not is_equal_approx(grid_zoom, value) or focus_cell != cell_index:
+        grid_pan = Vector2.ZERO
+    grid_zoom = maxf(value, 1.0)
+    focus_cell = cell_index
+    queue_redraw()
+
+
+func _grid_box() -> Rect2:
+    if grid_zoom <= 1.0 or focus_cell < 0:
+        return _fitted(picture.get_size())
+    var selected: Rect2i = Assembly.cell_rect(grid_source, focus_cell)
+    if not selected.has_area():
+        return _fitted(picture.get_size())
+    var scale := minf(size.x / float(selected.size.x),
+        size.y / float(selected.size.y)) * grid_zoom
+    var center := Vector2(selected.position) + Vector2(selected.size) * 0.5
+    return Rect2(size * 0.5 - center * scale + grid_pan,
+        picture.get_size() * scale)
 
 
 func set_candidate_display_scale(value: float) -> void:
@@ -41,10 +78,15 @@ func show_atlas(texture: Texture2D, cols: int, row_count: int, feet: Vector2) ->
     queue_redraw()
 
 
-func show_grid(texture: Texture2D, source: Dictionary) -> void:
+func show_grid(texture: Texture2D, source: Dictionary, selection_mode: String = "select") -> void:
     mode = "grid"
     picture = texture
     grid_source = source.duplicate(true)
+    if edit_mode != selection_mode:
+        trace_points.clear()
+        trace_cell = -1
+        dragging = false
+    edit_mode = selection_mode
     layers.clear()
     queue_redraw()
 
@@ -92,7 +134,7 @@ func _fitted(source_size: Vector2) -> Rect2:
 
 func _draw_picture() -> void:
     if mode == "grid":
-        var whole := _fitted(picture.get_size())
+        var whole := _grid_box()
         draw_texture_rect(picture, whole, false)
         var factor := whole.size / picture.get_size()
         var cols := int(grid_source.get("columns", 0))
@@ -105,6 +147,21 @@ func _draw_picture() -> void:
             if target.size.x > 15.0 and target.size.y > 11.0:
                 draw_string(get_theme_default_font(), target.position + Vector2(2, 12),
                     str(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.YELLOW)
+            var mask: PackedVector2Array = grid_source.get("masks", {}).get(index, PackedVector2Array())
+            if mask.size() >= 3:
+                var screen_mask := PackedVector2Array()
+                for point in mask:
+                    screen_mask.append(whole.position + point * factor)
+                screen_mask.append(screen_mask[0])
+                draw_polyline(screen_mask, Color(1.0, 0.70, 0.12, 0.95), 2.0)
+        if dragging and edit_mode == "crop":
+            var outline := Rect2(drag_start, drag_end - drag_start).abs()
+            draw_rect(outline, Color(1.0, 0.66, 0.20), false, 2.0)
+        if trace_points.size() >= 2:
+            var screen_trace := PackedVector2Array()
+            for point in trace_points:
+                screen_trace.append(whole.position + point * factor)
+            draw_polyline(screen_trace, Color(1.0, 0.36, 0.22), 2.0)
         return
     if mode == "slice":
         _draw_region(Rect2(crop_rect))
@@ -134,18 +191,128 @@ func _draw_region(source_rect: Rect2) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-    if mode != "grid" or picture == null or not event is InputEventMouseButton or \
-            event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
+    if mode != "grid" or picture == null:
         return
-    var whole := _fitted(picture.get_size())
-    if not whole.has_point(event.position):
+    var whole := _grid_box()
+    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_MIDDLE:
+        panning = event.pressed
+        accept_event()
         return
-    var pixel: Vector2 = (event.position - whole.position) * picture.get_size() / whole.size
-    for index in range(int(grid_source["columns"]) * int(grid_source["rows"])):
-        if Assembly.cell_rect(grid_source, index).has_point(Vector2i(pixel)):
-            cell_clicked.emit(index)
+    if event is InputEventMouseMotion and panning:
+        grid_pan += event.relative
+        queue_redraw()
+        accept_event()
+        return
+    if event is InputEventMouseMotion and dragging:
+        if edit_mode == "crop":
+            drag_end = event.position.clamp(whole.position, whole.end)
+        elif edit_mode == "lasso":
+            var point := _source_point(event.position, whole)
+            if trace_points.is_empty() or trace_points[-1].distance_to(point) >= 2.0:
+                if trace_points.size() < 2048:
+                    trace_points.append(point)
+        queue_redraw()
+        accept_event()
+        return
+    if not event is InputEventMouseButton:
+        return
+    if edit_mode == "polygon" and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+        _finish_trace()
+        accept_event()
+        return
+    if event.button_index != MOUSE_BUTTON_LEFT:
+        return
+    if event.pressed:
+        if not whole.has_point(event.position):
+            return
+        if edit_mode == "polygon":
+            var clicked_cell := _cell_at(event.position, whole)
+            if clicked_cell < 0:
+                return
+            if trace_cell != clicked_cell:
+                trace_points.clear()
+                trace_cell = clicked_cell
+            if trace_points.size() >= 3 and (event.double_click or \
+                    _screen_distance(event.position, trace_points[0], whole) < 8.0):
+                _finish_trace()
+            elif trace_points.size() < 2048:
+                trace_points.append(_source_point(event.position, whole))
+            queue_redraw()
             accept_event()
             return
+        drag_start = event.position
+        drag_end = drag_start
+        dragging = edit_mode in ["crop", "lasso"]
+        if edit_mode == "lasso":
+            trace_cell = _cell_at(drag_start, whole)
+            trace_points.clear()
+            if trace_cell >= 0:
+                trace_points.append(_source_point(drag_start, whole))
+            else:
+                dragging = false
+        if dragging:
+            accept_event()
+        else:
+            _select_cell(event.position, whole)
+        return
+    if not dragging:
+        return
+    dragging = false
+    if edit_mode == "lasso":
+        var point := _source_point(event.position, whole)
+        if trace_points.is_empty() or trace_points[-1].distance_to(point) > 0.5:
+            trace_points.append(point)
+        _finish_trace()
+        accept_event()
+        return
+    drag_end = event.position.clamp(whole.position, whole.end)
+    queue_redraw()
+    if drag_start.distance_to(drag_end) < 5.0:
+        _select_cell(drag_start, whole)
+        return
+    var start_px := _source_point(drag_start, whole)
+    var end_px := _source_point(drag_end, whole)
+    var min_point := Vector2i(Vector2(start_px.min(end_px)).floor())
+    var max_point := Vector2i(Vector2(start_px.max(end_px)).ceil())
+    var rect := Rect2i(min_point, max_point - min_point)
+    var index := _cell_at(drag_start, whole)
+    if index >= 0 and rect.has_area():
+        crop_drawn.emit(index, rect)
+    accept_event()
+
+
+func _source_point(screen_point: Vector2, whole: Rect2) -> Vector2:
+    return ((screen_point.clamp(whole.position, whole.end) - whole.position) *
+        picture.get_size() / whole.size)
+
+
+func _screen_distance(screen_point: Vector2, pixel: Vector2, whole: Rect2) -> float:
+    return screen_point.distance_to(whole.position + pixel * whole.size / picture.get_size())
+
+
+func _finish_trace() -> void:
+    if trace_cell >= 0 and trace_points.size() >= 3:
+        # The artist's path must fit the chosen source rectangle. Reject an
+        # invalid outline at preflight, rather than silently chopping vertices.
+        mask_drawn.emit(trace_cell, trace_points.duplicate())
+    trace_points.clear()
+    trace_cell = -1
+    queue_redraw()
+
+
+func _cell_at(screen_point: Vector2, whole: Rect2) -> int:
+    var pixel := Vector2i((screen_point - whole.position) * picture.get_size() / whole.size)
+    for index in range(int(grid_source["columns"]) * int(grid_source["rows"])):
+        if Assembly.cell_rect(grid_source, index).has_point(pixel):
+            return index
+    return -1
+
+
+func _select_cell(screen_point: Vector2, whole: Rect2) -> void:
+    var index := _cell_at(screen_point, whole)
+    if index >= 0:
+        cell_clicked.emit(index)
+        accept_event()
 
 
 func _draw_scene() -> void:
