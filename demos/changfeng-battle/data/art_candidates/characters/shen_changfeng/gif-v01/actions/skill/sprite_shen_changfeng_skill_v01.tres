@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WuxiaArtCandidateDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/art_candidate_definition.gd" id="1_candidate"]
+
+[resource]
+script = ExtResource("1_candidate")
+asset_kind = "sprite"
+owner_id = "shen_changfeng"
+source_path = "art-production/candidates/characters/shen_changfeng/gif-v01/actions/skill/sprite_shen_changfeng_skill_v01.gif"
+source_pixel_size = Vector2i(328, 256)
+columns = 0
+rows = 0
+action_id = "skill"
