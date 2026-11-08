@@ -9,6 +9,7 @@ const Transaction = preload("res://addons/wuxia_art_importer/art_transaction_ser
 const Assembly = preload("res://addons/wuxia_art_importer/sprite_assembly.gd")
 const LABELS := ["角色立绘", "角色动作 Atlas", "分层场景", "UI Atlas", "战斗 VFX", "整个角色目录"]
 const MODES := ["portrait", "atlas", "scene", "ui_atlas", "vfx", "character_folder"]
+const COMPOSE_TOOLS := ["select", "crop", "lasso", "polygon", "anchor"]
 
 var body: VBoxContainer
 var source_list: ItemList
@@ -42,6 +43,8 @@ var compose_panel: VBoxContainer
 var compose_source_list: ItemList
 var compose_grid: CheckBox
 var compose_preview: Control
+var compose_aligned_panel: VBoxContainer
+var compose_aligned_preview: Control
 var compose_status: Label
 var compose_playing: bool = false
 var compose_tall: CheckBox
@@ -360,12 +363,12 @@ func _vfx_number(label: String, initial: float) -> SpinBox:
     return spin
 
 
-func _compose_number(key: String, label: String, initial: int, minimum: int = -4096,
-        maximum: int = 4096) -> void:
+func _compose_number(key: String, label: String, initial: float, minimum: float = -4096,
+        maximum: float = 4096, step: float = 1.0) -> void:
     var spin := SpinBox.new()
     spin.min_value = minimum
     spin.max_value = maximum
-    spin.step = 1
+    spin.step = step
     spin.value = initial
     compose_numbers[key] = spin
     var row := HBoxContainer.new()
@@ -392,6 +395,7 @@ func _build_composer() -> void:
     compose_panel.add_child(help)
     compose_tall = CheckBox.new()
     compose_tall.text = "高个档：输出 384×288 单格（默认普通档 328×256）"
+    compose_tall.toggled.connect(func(_value: bool): _refresh_preview())
     compose_panel.add_child(compose_tall)
     compose_native = CheckBox.new()
     compose_native.text = "生成原生 SpriteFrames.tres（推荐；旧 Clip 仅兼容）"
@@ -414,7 +418,14 @@ func _build_composer() -> void:
     compose_preview.cell_clicked.connect(_on_grid_cell_clicked)
     compose_preview.crop_drawn.connect(_on_crop_drawn)
     compose_preview.mask_drawn.connect(_on_mask_drawn)
+    compose_preview.anchor_picked.connect(_on_anchor_picked)
     compose_panel.add_child(compose_preview)
+    compose_aligned_preview = Preview.new()
+    compose_aligned_preview.custom_minimum_size.y = 160
+    compose_aligned_panel = _compose_labeled("当前格输出预览（橙色十字为地面原点）",
+        compose_aligned_preview) as VBoxContainer
+    compose_aligned_panel.hide()
+    compose_panel.add_child(compose_aligned_panel)
     compose_status = Label.new()
     compose_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     compose_panel.add_child(compose_status)
@@ -448,10 +459,12 @@ func _build_composer() -> void:
         ["canvas_x", "输出画布偏移 X", 0, -4096, 4096],
         ["canvas_y", "输出画布偏移 Y", 0, -4096, 4096]]:
         _compose_number(str(item[0]), str(item[1]), int(item[2]), int(item[3]), int(item[4]))
+    _compose_number("scale", "当前帧缩放倍率（1 为共同归一比例）", 1.0, 0.001, 8.0, 0.001)
     compose_selection_mode = OptionButton.new()
-    for label in ["点击格子加入动作", "拖拽矩形裁切", "自由手绘套索抠图", "多边形点击描边（右键闭合）"]:
+    for label in ["点击格子加入动作", "拖拽矩形裁切", "自由手绘套索抠图",
+            "多边形点击描边（右键闭合）", "点击当前格内的脚点"]:
         compose_selection_mode.add_item(label)
-    compose_selection_mode.item_selected.connect(func(_value: int): _refresh_preview())
+    compose_selection_mode.item_selected.connect(_composition_tool_changed)
     compose_panel.add_child(_compose_labeled("源图交互工具", compose_selection_mode))
     compose_zoom = SpinBox.new()
     compose_zoom.min_value = 1.0
@@ -460,8 +473,12 @@ func _build_composer() -> void:
     compose_zoom.value = 1.0
     compose_zoom.value_changed.connect(func(_value: float): _refresh_preview())
     compose_panel.add_child(_compose_labeled("局部放大倍率（1 为整图，按住鼠标中键平移）", compose_zoom))
+    var clear_anchor := Button.new()
+    clear_anchor.text = "清除当前帧脚点"
+    clear_anchor.pressed.connect(_clear_frame_anchor)
+    compose_panel.add_child(clear_anchor)
     var reset_crop := Button.new()
-    reset_crop.text = "重置当前帧裁切矩形、蒙版和输出偏移"
+    reset_crop.text = "重置当前帧裁切、蒙版、偏移、缩放和脚点"
     reset_crop.pressed.connect(_reset_crop)
     compose_panel.add_child(reset_crop)
     compose_grid = CheckBox.new()
@@ -534,11 +551,14 @@ func _add_composition_source() -> void:
     var rects: Dictionary = candidate.grid_cell_rects.duplicate(true) if candidate != null else {}
     var canvas_offsets: Dictionary = candidate.grid_canvas_offsets.duplicate(true) if candidate != null else {}
     var masks: Dictionary = candidate.grid_cutout_polygons.duplicate(true) if candidate != null else {}
+    var scales: Dictionary = candidate.grid_frame_scales.duplicate(true) if candidate != null else {}
+    var anchors: Dictionary = candidate.grid_frame_anchors.duplicate(true) if candidate != null else {}
     compose_sources.append({"path": path, "columns": cols, "rows": count_rows,
         "cell_width": cell_size.x, "cell_height": cell_size.y,
         "origin_x": origin.x, "origin_y": origin.y,
         "gap_x": gap.x, "gap_y": gap.y, "offsets": offsets,
-        "rects": rects, "canvas_offsets": canvas_offsets, "masks": masks})
+        "rects": rects, "canvas_offsets": canvas_offsets, "masks": masks,
+        "scales": scales, "anchors": anchors})
     _refresh_composition_list()
     compose_source_list.select(compose_sources.size() - 1)
     _load_composition_geometry()
@@ -590,6 +610,7 @@ func _load_frame_crop_fields(source: Dictionary, cell_index: int) -> void:
     compose_numbers["crop_h"].value = maxi(rect.size.y, 1)
     compose_numbers["canvas_x"].value = placement.x
     compose_numbers["canvas_y"].value = placement.y
+    compose_numbers["scale"].value = float(source.get("scales", {}).get(cell_index, 1.0))
 
 
 func _geometry_changed(changed_field: String) -> void:
@@ -613,7 +634,7 @@ func _geometry_changed(changed_field: String) -> void:
         compose_numbers["local_y"].value = offset.y
         _load_frame_crop_fields(source, cell_index)
         compose_editing = false
-    else:
+    elif changed_field in ["local_x", "local_y"]:
         var offset := Vector2i(int(compose_numbers["local_x"].value),
             int(compose_numbers["local_y"].value))
         if offset == Vector2i.ZERO:
@@ -640,6 +661,14 @@ func _geometry_changed(changed_field: String) -> void:
         else:
             placements[cell_index] = placement
         source["canvas_offsets"] = placements
+    if changed_field == "scale":
+        var multiplier: float = compose_numbers["scale"].value
+        var scales: Dictionary = source.get("scales", {})
+        if is_equal_approx(multiplier, 1.0):
+            scales.erase(cell_index)
+        else:
+            scales[cell_index] = multiplier
+        source["scales"] = scales
     if changed_field in ["columns", "rows", "cell_width", "cell_height",
             "origin_x", "origin_y", "gap_x", "gap_y", "local_x", "local_y"]:
         compose_editing = true
@@ -689,22 +718,42 @@ func _on_mask_drawn(cell_index: int, polygon: PackedVector2Array) -> void:
     _refresh_composition_preview()
 
 
+func _on_anchor_picked(cell_index: int, point: Vector2) -> void:
+    var index := _composition_index()
+    if index < 0 or cell_index != int(compose_numbers["selected_cell"].value):
+        return
+    var source: Dictionary = compose_sources[index]
+    var anchors: Dictionary = source.get("anchors", {})
+    anchors[cell_index] = point
+    source["anchors"] = anchors
+    var placements: Dictionary = source.get("canvas_offsets", {})
+    placements.erase(cell_index)
+    source["canvas_offsets"] = placements
+    compose_editing = true
+    _load_frame_crop_fields(source, cell_index)
+    compose_editing = false
+    _refresh_composition_preview()
+
+
+func _clear_frame_anchor() -> void:
+    var index := _composition_index()
+    if index < 0:
+        return
+    var source: Dictionary = compose_sources[index]
+    var anchors: Dictionary = source.get("anchors", {})
+    anchors.erase(int(compose_numbers["selected_cell"].value))
+    _refresh_composition_preview()
+
+
 func _reset_crop() -> void:
     var index := _composition_index()
     if index < 0:
         return
     var source: Dictionary = compose_sources[index]
     var cell_index := int(compose_numbers["selected_cell"].value)
-    var rects: Dictionary = source.get("rects", {})
-    rects.erase(cell_index)
-    source["rects"] = rects
-    var placements: Dictionary = source.get("canvas_offsets", {})
-    placements.erase(cell_index)
-    source["canvas_offsets"] = placements
-    var masks: Dictionary = source.get("masks", {})
-    masks.erase(cell_index)
-    source["masks"] = masks
-    compose_sources[index] = source
+    for key in ["rects", "canvas_offsets", "masks", "scales", "anchors"]:
+        var values: Dictionary = source.get(key, {})
+        values.erase(cell_index)
     compose_editing = true
     _load_frame_crop_fields(source, cell_index)
     compose_editing = false
@@ -769,6 +818,13 @@ func _metadata_changed() -> void:
         return
     compose_metadata[_action_name()] = {"loop": compose_loop.button_pressed,
         "fps": compose_fps.value, "durations": compose_durations.text}
+    _refresh_preview()
+
+
+func _composition_tool_changed(tool: int) -> void:
+    if COMPOSE_TOOLS[tool] == "anchor":
+        compose_playing = false
+        compose_grid.set_pressed_no_signal(true)
     _refresh_preview()
 
 
@@ -1022,6 +1078,7 @@ func _refresh_composition_preview() -> void:
     if compose_sources.is_empty():
         _composition_message("自由装配：先选择一张图片，点击「添加选中的源图集」。")
         compose_preview.call("show_image", null)
+        compose_aligned_panel.hide()
         return
     var index := _composition_index()
     if index < 0:
@@ -1030,6 +1087,7 @@ func _refresh_composition_preview() -> void:
     var details := _compose_inspect(str(source["path"]))
     if not str(details.get("error", "")).is_empty():
         _composition_message(str(details["error"]))
+        compose_aligned_panel.hide()
         return
     var parsed := Assembly.parse_mapping(str(compose_actions.get(_action_name(), "")),
         compose_sources.size())
@@ -1043,16 +1101,28 @@ func _refresh_composition_preview() -> void:
         message += "\n%s · 第 %d/%d 帧 · %s" % [_action_name(),
             current_frame + 1, refs.size(),
             "播放中" if compose_playing and not compose_grid.button_pressed else "暂停/切格"]
-    _composition_message(message)
     compose_preview.call("set_candidate_display_scale", 0.0)
     if compose_grid.button_pressed or not str(parsed["error"]).is_empty():
-        compose_preview.call("set_grid_zoom", compose_zoom.value,
-            int(compose_numbers["selected_cell"].value))
-        compose_preview.call("show_grid", details["texture"], source,
-            ["select", "crop", "lasso", "polygon"][compose_selection_mode.selected])
+        var cell_index := int(compose_numbers["selected_cell"].value)
+        var tool: String = COMPOSE_TOOLS[compose_selection_mode.selected]
+        if tool == "anchor":
+            var anchor: Variant = source.get("anchors", {}).get(cell_index)
+            message += "\n请用「微调的格号」选格，再点击该格裁切框内的脚点。点选会清零本帧输出偏移。"
+            if anchor is Vector2:
+                message += "\n第 %d 格源图脚点 %s" % [cell_index, anchor]
+                if not Rect2(Assembly.cell_rect(source, cell_index)).has_point(anchor):
+                    message += "（已超出裁切框，请重选）"
+        _composition_message(message)
+        compose_preview.call("set_grid_zoom", compose_zoom.value, cell_index)
+        compose_preview.call("show_grid", details["texture"], source, tool)
+        compose_aligned_panel.visible = _has_frame_alignment({"source": index, "cell": cell_index})
+        if compose_aligned_panel.visible:
+            _show_aligned_frame(compose_aligned_preview, index, cell_index, details["texture"])
         return
+    compose_aligned_panel.hide()
+    _composition_message(message)
     var refs: Array = parsed["frames"]
-    _show_composition_frame(refs[current_frame])
+    _show_composition_frame(refs[current_frame], refs)
 
 
 func _composition_message(value: String) -> void:
@@ -1060,18 +1130,23 @@ func _composition_message(value: String) -> void:
     compose_status.text = value
 
 
-func _show_composition_frame(ref: Dictionary) -> void:
-    var source: Dictionary = compose_sources[int(ref["source"])]
+func _show_composition_frame(ref: Dictionary, refs: Array) -> void:
+    var source_index := int(ref["source"])
+    var cell_index := int(ref["cell"])
+    var source: Dictionary = compose_sources[source_index]
     var details := _compose_inspect(str(source["path"]))
     if not str(details.get("error", "")).is_empty():
         _composition_message(str(details["error"]))
         return
-    var rect := Assembly.cell_rect(source, int(ref["cell"]))
+    if refs.any(_has_frame_alignment):
+        _show_aligned_frame(compose_preview, source_index, cell_index, details["texture"])
+        return
+    var rect := Assembly.cell_rect(source, cell_index)
     if not rect.has_area() or rect.position.x < 0 or rect.position.y < 0 or \
             rect.end.x > int(details["width"]) or rect.end.y > int(details["height"]):
         _composition_message("当前动作帧超出源图，请校准网格")
         return
-    var points: PackedVector2Array = source.get("masks", {}).get(int(ref["cell"]), PackedVector2Array())
+    var points: PackedVector2Array = source.get("masks", {}).get(cell_index, PackedVector2Array())
     if points.is_empty():
         compose_preview.call("show_sliced_frame", details["texture"], rect,
             Vector2(feet_x.value, feet_y.value))
@@ -1083,6 +1158,30 @@ func _show_composition_frame(ref: Dictionary) -> void:
             return
         compose_preview.call("show_sliced_frame", ImageTexture.create_from_image(result["image"]),
             Rect2i(Vector2i.ZERO, rect.size), Vector2(feet_x.value, feet_y.value))
+
+
+func _has_frame_alignment(ref: Dictionary) -> bool:
+    var source: Dictionary = compose_sources[int(ref["source"])]
+    var cell_index := int(ref["cell"])
+    return source.get("scales", {}).has(cell_index) or source.get("anchors", {}).has(cell_index)
+
+
+func _show_aligned_frame(display: Control, source_index: int, cell_index: int,
+        texture: Texture2D) -> void:
+    var sources: Array[Dictionary] = []
+    for index in range(compose_sources.size()):
+        var source := compose_sources[index].duplicate()
+        if index == source_index:
+            source["texture"] = texture
+        sources.append(source)
+    var target_cell := Vector2i(384, 288) if compose_tall.button_pressed else Vector2i(328, 256)
+    var result := Assembly.preview_frame(sources, source_index, cell_index, target_cell)
+    if not str(result["error"]).is_empty():
+        _composition_message(compose_status.text + "\n装配预览：" + str(result["error"]))
+        display.call("show_image", null)
+        return
+    display.call("show_sliced_frame", result["texture"],
+        Rect2i(Vector2i.ZERO, target_cell), Vector2(0, -16))
 
 
 func _compose_inspect(path: String) -> Dictionary:

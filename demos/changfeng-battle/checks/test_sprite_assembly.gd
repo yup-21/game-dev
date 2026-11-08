@@ -47,12 +47,24 @@ func _initialize() -> void:
             "gap_x": 0, "gap_y": 0, "offsets": {},
             "rects": {0: Rect2i(1, 2, 20, 20)},
             "canvas_offsets": {0: Vector2i(3, -1)},
+            "scales": {0: 0.75}, "anchors": {0: Vector2(12, 17)},
             "masks": {0: PackedVector2Array([Vector2(2, 3), Vector2(18, 3), Vector2(12, 17)])}})
         check(cropped_candidate.validate_source().is_empty() and
             cropped_candidate.grid_cell_rects[0] == Rect2i(1, 2, 20, 20) and
             cropped_candidate.grid_canvas_offsets[0] == Vector2i(3, -1) and
-            cropped_candidate.grid_cutout_polygons[0].size() == 3,
-            "candidate metadata stages per-frame crop, placement and cutout")
+            cropped_candidate.grid_cutout_polygons[0].size() == 3 and
+            cropped_candidate.grid_frame_scales[0] == 0.75 and
+            cropped_candidate.grid_frame_anchors[0] == Vector2(12, 17) and
+            original_candidate.grid_frame_scales.is_empty(),
+            "candidate stages crop, mask, scale and foot point without modifying the original")
+        var candidate_path := "user://sprite_assembly_candidate_roundtrip.tres"
+        var candidate_saved := ResourceSaver.save(cropped_candidate, candidate_path)
+        var restored_candidate := ResourceLoader.load(candidate_path, "",
+            ResourceLoader.CACHE_MODE_IGNORE) as WuxiaArtCandidateDefinition
+        check(candidate_saved == OK and restored_candidate != null and
+            restored_candidate.grid_frame_scales.get(0) == 0.75 and
+            restored_candidate.grid_frame_anchors.get(0) == Vector2(12, 17),
+            "candidate .tres roundtrip retains the frame transform")
     var sources := [_source(0), _source(25, true)]
     var mappings := {"idle": "0:0-1", "walk": "0:2-3", "run": "0:4",
         "attack1": "0:5", "attack2": "0:6", "attack3": "0:7", "attack4": "0:8",
@@ -154,6 +166,43 @@ func _initialize() -> void:
             Vector2(0, 0), Vector2(45, 0), Vector2(0, 40)]))
     check(not str(invalid_polygon["error"]).is_empty(),
         "polygon points outside the crop are rejected")
+
+    var transformed := [_source(0), _source(25, true)]
+    transformed[0]["scales"] = {0: 0.5, 1: 0.75}
+    transformed[0]["anchors"] = {0: Vector2(20, 30), 1: Vector2(60, 30)}
+    var target := Vector2i(80, 80)
+    var aligned := Assembly.build(transformed, mappings, metadata, target)
+    check(str(aligned.get("error", "")).is_empty(),
+        "independent scaled frames fit shared canvas: " + str(aligned.get("error", "")))
+    if str(aligned.get("error", "")).is_empty():
+        var atlas: Image = aligned["texture"].get_image()
+        for i in range(2):
+            var preview := Assembly.preview_frame(transformed, 0, i, target)
+            check(str(preview.get("error", "")).is_empty() and
+                preview["texture"].get_image().get_data() ==
+                    atlas.get_region(Rect2i(Vector2i(i * 80, 0), target)).get_data(),
+                "frame %d preview and Atlas output match exactly" % i)
+        check(atlas.get_region(Rect2i(0, 0, 80, 80)).get_used_rect() == Rect2i(32, 46, 8, 8),
+            "first frame projects picked foot point to common output foot point")
+    transformed[0]["scales"][0] = 1.0
+    transformed[0]["anchors"][0] = Vector2(20, 22)
+    var padded := Assembly.build(transformed, mappings, metadata, target)
+    check(str(padded.get("error", "")).is_empty(),
+        "alignment can discard transparent padding beyond the canvas: " + str(padded.get("error", "")))
+    if str(padded.get("error", "")).is_empty():
+        var padded_atlas: Image = padded["texture"].get_image()
+        var padded_preview := Assembly.preview_frame(transformed, 0, 0, target)
+        check(str(padded_preview.get("error", "")).is_empty() and
+            padded_preview["texture"].get_image().get_data() ==
+                padded_atlas.get_region(Rect2i(Vector2i.ZERO, target)).get_data(),
+            "padded frame preview and Atlas output match exactly")
+    transformed[0]["anchors"][0] = Vector2(-1, 30)
+    check(str(Assembly.build(transformed, mappings, metadata, target).get("error", "")).contains("脚点"),
+        "out-of-crop foot point is rejected")
+    transformed[0]["anchors"][0] = Vector2(20, 30)
+    transformed[0]["scales"][0] = 8.0
+    var overflow := str(Assembly.build(transformed, mappings, metadata, target).get("error", ""))
+    check(overflow.contains("超出输出画布"), "scaled frame overflow is rejected: " + overflow)
 
     if not failures.is_empty():
         for message in failures:

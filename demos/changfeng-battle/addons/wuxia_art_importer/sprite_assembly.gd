@@ -1,11 +1,12 @@
 @tool
 extends RefCounted
-## Editor-only sprite assembly. A source cell is never resized or alpha-trimmed.
+## Editor-only sprite assembly from explicit source crops, masks and placement.
 ## All action/frame semantics come from explicit user mappings.
 
 const ACTIONS := ["idle", "walk", "run", "attack1", "attack2", "attack3",
     "attack4", "skill", "evade", "guard", "hit", "defeat"]
 const MARGIN := 8
+const MAX_FRAME_SCALE := 8.0
 
 
 static func parse_mapping(value: String, source_count: int) -> Dictionary:
@@ -78,8 +79,126 @@ static func _validate_source(source: Dictionary) -> String:
         var rect := cell_rect(source, index)
         if not rect.has_area() or rect.position.x < 0 or rect.position.y < 0 or \
                 rect.end.x > texture.get_width() or rect.end.y > texture.get_height():
-            return "格位超出源图：" + str(index)
+            return "格 %d 超出源图：选区 %s，原图 %d×%d" % [
+                index, str(rect), texture.get_width(), texture.get_height()]
+    for field in ["scales", "anchors"]:
+        var edits: Dictionary = source.get(field, {})
+        for index in edits:
+            if not index is int or index < 0 or index >= cols * rows:
+                return "逐帧缩放或脚点格号无效：" + str(index)
+            if field == "anchors" and not edits[index] is Vector2:
+                return "格 %d：脚点坐标无效" % index
+            var error := frame_edit_error(cell_rect(source, index),
+                source.get("scales", {}).get(index, 1.0), source.get("anchors", {}).get(index))
+            if not error.is_empty():
+                return "格 %d：%s" % [index, error]
     return ""
+
+
+static func frame_edit_error(rect: Rect2i, multiplier: Variant, anchor: Variant) -> String:
+    if not (multiplier is float or multiplier is int) or not is_finite(float(multiplier)) \
+            or float(multiplier) <= 0.0 or float(multiplier) > MAX_FRAME_SCALE:
+        return "帧缩放倍率必须大于 0 且不超过 8"
+    if anchor != null:
+        if not anchor is Vector2 or not anchor.is_finite() \
+                or not Rect2(rect).has_point(anchor):
+            return "脚点必须位于当前帧裁切矩形内，请重新点选"
+    return ""
+
+
+static func _base_size(sources: Array) -> Vector2i:
+    var result := Vector2i.ZERO
+    for source in sources:
+        result = result.max(Vector2i(int(source["cell_width"]), int(source["cell_height"])))
+        for rect in source.get("rects", {}).values():
+            result = result.max(rect.size)
+    return result
+
+
+static func _frame_layout(base: Vector2i, target: Vector2i) -> Dictionary:
+    var factor := minf(float(target.x) / base.x, float(target.y) / base.y)
+    var scaled := Vector2i(roundi(base.x * factor), roundi(base.y * factor)).max(Vector2i.ONE)
+    return {"factor": factor, "padding": (target - scaled) / 2}
+
+
+static func _place_frame(image: Image, source: Dictionary, index: int, rect: Rect2i,
+        base: Vector2i, target: Vector2i, layout: Dictionary) -> Dictionary:
+    var multiplier: Variant = source.get("scales", {}).get(index, 1.0)
+    var anchor: Variant = source.get("anchors", {}).get(index)
+    var problem := frame_edit_error(rect, multiplier, anchor)
+    if not problem.is_empty():
+        return {"error": problem}
+    var factor: float = layout["factor"]
+    var scale := factor * float(multiplier)
+    var normal_size := Vector2i(roundi(rect.size.x * factor), roundi(rect.size.y * factor)).max(Vector2i.ONE)
+    var frame_size := Vector2i(roundi(rect.size.x * scale), roundi(rect.size.y * scale)).max(Vector2i.ONE)
+    var raster_scale := Vector2(frame_size) / Vector2(rect.size)
+    var nudge: Vector2i = source.get("canvas_offsets", {}).get(index, Vector2i.ZERO)
+    var canvas_position := (base - rect.size) / 2 + nudge
+    var padding: Vector2i = layout["padding"]
+    var dest := padding + Vector2i((Vector2(canvas_position) * factor).round()) \
+        + (normal_size - frame_size) / 2
+    if anchor != null:
+        var output_anchor := Vector2(target.x * 0.5, target.y - 16)
+        # Match the actual integer-sized resample when projecting the source point.
+        dest = Vector2i((output_anchor - (Vector2(anchor) - Vector2(rect.position)) * raster_scale \
+            + Vector2(nudge) * factor).round())
+    var output_rect := Rect2i(Vector2i.ZERO, target)
+    var overflow := {"error": "缩放定位后的帧内容超出输出画布 %s，请调整倍率、脚点或偏移" % str(target)}
+    if not output_rect.encloses(Rect2i(dest, frame_size)):
+        if anchor == null and float(multiplier) == 1.0:
+            return overflow
+        # Discard excess transparent padding while preserving the source point projection.
+        var content := image.get_used_rect()
+        var start := dest + Vector2i((Vector2(content.position) * raster_scale).round())
+        var end := dest + Vector2i((Vector2(content.end) * raster_scale).round())
+        if not content.has_area() or not output_rect.encloses(Rect2i(start, (end - start).max(Vector2i.ONE))):
+            return overflow
+        var sample := content.grow(4).intersection(Rect2i(Vector2i.ZERO, image.get_size()))
+        start = dest + Vector2i((Vector2(sample.position) * raster_scale).round())
+        end = dest + Vector2i((Vector2(sample.end) * raster_scale).round())
+        dest = start
+        frame_size = (end - start).max(Vector2i.ONE)
+        image = image.get_region(sample)
+    if frame_size != image.get_size():
+        image.resize(frame_size.x, frame_size.y, Image.INTERPOLATE_LANCZOS)
+    if not output_rect.encloses(Rect2i(dest, frame_size)):
+        var used := image.get_used_rect()
+        if not output_rect.encloses(Rect2i(dest + used.position, used.size)):
+            return overflow
+        var visible := output_rect.intersection(Rect2i(dest, frame_size))
+        image = image.get_region(Rect2i(visible.position - dest, visible.size))
+        dest = visible.position
+    return {"error": "", "position": dest, "image": image}
+
+
+static func preview_frame(sources: Array, source_index: int, cell_index: int,
+        target_cell: Vector2i) -> Dictionary:
+    if source_index < 0 or source_index >= sources.size() or target_cell.x <= 0 or target_cell.y <= 0:
+        return {"error": "缺少预览源图或输出画布"}
+    var source: Dictionary = sources[source_index]
+    var texture := source.get("texture") as Texture2D
+    var rect := cell_rect(source, cell_index)
+    if texture == null or not rect.has_area() or not Rect2i(Vector2i.ZERO,
+            Vector2i(texture.get_size())).encloses(rect):
+        return {"error": "当前帧裁切超出源图"}
+    var cropped := texture.get_image().get_region(rect)
+    var points: PackedVector2Array = source.get("masks", {}).get(cell_index, PackedVector2Array())
+    if not points.is_empty():
+        var masked := mask_frame(cropped, rect, points)
+        if not str(masked["error"]).is_empty():
+            return masked
+        cropped = masked["image"]
+    var base := _base_size(sources)
+    var placed := _place_frame(cropped, source, cell_index, rect, base, target_cell,
+        _frame_layout(base, target_cell))
+    if not str(placed["error"]).is_empty():
+        return placed
+    var canvas := Image.create(target_cell.x, target_cell.y, false, Image.FORMAT_RGBA8)
+    canvas.fill(Color.TRANSPARENT)
+    var rendered: Image = placed["image"]
+    canvas.blit_rect(rendered, Rect2i(Vector2i.ZERO, rendered.get_size()), placed["position"])
+    return {"error": "", "texture": ImageTexture.create_from_image(canvas)}
 
 
 ## Even-odd scanline fill. Preserve original Alpha inside the hand-drawn
@@ -148,30 +267,21 @@ static func _durations(value: String, count: int) -> Dictionary:
 
 ## sources: [{texture, columns, rows, cell_width, cell_height, origin_x/y,
 ##            gap_x/y, offsets, rects: {index: Rect2i},
-##            canvas_offsets: {index: Vector2i}, masks: {index: PackedVector2Array}}]
+##            canvas_offsets: {index: Vector2i}, masks: {index: PackedVector2Array},
+##            scales: {index: float}, anchors: {index: Vector2}}]
 ## mappings: {action_id: "source_number:cell[-cell],..."}
 static func build(sources: Array, mappings: Dictionary, metadata: Dictionary,
         target_cell: Vector2i = Vector2i.ZERO) -> Dictionary:
     if sources.is_empty() or sources.size() > 32:
         return {"error": "请选择 1..32 张源图集"}
-    var base_size := Vector2i.ZERO
     var source_images: Array[Image] = []
     for i in range(sources.size()):
         var source: Dictionary = sources[i]
         var failure := _validate_source(source)
         if not failure.is_empty():
             return {"error": "源图 %d：%s" % [i, failure]}
-        var cell := Vector2i(int(source["cell_width"]), int(source["cell_height"]))
-        if base_size == Vector2i.ZERO:
-            base_size = cell
-        else:
-            base_size = Vector2i(maxi(base_size.x, cell.x), maxi(base_size.y, cell.y))
-        # All source frames use a single physical pixel-to-output scale, even
-        # if their manually authored crop dimensions differ.
-        for rect in source.get("rects", {}).values():
-            base_size = Vector2i(maxi(base_size.x, rect.size.x),
-                maxi(base_size.y, rect.size.y))
         source_images.append((source["texture"] as Texture2D).get_image())
+    var base_size := _base_size(sources)
 
     var sequence: Array[Dictionary] = []
     var clips: Dictionary = {}
@@ -220,14 +330,10 @@ static func build(sources: Array, mappings: Dictionary, metadata: Dictionary,
         target_cell = base_size
     if target_cell.x < 16 or target_cell.y < 16 or target_cell.x > 4096 or target_cell.y > 4096:
         return {"error": "目标单格像素无效"}
-    # One common isotropic factor for all sources and frames. Center each
-    # *authored crop canvas*, never its alpha content. Artist offsets preserve
-    # the intended shared footpoint when rectangles have different dimensions.
-    var factor := minf(float(target_cell.x) / float(base_size.x),
-        float(target_cell.y) / float(base_size.y))
-    var scaled_size := Vector2i(maxi(1, roundi(float(base_size.x) * factor)),
-        maxi(1, roundi(float(base_size.y) * factor)))
-    var padding := (target_cell - scaled_size) / 2
+    # Unedited frames use the common scale and center the authored crop canvas.
+    # Explicit frame edits can refine that scale and place a picked foot point.
+    var layout := _frame_layout(base_size, target_cell)
+    var factor: float = layout["factor"]
     var output_columns := mini(5 if sequence.size() <= 320 else 8, sequence.size())
     var output_rows := int(ceili(float(sequence.size()) / float(output_columns)))
     var output := Image.create(output_columns * target_cell.x, output_rows * target_cell.y,
@@ -237,25 +343,17 @@ static func build(sources: Array, mappings: Dictionary, metadata: Dictionary,
         var part: Dictionary = sequence[n]
         var frame_image: Image = part["image"]
         var rect: Rect2i = part["rect"]
-        var frame_size := Vector2i(maxi(1, roundi(rect.size.x * factor)),
-            maxi(1, roundi(rect.size.y * factor)))
-        if frame_size != rect.size:
-            frame_image.resize(frame_size.x, frame_size.y, Image.INTERPOLATE_LANCZOS)
         var source: Dictionary = sources[int(part["source"])]
-        var authored_offset: Vector2i = source.get("canvas_offsets", {}).get(int(part["cell"]), Vector2i.ZERO)
-        var canvas_position := (base_size - rect.size) / 2 + authored_offset
-        var placement := Vector2i(roundi(canvas_position.x * factor),
-            roundi(canvas_position.y * factor))
-        var dest := Vector2i(n % output_columns, n / output_columns) * target_cell + padding + placement
+        var placed := _place_frame(frame_image, source, int(part["cell"]), rect, base_size,
+            target_cell, layout)
+        if not str(placed["error"]).is_empty():
+            return {"error": "第 %d 帧：%s" % [n, placed["error"]]}
         var bounds := Rect2i(Vector2i(n % output_columns, n / output_columns) * target_cell,
             target_cell)
-        if dest.x < bounds.position.x or dest.y < bounds.position.y or \
-                dest.x + frame_size.x > bounds.end.x or dest.y + frame_size.y > bounds.end.y:
-            return {"error": "第 %d 帧在标准画布内越界；请调整输出定位" % n}
-        output.blit_rect(frame_image, Rect2i(Vector2i.ZERO, frame_size), dest)
-        var final_rect := Rect2i(Vector2i(n % output_columns, n / output_columns) * target_cell,
-            target_cell)
-        var final_error := _validate_frame(output, final_rect, "标准化后第 %d 帧" % n)
+        var rendered: Image = placed["image"]
+        output.blit_rect(rendered, Rect2i(Vector2i.ZERO, rendered.get_size()),
+            bounds.position + Vector2i(placed["position"]))
+        var final_error := _validate_frame(output, bounds, "标准化后第 %d 帧" % n)
         if not final_error.is_empty():
             return {"error": final_error}
     var bytes := output.save_png_to_buffer()

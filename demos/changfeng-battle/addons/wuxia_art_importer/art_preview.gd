@@ -5,6 +5,7 @@ extends Control
 signal cell_clicked(index: int)
 signal crop_drawn(index: int, region: Rect2i)
 signal mask_drawn(index: int, outline: PackedVector2Array)
+signal anchor_picked(index: int, point: Vector2)
 
 var mode: String = "image"
 var picture: Texture2D
@@ -143,7 +144,9 @@ func _draw_picture() -> void:
             var rect := Assembly.cell_rect(grid_source, index)
             var target := Rect2(whole.position + Vector2(rect.position) * factor,
                 Vector2(rect.size) * factor)
-            draw_rect(target, Color(0.1, 0.96, 0.68, 0.9), false, 1.3)
+            var selected := edit_mode == "anchor" and index == focus_cell
+            var border := Color.ORANGE if selected else Color(0.1, 0.96, 0.68, 0.9)
+            draw_rect(target, border, false, 2.0 if selected else 1.3)
             if target.size.x > 15.0 and target.size.y > 11.0:
                 draw_string(get_theme_default_font(), target.position + Vector2(2, 12),
                     str(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color.YELLOW)
@@ -154,6 +157,9 @@ func _draw_picture() -> void:
                     screen_mask.append(whole.position + point * factor)
                 screen_mask.append(screen_mask[0])
                 draw_polyline(screen_mask, Color(1.0, 0.70, 0.12, 0.95), 2.0)
+        for point in grid_source.get("anchors", {}).values():
+            if point is Vector2:
+                _draw_foot_marker(whole.position + point * factor)
         if dragging and edit_mode == "crop":
             var outline := Rect2(drag_start, drag_end - drag_start).abs()
             draw_rect(outline, Color(1.0, 0.66, 0.20), false, 2.0)
@@ -186,6 +192,10 @@ func _draw_region(source_rect: Rect2) -> void:
     draw_texture_rect_region(picture, dest, source_rect)
     var marker := dest.position + dest.size * Vector2(0.5, 1.0)
     marker += feet_offset * (dest.size.x / source_rect.size.x)
+    _draw_foot_marker(marker)
+
+
+func _draw_foot_marker(marker: Vector2) -> void:
     draw_line(marker - Vector2(7, 0), marker + Vector2(7, 0), Color.ORANGE, 2)
     draw_line(marker - Vector2(0, 7), marker + Vector2(0, 7), Color.ORANGE, 2)
 
@@ -224,6 +234,12 @@ func _gui_input(event: InputEvent) -> void:
         return
     if event.pressed:
         if not whole.has_point(event.position):
+            return
+        if edit_mode == "anchor":
+            var pixel := Vector2i(_source_point(event.position, whole).floor())
+            if focus_cell >= 0 and Assembly.cell_rect(grid_source, focus_cell).has_point(pixel):
+                anchor_picked.emit(focus_cell, Vector2(pixel))
+            accept_event()
             return
         if edit_mode == "polygon":
             var clicked_cell := _cell_at(event.position, whole)

@@ -26,6 +26,10 @@ const CombatScale = preload("res://scripts/combat_scale.gd")
 ## Optional placement adjustment on the shared output canvas (source pixels).
 ## These are authored offsets, not per-frame alpha centering or scaling.
 @export var grid_canvas_offsets: Dictionary = {}
+## Optional multipliers on top of the shared normalization scale.
+@export var grid_frame_scales: Dictionary = {}
+## Optional explicitly picked foot points, in absolute source image pixels.
+@export var grid_frame_anchors: Dictionary = {}
 ## Per-frame freehand/polygon cutout masks, in absolute source-image pixels.
 ## Polygon vertices are editable candidate metadata; final Alpha is baked only
 ## into the generated runtime atlas, never into the source image.
@@ -83,6 +87,31 @@ func validate_source() -> String:
         return "Candidate pixel dimensions changed: " + source_path
     if (columns == 0) != (rows == 0):
         return "Incomplete candidate atlas grid: " + source_path
+    if not grid_frame_scales.is_empty() or not grid_frame_anchors.is_empty():
+        if asset_kind != "sprite" or columns < 1 or rows < 1:
+            return "Frame transforms require a sprite grid: " + source_path
+        var frame_cell := grid_cell_size
+        if frame_cell == Vector2i.ZERO:
+            frame_cell = Vector2i(source_pixel_size.x / columns, source_pixel_size.y / rows)
+        for key in grid_frame_scales:
+            var scale: Variant = grid_frame_scales[key]
+            if not key is int or key < 0 or key >= columns * rows \
+                    or not (scale is float or scale is int) or not is_finite(float(scale)) \
+                    or float(scale) <= 0.0 or float(scale) > 8.0:
+                return "Invalid candidate frame scale: " + source_path
+        for key in grid_frame_anchors:
+            var anchor: Variant = grid_frame_anchors[key]
+            if not key is int or key < 0 or key >= columns * rows or not anchor is Vector2 \
+                    or not anchor.is_finite():
+                return "Invalid candidate frame foot point: " + source_path
+            var offset: Variant = grid_cell_offsets.get(key, Vector2i.ZERO)
+            if not offset is Vector2i:
+                return "Invalid candidate cell offset: " + source_path
+            var origin := grid_origin + Vector2i(key % columns, key / columns) \
+                * (frame_cell + grid_gap) + Vector2i(offset)
+            var rect: Variant = grid_cell_rects.get(key, Rect2i(origin, frame_cell))
+            if not rect is Rect2i or not Rect2(rect).has_point(anchor):
+                return "Candidate foot point exceeds crop rectangle (cell %d): %s" % [key, source_path]
     if columns > 0:
         if grid_cell_size == Vector2i.ZERO:
             if source_pixel_size.x % columns != 0 or source_pixel_size.y % rows != 0:
@@ -113,7 +142,8 @@ func validate_source() -> String:
                 var rect: Rect2i = grid_cell_rects.get(index, Rect2i(origin, grid_cell_size))
                 if not rect.has_area() or rect.position.x < 0 or rect.position.y < 0 or \
                         rect.end.x > source_pixel_size.x or rect.end.y > source_pixel_size.y:
-                    return "Candidate grid cell exceeds source canvas: " + source_path
+                    return "Candidate grid cell exceeds source canvas (cell %d, %s, source %s): %s" % [
+                        index, str(rect), str(source_pixel_size), source_path]
                 if grid_cutout_polygons.has(index):
                     for point in grid_cutout_polygons[index]:
                         if point.x < rect.position.x or point.y < rect.position.y or \

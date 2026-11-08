@@ -392,6 +392,8 @@ static func _stage_candidate_grid(candidate: WuxiaArtCandidateDefinition,
     staged.grid_cell_rects = config.get("rects", {}).duplicate(true)
     staged.grid_canvas_offsets = config.get("canvas_offsets", {}).duplicate(true)
     staged.grid_cutout_polygons = config.get("masks", {}).duplicate(true)
+    staged.grid_frame_scales = config.get("scales", candidate.grid_frame_scales).duplicate(true)
+    staged.grid_frame_anchors = config.get("anchors", candidate.grid_frame_anchors).duplicate(true)
     return staged
 
 
@@ -449,9 +451,13 @@ static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
                     candidate.grid_cell_offsets != staged_candidate.grid_cell_offsets or \
                     candidate.grid_cell_rects != staged_candidate.grid_cell_rects or \
                     candidate.grid_canvas_offsets != staged_candidate.grid_canvas_offsets or \
-                    candidate.grid_cutout_polygons != staged_candidate.grid_cutout_polygons:
+                    candidate.grid_cutout_polygons != staged_candidate.grid_cutout_polygons or \
+                    candidate.grid_frame_scales != staged_candidate.grid_frame_scales or \
+                    candidate.grid_frame_anchors != staged_candidate.grid_frame_anchors:
                 candidate_updates.append({"resource_path": candidate.resource_path,
                     "source_path": path, "geometry": config.duplicate(true)})
+            config["scales"] = staged_candidate.grid_frame_scales
+            config["anchors"] = staged_candidate.grid_frame_anchors
         config["texture"] = details["texture"]
         sources.append(config)
     var requested_cell := Vector2i(384, 288) if bool(fields.get("composition_tall", false)) \
