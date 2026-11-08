@@ -10,12 +10,12 @@
 script = ExtResource("1_def")
 content_id = "pursuer_captain"
 display_name = "追镖首领"
-title = "追索者"
+title = "截镖执行人"
 role = "追兵 · 重刀"
 faction = "神秘追兵"
 weapon = "重刀"
-personality = "冷厉、执拗，只为完成追索命令。"
-biography = "率众截镖的领头人物，身后势力尚不明朗。他所追寻的似乎并非镖车上的财物。"
+personality = "冷厉、服从命令，做事利落，却并不掌握上级全部意图。"
+biography = "率众执行截镖与杀人灭口的现场头目，事前不知道残卷或任何关键物品存在。向上级交差后才被告知查获物品有缺，由此开始怀疑有人先一步带走东西；他仍不知道所缺之物究竟是什么。"
 team_hint = "enemy"
 battle_actor_id = 1
 school_id = "saber"

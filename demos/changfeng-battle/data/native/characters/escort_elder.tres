@@ -8,12 +8,12 @@
 script = ExtResource("1_def")
 content_id = "escort_elder"
 display_name = "老镖头"
-title = "血镖托孤"
+title = "雨夜残镖"
 role = "剧情人物 · 镖头"
 faction = "旧镖局"
 weapon = "长刀（非战斗）"
-personality = "负伤垂危，仍竭力守护无名残篇。"
-biography = "雨夜残镖的幸存者，将《太虚引气残篇》交给沈长风，并警告追兵身后藏着不可轻信的势力。"
+personality = "老练谨慎，不肯轻信陌生人；伤重时仍尽力为救命恩人争取逃脱机会。"
+biography = "劫镖幸存者。因两次受沈长风救护而认可他，在断桥交付一卷连题名都残缺的无名残卷，自己留在明路牵制追兵，此后下落不明。"
 team_hint = "neutral"
 battle_actor_id = -1
 school_id = ""

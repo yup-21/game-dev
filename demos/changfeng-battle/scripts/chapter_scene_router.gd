@@ -3,6 +3,7 @@ extends RefCounted
 const PATHS := {
     "menu":"res://opening.tscn",
     "story":"res://opening.tscn",
+    "prologue":"res://scenes/prologue/prologue_exploration.tscn",
     "battle":"res://battle_hd2d.tscn",
     "aftermath":"res://demo_result.tscn",
     "complete":"res://demo_result.tscn"

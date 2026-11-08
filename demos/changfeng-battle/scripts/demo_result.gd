@@ -26,6 +26,9 @@ func _primary_action() -> void:
     var session = _session()
     if session == null:
         return
+    if session.prologue_active and session.phase == "aftermath":
+        _action("retry")
+        return
     _action("new" if session.phase == "complete" else
         ("continue" if session.can_advance_chapter() else "finish"))
 
@@ -59,6 +62,17 @@ func _refresh_native() -> void:
     var chapter: Dictionary = session.chapter_definition()
     panel.get_node("Chapter").text = str(chapter.get("scene", {}).get("title", "序章 · 雨夜残镖"))
     var outcome_label: Label = panel.get_node("Outcome")
+    if session.prologue_active:
+        outcome_label.text = "追兵逼近 · 此路不通，重试迎敌"
+        outcome_label.add_theme_color_override("font_color", LOSS)
+        panel.get_node("Clue").text = "随身线索：一卷无名残卷" if session.flags.get("obtained_fragment", false) else "尚未获知残卷下落"
+        panel.get_node("Decision").text = "你选择护送重伤的严守诚。"
+        panel.get_node("Equipment").text = "战斗失败不会抹除已经获得的剧情线索。"
+        panel.get_node("Completion").visible = false
+        panel.get_node("PrimaryAction").text = "重试本场战斗"
+        panel.get_node("Retry").visible = true
+        panel.get_node("Menu").visible = true
+        return
     outcome_label.text = "江湖暂安 · 一战得脱" if success else \
         ("两败俱伤 · 血路未定" if outcome == "draw" else "追兵得势 · 退守破庙")
     outcome_label.add_theme_color_override("font_color", JADE if success else LOSS)

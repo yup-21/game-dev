@@ -300,7 +300,11 @@ func _session():
 
 func _enter_new_game() -> void:
 	var session=_session()
-	if session!=null: session.start_new_game()
+	if session!=null:
+		session.start_new_game()
+		if session.activate_prologue_chase():
+			call_deferred("_change_scene", session.scene_for("prologue"))
+			return
 	_load_chapter_content()
 	# Rebind the existing authored nodes; freeing them would destroy their
 	# editor-configured transforms and break the next chapter's layer lookup.

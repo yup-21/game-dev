@@ -1,0 +1,234 @@
+[gd_resource type="Resource" script_class="WuxiaStoryDefinition" load_steps=29 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/story_definition.gd" id="story"]
+[ext_resource type="Script" path="res://scripts/content/story_beat_definition.gd" id="beat"]
+[ext_resource type="Script" path="res://scripts/content/story_event_definition.gd" id="event"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_node_definition.gd" id="node"]
+[ext_resource type="Script" path="res://scripts/content/dialogue_choice_definition.gd" id="choice"]
+[ext_resource type="Script" path="res://scripts/content/flag_requirement_definition.gd" id="req"]
+
+[sub_resource type="Resource" id="opening_beat"]
+script = ExtResource("beat")
+caption = "暮秋 · 荒山古道"
+text = "沈长风只是一个赶往平江府的江湖散人。连夜秋雨迫他在破庙生起篝火，歇息片刻。"
+duration = 3.0
+
+[sub_resource type="Resource" id="rescued_flag"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "helped_escort"
+flag_value = true
+
+[sub_resource type="Resource" id="declined_flag"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "helped_escort"
+flag_value = false
+
+[sub_resource type="Resource" id="help_choice"]
+script = ExtResource("choice")
+text = "扶老人回破庙，先替他止血"
+next_node = "rescue_response"
+events = Array[Resource]([SubResource("rescued_flag")])
+
+[sub_resource type="Resource" id="leave_choice"]
+script = ExtResource("choice")
+text = "不敢卷入追杀，沿官道离开"
+next_node = "decline_response"
+events = Array[Resource]([SubResource("declined_flag")])
+
+[sub_resource type="Resource" id="roadside_open"]
+script = ExtResource("node")
+node_id = "roadside_open"
+speaker = "旁白"
+text = "官道旁的镖车翻倒在泥水里，断旗与刀痕散落一地。一个满身是血的老镖头勉强摆脱追兵，倒在路边树下。"
+next_node = "roadside_warning"
+
+[sub_resource type="Resource" id="roadside_warning"]
+script = ExtResource("node")
+node_id = "roadside_warning"
+speaker = "老镖头"
+text = "后生……别管我。那些人沿着车辙追来，走得迟了，你也会被卷进去。"
+next_node = "roadside_decision"
+
+[sub_resource type="Resource" id="roadside_decision"]
+script = ExtResource("node")
+node_id = "roadside_decision"
+speaker = "沈长风"
+text = "老人气息急促，肩上刀伤尚在流血；官道后方隐约传来哨声。你要怎么办？"
+choices = Array[Resource]([SubResource("help_choice"), SubResource("leave_choice")])
+
+[sub_resource type="Resource" id="rescue_response"]
+script = ExtResource("node")
+node_id = "rescue_response"
+speaker = "沈长风"
+text = "能走吗？前头有座破庙。我扶你过去，先把血止住。"
+next_node = "rescue_depart"
+
+[sub_resource type="Resource" id="rescue_depart"]
+script = ExtResource("node")
+node_id = "rescue_depart"
+speaker = "旁白"
+text = "你扯起雨湿的兜帽遮住脸，搀起老镖头，抄荒草小路折回破庙。老人一路几乎说不出话，只护着怀里的油布包。"
+
+[sub_resource type="Resource" id="decline_response"]
+script = ExtResource("node")
+node_id = "decline_response"
+speaker = "旁白"
+text = "你沿官道离开，却撞上正在封锁路口的探子。对方认定你目睹了截镖，拔刀杀人灭口。没有退路，你终究不敌追兵。"
+
+[sub_resource type="Resource" id="healing_open"]
+script = ExtResource("node")
+node_id = "healing_open"
+speaker = "旁白"
+text = "你在篝火旁撕开干净布条，替老人压住肩上的伤口。伤势太重，止血之后他仍然只能靠人搀扶行走。"
+next_node = "healing_question"
+
+[sub_resource type="Resource" id="healing_question"]
+script = ExtResource("node")
+node_id = "healing_question"
+speaker = "老镖头"
+text = "你连老夫姓名都不知道，何必管这场闲事？"
+next_node = "healing_answer"
+
+[sub_resource type="Resource" id="healing_answer"]
+script = ExtResource("node")
+node_id = "healing_answer"
+speaker = "沈长风"
+text = "不知你们结的什么仇，只知道眼下你快失血而死。先把命保住，再说别的。"
+next_node = "healing_alarm"
+
+[sub_resource type="Resource" id="healing_alarm"]
+script = ExtResource("node")
+node_id = "healing_alarm"
+speaker = "旁白"
+text = "庙外传来踩水的脚步声。两名戴鬼面的刀卫循血迹而来，你只能先把老人护在身后。"
+
+[sub_resource type="Resource" id="wave1_open"]
+script = ExtResource("node")
+node_id = "wave1_open"
+speaker = "鬼面刀卫"
+text = "老东西就在庙里！那小子也在，别留活口！"
+next_node = "wave1_answer"
+
+[sub_resource type="Resource" id="wave1_answer"]
+script = ExtResource("node")
+node_id = "wave1_answer"
+speaker = "沈长风"
+text = "老人家，往我身后退。这里路窄，他们两个未必占得到便宜。"
+
+[sub_resource type="Resource" id="wave2_open"]
+script = ExtResource("node")
+node_id = "wave2_open"
+speaker = "旁白"
+text = "刚脱离破庙，荒山古道又出现三名追兵。老人脚步越来越沉，你握剑的手也因连续迎战微微发抖。兜帽和夜雨遮住了你的面目。"
+next_node = "wave2_answer"
+
+[sub_resource type="Resource" id="wave2_answer"]
+script = ExtResource("node")
+node_id = "wave2_answer"
+speaker = "沈长风"
+text = "借前面的石壁挡住他们的来路。打退这一波，我们继续向断桥走！"
+
+[sub_resource type="Resource" id="fragment_flag"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "obtained_fragment"
+flag_value = true
+
+[sub_resource type="Resource" id="fragment_clue"]
+script = ExtResource("event")
+event_type = "grant_clue"
+clue_id = "unknown_fragment"
+count = 1
+
+[sub_resource type="Resource" id="handover_open"]
+script = ExtResource("node")
+node_id = "handover_open"
+speaker = "旁白"
+text = "第二波追兵倒下前有人放出响箭。更远处陆续亮起火把，人数远超你能抵挡的范围。断桥旁有一条被荒草遮住的溪谷小径。"
+next_node = "handover_yan"
+
+[sub_resource type="Resource" id="handover_yan"]
+script = ExtResource("node")
+node_id = "handover_yan"
+speaker = "严守诚"
+text = "小兄弟，够了。你救了老夫两次，如今还不肯丢下我……老夫严守诚，走镖半生，今日总算识得一个可信的人。"
+next_node = "handover_hero"
+
+[sub_resource type="Resource" id="handover_hero"]
+script = ExtResource("node")
+node_id = "handover_hero"
+speaker = "沈长风"
+text = "既然救了你，哪能半途撂下？你还有力气走，我们就继续走。"
+next_node = "handover_fragment"
+
+[sub_resource type="Resource" id="handover_fragment"]
+script = ExtResource("node")
+node_id = "handover_fragment"
+speaker = "严守诚"
+text = "老夫走不动了。这卷残卷替我收着；它并非酬劳，带着它反而危险。你沿溪谷下去，到烟水渡便有船往平江府。"
+next_node = "handover_decoy"
+events = Array[Resource]([SubResource("fragment_flag"), SubResource("fragment_clue")])
+
+[sub_resource type="Resource" id="handover_decoy"]
+script = ExtResource("node")
+node_id = "handover_decoy"
+speaker = "严守诚"
+text = "追兵只顾截镖灭口，没一个提过这卷东西。他们认得老夫和镖车，却不识你的来历。我留在明路上拖住搜山的人；你沿溪谷走，千万别回头。卷上原题残缺，莫轻信旁人。"
+
+[sub_resource type="Resource" id="insight_flag"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "fragment_insight_unlocked"
+flag_value = true
+
+[sub_resource type="Resource" id="lookout_open"]
+script = ExtResource("node")
+node_id = "lookout_open"
+speaker = "旁白"
+text = "你刚潜入溪谷，一名警戒的刀卫便挡住去路。怀中残卷微热；对方的呼吸、握刀和脚步忽然变得清晰，仿佛连他手中尚未施展的招式都能看见。"
+next_node = "lookout_answer"
+events = Array[Resource]([SubResource("insight_flag")])
+
+[sub_resource type="Resource" id="lookout_answer"]
+script = ExtResource("node")
+node_id = "lookout_answer"
+speaker = "沈长风"
+text = "这残卷……能让我看清他的手段？先避锋芒，不能再恋战了。"
+
+[sub_resource type="Resource" id="escape_flag"]
+script = ExtResource("event")
+event_type = "set_flag"
+flag_id = "prologue_escaped"
+flag_value = true
+
+[sub_resource type="Resource" id="escape_open"]
+script = ExtResource("node")
+node_id = "escape_open"
+speaker = "旁白"
+text = "你甩开最后一名探子，沿溪水和乱石一路向下。雨水洗掉足迹，烟水渡的船灯终于出现在远处。"
+next_node = "escape_final"
+
+[sub_resource type="Resource" id="escape_final"]
+script = ExtResource("node")
+node_id = "escape_final"
+speaker = "沈长风"
+text = "家书还要送到平江府……严前辈也不知如何了。先过江，再慢慢查这卷东西。"
+events = Array[Resource]([SubResource("escape_flag")])
+
+[sub_resource type="Resource" id="escape_requirement"]
+script = ExtResource("req")
+flag_id = "prologue_escaped"
+equals = true
+
+[resource]
+script = ExtResource("story")
+content_id = "prologue_chase_story"
+title = "暮秋荒庙 · 雨夜残镖"
+subtitle = "江湖散人偶遇劫镖，雨夜两战后受托残卷"
+entry_node = "roadside_open"
+cinematic_beats = Array[Resource]([SubResource("opening_beat")])
+dialogue_nodes = Array[Resource]([SubResource("roadside_open"), SubResource("roadside_warning"), SubResource("roadside_decision"), SubResource("rescue_response"), SubResource("rescue_depart"), SubResource("decline_response"), SubResource("healing_open"), SubResource("healing_question"), SubResource("healing_answer"), SubResource("healing_alarm"), SubResource("wave1_open"), SubResource("wave1_answer"), SubResource("wave2_open"), SubResource("wave2_answer"), SubResource("handover_open"), SubResource("handover_yan"), SubResource("handover_hero"), SubResource("handover_fragment"), SubResource("handover_decoy"), SubResource("lookout_open"), SubResource("lookout_answer"), SubResource("escape_open"), SubResource("escape_final")])
+return_to_explore = true
+completion_requirements = Array[Resource]([SubResource("escape_requirement")])

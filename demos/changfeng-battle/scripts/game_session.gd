@@ -10,6 +10,25 @@ const StoryEvents = preload("res://scripts/story_event_executor.gd")
 const SceneRouter = preload("res://scripts/chapter_scene_router.gd")
 const Quests = preload("res://scripts/quest_runtime.gd")
 const QUICK_ENCOUNTER_ID := "r40_quick_duel"
+const PROLOGUE_WAVES := {
+    "wave1_ready":"prologue_scout_wave1",
+    "wave2_ready":"prologue_scout_wave2",
+    "lookout_ready":"prologue_lookout"
+}
+const PROLOGUE_VICTORIES := {
+    "prologue_scout_wave1":"wave1_cleared",
+    "prologue_scout_wave2":"wave2_cleared",
+    "prologue_lookout":"lookout_cleared"
+}
+const PROLOGUE_TRANSITIONS := {
+    "explore":["healing", "failure"],
+    "roadside_retry":["healing", "failure"],
+    "failure":["roadside_retry"],
+    "healing":["wave1_ready"],
+    "wave1_cleared":["wave2_ready"],
+    "wave2_cleared":["lookout_ready"],
+    "lookout_cleared":["escaped"]
+}
 var director = ScenarioDirector.new()
 var chapters = ChapterCatalog.new()
 var quests = Quests.new()
@@ -25,6 +44,8 @@ var encounter_id: String = ""
 var battle_outcome: String = ""
 var winning_team: int = -1
 var battle_spatial_mode: String = "GRID"
+var prologue_active: bool = false
+var prologue_stage: String = ""
 
 func start_new_game(entry_chapter_id: String = "") -> void:
     var first: String = chapters.first_chapter_id() if entry_chapter_id.is_empty() else entry_chapter_id
@@ -39,6 +60,8 @@ func start_new_game(entry_chapter_id: String = "") -> void:
     encounter_id = ""
     battle_outcome = ""
     winning_team = -1
+    prologue_active = false
+    prologue_stage = ""
     var chapter: Dictionary = chapter_definition()
     var factory = CharacterFactory.new()
     for actor in director.encounter(str(chapter.get("encounter_id",""))).get("combatants",[]):
@@ -49,6 +72,41 @@ func start_new_game(entry_chapter_id: String = "") -> void:
             var character = factory.create_runtime(id)
             if character != null:
                 characters[id] = character
+
+## The new playable prologue uses native exploration maps and a staged chase.
+## Legacy chapter resources remain readable for historical test/demo entries.
+func activate_prologue_chase() -> bool:
+    if phase != "story" or chapter_id != "rain_escort_prologue":
+        return false
+    if director.encounter("prologue_scout_wave1").is_empty():
+        return false
+    prologue_active = true
+    prologue_stage = "explore"
+    return true
+
+func set_prologue_stage(next_stage: String) -> bool:
+    if not prologue_active or phase != "story" or next_stage not in PROLOGUE_TRANSITIONS.get(prologue_stage, []):
+        return false
+    prologue_stage = next_stage
+    return true
+
+func begin_prologue_wave() -> bool:
+    if not prologue_active or phase != "story":
+        return false
+    var selected: String = str(PROLOGUE_WAVES.get(prologue_stage, ""))
+    if selected.is_empty() or director.encounter(selected).is_empty():
+        return false
+    if selected == "prologue_lookout" and not bool(flags.get("obtained_fragment", false)):
+        return false
+    for actor in director.encounter(selected).get("combatants", []):
+        if int(actor.get("team_id", -1)) == 0 and not characters.has(str(actor.get("character_id", ""))):
+            return false
+    phase = "battle"
+    encounter_id = selected
+    battle_outcome = ""
+    winning_team = -1
+    prologue_stage = prologue_stage.trim_suffix("_ready") + "_battle"
+    return true
 
 ## Quick combat bypasses story progression, not encounter loading.
 func start_quick_battle() -> bool:
@@ -132,6 +190,15 @@ func encounter_options() -> Dictionary:
     for character_id in characters:
         builds[str(character_id)] = characters[character_id].battle_build()
     var options: Dictionary = director.battle_options(encounter_id,builds)
+    if prologue_active and PROLOGUE_VICTORIES.has(encounter_id):
+        # A fragment grants the already-supported native insight passive only
+        # during the final lookout encounter; no combat rule is duplicated.
+        var passives: Dictionary = options.get("passives", {}).duplicate(true)
+        var hero_passives: Dictionary = passives.get(0, {}).duplicate(true)
+        hero_passives["insight"] = 2 if encounter_id == "prologue_lookout" and \
+            bool(flags.get("fragment_insight_unlocked", false)) else 0
+        passives[0] = hero_passives
+        options["passives"] = passives
     options["spatial_mode"] = battle_spatial_mode
     return options
 
@@ -182,7 +249,8 @@ func report_battle(outcome: String, team: int, battle_inventories: Dictionary = 
             staged_characters[id] = cloned
     var chapter: Dictionary = chapter_definition()
     var first_clear: bool = outcome == "victory" and team == 0 and not cleared_encounters.has(encounter_id)
-    var rewards: Array = chapter.get("victory_events",[]) if first_clear else (chapter.get("defeat_events",[]) if outcome != "victory" else [])
+    var is_prologue_wave: bool = prologue_active and PROLOGUE_VICTORIES.has(encounter_id)
+    var rewards: Array = [] if is_prologue_wave else (chapter.get("victory_events",[]) if first_clear else (chapter.get("defeat_events",[]) if outcome != "victory" else []))
     var staged: Dictionary = StoryEvents.prepare(rewards,flags,items,staged_characters)
     if not bool(staged.get("ok",false)):
         return false
@@ -191,7 +259,12 @@ func report_battle(outcome: String, team: int, battle_inventories: Dictionary = 
         cleared_encounters[encounter_id] = true
     battle_outcome = outcome
     winning_team = team
-    phase = "aftermath"
+    if is_prologue_wave and first_clear:
+        prologue_stage = str(PROLOGUE_VICTORIES[encounter_id])
+        flags[prologue_stage] = true
+        phase = "story"
+    else:
+        phase = "aftermath"
     return true
 
 func retry_encounter() -> bool:
@@ -225,3 +298,5 @@ func finish_demo() -> bool:
 func return_to_menu() -> void:
     phase = "menu"
     chapter_id = ""
+    prologue_active = false
+    prologue_stage = ""

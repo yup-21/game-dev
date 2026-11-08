@@ -1056,6 +1056,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
             KEY_ESCAPE:
                 if story_encounter and snap.get("outcome", "playing") != "playing":
-                    get_tree().change_scene_to_file("res://demo_result.tscn")
+                    var current_session = _session()
+                    if current_session != null and current_session.prologue_active and current_session.phase == "story":
+                        get_tree().change_scene_to_file(current_session.scene_for("prologue"))
+                    else:
+                        get_tree().change_scene_to_file("res://demo_result.tscn")
                 elif not story_encounter:
                     get_tree().change_scene_to_file("res://opening.tscn")
