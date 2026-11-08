@@ -41,6 +41,18 @@ func _initialize() -> void:
             "undeclared candidate grid accepts explicitly calibrated visual geometry")
         check(original_candidate.columns == 0,
             "calibrating a candidate does not mutate its original Resource before confirmation")
+        var cropped_candidate := Service._stage_candidate_grid(original_candidate, {
+            "columns": 5, "rows": 5, "cell_width": size.x / 5,
+            "cell_height": size.y / 5, "origin_x": 0, "origin_y": 0,
+            "gap_x": 0, "gap_y": 0, "offsets": {},
+            "rects": {0: Rect2i(1, 2, 20, 20)},
+            "canvas_offsets": {0: Vector2i(3, -1)},
+            "masks": {0: PackedVector2Array([Vector2(2, 3), Vector2(18, 3), Vector2(12, 17)])}})
+        check(cropped_candidate.validate_source().is_empty() and
+            cropped_candidate.grid_cell_rects[0] == Rect2i(1, 2, 20, 20) and
+            cropped_candidate.grid_canvas_offsets[0] == Vector2i(3, -1) and
+            cropped_candidate.grid_cutout_polygons[0].size() == 3,
+            "candidate metadata stages per-frame crop, placement and cutout")
     var sources := [_source(0), _source(25, true)]
     var mappings := {"idle": "0:0-1", "walk": "0:2-3", "run": "0:4",
         "attack1": "0:5", "attack2": "0:6", "attack3": "0:7", "attack4": "0:8",
@@ -73,6 +85,24 @@ func _initialize() -> void:
             check(normalized["texture"].get_size() == Vector2(1640, 768) and
                 absf(float(normalized["scale_factor"]) - 6.4) < 0.001,
                 "uniform scale and transparent padding to normal-size cell")
+        var native: SpriteFrames = Service.native_frames_from_assembly(result,
+            result["texture"])
+        check(native.has_animation("attack4") and native.get_frame_count("walk") == 2 and
+            native.get_animation_loop("walk") and not native.get_animation_loop("defeat") and
+            absf(native.get_frame_duration("walk", 0) - 0.8) < 0.001 and
+            absf(native.get_frame_duration("walk", 1) - 1.2) < 0.001,
+            "native SpriteFrames preserves each action, loop, order and relative durations")
+        var native_profile := WuxiaActorAnimationProfile.new()
+        native_profile.native_frames = native
+        check(native_profile.valid_profile(), "native SpriteFrames is accepted by Profile")
+        var native_path := "user://sprite_assembly_native_roundtrip.tres"
+        var saved := ResourceSaver.save(native, native_path)
+        var restored: SpriteFrames = ResourceLoader.load(native_path, "SpriteFrames",
+            ResourceLoader.CACHE_MODE_IGNORE) as SpriteFrames
+        check(saved == OK and restored != null and
+            restored.get_frame_count("evade") == 2 and
+            absf(restored.get_frame_duration("walk", 1) - 1.2) < 0.001,
+            "native SpriteFrames .tres roundtrip retains authored frame timing")
 
     var invalid: Dictionary = Assembly.parse_mapping("2:0", 2)
     check(not str(invalid["error"]).is_empty(), "invalid source reference rejected")
@@ -93,8 +123,37 @@ func _initialize() -> void:
     var shifted := sources.duplicate(true)
     shifted[1] = sources[1].duplicate(true)
     shifted[1]["cell_height"] = 39
-    check(str(Assembly.build(shifted, mappings, metadata).get("error", "")).contains("尺寸"),
-        "mixed cell dimensions rejected instead of per-cell stretching")
+    var variable_cells := Assembly.build(shifted, mappings, metadata)
+    check(str(variable_cells.get("error", "")).is_empty() and
+        variable_cells.get("source_cell") == Vector2i(40, 40) and
+        absf(float(variable_cells.get("scale_factor", 0.0)) - 1.0) < 0.001,
+        "mixed source cell dimensions use one scale, without per-frame stretching")
+    var independently_cropped: Dictionary = sources[0].duplicate(true)
+    independently_cropped["rects"] = {0: Rect2i(2, 2, 36, 36)}
+    var cropped: Dictionary = Assembly.build([independently_cropped, sources[1]], mappings, metadata)
+    check(str(cropped.get("error", "")).is_empty() and
+        Assembly.cell_rect(independently_cropped, 0) == Rect2i(2, 2, 36, 36),
+        "per-frame rectangle overrides the source grid")
+    var contaminated: Dictionary = sources[0].duplicate(true)
+    var dirty_image: Image = (contaminated["texture"] as Texture2D).get_image()
+    dirty_image.set_pixel(35, 12, Color.RED)
+    contaminated["texture"] = ImageTexture.create_from_image(dirty_image)
+    check(str(Assembly.build([contaminated, sources[1]], mappings, metadata)
+        .get("error", "")).contains("8px"), "adjacent frame residue rejected without mask")
+    contaminated["masks"] = {0: PackedVector2Array([
+        Vector2(9, 9), Vector2(30, 9), Vector2(30, 30), Vector2(9, 30)])}
+    var masked := Assembly.build([contaminated, sources[1]], mappings, metadata)
+    check(str(masked.get("error", "")).is_empty(),
+        "hand-drawn polygon removes adjacent frame residue before margin validation")
+    if str(masked.get("error", "")).is_empty():
+        var image: Image = (masked["texture"] as Texture2D).get_image()
+        check(image.get_pixel(35, 12).a == 0 and image.get_pixel(16, 16).a > 0.9,
+            "polygon mask clears outside pixels and preserves the character")
+    var invalid_polygon := Assembly.mask_frame(dirty_image.get_region(Rect2i(0, 0, 40, 40)),
+        Rect2i(0, 0, 40, 40), PackedVector2Array([
+            Vector2(0, 0), Vector2(45, 0), Vector2(0, 40)]))
+    check(not str(invalid_polygon["error"]).is_empty(),
+        "polygon points outside the crop are rejected")
 
     if not failures.is_empty():
         for message in failures:

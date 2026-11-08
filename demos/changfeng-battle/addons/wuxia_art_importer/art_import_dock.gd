@@ -45,6 +45,9 @@ var compose_preview: Control
 var compose_status: Label
 var compose_playing: bool = false
 var compose_tall: CheckBox
+var compose_native: CheckBox
+var compose_selection_mode: OptionButton
+var compose_zoom: SpinBox
 var compose_numbers: Dictionary = {}
 var compose_mapping: LineEdit
 var compose_loop: CheckBox
@@ -373,7 +376,7 @@ func _compose_number(key: String, label: String, initial: int, minimum: int = -4
     spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     row.add_child(spin)
     compose_panel.add_child(row)
-    spin.value_changed.connect(func(_value: float): _geometry_changed())
+    spin.value_changed.connect(func(_value: float): _geometry_changed(key))
 
 
 func _build_composer() -> void:
@@ -390,6 +393,10 @@ func _build_composer() -> void:
     compose_tall = CheckBox.new()
     compose_tall.text = "高个档：输出 384×288 单格（默认普通档 328×256）"
     compose_panel.add_child(compose_tall)
+    compose_native = CheckBox.new()
+    compose_native.text = "生成原生 SpriteFrames.tres（推荐；旧 Clip 仅兼容）"
+    compose_native.button_pressed = true
+    compose_panel.add_child(compose_native)
     var add_source := Button.new()
     add_source.text = "添加选中的源图集"
     add_source.pressed.connect(_add_composition_source)
@@ -402,9 +409,11 @@ func _build_composer() -> void:
     preview_caption.text = "切格与动作预览（可点击格位追加当前动作帧）"
     compose_panel.add_child(preview_caption)
     compose_preview = Preview.new()
-    compose_preview.custom_minimum_size = Vector2(0, 240)
+    compose_preview.custom_minimum_size = Vector2(0, 340)
     compose_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     compose_preview.cell_clicked.connect(_on_grid_cell_clicked)
+    compose_preview.crop_drawn.connect(_on_crop_drawn)
+    compose_preview.mask_drawn.connect(_on_mask_drawn)
     compose_panel.add_child(compose_preview)
     compose_status = Label.new()
     compose_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -431,8 +440,30 @@ func _build_composer() -> void:
         ["gap_y", "纵向格距", 0, -4096, 4096],
         ["selected_cell", "微调的格号", 0, 0, 4095],
         ["local_x", "当前格偏移 X", 0, -4096, 4096],
-        ["local_y", "当前格偏移 Y", 0, -4096, 4096]]:
+        ["local_y", "当前格偏移 Y", 0, -4096, 4096],
+        ["crop_x", "当前帧裁切 X", 0, 0, 16384],
+        ["crop_y", "当前帧裁切 Y", 0, 0, 16384],
+        ["crop_w", "当前帧裁切宽度", 328, 1, 16384],
+        ["crop_h", "当前帧裁切高度", 256, 1, 16384],
+        ["canvas_x", "输出画布偏移 X", 0, -4096, 4096],
+        ["canvas_y", "输出画布偏移 Y", 0, -4096, 4096]]:
         _compose_number(str(item[0]), str(item[1]), int(item[2]), int(item[3]), int(item[4]))
+    compose_selection_mode = OptionButton.new()
+    for label in ["点击格子加入动作", "拖拽矩形裁切", "自由手绘套索抠图", "多边形点击描边（右键闭合）"]:
+        compose_selection_mode.add_item(label)
+    compose_selection_mode.item_selected.connect(func(_value: int): _refresh_preview())
+    compose_panel.add_child(_compose_labeled("源图交互工具", compose_selection_mode))
+    compose_zoom = SpinBox.new()
+    compose_zoom.min_value = 1.0
+    compose_zoom.max_value = 8.0
+    compose_zoom.step = 0.5
+    compose_zoom.value = 1.0
+    compose_zoom.value_changed.connect(func(_value: float): _refresh_preview())
+    compose_panel.add_child(_compose_labeled("局部放大倍率（1 为整图，按住鼠标中键平移）", compose_zoom))
+    var reset_crop := Button.new()
+    reset_crop.text = "重置当前帧裁切矩形、蒙版和输出偏移"
+    reset_crop.pressed.connect(_reset_crop)
+    compose_panel.add_child(reset_crop)
     compose_grid = CheckBox.new()
     compose_grid.text = "显示整图切格（取消后显示当前动作帧）"
     compose_grid.button_pressed = true
@@ -500,10 +531,14 @@ func _add_composition_source() -> void:
     var origin: Vector2i = candidate.grid_origin if candidate != null else Vector2i.ZERO
     var gap: Vector2i = candidate.grid_gap if candidate != null else Vector2i.ZERO
     var offsets: Dictionary = candidate.grid_cell_offsets.duplicate(true) if candidate != null else {}
+    var rects: Dictionary = candidate.grid_cell_rects.duplicate(true) if candidate != null else {}
+    var canvas_offsets: Dictionary = candidate.grid_canvas_offsets.duplicate(true) if candidate != null else {}
+    var masks: Dictionary = candidate.grid_cutout_polygons.duplicate(true) if candidate != null else {}
     compose_sources.append({"path": path, "columns": cols, "rows": count_rows,
         "cell_width": cell_size.x, "cell_height": cell_size.y,
         "origin_x": origin.x, "origin_y": origin.y,
-        "gap_x": gap.x, "gap_y": gap.y, "offsets": offsets})
+        "gap_x": gap.x, "gap_y": gap.y, "offsets": offsets,
+        "rects": rects, "canvas_offsets": canvas_offsets, "masks": masks})
     _refresh_composition_list()
     compose_source_list.select(compose_sources.size() - 1)
     _load_composition_geometry()
@@ -539,11 +574,25 @@ func _load_composition_geometry() -> void:
         compose_numbers["selected_cell"].value = 0
         compose_numbers["local_x"].value = 0
         compose_numbers["local_y"].value = 0
+        source["editing_cell"] = 0
+        compose_sources[index] = source
+        _load_frame_crop_fields(source, 0)
     compose_editing = false
     _refresh_preview()
 
 
-func _geometry_changed() -> void:
+func _load_frame_crop_fields(source: Dictionary, cell_index: int) -> void:
+    var rect := Assembly.cell_rect(source, cell_index)
+    var placement: Vector2i = source.get("canvas_offsets", {}).get(cell_index, Vector2i.ZERO)
+    compose_numbers["crop_x"].value = rect.position.x
+    compose_numbers["crop_y"].value = rect.position.y
+    compose_numbers["crop_w"].value = maxi(rect.size.x, 1)
+    compose_numbers["crop_h"].value = maxi(rect.size.y, 1)
+    compose_numbers["canvas_x"].value = placement.x
+    compose_numbers["canvas_y"].value = placement.y
+
+
+func _geometry_changed(changed_field: String) -> void:
     if compose_editing:
         return
     var index := _composition_index()
@@ -562,6 +611,7 @@ func _geometry_changed() -> void:
         compose_editing = true
         compose_numbers["local_x"].value = offset.x
         compose_numbers["local_y"].value = offset.y
+        _load_frame_crop_fields(source, cell_index)
         compose_editing = false
     else:
         var offset := Vector2i(int(compose_numbers["local_x"].value),
@@ -571,8 +621,94 @@ func _geometry_changed() -> void:
         else:
             offsets[cell_index] = offset
         source["offsets"] = offsets
+    if changed_field in ["crop_x", "crop_y", "crop_w", "crop_h"]:
+        var rect := Rect2i(int(compose_numbers["crop_x"].value),
+            int(compose_numbers["crop_y"].value),
+            int(compose_numbers["crop_w"].value), int(compose_numbers["crop_h"].value))
+        var rects: Dictionary = source.get("rects", {})
+        if rect == Assembly.grid_rect(source, cell_index):
+            rects.erase(cell_index)
+        else:
+            rects[cell_index] = rect
+        source["rects"] = rects
+    if changed_field in ["canvas_x", "canvas_y"]:
+        var placement := Vector2i(int(compose_numbers["canvas_x"].value),
+            int(compose_numbers["canvas_y"].value))
+        var placements: Dictionary = source.get("canvas_offsets", {})
+        if placement == Vector2i.ZERO:
+            placements.erase(cell_index)
+        else:
+            placements[cell_index] = placement
+        source["canvas_offsets"] = placements
+    if changed_field in ["columns", "rows", "cell_width", "cell_height",
+            "origin_x", "origin_y", "gap_x", "gap_y", "local_x", "local_y"]:
+        compose_editing = true
+        _load_frame_crop_fields(source, cell_index)
+        compose_editing = false
     compose_sources[index] = source
     _refresh_preview()
+
+
+func _on_crop_drawn(cell_index: int, rect: Rect2i) -> void:
+    var source_index := _composition_index()
+    if source_index < 0:
+        return
+    var source: Dictionary = compose_sources[source_index]
+    var rects: Dictionary = source.get("rects", {})
+    rects[cell_index] = rect
+    source["rects"] = rects
+    source["editing_cell"] = cell_index
+    compose_sources[source_index] = source
+    compose_editing = true
+    compose_numbers["selected_cell"].value = cell_index
+    _load_frame_crop_fields(source, cell_index)
+    compose_editing = false
+    _refresh_composition_preview()
+
+
+func _on_mask_drawn(cell_index: int, polygon: PackedVector2Array) -> void:
+    var index := _composition_index()
+    if index < 0:
+        return
+    var source: Dictionary = compose_sources[index]
+    var rect := Assembly.cell_rect(source, cell_index)
+    for point in polygon:
+        if point.x < rect.position.x or point.y < rect.position.y or \
+                point.x > rect.end.x or point.y > rect.end.y:
+            _composition_message("描边轮廓超出本帧矩形；请先扩大裁切框或重新描边。")
+            return
+    var masks: Dictionary = source.get("masks", {})
+    masks[cell_index] = polygon.duplicate()
+    source["masks"] = masks
+    compose_sources[index] = source
+    compose_editing = true
+    compose_numbers["selected_cell"].value = cell_index
+    source["editing_cell"] = cell_index
+    _load_frame_crop_fields(source, cell_index)
+    compose_editing = false
+    _refresh_composition_preview()
+
+
+func _reset_crop() -> void:
+    var index := _composition_index()
+    if index < 0:
+        return
+    var source: Dictionary = compose_sources[index]
+    var cell_index := int(compose_numbers["selected_cell"].value)
+    var rects: Dictionary = source.get("rects", {})
+    rects.erase(cell_index)
+    source["rects"] = rects
+    var placements: Dictionary = source.get("canvas_offsets", {})
+    placements.erase(cell_index)
+    source["canvas_offsets"] = placements
+    var masks: Dictionary = source.get("masks", {})
+    masks.erase(cell_index)
+    source["masks"] = masks
+    compose_sources[index] = source
+    compose_editing = true
+    _load_frame_crop_fields(source, cell_index)
+    compose_editing = false
+    _refresh_composition_preview()
 
 
 func _action_name() -> String:
@@ -638,7 +774,8 @@ func _metadata_changed() -> void:
 
 func _on_grid_cell_clicked(index: int) -> void:
     compose_numbers["selected_cell"].value = index
-    _append_selected_cell()
+    if compose_selection_mode.selected == 0:
+        _append_selected_cell()
 
 
 func _append_selected_cell() -> void:
@@ -789,6 +926,7 @@ func _fields() -> Dictionary:
         "composition_actions": compose_actions.duplicate(true),
         "composition_metadata": compose_metadata.duplicate(true),
         "composition_tall": compose_tall.button_pressed,
+        "composition_native": compose_native.button_pressed,
         "versioned_replace": versioned.button_pressed,
         "ground": extras["ground"].text.strip_edges(),
         "foreground": extras["foreground"].text.strip_edges(),
@@ -895,7 +1033,7 @@ func _refresh_composition_preview() -> void:
         return
     var parsed := Assembly.parse_mapping(str(compose_actions.get(_action_name(), "")),
         compose_sources.size())
-    var message := "源图 %d/%d · %sx%s · 已映射动作 %d/12；先逐帧核对，再执行导入预检。" % [
+    var message := "源图 %d/%d · %sx%s · 已映射动作 %d/12；可放大描边并逐帧核对。" % [
         index, compose_sources.size(), details["width"], details["height"], compose_actions.size()]
     if not str(parsed["error"]).is_empty():
         message += "\n当前动作尚无播放帧：" + str(parsed["error"])
@@ -908,7 +1046,10 @@ func _refresh_composition_preview() -> void:
     _composition_message(message)
     compose_preview.call("set_candidate_display_scale", 0.0)
     if compose_grid.button_pressed or not str(parsed["error"]).is_empty():
-        compose_preview.call("show_grid", details["texture"], source)
+        compose_preview.call("set_grid_zoom", compose_zoom.value,
+            int(compose_numbers["selected_cell"].value))
+        compose_preview.call("show_grid", details["texture"], source,
+            ["select", "crop", "lasso", "polygon"][compose_selection_mode.selected])
         return
     var refs: Array = parsed["frames"]
     _show_composition_frame(refs[current_frame])
@@ -930,8 +1071,18 @@ func _show_composition_frame(ref: Dictionary) -> void:
             rect.end.x > int(details["width"]) or rect.end.y > int(details["height"]):
         _composition_message("当前动作帧超出源图，请校准网格")
         return
-    compose_preview.call("show_sliced_frame", details["texture"], rect,
-        Vector2(feet_x.value, feet_y.value))
+    var points: PackedVector2Array = source.get("masks", {}).get(int(ref["cell"]), PackedVector2Array())
+    if points.is_empty():
+        compose_preview.call("show_sliced_frame", details["texture"], rect,
+            Vector2(feet_x.value, feet_y.value))
+    else:
+        var cropped: Image = (details["texture"] as Texture2D).get_image().get_region(rect)
+        var result := Assembly.mask_frame(cropped, rect, points)
+        if not str(result.get("error", "")).is_empty():
+            _composition_message("当前帧蒙版错误：" + str(result["error"]))
+            return
+        compose_preview.call("show_sliced_frame", ImageTexture.create_from_image(result["image"]),
+            Rect2i(Vector2i.ZERO, rect.size), Vector2(feet_x.value, feet_y.value))
 
 
 func _compose_inspect(path: String) -> Dictionary:
@@ -1114,6 +1265,9 @@ func _signature(plans: Array[Dictionary]) -> String:
         var native_path := str(plan_data.get("native_scene_path", ""))
         if not native_path.is_empty():
             lines.append(native_path + "|" + FileAccess.get_sha256(native_path))
+        var frames_path := str(plan_data.get("native_frames_path", ""))
+        if not frames_path.is_empty():
+            lines.append(frames_path + "|" + FileAccess.get_sha256(frames_path))
     return "\n".join(lines)
 
 
@@ -1153,10 +1307,12 @@ func _review_entries(entries: Array[Dictionary]) -> void:
         var updates: Array = plan_data.get("candidate_updates", [])
         var update_note := "\n将同步保存 %d 个候选 .tres 网格元数据（事务可回退）" % updates.size() \
             if not updates.is_empty() else ""
-        descriptions.append("%s → %s\n原绑定：%s\n新绑定：%s\n图片：%s\n原生场景：%s%s" % [
+        var native_frames := str(plan_data.get("native_frames_path", ""))
+        descriptions.append("%s → %s\n原绑定：%s\n新绑定：%s\n图片：%s\n动画 SpriteFrames：%s\n原生场景：%s%s" % [
             str(plan_data["mode"]), str(plan_data["target"]),
             str(plan_data.get("current_binding", "（空）")),
             str(plan_data.get("next_binding", "")), ", ".join(destinations),
+            native_frames if not native_frames.is_empty() else "旧 Clip 兼容或不涉及动画",
             str(plan_data.get("native_scene_path", "不修改 .tscn")), update_note
         ])
     confirm.dialog_text = "批次 %s 项：\n\n%s\n\n%s" % [

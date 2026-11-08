@@ -20,6 +20,16 @@ const CombatScale = preload("res://scripts/combat_scale.gd")
 @export var grid_cell_size: Vector2i = Vector2i.ZERO
 @export var grid_gap: Vector2i = Vector2i.ZERO
 @export var grid_cell_offsets: Dictionary = {}
+## Optional absolute pixel rectangles for individual source cells. A missing
+## entry uses the calibrated grid; the source image is never rewritten.
+@export var grid_cell_rects: Dictionary = {}
+## Optional placement adjustment on the shared output canvas (source pixels).
+## These are authored offsets, not per-frame alpha centering or scaling.
+@export var grid_canvas_offsets: Dictionary = {}
+## Per-frame freehand/polygon cutout masks, in absolute source-image pixels.
+## Polygon vertices are editable candidate metadata; final Alpha is baked only
+## into the generated runtime atlas, never into the source image.
+@export var grid_cutout_polygons: Dictionary = {}
 @export var action_id: String = ""
 @export var frame_indices: PackedInt32Array = PackedInt32Array()
 ## Optional authored clips for multi-action sheets. Unlike a runtime Profile,
@@ -80,6 +90,19 @@ func validate_source() -> String:
         else:
             if grid_cell_size.x <= 0 or grid_cell_size.y <= 0:
                 return "Invalid candidate cell size: " + source_path
+            for key in grid_cell_rects:
+                if not key is int or key < 0 or key >= columns * rows or \
+                        not grid_cell_rects[key] is Rect2i:
+                    return "Invalid candidate per-frame crop: " + source_path
+            for key in grid_canvas_offsets:
+                if not key is int or key < 0 or key >= columns * rows or \
+                        not grid_canvas_offsets[key] is Vector2i:
+                    return "Invalid candidate frame placement: " + source_path
+            for key in grid_cutout_polygons:
+                if not key is int or key < 0 or key >= columns * rows or \
+                        not grid_cutout_polygons[key] is PackedVector2Array or \
+                        grid_cutout_polygons[key].size() < 3:
+                    return "Invalid candidate polygon mask: " + source_path
             for index in range(columns * rows):
                 var offset: Variant = grid_cell_offsets.get(index, Vector2i.ZERO)
                 if not offset is Vector2i:
@@ -87,9 +110,15 @@ func validate_source() -> String:
                 var cell_offset: Vector2i = offset
                 var origin: Vector2i = grid_origin + Vector2i(index % columns, index / columns) * \
                     (grid_cell_size + grid_gap) + cell_offset
-                if origin.x < 0 or origin.y < 0 or origin.x + grid_cell_size.x > source_pixel_size.x \
-                        or origin.y + grid_cell_size.y > source_pixel_size.y:
+                var rect: Rect2i = grid_cell_rects.get(index, Rect2i(origin, grid_cell_size))
+                if not rect.has_area() or rect.position.x < 0 or rect.position.y < 0 or \
+                        rect.end.x > source_pixel_size.x or rect.end.y > source_pixel_size.y:
                     return "Candidate grid cell exceeds source canvas: " + source_path
+                if grid_cutout_polygons.has(index):
+                    for point in grid_cutout_polygons[index]:
+                        if point.x < rect.position.x or point.y < rect.position.y or \
+                                point.x > rect.end.x or point.y > rect.end.y:
+                            return "Candidate polygon exceeds crop rectangle: " + source_path
     if not frame_indices.is_empty():
         if columns == 0:
             return "Frame indices require an explicit candidate grid: " + source_path

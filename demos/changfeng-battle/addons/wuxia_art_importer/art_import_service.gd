@@ -389,6 +389,9 @@ static func _stage_candidate_grid(candidate: WuxiaArtCandidateDefinition,
     staged.grid_cell_size = Vector2i(int(config.get("cell_width", 0)), int(config.get("cell_height", 0)))
     staged.grid_gap = Vector2i(int(config.get("gap_x", 0)), int(config.get("gap_y", 0)))
     staged.grid_cell_offsets = config.get("offsets", {}).duplicate(true)
+    staged.grid_cell_rects = config.get("rects", {}).duplicate(true)
+    staged.grid_canvas_offsets = config.get("canvas_offsets", {}).duplicate(true)
+    staged.grid_cutout_polygons = config.get("masks", {}).duplicate(true)
     return staged
 
 
@@ -443,7 +446,10 @@ static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
                     candidate.grid_origin != staged_candidate.grid_origin or \
                     candidate.grid_cell_size != staged_candidate.grid_cell_size or \
                     candidate.grid_gap != staged_candidate.grid_gap or \
-                    candidate.grid_cell_offsets != staged_candidate.grid_cell_offsets:
+                    candidate.grid_cell_offsets != staged_candidate.grid_cell_offsets or \
+                    candidate.grid_cell_rects != staged_candidate.grid_cell_rects or \
+                    candidate.grid_canvas_offsets != staged_candidate.grid_canvas_offsets or \
+                    candidate.grid_cutout_polygons != staged_candidate.grid_cutout_polygons:
                 candidate_updates.append({"resource_path": candidate.resource_path,
                     "source_path": path, "geometry": config.duplicate(true)})
         config["texture"] = details["texture"]
@@ -464,7 +470,18 @@ static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
         template = ResourceLoader.load("res://data/templates/actor_animation_profile.tres") as WuxiaActorAnimationProfile
     if template == null:
         return {"error": "缺少动画 Profile 模板"}
-    var staged := _composed_profile(template, assembly["texture"], assembly, fields)
+    var native := bool(fields.get("composition_native", true))
+    var staged: WuxiaActorAnimationProfile
+    if native:
+        staged = template.duplicate(true) as WuxiaActorAnimationProfile
+        staged.native_frames = native_frames_from_assembly(assembly, assembly["texture"])
+        staged.atlas = null
+        staged.clips.clear()
+        staged.action_fallbacks.clear()
+        staged.feet_offset = fields.get("feet_offset", Vector2(0, -102))
+    else:
+        staged = _composed_profile(template, assembly["texture"], assembly, fields)
+        staged.native_frames = null
     if not staged.valid_profile():
         return {"error": "组合图集动作配置未通过原生 Profile 验证"}
     var hash: String = assembly["sha256"]
@@ -477,8 +494,14 @@ static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
         destination_path = destination_path.get_basename() + "__" + hash.substr(0, 12) + ".png"
         if FileAccess.file_exists(destination_path) and FileAccess.get_sha256(destination_path) != hash:
             return {"error": "版本化图片哈希冲突"}
-    return {"error": "", "mode": "atlas", "composition": true, "target": target,
+    var authored_hash: String = (hash + "|" + str(assembly["clips"])).sha256_text()
+    var frames_path := "res://data/native/animations/%s_frames__%s.tres" % [
+        actor.content_id, authored_hash.substr(0, 12)]
+    if native and FileAccess.file_exists(frames_path):
+        return {"error": "该版本 SpriteFrames.tres 已存在（可能经过人工微调）；请直接在 Godot 编辑，或修改帧配置生成新版本：" + frames_path}
+    var plan_data := {"error": "", "mode": "atlas", "composition": true, "target": target,
         "owner": actor, "profile_path": "res://data/native/animations/" + actor.content_id + ".tres",
+        "native_composition": native,
         "template_path": template_path, "clip_profile_path": template_path,
         "assembly": assembly, "feet_offset": fields.get("feet_offset", Vector2(0, -102)),
         "candidate_updates": candidate_updates,
@@ -487,6 +510,37 @@ static func plan_composition(target: String, fields: Dictionary) -> Dictionary:
             "sha256": hash, "generated_bytes": assembly["bytes"], "replaces": replaced}},
         "current_binding": actor.sprite_sheet.resource_path if actor.sprite_sheet != null else "",
         "next_binding": destination_path}
+    if native:
+        plan_data["native_frames_path"] = frames_path
+    return plan_data
+
+
+## A mixed-sheet assembly becomes one editable Godot SpriteFrames Resource.
+## After import, native_frames owns the frame order and timing; no duplicate
+## WuxiaActorAnimationClip sequence is kept in the Profile.
+static func native_frames_from_assembly(assembly: Dictionary, atlas: Texture2D) -> SpriteFrames:
+    var frames := SpriteFrames.new()
+    frames.remove_animation("default")
+    var columns := int(assembly["columns"])
+    var cell: Vector2i = assembly["cell"]
+    for action in SpriteAssembly.ACTIONS:
+        var clip: Dictionary = assembly["clips"][action]
+        var fps := float(clip["fps"])
+        frames.add_animation(action)
+        frames.set_animation_speed(action, fps)
+        frames.set_animation_loop(action, bool(clip["loop"]))
+        var durations: PackedFloat32Array = clip["durations"]
+        var sequence: PackedInt32Array = clip["frames"]
+        for index in range(sequence.size()):
+            var absolute_index := sequence[index]
+            var region := AtlasTexture.new()
+            region.atlas = atlas
+            region.region = Rect2(Vector2(absolute_index % columns,
+                absolute_index / columns) * Vector2(cell), Vector2(cell))
+            # SpriteFrames durations are relative multiples of 1 / FPS.
+            var duration := durations[index] * fps if not durations.is_empty() else 1.0
+            frames.add_frame(action, region, duration)
+    return frames
 
 
 ## One atomic plan for an existing character: portrait + shared Atlas and/or
@@ -935,8 +989,32 @@ static func save_bindings(plan_data: Dictionary) -> String:
                 return "动画 Profile 模板不可用"
             var profile: WuxiaActorAnimationProfile
             if bool(plan_data.get("composition", false)):
-                profile = _composed_profile(template, textures["primary"],
-                    plan_data["assembly"], plan_data)
+                if bool(plan_data.get("native_composition", false)):
+                    var frames_path := str(plan_data["native_frames_path"])
+                    if FileAccess.file_exists(frames_path):
+                        return "原生 SpriteFrames 已出现或被手动修改，拒绝覆盖：" + frames_path
+                    var native_frames := native_frames_from_assembly(
+                        plan_data["assembly"], textures["primary"])
+                    profile = template.duplicate(true) as WuxiaActorAnimationProfile
+                    profile.atlas = null
+                    profile.clips.clear()
+                    profile.action_fallbacks.clear()
+                    profile.native_frames = native_frames
+                    profile.feet_offset = plan_data.get("feet_offset", Vector2(0, -102))
+                    if not profile.valid_profile():
+                        return "装配后的原生 SpriteFrames 未通过 Profile 验证"
+                    var frames_error := _save(native_frames, frames_path)
+                    if not frames_error.is_empty():
+                        return frames_error
+                    var persisted: SpriteFrames = ResourceLoader.load(frames_path,
+                        "SpriteFrames", ResourceLoader.CACHE_MODE_REPLACE) as SpriteFrames
+                    if persisted == null:
+                        return "无法重新加载新生成的 SpriteFrames.tres"
+                    profile.native_frames = persisted
+                else:
+                    profile = _composed_profile(template, textures["primary"],
+                        plan_data["assembly"], plan_data)
+                    profile.native_frames = null
             else:
                 profile = template.duplicate(true) as WuxiaActorAnimationProfile
                 profile.atlas = textures["primary"]
