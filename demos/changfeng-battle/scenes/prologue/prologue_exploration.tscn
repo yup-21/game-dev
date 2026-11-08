@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/prologue/prologue_exploration.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/prologue/zones/temple_hall.tscn" id="2_hall"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/escort_elder/story-poses/injured.png" id="3_elder"]
 
 [node name="PrologueExploration" type="Node2D"]
 script = ExtResource("1_world")
@@ -14,6 +15,12 @@ script = ExtResource("1_world")
 z_index = 15
 
 [node name="Avatar" type="Sprite2D" parent="ShenChangfeng"]
+
+[node name="EscortFollower" type="Sprite2D" parent="."]
+visible = false
+z_index = 14
+texture = ExtResource("3_elder")
+scale = Vector2(0.12, 0.12)
 
 [node name="Camera2D" type="Camera2D" parent="ShenChangfeng"]
 zoom = Vector2(1.15, 1.15)
@@ -33,3 +40,61 @@ theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 23
 text = "序幕原生场景 QA"
+
+[node name="DialoguePanel" type="PanelContainer" parent="Interface"]
+visible = false
+anchor_left = 0.09
+anchor_top = 0.7
+anchor_right = 0.91
+anchor_bottom = 0.98
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+
+[node name="Content" type="VBoxContainer" parent="Interface/DialoguePanel"]
+theme_override_constants/separation = 12
+
+[node name="Speaker" type="Label" parent="Interface/DialoguePanel/Content"]
+theme_override_colors/font_color = Color(0.95, 0.79, 0.45, 1)
+theme_override_font_sizes/font_size = 27
+text = "旁白"
+
+[node name="Body" type="Label" parent="Interface/DialoguePanel/Content"]
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 25
+autowrap_mode = 3
+
+[node name="Actions" type="HBoxContainer" parent="Interface/DialoguePanel/Content"]
+theme_override_constants/separation = 18
+
+[node name="Continue" type="Button" parent="Interface/DialoguePanel/Content/Actions"]
+size_flags_horizontal = 3
+text = "继续 [E / Enter]"
+
+[node name="Choice1" type="Button" parent="Interface/DialoguePanel/Content/Actions"]
+visible = false
+size_flags_horizontal = 3
+
+[node name="Choice2" type="Button" parent="Interface/DialoguePanel/Content/Actions"]
+visible = false
+size_flags_horizontal = 3
+
+[node name="FailurePanel" type="PanelContainer" parent="Interface"]
+visible = false
+anchor_left = 0.25
+anchor_top = 0.3
+anchor_right = 0.75
+anchor_bottom = 0.67
+
+[node name="FailureContent" type="VBoxContainer" parent="Interface/FailurePanel"]
+theme_override_constants/separation = 18
+
+[node name="FailureMessage" type="Label" parent="Interface/FailurePanel/FailureContent"]
+theme_override_font_sizes/font_size = 27
+horizontal_alignment = 1
+autowrap_mode = 3
+text = "官道被封，孤身难敌追兵。"
+
+[node name="Retry" type="Button" parent="Interface/FailurePanel/FailureContent"]
+text = "回到劫镖现场重新选择"

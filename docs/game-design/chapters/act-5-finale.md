@@ -1,4 +1,6 @@
-# 附录 · 终章详细剧本与关卡规范：极境入道 · 剑斩残仙 · 破碎虚空
+# 附录（V1 结局待复核）· 终章详细剧本与关卡规范：极境入道 · 剑斩残仙 · 破碎虚空
+
+> **制作阻断提示**：保留“凡人反抗残仙寄生”主题，但旧结局以寿元枷锁、主角命定飞升作唯一答案；现在是否飞升、如何释放修行资源必须重新确定，不能视作已拍板。参见[主线 V2 总纲](../03-main-storyline.md)、[跨幕同步清单](../mainline-v2-consistency-audit.md)。
 
 > **关联索引**：[企划总库](../README.md) · [主线全景](../03-main-storyline.md) · [第四幕详案](act-4-frozen-gate.md) · [武道与战斗系统](../08-cultivation-and-combat.md) · [全景人物录](../grand-character-encyclopedia.md)
 

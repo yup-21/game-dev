@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="WuxiaEncounterDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/encounter_definition.gd" id="encounter"]
+[ext_resource type="Script" path="res://scripts/content/encounter_combatant_definition.gd" id="actor"]
+
+[sub_resource type="Resource" id="hero"]
+script = ExtResource("actor")
+actor_id = 0
+character_id = "shen_changfeng"
+display_name = "沈长风"
+team_id = 0
+controller = "PLAYER"
+cell = Vector2i(6,4)
+
+[sub_resource type="Resource" id="scout_a"]
+script = ExtResource("actor")
+actor_id = 1
+character_id = "ghost_mask_scout"
+display_name = "鬼面刀卫"
+team_id = 1
+controller = "AI"
+cell = Vector2i(10,4)
+
+[sub_resource type="Resource" id="scout_b"]
+script = ExtResource("actor")
+actor_id = 2
+character_id = "ghost_mask_scout"
+display_name = "鬼面刀卫"
+team_id = 1
+controller = "AI"
+cell = Vector2i(12,4)
+
+[resource]
+script = ExtResource("encounter")
+content_id = "prologue_scout_wave1"
+title = "雨夜残镖 · 破庙前院"
+seed = 20611081
+map_id = "rainy_bridge"
+combatants = Array[Resource]([SubResource("hero"), SubResource("scout_a"), SubResource("scout_b")])

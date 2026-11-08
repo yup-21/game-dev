@@ -492,8 +492,12 @@ func _update_camera_and_status() -> void:
     var interaction: String = "靠近金色连接点按 E 换图" if nearby.is_empty() else "按 E 前往目标区域"
     if not nearby.is_empty() and not regions.has(str(nearby.get("target_zone_id", ""))):
         interaction = "规划连接 · 尚未开放"
-    status.text = "平江地图测试  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 演示角色 %.0fpx / 80px=u · 镜头×%.3f" % [
-        str(region["title"]), int(size.x), int(size.y), crossing_count, interaction,
+    var game_session = get_node_or_null("/root/GameSession")
+    var arrived_from_prologue: bool = game_session != null and game_session.prologue_active \
+        and bool(game_session.flags.get("prologue_escaped", false))
+    var heading: String = "平江府 · 抵达南门（序幕已完成，后续剧情待续）" if arrived_from_prologue else "平江地图测试"
+    status.text = "%s  |  %s  |  %d×%d  |  跨区 %d 次\nWASD/方向键移动 · 左键选目标 · %s · F3 可走区 · Esc 返回菜单\n脚点 (%.0f, %.0f) · 镜头 (%.0f, %.0f) · 演示角色 %.0fpx / 80px=u · 镜头×%.3f" % [
+        heading, str(region["title"]), int(size.x), int(size.y), crossing_count, interaction,
         player.position.x, player.position.y, stage.position.x, stage.position.y,
         CombatScale.actor_height_pixels() * actor_display_scale, camera_zoom]
 

@@ -1,4 +1,6 @@
-# 附录 · 第二幕详细剧本与关卡规范：名门暗流 · 昆仑药劫
+# 附录（V1 分镜待复核）· 第二幕详细剧本与关卡规范：名门暗流 · 昆仑药劫
+
+> **制作阻断提示**：本稿中百年寿限、燃尽命元、古卷自动看破所有药毒等细节尚未按新设定改写，不能直接生成剧情 Resource。大体的昆仑药案与门派冲突可保留，具体因果和能力解锁按[主线 V2 总纲](../03-main-storyline.md)、[跨幕同步清单](../mainline-v2-consistency-audit.md)重新审定。
 
 > **关联索引**：[企划总库](../README.md) · [主线全景](../03-main-storyline.md) · [势力矩阵](../05-factions-and-sects.md) · [第一幕详案](act-1-jiangnan.md) · [第三幕详案](act-3-shendu.md) · [全景人物录](../grand-character-encyclopedia.md)
 

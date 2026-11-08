@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WuxiaCharacterDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/content/character_definition.gd" id="character"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/black_blade/sprites/atlas.png" id="sprite"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/black_blade/portraits/portrait.png" id="portrait"]
+[ext_resource type="Resource" path="res://data/native/animations/black_blade.tres" id="animation"]
+
+[resource]
+script = ExtResource("character")
+content_id = "ghost_mask_scout"
+display_name = "鬼面刀卫"
+title = "追镖探子"
+role = "追兵 · 斥候"
+faction = "秘密追镖队"
+weapon = "环首短刀"
+personality = "听哨行动，遇抵抗便发响箭求援。"
+biography = "奉命截镖、追杀幸存者和目击者的普通探子，不知道残卷或任何关键物品。临时复用现有刀客表现资源，独立鬼面造型尚待美术验收。"
+team_hint = "enemy"
+school_id = "saber"
+learned_schools = Array[String](["saber"])
+attributes = {"STR":9,"AGI":10,"CON":8,"MND":9}
+passives = {"insight":0,"conceal":0}
+techniques = {}
+sprite_sheet = ExtResource("sprite")
+portrait = ExtResource("portrait")
+animation_profile = ExtResource("animation")
+portrait_quality = "candidate"
+sheet_quality = "candidate"

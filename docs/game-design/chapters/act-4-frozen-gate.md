@@ -1,4 +1,6 @@
-# 附录 · 第四幕详细剧本与关卡规范：叩击绝天 · 先贤共鸣
+# 附录（V1 分镜待复核）· 第四幕详细剧本与关卡规范：叩击绝天 · 先贤共鸣
+
+> **制作阻断提示**：古卷真名与来源是否在此幕揭示仍待证据链审定；旧“唯一血脉命定继承”“先贤自动认主”的对白不可照搬。参见[主线 V2 总纲](../03-main-storyline.md)、[跨幕同步清单](../mainline-v2-consistency-audit.md)。
 
 > **关联索引**：[企划总库](../README.md) · [主线全景](../03-main-storyline.md) · [第三幕详案](act-3-shendu.md) · [终章详案](act-5-finale.md) · [全景人物录](../grand-character-encyclopedia.md)
 

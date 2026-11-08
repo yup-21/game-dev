@@ -6,13 +6,15 @@
 >
 > 状态：设计基线（地图拓扑、尺寸、出口命名）；贴图、几何、剧情点和运行时 Resource 需逐区验收。
 >
-> 关联： [04 世界地图与副本](04-world-map-and-dungeons.md) · [第一幕详案](chapters/act-1-jiangnan.md) · [地理大志](world-gazetteer-and-regions.md) · [城镇比例尺规范](../../art-production/standards/TOWN_MAP_SCALE_PRODUCTION.md)
+> 关联： [04 世界地图与副本](04-world-map-and-dungeons.md) · [第一幕 V2 任务链](chapters/act-1-pingjiang-v2.md) · [旧第一幕归档稿](chapters/act-1-jiangnan.md) · [地理大志](world-gazetteer-and-regions.md) · [城镇比例尺规范](../../art-production/standards/TOWN_MAP_SCALE_PRODUCTION.md)
+
+> **剧情语义修订**：PJ-04 的技术资源名 `pingjiang_shen_house` 与现有地图图层、双向出口保持不变；“沈家旧宅”现在是**另一户城中沈姓居民留下的旧院**，并非沈长风自幼故居或祖产。下述地图技术布局继续有效，第一幕故事交互以 V2 任务链为准，旧版“祖传剑匣／师门暗格”已撤销。
 
 > 当前四区 PR #123–#128 的集成进度与下一轮开发事项见 [平江府地图集成状态](pingjiang-map-integration-status.md)。
 
 ## 1. 设计定位与边界
 
-平江府是江南道第一幕的核心水都。城市表面为水陆双棋盘、商贾繁华的姑苏城；城西暗渠通向地下鬼市和活人血炉。主线体验依次覆盖入城调查、茶棚救人、结识顾清霜、搜集药引证据、鬼市潜入、血炉决战。
+平江府是江南道第一幕的核心水都。城市表面为水陆双棋盘、商贾繁华的姑苏城；城西暗渠与地下鬼市、血炉暂保留为**候选远期副本空间**，不自动成为已确认的第一幕终战。现行主线按[平江 V2 任务链](chapters/act-1-pingjiang-v2.md)先完成家书与谋生、药膏取样、药材货运调查、证人和账本收集，再凭证据决定向外地延伸。
 
 地图采用“城市区域拓扑 + 独立街区地图 + 街区内部连续卷屏 + 明确入口/出口跳转”，不制作可一镜到底的全城大图。版本一共规划 **16 个独立地图区域**：
 
@@ -48,7 +50,7 @@
 | PJ-01 | 平江瓮城正南门 / pingjiang_south_gate | 1600×2000 | vertical | 吊桥、水关、告示、巡江营盘查、城外通路 | P0 |
 | PJ-02 | 平江四街十字路 / pingjiang_crossroads | 1600×1000 | mixed | “永安平江”牌坊、说书茶棚、悬赏告示、行脚游商 | P0 / 首张 |
 | PJ-03 | 临河水市主大街 / pingjiang_riverside_market | 4800×1000 | horizontal | 乌篷画舫、淬锋堂、百草堂、水市摊贩、暗渠线索 | P0 |
-| PJ-04 | 主角旧宅·沈家老屋 / pingjiang_shen_house | 1600×1000 | horizontal | 老屋、剑匣案台、练功桩、存档和暗格 | P1 |
+| PJ-04 | 沈家旧宅（城中旧院，与主角无亲缘预设） / pingjiang_shen_house | 1600×1000 | horizontal | 老屋、闲置案台、院中练功桩、可租借的歇脚处 | P1 |
 | PJ-05 | 平江府衙正街 / pingjiang_yamen_street | 1600×2400 | vertical | 府衙、登闻大鼓、镇抚司哨房、巡捕盘查 | P1 |
 | PJ-06 | 沧澜驻外演武场 / pingjiang_canglan_yard | 3200×1000 | horizontal | 比武擂台、木人桩、兵器架、教习 | P1 |
 | PJ-07 | 苏氏大贾别院 / pingjiang_su_estate | 1600×1000 | mixed | 月亮门、园林、钱庄、药材镖车 | P1 |
@@ -75,7 +77,7 @@
 | ID | 建议 scene_id | 地图尺寸 | 入口来源 | 核心功能 |
 | --- | --- | --- | --- | --- |
 | PJ-I01 淬锋堂 | pingjiang_blacksmith | 1600×1000 | PJ-03 | 兵刃、锻造、修理 |
-| PJ-I02 百草堂 | pingjiang_herb_hall | 1600×1000 | PJ-03 | 药材、暗伤治疗 |
+| PJ-I02 百草堂 | pingjiang_herb_hall | 1600×1000 | PJ-03 | 药材、包扎与中毒诊治（非寿元暗伤系统） |
 | PJ-I03 织云绣坊 | pingjiang_clothier | 1600×1000 | PJ-02 | 外装、防具、染色 |
 | PJ-I04 万象通宝当 | pingjiang_pawnshop | 1600×1000 | PJ-02 | 杂货、典当、奇物 |
 

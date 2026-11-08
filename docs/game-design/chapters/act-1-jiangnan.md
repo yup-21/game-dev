@@ -1,6 +1,8 @@
-# 附录 · 第一幕详细剧本与关卡规范：微末斩芒 · 江南药引
+# 附录（V1 对白待改写）· 第一幕详细剧本与关卡规范：微末斩芒 · 江南药引
 
-> **关联索引**：[企划总库](../README.md) · [主线全景](../03-main-storyline.md) · [人物与女主](../06-characters-and-heroine.md) · [全景人物录](../grand-character-encyclopedia.md) · [序幕详案](act-0-prologue.md)
+> **制作阻断提示**：本页是 **V1 归档旧稿**，下文仍含旧版师门灭门、顾清霜三十岁死劫与开局“演武明镜”万能推演等对白，**不得直接编入正式 Godot Story Resource**。当前已新建[第一幕 V2 任务链](act-1-pingjiang-v2.md)，由其规定家书／市井药案／韩啸情报顺序与地图触发；本页只供检索旧分镜和历史素材，不能作为第一幕制作依据。
+
+> **关联索引**：[企划总库](../README.md) · [主线全景](../03-main-storyline.md) · [人物与女主](../06-characters-and-heroine.md) · [全景人物录](../grand-character-encyclopedia.md) · [序幕 V2](act-0-prologue-v2.md)
 
 ---
 

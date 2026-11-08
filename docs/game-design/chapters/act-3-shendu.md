@@ -1,4 +1,6 @@
-# 附录 · 第三幕详细剧本与关卡规范：神都泣血 · 帝京鼎炉
+# 附录（V1 分镜待复核）· 第三幕详细剧本与关卡规范：神都泣血 · 帝京鼎炉
+
+> **制作阻断提示**：国师血阵与严烈反戈可保留为总方向，但旧稿中的固定寿元死线、残卷自动指路和过早公开的上古信息须重写。请先按[主线 V2 总纲](../03-main-storyline.md)、[跨幕同步清单](../mainline-v2-consistency-audit.md)复核证据链与人物动机。
 
 > **关联索引**：[企划总库](../README.md) · [主线全景](../03-main-storyline.md) · [第二幕详案](act-2-kunlun.md) · [第四幕详案](act-4-frozen-gate.md) · [全景人物录](../grand-character-encyclopedia.md)
 
