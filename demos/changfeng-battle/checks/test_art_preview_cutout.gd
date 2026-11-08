@@ -1,5 +1,5 @@
 extends SceneTree
-## Synthetic editor-pointer input checks for crop, polygon and freehand lasso.
+## Synthetic editor-pointer input checks for crop, cutouts and frame footpoints.
 const Preview = preload("res://addons/wuxia_art_importer/art_preview.gd")
 
 var errors: Array[String] = []
@@ -44,10 +44,16 @@ func _run() -> void:
         "offsets": {}, "rects": {}, "masks": {}}
     var cropped: Array = []
     var traced: Array = []
+    var picked: Array = []
+    var selected: Array[int] = []
     preview.crop_drawn.connect(func(index: int, rect: Rect2i):
         cropped.append({"cell": index, "rect": rect}))
     preview.mask_drawn.connect(func(index: int, outline: PackedVector2Array):
         traced.append({"cell": index, "outline": outline.duplicate()}))
+
+    preview.anchor_picked.connect(func(index: int, point: Vector2):
+        picked.append({"cell": index, "point": point}))
+    preview.cell_clicked.connect(func(index: int): selected.append(index))
 
     preview.show_grid(texture, grid, "crop")
     _mouse(preview, _pixel(preview, Vector2(2, 2)), MOUSE_BUTTON_LEFT, true)
@@ -75,6 +81,27 @@ func _run() -> void:
     check(traced.size() == 2 and traced[1]["cell"] == 0 and
         traced[1]["outline"].size() >= 4,
         "zoomed freehand lasso records precise source-pixel outline")
+    grid["rects"] = {6: Rect2i(46, 48, 26, 27)}
+    preview.show_grid(texture, grid, "anchor")
+    preview.set_grid_zoom(1.0, 6)
+    _mouse(preview, _pixel(preview, Vector2(58.5, 72.5)), MOUSE_BUTTON_LEFT, true)
+    _mouse(preview, _pixel(preview, Vector2(58.5, 72.5)), MOUSE_BUTTON_LEFT, false)
+    _mouse(preview, _pixel(preview, Vector2(43.5, 51.5)), MOUSE_BUTTON_LEFT, true)
+    _mouse(preview, _pixel(preview, Vector2(58.5, 75.5)), MOUSE_BUTTON_LEFT, true)
+    _mouse(preview, _pixel(preview, Vector2(100.5, 60.5)), MOUSE_BUTTON_LEFT, true)
+    check(picked.size() == 1 and picked[0] == {"cell": 6, "point": Vector2(58, 72)} and
+        selected.is_empty(),
+        "footpoint mode stores only the selected crop's absolute source pixel without adding a frame")
+
+    preview.set_grid_zoom(2.0, 6)
+    _mouse(preview, Vector2(200, 200), MOUSE_BUTTON_MIDDLE, true)
+    var pan := InputEventMouseMotion.new()
+    pan.relative = Vector2(31, -17)
+    preview._gui_input(pan)
+    _mouse(preview, Vector2(231, 183), MOUSE_BUTTON_MIDDLE, false)
+    _mouse(preview, _pixel(preview, Vector2(60.5, 65.5)), MOUSE_BUTTON_LEFT, true)
+    check(picked.size() == 2 and picked[1] == {"cell": 6, "point": Vector2(60, 65)},
+        "footpoint picking follows the source image through zoom and pan")
     preview.queue_free()
     print("ART_PREVIEW_CUTOUT_PASS failures=", errors.size())
     quit(1 if not errors.is_empty() else 0)
