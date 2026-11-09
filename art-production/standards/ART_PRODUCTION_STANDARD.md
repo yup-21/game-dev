@@ -80,6 +80,8 @@
 
 ## 4. Godot 原生导入方式
 
+**V3 修复导入补充（不修改上述新制 AI 生产合同）：**对于已有 GIF／精灵图，可在候选后加工阶段直接载入实际尺寸、不预先声明 5×5 或完整 Alpha。用 `角色动画 V3` 工作台逐帧框选／多边形抠图、清除杂点、等比缩放与手动定位，然后**只对成品帧**执行 328×256／384×288、四边至少 8px 真透明、完整身体及武器的硬检。工具可修正格间污染和画布对齐，不保证能恢复缺失像素、错误动作或身份漂移；最终同角色自然身高与脚点连续性仍必须人工审核。导入前明确批准，按单个动作更新原生 SpriteFrames，其他动作与旧版本留存。详见 [V3 工作台](../tools/FRAME_WORKBENCH_V3.md)。
+
 1. 候选原始帧/Atlas 留在 `art-production/candidates/`；Godot Art Production 导入工具以类型、拥有者 ID、语义文件名复制到 `res://assets/imported/`。此目录就是当前游戏资源区，不再划分 candidate/in_use 子目录；候选目录不能作为运行时入口。
 2. 新动作优先经 Native GIF 或已验收的 Atlas 切片转换为 `SpriteFrames.tres`，由 `WuxiaActorAnimationProfile.native_frames` 引用，在原生 SpriteFrames 面板编辑动作 ID、FPS、逐帧时长和循环；Profile 维护统一脚点／缩放。**只有兼容旧 Atlas 或明确采用旧图集入口时**，使用 `data/templates/actor_animation_profile.tres` 配置 Clip 列行、绝对帧号、局部视觉偏移和 `frame_durations`。真实世界位移由战斗移动系统管理，不能直接复制离线 `root_offset` 到 Clip；Cue 语义时序和规则结算继续由原生配置及战斗层负责。
 3. 在对应 `WuxiaCharacterDefinition` 的 `animation_profile` 属性引用该 Resource。正式角色仍需在 `data/content_manifest.tres` 注册；**无需修改 `BattleModel` 或按角色 ID 添加脚本分支**。

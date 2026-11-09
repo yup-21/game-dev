@@ -15,6 +15,8 @@ description: "为《长风浮生录》检查美术素材规格、盘点在用资
 
 ## 可重复流程
 
+**既有素材 V3 逐帧修复路径**：下列 AI Sheet／GIF 原始格式与逐帧缩放禁令约束**新制 AI 生产源图**；若用户选择处理已经存在的 GIF／精灵图，先用 `角色动画 V3` 工作台自动归档原图和候选 `.tres`，按真实画布自由切帧、清边、手绘蒙版／画笔、每帧等比缩放定位，再在**成品**执行两档 328×256／384×288、≥8px 真透明边距、零越界和人物/武器/脚点一致性验收。不可凭局部抠图声称恢复缺失内容；需人工视觉与权属批准才能版本化替换单动作 SpriteFrames，不隐式迁移旧 Clip。详细操作以 [V3 导入指南](../../tools/FRAME_WORKBENCH_V3.md) 为准，未做 Godot GUI 实速验证不得标记完成。
+
 1. **发现与归档**：从实际游戏 Resource/scene/脚本读取当前绑定；仅使用中素材进入清单。执行 `python3 art-production/tools/inventory_assets.py --check` 检查静态引用与镜像；按文件名自动解析的 Resource 图片须以 Godot Dock「全部实际使用图片」导出预检为准。其他未用素材按原始身份放在候选或归档区。
 2. **创建候选包**：在 `art-production/candidates/<asset-type>/<asset-id>/` 保留候选及实际发送的短提示词，记录目标 `.tres`／`.tscn`。角色动画先按 `action_id` 留完整分镜与真实 N：**AI Sheet 路径**按 **5×5、25 格**保存原始 Sheet、实际尺寸、批次编号和 `cell_index(0..24) -> action_id + action_frame_index`，普通档单格 328×256／整图 1640×1280，高个档 384×288／整图 1920×1440；**逐动作 GIF 路径**每动作一份透明 GIF，声明实际完整单帧尺寸和 `action_id`，**不虚构 C×R 网格**。同角色同档。运行 `python3 art-production/tools/sync_candidate_resources.py` 或使用 Native GIF Dock 登记每张候选的 `WuxiaArtCandidateDefinition.tres`，真实尺寸和网格不得虚报。候选不加入 Manifest；不增加 JSON 运行时定义。
 3. **两级技术校验**：先逐动作核对 12 组正式美术分镜、`weapon_contract`、源身高 100px/米；再按来源检查：AI Sheet 必须有固定 5×5 格位及 25 格帧映射，先共同等比标准化／透明补边，再机械拆格，验证 Alpha、至少 8px 留白、零越格、空格透明与跨批连续；逐动作 GIF 核对完整 W×H 画布、逐帧真实 Alpha、时长与独立动作身份，不执行 5×5 拆格。禁止非等比拉伸、逐帧缩放、紧裁或隐式补损失像素；实际播放检查模型／武器／O、循环、收势及 `defeat` 终帧。**优先使用已验证的原生 `SpriteFrames.tres` 路径；现有 5×5 Atlas 导入器若尚不能直接生成 SpriteFrames，保留显式 `action_id -> ordered absolute frame_indices` 兼容输出或在 Godot 人工装配并验收，不冒充自动转换已经完成**。混合源图不得直接当一个 Clip，旧动作名无隐式 fallback。其他素材检查 Alpha、依赖和尺寸；未见 Godot 实速证据，不报告动画完成。
