@@ -2,6 +2,7 @@
 
 插件目录：`demos/changfeng-battle/addons/wuxia_art_importer/`。
 Godot **4.7.2** 编辑器显示 **Art Production** Dock。
+角色 GIF／任意精灵图的简化编辑与单动作绑定，优先使用新 `角色动画 V3` Dock；操作见[逐帧制作工作台 V3](FRAME_WORKBENCH_V3.md)。下述自由装配和独立 Native GIF Dock 继续作为旧版兼容入口。
 **运行时引用仍以 Godot 原生 .tres 为唯一配置来源。**
 `art-production/inventory` 与 `art-production/reviews` 的 JSON 只用于离线审计、SHA-256 校验和回退。
 
