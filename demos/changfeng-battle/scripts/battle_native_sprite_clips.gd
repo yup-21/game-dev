@@ -79,8 +79,10 @@ static func _attach_native_visual(sprite: Sprite2D, frames: SpriteFrames) -> voi
         animated = AnimatedSprite2D.new()
         animated.name = "NativeFrames"
         sprite.add_child(animated)
-        animated.offset = sprite.offset
-        animated.texture_filter = sprite.texture_filter
+    # Existing actor scenes already have NativeFrames. Their authored offset
+    # must also follow VisualScale.fit (which may move the parent Sprite2D).
+    animated.offset = sprite.offset
+    animated.texture_filter = sprite.texture_filter
     animated.sprite_frames = frames
     animated.animation = "idle"
     # The driver seeks native frames at deterministic presentation timestamps.

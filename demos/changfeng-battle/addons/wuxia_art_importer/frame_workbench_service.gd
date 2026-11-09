@@ -315,6 +315,44 @@ static func make_frames(existing: SpriteFrames, built: Dictionary, atlas: Textur
     return frames
 
 
+## Used only for the initial auto-fit of a new action. The imported idle pose
+## establishes the character's source-pixel height; later actions should not
+## each grow to fill the cell independently. Manual per-frame scale stays free.
+static func visible_bounds(texture: Texture2D) -> Rect2i:
+    if texture == null:
+        return Rect2i()
+    var image := texture.get_image()
+    if image == null or image.is_empty():
+        return Rect2i()
+    var left := image.get_width()
+    var top := image.get_height()
+    var right := -1
+    var bottom := -1
+    for y in range(image.get_height()):
+        for x in range(image.get_width()):
+            if image.get_pixel(x, y).a < 0.20:
+                continue
+            left = mini(left, x)
+            top = mini(top, y)
+            right = maxi(right, x)
+            bottom = maxi(bottom, y)
+    return Rect2i(left, top, right - left + 1, bottom - top + 1) \
+        if right >= left else Rect2i()
+
+
+static func reference_idle_height(target: String) -> float:
+    var actor := ResourceLoader.load(target) as WuxiaCharacterDefinition
+    if actor == null or actor.animation_profile == null:
+        return 0.0
+    var native: SpriteFrames = actor.animation_profile.native_frames
+    if native == null or not native.has_animation("idle") or native.get_frame_count("idle") == 0:
+        return 0.0
+    var texture: Texture2D = native.get_frame_texture("idle", 0)
+    if texture == null:
+        return 0.0
+    return float(visible_bounds(texture).size.y)
+
+
 static func prepare(target: String, built: Dictionary) -> Dictionary:
     if not str(built.get("error", "")).is_empty():
         return built
@@ -328,15 +366,10 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
         id, built["action"], hash.substr(0, 12)]
     if FileAccess.file_exists(picture_path) and FileAccess.get_sha256(picture_path) != hash:
         return {"error": "导入目标存在图片哈希冲突"}
-    # Include old binding identity in the version key: preserve user-edited SpriteFrames.
-    var original_path := profile.native_frames.resource_path if profile != null and \
-        profile.native_frames != null else ""
-    var original_hash := FileAccess.get_sha256(original_path) if not original_path.is_empty() else ""
-    var version := (hash + "|" + str(built["action"]) + "|" + str(built["durations"]) +
-        "|" + str(built["fps"]) + "|" + str(built["loop"]) + "|" + original_hash).sha256_text()
-    var frames_path := "res://data/native/animations/%s_frames__%s.tres" % [id, version.substr(0, 12)]
-    if FileAccess.file_exists(frames_path):
-        return {"error": "同版本 SpriteFrames 已存在；为保护 Godot 原生修改，拒绝覆盖：" + frames_path}
+    # One live SpriteFrames per character. Transaction.begin backs up the
+    # previous contents before replacing the selected action in this file.
+    # An older versioned binding is read as input and left untouched.
+    var frames_path := "res://data/native/animations/%s_frames.tres" % id
     var profile_path := "res://data/native/animations/" + id + ".tres"
     var notices: Array[String] = []
     if profile == null:
@@ -346,11 +379,14 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
     else:
         notices.append("更新当前角色 AnimationProfile：" + profile_path)
     if profile == null or profile.native_frames == null:
-        notices.append("自动创建 SpriteFrames 并添加 %s 动作：%s" % [built["action"], frames_path])
+        notices.append("自动创建角色唯一 SpriteFrames 并添加 %s：%s" % [built["action"], frames_path])
         if built["action"] != "idle":
             notices.append("提示：当前尚无 idle 动作，本次仍会导入 %s；待机动画可稍后添加。" % built["action"])
     else:
-        notices.append("复制现有 SpriteFrames 的其他动作，更新 %s：%s" % [built["action"], frames_path])
+        notices.append("保留其他动作，仅更新 %s（旧内容由事务备份）：%s" % [built["action"], frames_path])
+        if not profile.native_frames.resource_path.is_empty() and \
+                profile.native_frames.resource_path != frames_path:
+            notices.append("原绑定资源保留作历史备份：" + profile.native_frames.resource_path)
     notices.append("生成动作 PNG 图集：" + picture_path)
     notices.append("更新选中角色动画引用：" + target)
     var plan := {"error": "", "mode": "workbench", "target": target,

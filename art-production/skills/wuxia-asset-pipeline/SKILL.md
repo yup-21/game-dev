@@ -15,7 +15,7 @@ description: "为《长风浮生录》检查美术素材规格、盘点在用资
 
 ## 可重复流程
 
-**既有素材 V3 逐帧修复路径**：下列 AI Sheet／GIF 原始格式与逐帧缩放禁令约束**新制 AI 生产源图**；若用户选择处理已经存在的 GIF／精灵图，先用 `角色动画 V3` 工作台自动归档原图和候选 `.tres`，按真实画布自由切帧、清边、手绘蒙版／画笔、每帧等比缩放定位，再在**成品**执行两档 328×256／384×288、≥8px 真透明边距、零越界和人物/武器/脚点一致性验收。不可凭局部抠图声称恢复缺失内容；需人工视觉与权属批准才能版本化替换单动作 SpriteFrames，不隐式迁移旧 Clip。详细操作以 [V3 导入指南](../../tools/FRAME_WORKBENCH_V3.md) 为准，未做 Godot GUI 实速验证不得标记完成。
+**既有素材 V3 逐帧修复路径**：下列 AI Sheet／GIF 原始格式与逐帧缩放禁令约束**新制 AI 生产源图**；若用户选择处理已经存在的 GIF／精灵图，先用 `角色动画 V3` 工作台自动归档原图和候选 `.tres`，按真实画布自由切帧、清边、手绘蒙版／画笔、每帧等比缩放定位，再在**成品**执行两档 328×256／384×288、≥8px 真透明边距、零越界和人物/武器/脚点一致性验收。不可凭局部抠图声称恢复缺失内容；V3 正式在用 SpriteFrames 固定保存为每角色唯一的 `<id>_frames.tres`，在事务备份后只更新指定动作，不再生成每次导入的版本号文件，并可从 Dock 直接预览已绑定的原生动画。详细操作以 [V3 导入指南](../../tools/FRAME_WORKBENCH_V3.md) 为准，未做 Godot GUI 实速验证不得标记完成。
 
 1. **发现与归档**：从实际游戏 Resource/scene/脚本读取当前绑定；仅使用中素材进入清单。执行 `python3 art-production/tools/inventory_assets.py --check` 检查静态引用与镜像；按文件名自动解析的 Resource 图片须以 Godot Dock「全部实际使用图片」导出预检为准。其他未用素材按原始身份放在候选或归档区。
 2. **创建候选包**：在 `art-production/candidates/<asset-type>/<asset-id>/` 保留候选及实际发送的短提示词，记录目标 `.tres`／`.tscn`。角色动画先按 `action_id` 留完整分镜与真实 N：**AI Sheet 路径**按 **5×5、25 格**保存原始 Sheet、实际尺寸、批次编号和 `cell_index(0..24) -> action_id + action_frame_index`，普通档单格 328×256／整图 1640×1280，高个档 384×288／整图 1920×1440；**逐动作 GIF 路径**每动作一份透明 GIF，声明实际完整单帧尺寸和 `action_id`，**不虚构 C×R 网格**。同角色同档。运行 `python3 art-production/tools/sync_candidate_resources.py` 或使用 Native GIF Dock 登记每张候选的 `WuxiaArtCandidateDefinition.tres`，真实尺寸和网格不得虚报。候选不加入 Manifest；不增加 JSON 运行时定义。

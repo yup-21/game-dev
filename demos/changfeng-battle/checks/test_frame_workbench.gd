@@ -29,17 +29,23 @@ func _test_sequential_binding(frame: Dictionary) -> void:
     var prefix := "user://workbench_binding_%d" % Time.get_ticks_usec()
     var target := prefix + "_character.tres"
     var profile_path := prefix + "_profile.tres"
-    var created: Array[String] = [target, profile_path]
+    var frames_path := prefix + "_frames.tres"
+    var created: Array[String] = [target, profile_path, frames_path]
     var actor := source_actor.duplicate(true) as WuxiaCharacterDefinition
     var profile := source_actor.animation_profile.duplicate(true) as WuxiaActorAnimationProfile
+    profile.native_frames = null
     var expected: Array[String] = []
+    var original_idle_pixels := PackedByteArray()
     for action in ["idle", "walk", "run"]:
-        var built := Workbench.build([frame], Vector2i(328, 256), action, 12.0, true)
+        var source := Image.create(80, 80, false, Image.FORMAT_RGBA8)
+        source.fill(Color.TRANSPARENT)
+        var height: int = {"idle": 30, "walk": 24, "run": 36}[action]
+        source.fill_rect(Rect2i(30, 20, 20, height),
+            {"idle": Color.RED, "walk": Color.GREEN, "run": Color.BLUE}[action])
+        var built := Workbench.build([_frame(source)], Vector2i(328, 256), action, 12.0, true)
         check(str(built.get("error", "")).is_empty(), "build %s fixture" % action)
         if not str(built.get("error", "")).is_empty():
             break
-        var frames_path: String = prefix + "_" + str(action) + "_frames.tres"
-        created.append(frames_path)
         var merged := Workbench.make_frames(profile.native_frames, built,
             ImageTexture.create_from_image(built["image"] as Image))
         check(ResourceSaver.save(merged, frames_path) == OK,
@@ -59,11 +65,21 @@ func _test_sequential_binding(frame: Dictionary) -> void:
         if actor == null or actor.animation_profile == null:
             break
         profile = actor.animation_profile.duplicate(true) as WuxiaActorAnimationProfile
+        check(profile.native_frames.resource_path == frames_path,
+            "%s must use the same character SpriteFrames file" % action)
         expected.append(action)
         for previous in expected:
             check(profile.native_frames.has_animation(previous) and \
                 profile.native_frames.get_frame_count(previous) == 1,
                 "after %s, prior %s action still bound" % [action, previous])
+        var idle_pixels := profile.native_frames.get_frame_texture("idle", 0).get_image().get_data()
+        if action == "idle":
+            original_idle_pixels = idle_pixels
+        else:
+            check(idle_pixels == original_idle_pixels,
+                "import %s must keep idle pixels exactly unchanged" % action)
+    check(Workbench.reference_idle_height(target) > 0.0,
+        "later actions can derive their display height from bound idle")
     for path in created:
         if FileAccess.file_exists(path):
             DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
@@ -174,6 +190,10 @@ func _initialize() -> void:
             if str(plan.get("error", "")).is_empty():
                 check((plan.get("notices", []) as Array).size() >= 4,
                     "import plan explains auto-created/updated dependencies")
+                check(str(plan["native_frames_path"]).ends_with("shen_changfeng_frames.tres"),
+                    "V3 always targets one unversioned active SpriteFrames per character")
+                check(str(Workbench.prepare(target, baked).get("error", "")).is_empty(),
+                    "repeat plan must not reject a stable existing SpriteFrames")
     var white := Image.create(64, 64, false, Image.FORMAT_RGBA8)
     white.fill(Color.WHITE)
     white.fill_rect(Rect2i(24, 18, 16, 32), Color.BLACK)
@@ -190,11 +210,18 @@ func _initialize() -> void:
     _test_missing_dependencies(frame)
     var dock := Dock.new()
     root.add_child(dock)
-    # SceneTree._initialize runs before the first idle frame; initialize the
-    # Control explicitly to exercise the same editor plugin construction path.
-    dock._ready()
+    # Let Godot initialize the dock and its embedded preview window normally.
+    await process_frame
     check(dock.frame_list != null and dock.actor_choice != null,
         "workbench dock constructs in Godot editor runtime")
+    check(dock.actual_preview != null and dock.actual_preview.native_sprite != null,
+        "actual animation preview builds a native AnimatedSprite2D")
+    var preview_problem: String = dock.actual_preview.show_actor(
+        "res://data/native/characters/gu_qingshuang.tres", "idle")
+    check(preview_problem.is_empty() and dock.actual_preview.native_sprite.sprite_frames != null and \
+        dock.actual_preview.native_sprite.sprite_frames.has_animation("idle"),
+        "preview loads the character's bound SpriteFrames rather than the edit buffer")
+    dock.actual_preview.hide()
     dock.frames.append(frame)
     dock.pending = {"test": "stale preflight"}
     dock._reset_for_target()
