@@ -60,3 +60,29 @@ script = ExtResource("6_landmark")
 landmark_id = "ferry_trail"
 hint = "沿溪谷小径前往烟水渡"
 interaction_radius = 115.0
+
+[node name="YanDecoy" type="Marker2D" parent="StoryAnchors"]
+position = Vector2(320, 395)
+
+[node name="SearchPartyTorches" type="Node2D" parent="."]
+visible = false
+
+[node name="FarTorchA" type="Polygon2D" parent="SearchPartyTorches"]
+color = Color(1, 0.43, 0.13, 0.75)
+polygon = PackedVector2Array(180, 290, 173, 278, 185, 258, 194, 278, 189, 290)
+
+[node name="FarTorchB" type="Polygon2D" parent="SearchPartyTorches"]
+color = Color(1, 0.43, 0.13, 0.7)
+polygon = PackedVector2Array(240, 278, 233, 265, 245, 246, 254, 265, 249, 278)
+
+[node name="FarTorchC" type="Polygon2D" parent="SearchPartyTorches"]
+color = Color(1, 0.43, 0.13, 0.78)
+polygon = PackedVector2Array(300, 291, 293, 278, 305, 259, 314, 278, 309, 291)
+
+[node name="FarTorchD" type="Polygon2D" parent="SearchPartyTorches"]
+color = Color(1, 0.43, 0.13, 0.67)
+polygon = PackedVector2Array(365, 281, 358, 268, 370, 249, 379, 268, 374, 281)
+
+[node name="FarTorchE" type="Polygon2D" parent="SearchPartyTorches"]
+color = Color(1, 0.43, 0.13, 0.6)
+polygon = PackedVector2Array(427, 292, 420, 279, 432, 260, 441, 279, 436, 292)

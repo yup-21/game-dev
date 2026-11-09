@@ -1,7 +1,7 @@
 extends Node2D
-## Native-scene prologue blockout: hall spawn -> outside investigation -> return ambush.
-## All zone silhouettes, foot polygons, obstacles, exits and spawn markers are
-## editable inside scenes/prologue/zones/*.tscn in Godot's 2D editor.
+## Native prologue: the same editable four-zone geography serves isolated QA
+## and the formal rescue/chase story. Visual-only chase actors are scene nodes;
+## encounters and outcomes remain the authority of the native story resources.
 
 const Progress = preload("res://scripts/prologue/prologue_progress.gd")
 const Story = preload("res://scripts/opening_story.gd")
@@ -81,6 +81,12 @@ func _process(delta: float) -> void:
 		var desired := hero.position + Vector2(-80, -18)
 		escort_follow_position = escort_follow_position.lerp(desired, minf(1.0, delta * 3.5))
 		escort_follower.position = escort_follow_position
+	var torches := current_zone.get_node_or_null("SearchPartyTorches") as Node2D
+	if torches != null and torches.visible:
+		fire_animation_time += delta
+		for torch in torches.get_children():
+			if torch is Polygon2D:
+				torch.modulate.a = 0.79 + 0.14 * sin(fire_animation_time * 6.0 + float(torch.get_index()))
 
 
 func _setup_avatar() -> void:
@@ -203,6 +209,17 @@ func _apply_zone_state() -> void:
 	var enemies := current_zone.get_node_or_null("AmbushActors")
 	if enemies != null:
 		enemies.visible = not formal_mode and progress.ambush_started
+	# Named native anchors preview the increasing pursuer count. They never
+	# replace or influence the BattleModel's encounter combatants.
+	var chase_actors := current_zone.get_node_or_null("ChaseActors") as Node2D
+	if chase_actors != null:
+		chase_actors.visible = formal_mode and (
+			(current_zone.zone_id == "temple_courtyard" and session.prologue_stage == "wave1_ready")
+			or (current_zone.zone_id == "mountain_road" and session.prologue_stage == "wave2_ready"))
+	var search_torches := current_zone.get_node_or_null("SearchPartyTorches") as Node2D
+	if search_torches != null:
+		search_torches.visible = formal_mode and session.prologue_stage in [
+			"wave2_cleared", "lookout_ready", "lookout_battle", "lookout_cleared"]
 	# The same safe first-room becomes an uneasy scene on the explored return.
 	for part in ["Flame", "GlowingEmbers", "FireLight"]:
 		var fire_part := current_zone.get_node_or_null("Campfire/" + part) as CanvasItem
@@ -214,7 +231,7 @@ func _apply_zone_state() -> void:
 			tint.a = opacity
 			fire_part.modulate = tint
 	current_zone.walkable.visible = show_navigation
-	# Centered 1600×1000 blockouts retain the same world scale across zones.
+	# All 1600×1000 native zones retain the same world scale.
 	camera.limit_left = 0
 	camera.limit_top = 0
 	camera.limit_right = 1600
@@ -434,6 +451,7 @@ func _finish_formal_dialogue() -> void:
 				# Pingjiang is the next existing native free-roam destination.
 				get_tree().call_deferred("change_scene_to_file", "res://scenes/pingjiang_exploration.tscn")
 	_update_escort_visibility()
+	_apply_zone_state()
 	_update_interface()
 
 func _retry_roadside() -> void:

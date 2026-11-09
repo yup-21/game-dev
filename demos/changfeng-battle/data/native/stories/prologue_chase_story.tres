@@ -102,7 +102,7 @@ next_node = "healing_alarm"
 script = ExtResource("node")
 node_id = "healing_alarm"
 speaker = "旁白"
-text = "庙外传来踩水的脚步声。两名戴鬼面的刀卫循血迹而来，你只能先把老人护在身后。"
+text = "庙外雨声里混进脚步声。两个戴鬼面的探子顺着滴落的血迹摸到院门，打了个手势左右包抄。你让老人靠住墙根，提剑守在窄门前。"
 
 [sub_resource type="Resource" id="wave1_open"]
 script = ExtResource("node")
@@ -121,7 +121,7 @@ text = "老人家，往我身后退。这里路窄，他们两个未必占得到
 script = ExtResource("node")
 node_id = "wave2_open"
 speaker = "旁白"
-text = "刚脱离破庙，荒山古道又出现三名追兵。老人脚步越来越沉，你握剑的手也因连续迎战微微发抖。兜帽和夜雨遮住了你的面目。"
+text = "刚脱离破庙，荒山古道又冲来三名探子。老人脚步越来越沉，你握剑的手也因连续迎战微微发抖。远处还有应答的哨音，追来的人只会越来越多。兜帽和夜雨遮住了你的面目。"
 next_node = "wave2_answer"
 
 [sub_resource type="Resource" id="wave2_answer"]
@@ -153,7 +153,7 @@ next_node = "handover_yan"
 script = ExtResource("node")
 node_id = "handover_yan"
 speaker = "严守诚"
-text = "小兄弟，够了。你救了老夫两次，如今还不肯丢下我……老夫严守诚，走镖半生，今日总算识得一个可信的人。"
+text = "小兄弟，够了。你本可自己走，两回却都挡在老夫前头……老夫严守诚，走镖半生，今日总算识得一个可信的人。"
 next_node = "handover_hero"
 
 [sub_resource type="Resource" id="handover_hero"]
@@ -167,7 +167,7 @@ next_node = "handover_fragment"
 script = ExtResource("node")
 node_id = "handover_fragment"
 speaker = "严守诚"
-text = "老夫走不动了。这卷残卷替我收着；它并非酬劳，带着它反而危险。你沿溪谷下去，到烟水渡便有船往平江府。"
+text = "这卷残纸是我从散开的镖箱里抢护出来的。封箱时没人告诉我来历，我也不知它为何要紧；只是人都被杀了，不能再让这些凶徒拿走。老夫走不动了，求你暂替我保管。它并非酬劳，带着它反而危险。"
 next_node = "handover_decoy"
 events = Array[Resource]([SubResource("fragment_flag"), SubResource("fragment_clue")])
 
@@ -175,7 +175,7 @@ events = Array[Resource]([SubResource("fragment_flag"), SubResource("fragment_cl
 script = ExtResource("node")
 node_id = "handover_decoy"
 speaker = "严守诚"
-text = "追兵只顾截镖灭口，没一个提过这卷东西。他们认得老夫和镖车，却不识你的来历。我留在明路上拖住搜山的人；你沿溪谷走，千万别回头。卷上原题残缺，莫轻信旁人。"
+text = "追兵只顾截镖灭口，没一个提过这卷东西。他们认得老夫和镖旗，却不识你。我带着断旗沿明路去旧关卡，他们见我还活着，多半会先围来盘问；我懂几句镖行交涉的老话，兴许能引他们走错岔口。不是去和他们拼刀，只赌能拖几步路。你沿溪谷下去，到烟水渡搭船往平江府。卷上原题残缺，莫轻信旁人。"
 
 [sub_resource type="Resource" id="insight_flag"]
 script = ExtResource("event")
@@ -187,7 +187,7 @@ flag_value = true
 script = ExtResource("node")
 node_id = "lookout_open"
 speaker = "旁白"
-text = "你刚潜入溪谷，一名警戒的刀卫便挡住去路。怀中残卷微热；对方的呼吸、握刀和脚步忽然变得清晰，仿佛连他手中尚未施展的招式都能看见。"
+text = "你刚潜入溪谷，一名警戒的刀卫便挡住去路。怀中残卷微热；对方的呼吸、握刀和脚步忽然变得清晰，眼前短暂浮现他此刻可用的几式刀招。再往后会如何，你仍毫无把握。"
 next_node = "lookout_answer"
 events = Array[Resource]([SubResource("insight_flag")])
 
@@ -207,7 +207,7 @@ flag_value = true
 script = ExtResource("node")
 node_id = "escape_open"
 speaker = "旁白"
-text = "你甩开最后一名探子，沿溪水和乱石一路向下。雨水洗掉足迹，烟水渡的船灯终于出现在远处。"
+text = "你甩开最后一名探子，沿溪水和乱石一路向下。雨水洗掉足迹，烟水渡的船灯终于出现在远处。天未明，你混进赶早船的脚夫之间，借船篷遮住面容，终于到达平江府南面的水关。"
 next_node = "escape_final"
 
 [sub_resource type="Resource" id="escape_final"]

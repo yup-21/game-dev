@@ -66,6 +66,10 @@ func _run() -> void:
 	check(scene.interact(), "healing triggered by campfire")
 	exhaust_dialogue(scene)
 	check(session.prologue_stage == "wave1_ready", "healing raises the first chase encounter")
+	scene._teleport_formal("temple_courtyard", "FromHall")
+	check(scene.current_zone.get_node("ChaseActors").visible
+		and scene.current_zone.get_node("ChaseActors").get_child_count() == 2,
+		"formal courtyard reveals exactly two scouts, never the commander")
 
 	check(session.begin_prologue_wave(), "first two-scout encounter starts")
 	check(session.encounter_options().get("combatants", []).size() == 3,
@@ -79,6 +83,10 @@ func _run() -> void:
 	check(session.report_battle("victory", 0) and session.prologue_stage == "wave1_cleared",
 		"first victory resumes native exploration")
 	check(session.set_prologue_stage("wave2_ready"), "chase escalates on the mountain road")
+	scene._teleport_formal("mountain_road", "FromCourtyard")
+	check(scene.current_zone.get_node("ChaseActors").visible
+		and scene.current_zone.get_node("ChaseActors").get_child_count() == 3,
+		"formal road reveals three scouts as pursuit escalates")
 	check(session.begin_prologue_wave(), "second three-scout encounter starts")
 	check(session.encounter_options().get("combatants", []).size() == 4,
 		"second wave has three scouts without exposing the boss")
@@ -88,13 +96,15 @@ func _run() -> void:
 		"second scout formation is valid in the actual BattleModel")
 	check(session.report_battle("victory", 0) and session.prologue_stage == "wave2_cleared",
 		"second victory unlocks trust and handover")
+	scene._teleport_formal("broken_bridge", "FromRoad")
+	check(scene.current_zone.get_node("SearchPartyTorches").visible,
+		"fresh distant torchlights communicate that defeating scouts did not stop the search")
 
 	check(scene._start_formal_dialogue("handover_open", "handover"), "elder's trust is earned after two wins")
 	exhaust_dialogue(scene)
 	check(session.prologue_stage == "lookout_ready" and session.flags.get("obtained_fragment", false)
 		and session.items.get("unknown_fragment", 0) == 1,
 		"elder leaves an unnamed fragment and stays to divert the search")
-	scene._teleport_formal("broken_bridge", "FromRoad")
 	scene.hero.position = scene.current_zone.get_node("StoryAnchors/FutureFerryTrailNotConnected").position
 	check(scene.interact(), "ferry trail activates first encounter with the fragment")
 	exhaust_dialogue(scene)

@@ -101,8 +101,13 @@ func _run() -> void:
 	walk_by_input(scene, Vector2(800, 859))
 	check(use_gate(scene, "ToCourtyard"), "hall -> courtyard")
 	check(scene.current_zone.zone_id == "temple_courtyard", "courtyard was mounted")
-	check(scene.current_zone.get_node_or_null("StoryAnchors/HanXiaoForecourtBattle") is Marker2D,
-		"forecourt boss stage is reserved without firing formal encounter")
+	check(scene.current_zone.get_node_or_null("StoryAnchors/ScoutWave1Entry") is Marker2D,
+		"courtyard keeps a native first-scout encounter anchor")
+	check(scene.current_zone.get_node_or_null("StoryAnchors/HanXiaoForecourtBattle") == null,
+		"Han Xiao does not appear face-to-face in the prologue")
+	check(scene.current_zone.get_node("ChaseActors").get_child_count() == 2
+		and not scene.current_zone.get_node("ChaseActors").visible,
+		"two courtyard scout silhouettes are authored but hidden in isolated QA")
 	await capture("02_courtyard")
 	check(not scene.progress.explored_deep_outside, "leaving alone is not a milestone")
 	check(use_gate(scene, "ToHall"), "courtyard -> hall immediately")
@@ -110,6 +115,10 @@ func _run() -> void:
 	check(use_gate(scene, "ToCourtyard"), "hall -> courtyard again")
 	check(use_gate(scene, "ToRoad"), "courtyard -> road")
 	check(scene.current_zone.zone_id == "mountain_road", "road was mounted")
+	check(scene.current_zone.get_node_or_null("StoryAnchors/ScoutWave2Entry") is Marker2D
+		and scene.current_zone.get_node("ChaseActors").get_child_count() == 3
+		and not scene.current_zone.get_node("ChaseActors").visible,
+		"road authors three pursuers but never exposes them in isolated QA")
 	await capture("03_mountain_road")
 	check(not scene.progress.explored_deep_outside, "must investigate or reach the bridge")
 	walk_by_input(scene, Vector2(746, 406))
@@ -143,6 +152,10 @@ func _run() -> void:
 		and bridge_scene.progress.explored_deep_outside, "bridge arrival records exploration")
 	check(bridge_scene.current_zone.get_node_or_null("StoryAnchors/FutureFerryTrailNotConnected") is Marker2D,
 		"later ferry direction is a non-functional anchor")
+	check(bridge_scene.current_zone.get_node_or_null("StoryAnchors/YanDecoy") is Marker2D
+		and bridge_scene.current_zone.get_node("SearchPartyTorches").get_child_count() == 5
+		and not bridge_scene.current_zone.get_node("SearchPartyTorches").visible,
+		"bridge authors Yan's diversion and distant pursuer lights for formal mode only")
 	await capture("05_broken_bridge")
 	check(use_gate(bridge_scene, "ToRoad")
 		and use_gate(bridge_scene, "ToCourtyard")
