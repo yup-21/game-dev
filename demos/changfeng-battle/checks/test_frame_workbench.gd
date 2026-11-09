@@ -69,6 +69,44 @@ func _test_sequential_binding(frame: Dictionary) -> void:
             DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 
+func _test_missing_dependencies(frame: Dictionary) -> void:
+    var source_actor := ResourceLoader.load(
+        "res://data/native/characters/gu_qingshuang.tres") as WuxiaCharacterDefinition
+    if source_actor == null:
+        check(false, "load source for missing dependency test")
+        return
+    var prefix := "user://workbench_missing_%d" % Time.get_ticks_usec()
+    var target := prefix + "_character.tres"
+    var profile_path := prefix + "_profile.tres"
+    var frames_path := prefix + "_frames.tres"
+    var bare := source_actor.duplicate(true) as WuxiaCharacterDefinition
+    bare.animation_profile = null
+    var profile := WuxiaActorAnimationProfile.new()
+    var built := Workbench.build([frame], Vector2i(328, 256), "walk", 12.0, true)
+    if str(built.get("error", "")).is_empty():
+        var native := Workbench.make_frames(null, built,
+            ImageTexture.create_from_image(built["image"] as Image))
+        check(ResourceSaver.save(native, frames_path) == OK,
+            "create missing SpriteFrames dependency")
+        profile.native_frames = ResourceLoader.load(frames_path, "SpriteFrames",
+            ResourceLoader.CACHE_MODE_REPLACE) as SpriteFrames
+        var issue: String = Workbench.save_external_binding(bare, profile,
+            profile_path, target)
+        check(issue.is_empty(), "create missing AnimationProfile/actor dependency: " + issue)
+        if issue.is_empty():
+            var loaded := ResourceLoader.load(target, "", ResourceLoader.CACHE_MODE_IGNORE) \
+                as WuxiaCharacterDefinition
+            check(loaded != null and loaded.animation_profile != null and \
+                loaded.animation_profile.native_frames != null and \
+                loaded.animation_profile.native_frames.has_animation("walk"),
+                "new actor receives walk without pre-created idle/AnimationProfile")
+    else:
+        check(false, "build no-profile fixture: " + str(built["error"]))
+    for path in [target, profile_path, frames_path]:
+        if FileAccess.file_exists(path):
+            DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
 func _initialize() -> void:
     var source := Image.create(80, 80, false, Image.FORMAT_RGBA8)
     source.fill(Color.TRANSPARENT)
@@ -133,6 +171,9 @@ func _initialize() -> void:
             var plan := Workbench.prepare(target, baked)
             check(str(plan.get("error", "")).is_empty(), "real actor incremental import preflight: " +
                 str(plan.get("error", "")))
+            if str(plan.get("error", "")).is_empty():
+                check((plan.get("notices", []) as Array).size() >= 4,
+                    "import plan explains auto-created/updated dependencies")
     var white := Image.create(64, 64, false, Image.FORMAT_RGBA8)
     white.fill(Color.WHITE)
     white.fill_rect(Rect2i(24, 18, 16, 32), Color.BLACK)
@@ -146,6 +187,7 @@ func _initialize() -> void:
     check(not str(Workbench.build([frame], Vector2i(328, 256), "defeat", 10.0, true)
         .get("error", "")).is_empty(), "defeat cannot loop")
     _test_sequential_binding(frame)
+    _test_missing_dependencies(frame)
     var dock := Dock.new()
     root.add_child(dock)
     # SceneTree._initialize runs before the first idle frame; initialize the

@@ -13,7 +13,6 @@ var output_canvas: Control
 var frame_list: ItemList
 var status: Label
 var tall: CheckBox
-var approval: CheckBox
 var grid_columns: SpinBox
 var grid_rows: SpinBox
 var edits: Dictionary = {}
@@ -150,10 +149,7 @@ func _ready() -> void:
     _button(play_row, "下一帧", func(): _step(1))
     content.add_child(play_row)
     _button(content, "检查标准化成品", _review)
-    approval = CheckBox.new()
-    approval.text = "我已审核此动作的视觉、来源/权属，批准替换当前角色动作"
-    content.add_child(approval)
-    _button(content, "确认绑定当前动作（保留其他动作）", _confirm_apply)
+    _button(content, "导入并绑定当前动作（保留其他动作）", _confirm_apply)
     _button(content, "撤销本次绑定", _undo)
     status = Label.new()
     status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -251,8 +247,6 @@ func _cell() -> Vector2i:
 
 func _invalidate() -> void:
     pending.clear()
-    if approval != null:
-        approval.button_pressed = false
 
 
 func _reset_for_target() -> void:
@@ -568,19 +562,22 @@ func _review() -> void:
         status.text = "绑定预检失败：" + str(pending["error"])
         pending.clear()
         return
-    status.text = "%s · %d 帧 · %s，已通过透明边距和资源检查。\n目标：%s\n原动作保留；导入需人工确认。" % [
-        _action(), frames.size(), str(_cell()), str(pending["native_frames_path"])]
+    var lines: Array[String] = []
+    for notice in pending.get("notices", []):
+        lines.append("• " + str(notice))
+    status.text = "%s · %d 帧 · %s\n本次将自动创建/更新：\n%s\n确认后导入，动画画面可随后检查。" % [
+        _action(), frames.size(), str(_cell()), "\n".join(lines)]
 
 
 func _confirm_apply() -> void:
     if pending.is_empty():
         status.text = "请先检查标准化成品"
         return
-    if not approval.button_pressed:
-        status.text = "正式绑定前需要确认视觉与权属审核；否则请保留候选素材继续编辑。"
-        return
-    confirmation.dialog_text = "仅替换 %s 的 %s 动作。\n生成：%s\n保留其他动作及旧资源；备份可撤销。" % [
-        _actor_id(), _action(), str(pending["native_frames_path"])]
+    var changes: Array[String] = []
+    for notice in pending.get("notices", []):
+        changes.append("• " + str(notice))
+    confirmation.dialog_text = "确认导入 %s 的 %s 动作？\n%s\n仅更新所选角色，保留其他动作；可撤销。" % [
+        _actor_id(), _action(), "\n".join(changes)]
     confirmation.popup_centered_ratio(0.7)
 
 
@@ -594,7 +591,8 @@ func _apply() -> void:
         status.text = "导入失败：" + str(result["error"])
         return
     journal = str(result["journal"])
-    status.text = "已保存并绑定：" + str(result["frames_path"]) + "。请在 Godot 中实际播放验收。"
+    status.text = "导入完成，依赖已自动创建/更新。\nSpriteFrames：" + \
+        str(result["frames_path"]) + "\n请在 Godot 中查看动画效果。"
     _invalidate()
 
 

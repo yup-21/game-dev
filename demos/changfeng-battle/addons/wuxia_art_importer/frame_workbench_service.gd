@@ -338,11 +338,27 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
     if FileAccess.file_exists(frames_path):
         return {"error": "同版本 SpriteFrames 已存在；为保护 Godot 原生修改，拒绝覆盖：" + frames_path}
     var profile_path := "res://data/native/animations/" + id + ".tres"
+    var notices: Array[String] = []
+    if profile == null:
+        notices.append("创建角色 AnimationProfile：" + profile_path)
+    elif profile.resource_path != profile_path or not FileAccess.file_exists(profile_path):
+        notices.append("为当前角色建立独立 AnimationProfile：" + profile_path)
+    else:
+        notices.append("更新当前角色 AnimationProfile：" + profile_path)
+    if profile == null or profile.native_frames == null:
+        notices.append("自动创建 SpriteFrames 并添加 %s 动作：%s" % [built["action"], frames_path])
+        if built["action"] != "idle":
+            notices.append("提示：当前尚无 idle 动作，本次仍会导入 %s；待机动画可稍后添加。" % built["action"])
+    else:
+        notices.append("复制现有 SpriteFrames 的其他动作，更新 %s：%s" % [built["action"], frames_path])
+    notices.append("生成动作 PNG 图集：" + picture_path)
+    notices.append("更新选中角色动画引用：" + target)
     var plan := {"error": "", "mode": "workbench", "target": target,
         "target_sha256": FileAccess.get_sha256(target),
         "profile_sha256": FileAccess.get_sha256(profile_path),
         "profile_path": profile_path,
         "native_frames_path": frames_path,
+        "notices": notices,
         "files": {"atlas": {"destination": picture_path, "sha256": hash,
             "generated_bytes": built["bytes"]}}, "built": built}
     var check: String = Transaction.validate([plan])
@@ -357,6 +373,9 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
 static func save_external_binding(actor: WuxiaCharacterDefinition,
         staged: WuxiaActorAnimationProfile, profile_path: String,
         target: String) -> String:
+    if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(
+            profile_path).get_base_dir()) != OK:
+        return "无法创建 AnimationProfile 目录"
     if ResourceSaver.save(staged, profile_path) != OK:
         return "AnimationProfile 保存失败"
     var saved := ResourceLoader.load(profile_path, "", ResourceLoader.CACHE_MODE_REPLACE) \
@@ -432,4 +451,5 @@ static func apply(plan: Dictionary) -> Dictionary:
     # starts from the just-saved SpriteFrames and cannot drop this action.
     ResourceLoader.load(str(plan["profile_path"]), "", ResourceLoader.CACHE_MODE_REPLACE)
     ResourceLoader.load(str(plan["target"]), "", ResourceLoader.CACHE_MODE_REPLACE)
-    return {"error": "", "journal": journal, "frames_path": plan["native_frames_path"]}
+    return {"error": "", "journal": journal, "frames_path": plan["native_frames_path"],
+        "notices": plan.get("notices", [])}
