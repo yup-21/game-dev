@@ -14,12 +14,14 @@
 
 | 原生 `.tscn` | 内容／正式剧情 | 原生图层与美术资源 |
 | --- | --- | --- |
-| `scenes/prologue/zones/temple_hall.tscn` | 篝火初醒、避雨、救人后包扎 | `PaintedLayers/{Background,Ground,Foreground}`，引用在用 `prologue_temple_hall` WebP 三层；`Architecture` 灰盒隐藏；`Campfire` 保持独立火焰演出 |
+| `scenes/prologue/zones/temple_hall.tscn` | 篝火初醒、避雨、救人后包扎 | `PaintedLayers/{Background,Ground,Foreground}`，引用在用 `prologue_temple_hall` WebP 三层；`Architecture` 灰盒隐藏；`Campfire` 独立火焰演出，`StoryAnchors/YanRestByFire` 为严的固定疗伤位 |
 | `scenes/prologue/zones/temple_courtyard.tscn` | 救人后第一波两名探子（1v2） | 复用在用 `ruined_temple` 三层；`StoryAnchors/ScoutWave1Entry`、`ChaseActors/ScoutA,B`；**没有韩啸出场锚点** |
 | `scenes/prologue/zones/mountain_road.tscn` | 劫镖残局与破车线索、第二波三名探子（1v3） | `PaintedLayers/{Background,Ground,Foreground}`，引用在用 `prologue_mountain_road` WebP 三层；`BlockoutArt` 和重复破车隐藏；`StoryAnchors/ScoutWave2Entry`、`ChaseActors/ScoutA,B,C` |
-| `scenes/prologue/zones/broken_bridge.tscn` | 严守诚因两场护送而信任主角，留下残卷并沿明路诱敌；主角下溪谷对上哨探（1v1） | 复用在用 `rainy_bridge` 三层；`StoryAnchors/YanDecoy`、五处 `SearchPartyTorches`、`FutureFerryTrailNotConnected` |
+| `scenes/prologue/zones/broken_bridge.tscn` | 严守诚因两场护送而信任主角，留下残卷并沿明路诱敌；主角下溪谷对上哨探（1v1） | 复用在用 `rainy_bridge` 三层；`StoryAnchors/YanDecoy`、可调整的 `YanDecoyRoute`、五处 `SearchPartyTorches`、`FutureFerryTrailNotConnected` |
 
 **正式演出状态：** 前院两名、古道三名追兵是独立场景节点，分别只在 `wave1_ready` 与 `wave2_ready` 显示；断桥远处搜山火光在第二波击退后出现。它们是当前阶段的简易场景剪影／灯光标记，正式战斗人数以 `GameSession`、`BattleModel` 为准。独立 QA 不显示这些追击节点。
+
+**严守诚护送／诱敌状态：** `EscortFollower` 在 `healing` 时用已在用的受伤坐姿，固定于 `YanRestByFire`；疗伤后复用其已有站姿作为临时行走表现，主角护送速度变慢，老人以限速跟随。断桥托卷完成后，原随行实例隐藏、场景内 `YanDecoyRoute/Traveler` 从同一脚点沿编辑器定义的 `Curve2D` 向旧关卡折返，带简易断旗并淡出。全程不对 `BattleModel`、NPC 生死或道路碰撞作任何剧情豁免。
 
 ## Godot 编辑约定
 
@@ -32,7 +34,7 @@
 ## 已有资源与待补素材
 
 - **已绑定**：四张地图各三层（内殿、古道为已导入的 WebP，前院、断桥复用既有正式素材）；篝火轻微火焰动画；主角角色资源；受伤严守诚静态图；战斗系统通用敌人资源。
-- **待美术／演出验收（P0）**：四地图连续走图的脚点与前景遮挡；古道破车现场的伤痕、血迹／断旗是否容易读懂；主角与严守诚搀扶同行、断桥严转身引开追兵的动线；鬼面探子的实际逐帧动作素材替换场景剪影。
+- **待美术／演出验收（P0）**：四地图连续走图的脚点与前景遮挡；古道破车现场的伤痕、血迹／断旗是否容易读懂；严守诚目前只是受伤／站姿静态图加移动与轻微摆动，尚需正式搀扶动作、跛行及转身递卷帧，断桥路线也需实机检查镜头中的停顿与遮挡；鬼面探子的实际逐帧动作素材替换场景剪影。
 - **待独立交付（P1）**：溪谷小径／烟水渡真实过场地图、船只与脚夫环境图、雨雾与远景火光 VFX；第一波和第二波区分的战斗背景（目前三场共用雨夜断桥战斗图）。尚不能把 `FutureFerryTrailNotConnected` 当作已完成的渡口地图。
 - **保留悬念**：韩啸不在序幕与主角碰面，不知道残卷存在；受上级交差后才得知少了关键物品。卷名、严的生死都不在序幕揭晓。
 

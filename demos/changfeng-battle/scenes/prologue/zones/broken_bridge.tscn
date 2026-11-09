@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/prologue/prologue_zone.gd" id="1_zone"]
 [ext_resource type="Script" path="res://scripts/prologue/prologue_portal.gd" id="2_gate"]
@@ -6,6 +6,13 @@
 [ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/background.png" id="3_bg"]
 [ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/ground.png" id="4_ground"]
 [ext_resource type="Texture2D" path="res://assets/imported/scenes/rainy_bridge/foreground.png" id="5_front"]
+[ext_resource type="Texture2D" path="res://assets/imported/characters/escort_elder/portraits/portrait.png" id="7_elder_standing"]
+
+[sub_resource type="Curve2D" id="Curve2D_yan_decoy"]
+_data = {
+"points": PackedVector2Array(0, 0, -18, 0, 200, 415, 18, 0, -18, 0, 168, 415, 20, 0, 0, 0, 123, 410)
+}
+point_count = 3
 
 [node name="BrokenBridge" type="Node2D"]
 script = ExtResource("1_zone")
@@ -62,7 +69,32 @@ hint = "沿溪谷小径前往烟水渡"
 interaction_radius = 115.0
 
 [node name="YanDecoy" type="Marker2D" parent="StoryAnchors"]
-position = Vector2(320, 395)
+position = Vector2(123, 410)
+
+[node name="YanDecoyRoute" type="Path2D" parent="."]
+visible = false
+curve = SubResource("Curve2D_yan_decoy")
+
+[node name="Traveler" type="PathFollow2D" parent="YanDecoyRoute"]
+rotates = false
+loop = false
+
+[node name="StandingElder" type="Sprite2D" parent="YanDecoyRoute/Traveler"]
+z_index = 14
+position = Vector2(0, -86)
+scale = Vector2(0.12, 0.12)
+texture = ExtResource("7_elder_standing")
+
+[node name="FlagPole" type="Line2D" parent="YanDecoyRoute/Traveler"]
+z_index = 15
+points = PackedVector2Array(-30, -162, -33, -57)
+width = 5.0
+default_color = Color(0.37, 0.23, 0.12, 0.93)
+
+[node name="TornEscortFlag" type="Polygon2D" parent="YanDecoyRoute/Traveler"]
+z_index = 15
+color = Color(0.51, 0.20, 0.14, 0.9)
+polygon = PackedVector2Array(-29, -158, 12, -154, 3, -139, 17, -130, -29, -135)
 
 [node name="SearchPartyTorches" type="Node2D" parent="."]
 visible = false

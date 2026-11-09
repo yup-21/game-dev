@@ -9,7 +9,14 @@ const CombatScale = preload("res://scripts/combat_scale.gd")
 const VisualScale = preload("res://scripts/actor_visual_scale.gd")
 const ACTOR_PROFILE_PATH := "res://data/native/animations/shen_changfeng.tres"
 const CHASE_STORY_PATH := "res://data/native/stories/prologue_chase_story.tres"
+const ELDER_RESTING_POSE := preload("res://assets/imported/characters/escort_elder/story-poses/injured.png")
+const ELDER_STANDING_POSE := preload("res://assets/imported/characters/escort_elder/portraits/portrait.png")
 const MOVE_SPEED := 260.0
+const ESCORT_PLAYER_SPEED := 180.0
+const ESCORT_WAIT_SPEED := 88.0
+const ESCORT_FOLLOW_SPEED := 135.0
+const ESCORT_MAX_SEPARATION := 150.0
+const YAN_DECOY_DURATION := 3.0
 const ZONE_SCENES := {
 	"temple_hall": preload("res://scenes/prologue/zones/temple_hall.tscn"),
 	"temple_courtyard": preload("res://scenes/prologue/zones/temple_courtyard.tscn"),
@@ -44,6 +51,9 @@ var session: Node
 var story: RefCounted
 var dialogue_outcome: String = ""
 var escort_follow_position: Vector2 = Vector2.ZERO
+var escort_travel_direction: Vector2 = Vector2.RIGHT
+var escort_stride_time: float = 0.0
+var yan_decoy_time: float = -1.0
 
 func _ready() -> void:
 	session = get_node_or_null("/root/GameSession")
@@ -70,17 +80,25 @@ func _ready() -> void:
 	_update_interface()
 
 func _process(delta: float) -> void:
-	# Small, local QA visual cue. Formal combat/story VFX remain unchanged.
+	# Visual-only scene feedback. Combat and story resources still own results.
 	if current_zone == null:
 		return
 	var flame := current_zone.get_node_or_null("Campfire/Flame") as Polygon2D
 	if flame != null:
 		fire_animation_time += delta
 		flame.scale.y = 0.93 + 0.07 * sin(fire_animation_time * 8.3)
-	if formal_mode and escort_follower.visible:
-		var desired := hero.position + Vector2(-80, -18)
-		escort_follow_position = escort_follow_position.lerp(desired, minf(1.0, delta * 3.5))
-		escort_follower.position = escort_follow_position
+	if _escort_is_travelling():
+		var desired: Vector2 = hero.position - escort_travel_direction * 76.0 + Vector2(0, -8)
+		var previous: Vector2 = escort_follow_position
+		escort_follow_position = escort_follow_position.move_toward(desired, ESCORT_FOLLOW_SPEED * delta)
+		var walking := previous.distance_to(escort_follow_position) > 0.1
+		if walking:
+			escort_stride_time += delta * 5.5
+		escort_follower.position = escort_follow_position + Vector2(0, -1.6 * absf(sin(escort_stride_time)) if walking else 0.0)
+		escort_follower.rotation = deg_to_rad(-2.0 + (0.9 * sin(escort_stride_time) if walking else 0.0))
+		if absf(escort_travel_direction.x) > 0.25:
+			escort_follower.flip_h = escort_travel_direction.x < 0.0
+	_update_yan_decoy(delta)
 	var torches := current_zone.get_node_or_null("SearchPartyTorches") as Node2D
 	if torches != null and torches.visible:
 		fire_animation_time += delta
@@ -118,7 +136,12 @@ func _physics_process(delta: float) -> void:
 	movement.x += float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A))
 	movement.y += float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))
 	movement = movement.normalized()
-	var target: Vector2 = hero.position + movement * MOVE_SPEED * delta
+	var speed := MOVE_SPEED
+	if _escort_is_travelling():
+		if movement.length_squared() > 0.01:
+			escort_travel_direction = movement
+		speed = ESCORT_WAIT_SPEED if hero.position.distance_to(escort_follow_position) > ESCORT_MAX_SEPARATION else ESCORT_PLAYER_SPEED
+	var target: Vector2 = hero.position + movement * speed * delta
 	if current_zone.permits_foot(Vector2(target.x, hero.position.y)):
 		hero.position.x = target.x
 	if current_zone.permits_foot(Vector2(hero.position.x, target.y)):
@@ -328,7 +351,12 @@ func _teleport_formal(zone_id: String, entry_name: String) -> void:
 	zone_host.add_child(next_zone)
 	current_zone = next_zone
 	hero.position = entry
+	_update_escort_visibility()
 	_apply_zone_state()
+
+func _escort_is_travelling() -> bool:
+	return formal_mode and escort_follower.visible and session.prologue_stage in [
+		"wave1_ready", "wave1_cleared", "wave2_ready", "wave2_cleared"]
 
 func _update_escort_visibility() -> void:
 	if not formal_mode:
@@ -337,8 +365,51 @@ func _update_escort_visibility() -> void:
 		"healing", "wave1_ready", "wave1_battle", "wave1_cleared",
 		"wave2_ready", "wave2_battle", "wave2_cleared"]
 	if escort_follower.visible:
-		escort_follow_position = hero.position + Vector2(-80, -18)
+		var resting: bool = session.prologue_stage == "healing"
+		escort_follower.texture = ELDER_RESTING_POSE if resting else ELDER_STANDING_POSE
+		# The sprite's world origin is at the feet, not the center of the portrait canvas.
+		escort_follower.offset = Vector2(0, -escort_follower.texture.get_height() * 0.5)
+		escort_follower.rotation = 0.0
+		escort_follower.flip_h = false
+		if resting:
+			var rest := current_zone.get_node_or_null("StoryAnchors/YanRestByFire") as Marker2D
+			escort_follow_position = rest.position if rest != null else hero.position + Vector2(-100, 12)
+		elif current_zone.zone_id == "broken_bridge":
+			# During the handover Yan stands at the authored diversion route's start.
+			var route := current_zone.get_node_or_null("YanDecoyRoute") as Path2D
+			escort_follow_position = route.curve.get_point_position(0) if route != null else hero.position + Vector2(-76, 0)
+		else:
+			escort_follow_position = hero.position - escort_travel_direction * 76.0 + Vector2(0, -8)
 		escort_follower.position = escort_follow_position
+
+func _start_yan_decoy() -> void:
+	if current_zone.zone_id != "broken_bridge":
+		return
+	var route := current_zone.get_node_or_null("YanDecoyRoute") as Path2D
+	if route == null or route.curve == null or route.curve.point_count < 2:
+		push_warning("Broken bridge has no editable Yan diversion route")
+		return
+	var traveler := route.get_node("Traveler") as PathFollow2D
+	traveler.progress_ratio = 0.0
+	traveler.modulate.a = 1.0
+	route.visible = true
+	yan_decoy_time = 0.0
+
+func _update_yan_decoy(delta: float) -> void:
+	if yan_decoy_time < 0.0 or current_zone.zone_id != "broken_bridge":
+		return
+	var route := current_zone.get_node_or_null("YanDecoyRoute") as Path2D
+	if route == null or not route.visible:
+		yan_decoy_time = -1.0
+		return
+	yan_decoy_time += delta
+	var ratio := minf(1.0, yan_decoy_time / YAN_DECOY_DURATION)
+	var traveler := route.get_node("Traveler") as PathFollow2D
+	traveler.progress_ratio = ratio
+	traveler.modulate.a = clampf((1.0 - ratio) * 4.0, 0.0, 1.0)
+	if ratio >= 1.0:
+		route.visible = false
+		yan_decoy_time = -1.0
 
 func _interact_formal() -> bool:
 	if dialogue_panel.visible or failure_panel.visible:
@@ -442,7 +513,7 @@ func _finish_formal_dialogue() -> void:
 				get_tree().call_deferred("change_scene_to_file", session.scene_for("battle"))
 		"handover":
 			if session.set_prologue_stage("lookout_ready"):
-				notice = "严守诚留在明路牵制追兵。你带着残卷去断桥东侧的溪谷入口。"
+				notice = "严守诚拿着断旗折回明路，走向搜山火光。你带着残卷往断桥东侧的溪谷走。"
 		"escape":
 			if not session.flags.get("prologue_escaped", false):
 				push_error("Prologue ending requires escape flag")
@@ -451,6 +522,8 @@ func _finish_formal_dialogue() -> void:
 				# Pingjiang is the next existing native free-roam destination.
 				get_tree().call_deferred("change_scene_to_file", "res://scenes/pingjiang_exploration.tscn")
 	_update_escort_visibility()
+	if finished == "handover" and session.prologue_stage == "lookout_ready":
+		_start_yan_decoy()
 	_apply_zone_state()
 	_update_interface()
 

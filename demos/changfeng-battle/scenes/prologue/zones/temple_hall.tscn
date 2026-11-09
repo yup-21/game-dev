@@ -144,6 +144,11 @@ landmark_id = "guardian_statue"
 hint = "观察断臂金刚像"
 interaction_radius = 135.0
 
+[node name="StoryAnchors" type="Node2D" parent="."]
+
+[node name="YanRestByFire" type="Marker2D" parent="StoryAnchors"]
+position = Vector2(745, 720)
+
 
 [node name="AmbushActors" type="Node2D" parent="."]
 visible = false

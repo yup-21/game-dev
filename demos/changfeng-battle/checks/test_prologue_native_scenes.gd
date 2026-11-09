@@ -87,6 +87,8 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 	check(scene.current_zone.zone_id == "temple_hall", "player starts in hall")
+	check(scene.current_zone.get_node_or_null("StoryAnchors/YanRestByFire") is Marker2D,
+		"elder's recovery spot is editable in the hall scene")
 	await capture("01_hall_fire_start")
 	check(scene.hero.position == Vector2(862, 699), "wakes beside the campfire")
 	check(not scene.progress.ambush_started
@@ -156,6 +158,12 @@ func _run() -> void:
 		and bridge_scene.current_zone.get_node("SearchPartyTorches").get_child_count() == 5
 		and not bridge_scene.current_zone.get_node("SearchPartyTorches").visible,
 		"bridge authors Yan's diversion and distant pursuer lights for formal mode only")
+	var yan_route: Path2D = bridge_scene.current_zone.get_node("YanDecoyRoute")
+	check(not yan_route.visible and yan_route.curve.point_count >= 2
+		and yan_route.get_node_or_null("Traveler/StandingElder") is Sprite2D
+		and yan_route.curve.get_point_position(yan_route.curve.point_count - 1).distance_to(
+			bridge_scene.current_zone.get_node("StoryAnchors/YanDecoy").position) < 1.0,
+		"native path and the diversion end marker agree; no extra actor in isolated QA")
 	await capture("05_broken_bridge")
 	check(use_gate(bridge_scene, "ToRoad")
 		and use_gate(bridge_scene, "ToCourtyard")
