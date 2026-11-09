@@ -1,15 +1,37 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/prologue/prologue_zone.gd" id="1_zone"]
 [ext_resource type="Script" path="res://scripts/prologue/prologue_portal.gd" id="2_gate"]
 [ext_resource type="Script" path="res://scripts/prologue/prologue_landmark.gd" id="3_clue"]
+[ext_resource type="Resource" path="res://data/native/scene_art/prologue_temple_hall.tres" id="4_art"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/prologue_temple_hall/background.webp" id="5_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/prologue_temple_hall/ground.webp" id="6_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/prologue_temple_hall/foreground.webp" id="7_front"]
 
 [node name="TempleHall" type="Node2D"]
 script = ExtResource("1_zone")
 zone_id = "temple_hall"
 zone_title = "破庙·内殿"
+scene_art = ExtResource("4_art")
+
+[node name="PaintedLayers" type="Node2D" parent="."]
+
+[node name="Background" type="Sprite2D" parent="PaintedLayers"]
+texture = ExtResource("5_bg")
+centered = false
+
+[node name="Ground" type="Sprite2D" parent="PaintedLayers"]
+z_index = 1
+texture = ExtResource("6_ground")
+centered = false
+
+[node name="Foreground" type="Sprite2D" parent="PaintedLayers"]
+z_index = 17
+texture = ExtResource("7_front")
+centered = false
 
 [node name="Architecture" type="Node2D" parent="."]
+visible = false
 
 [node name="OuterDarkness" type="Polygon2D" parent="Architecture"]
 color = Color(0.075, 0.094, 0.096, 1)
@@ -48,6 +70,7 @@ color = Color(0.22, 0.18, 0.13, 1)
 polygon = PackedVector2Array(190, 730, 490, 667, 503, 712, 205, 775)
 
 [node name="Campfire" type="Node2D" parent="."]
+z_index = 12
 position = Vector2(627, 575)
 
 [node name="AshAndStones" type="Polygon2D" parent="Campfire"]
@@ -120,6 +143,11 @@ script = ExtResource("3_clue")
 landmark_id = "guardian_statue"
 hint = "观察断臂金刚像"
 interaction_radius = 135.0
+
+[node name="StoryAnchors" type="Node2D" parent="."]
+
+[node name="YanRestByFire" type="Marker2D" parent="StoryAnchors"]
+position = Vector2(745, 720)
 
 
 [node name="AmbushActors" type="Node2D" parent="."]

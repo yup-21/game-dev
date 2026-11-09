@@ -1,15 +1,37 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/prologue/prologue_zone.gd" id="1_zone"]
 [ext_resource type="Script" path="res://scripts/prologue/prologue_portal.gd" id="2_gate"]
 [ext_resource type="Script" path="res://scripts/prologue/prologue_landmark.gd" id="3_clue"]
+[ext_resource type="Resource" path="res://data/native/scene_art/prologue_mountain_road.tres" id="4_art"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/prologue_mountain_road/background.webp" id="5_bg"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/prologue_mountain_road/ground.webp" id="6_ground"]
+[ext_resource type="Texture2D" path="res://assets/imported/scenes/prologue_mountain_road/foreground.webp" id="7_front"]
 
 [node name="MountainRoad" type="Node2D"]
 script = ExtResource("1_zone")
 zone_id = "mountain_road"
 zone_title = "雨夜·荒山古道"
+scene_art = ExtResource("4_art")
+
+[node name="PaintedLayers" type="Node2D" parent="."]
+
+[node name="Background" type="Sprite2D" parent="PaintedLayers"]
+texture = ExtResource("5_bg")
+centered = false
+
+[node name="Ground" type="Sprite2D" parent="PaintedLayers"]
+z_index = 1
+texture = ExtResource("6_ground")
+centered = false
+
+[node name="Foreground" type="Sprite2D" parent="PaintedLayers"]
+z_index = 17
+texture = ExtResource("7_front")
+centered = false
 
 [node name="BlockoutArt" type="Node2D" parent="."]
+visible = false
 
 [node name="MountainShadow" type="Polygon2D" parent="BlockoutArt"]
 color = Color(0.08, 0.15, 0.15, 1)
@@ -28,6 +50,7 @@ color = Color(0.38, 0.36, 0.29, 1)
 polygon = PackedVector2Array(625, 65, 955, 65, 1045, 360, 1060, 610, 1090, 955, 560, 955, 670, 640, 570, 400)
 
 [node name="BrokenCart" type="Node2D" parent="."]
+visible = false
 position = Vector2(1155, 480)
 
 [node name="CartWood" type="Polygon2D" parent="BrokenCart"]
@@ -91,3 +114,32 @@ position = Vector2(822, 667)
 script = ExtResource("3_clue")
 landmark_id = "cart_traces"
 hint = "调查破车与新鲜刀痕"
+
+[node name="StoryAnchors" type="Node2D" parent="."]
+
+[node name="ScoutWave2Entry" type="Marker2D" parent="StoryAnchors"]
+position = Vector2(792, 520)
+
+[node name="ChaseActors" type="Node2D" parent="."]
+visible = false
+
+[node name="ScoutA" type="Node2D" parent="ChaseActors"]
+position = Vector2(743, 468)
+
+[node name="Cloak" type="Polygon2D" parent="ChaseActors/ScoutA"]
+color = Color(0.09, 0.11, 0.13, 0.95)
+polygon = PackedVector2Array(-30, 0, -36, -75, -25, -128, -12, -151, 12, -151, 25, -128, 36, -75, 30, 0)
+
+[node name="ScoutB" type="Node2D" parent="ChaseActors"]
+position = Vector2(858, 493)
+
+[node name="Cloak" type="Polygon2D" parent="ChaseActors/ScoutB"]
+color = Color(0.09, 0.11, 0.13, 0.95)
+polygon = PackedVector2Array(-30, 0, -36, -75, -25, -128, -12, -151, 12, -151, 25, -128, 36, -75, 30, 0)
+
+[node name="ScoutC" type="Node2D" parent="ChaseActors"]
+position = Vector2(970, 520)
+
+[node name="Cloak" type="Polygon2D" parent="ChaseActors/ScoutC"]
+color = Color(0.09, 0.11, 0.13, 0.95)
+polygon = PackedVector2Array(-30, 0, -36, -75, -25, -128, -12, -151, 12, -151, 25, -128, 36, -75, 30, 0)

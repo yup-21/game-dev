@@ -1,7 +1,7 @@
 @tool
 extends Node2D
-## Isolated Godot-editor review for prologue candidate art.
-## Native zones themselves bind complete three-layer sets. No duplicate sprites.
+## Isolated Godot-editor review for prologue art that is already in use.
+## Native zones themselves serialize complete three-layer sets. No duplicate sprites.
 @export_enum("temple_hall", "mountain_road") var scene_id: String = "temple_hall"
 @export var show_walkable_guides: bool = true
 
@@ -36,7 +36,7 @@ func _show_review_info() -> void:
 	label.add_theme_constant_override("shadow_offset_x", 2)
 	label.add_theme_constant_override("shadow_offset_y", 2)
 	if imported_layer_count == 3:
-		label.text = "候选美术预览（未验收）· %s · 三层 1600×1000" % scene_id
+		label.text = "原生分层实景（视觉待验收）· %s · 三层 1600×1000" % scene_id
 	else:
 		label.text = "候选美术未完整导入，显示原生灰盒 · %s" % scene_id
 	add_child(label)

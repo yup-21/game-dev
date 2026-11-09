@@ -71,5 +71,30 @@ hint = "沿荒山古道探索"
 
 [node name="StoryAnchors" type="Node2D" parent="."]
 
-[node name="HanXiaoForecourtBattle" type="Marker2D" parent="StoryAnchors"]
+[node name="ScoutWave1Entry" type="Marker2D" parent="StoryAnchors"]
 position = Vector2(800, 672)
+
+[node name="ChaseActors" type="Node2D" parent="."]
+visible = false
+
+[node name="ScoutA" type="Node2D" parent="ChaseActors"]
+position = Vector2(675, 555)
+
+[node name="Cloak" type="Polygon2D" parent="ChaseActors/ScoutA"]
+color = Color(0.10, 0.12, 0.13, 0.9)
+polygon = PackedVector2Array(-33, 0, -41, -85, -27, -132, -16, -160, 16, -160, 27, -132, 41, -85, 33, 0)
+
+[node name="Mask" type="Polygon2D" parent="ChaseActors/ScoutA"]
+color = Color(0.57, 0.57, 0.52, 0.95)
+polygon = PackedVector2Array(-17, -154, 17, -154, 19, -119, -19, -119)
+
+[node name="ScoutB" type="Node2D" parent="ChaseActors"]
+position = Vector2(980, 575)
+
+[node name="Cloak" type="Polygon2D" parent="ChaseActors/ScoutB"]
+color = Color(0.10, 0.12, 0.13, 0.9)
+polygon = PackedVector2Array(-33, 0, -41, -85, -27, -132, -16, -160, 16, -160, 27, -132, 41, -85, 33, 0)
+
+[node name="Mask" type="Polygon2D" parent="ChaseActors/ScoutB"]
+color = Color(0.57, 0.57, 0.52, 0.95)
+polygon = PackedVector2Array(-17, -154, 17, -154, 19, -119, -19, -119)

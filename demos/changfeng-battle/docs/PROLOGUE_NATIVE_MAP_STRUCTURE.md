@@ -1,102 +1,56 @@
-# 序幕原生地图结构 · 破庙初醒／外出探索／返庙遇敌
+# 序幕原生场景 · 正式 V2 与独立地图 QA
 
-本结构是**独立 Godot 原生场景 QA / 灰盒**，用于确定序幕的空间、行走区、剧情锚点与跨区节奏。它尚未接入正式 `WuxiaChapterDefinition`、`WuxiaStoryDefinition` 或 Content Manifest，也不会修改 `GameSession` 的存档旗标；不能当成正式序章已经完成。
+本页以当前 Godot 工程为准，关联企划稿：`docs/game-design/chapters/act-0-prologue-v2.md`。**正式序幕**与**独立地图 QA**共用四张可编辑地图，但有两套独立的剧情状态；不要把旧的返庙遭遇误认为正式 V2 剧情。
 
-## 场景与出口
+## 入口与玩法
 
-入口：主菜单 **K · 序幕地图**，或在 Godot 中打开 `res://scenes/prologue/prologue_exploration.tscn` 并运行当前场景（F6）。四张独立场景均可在 Godot **2D 编辑器中直接打开**：
+- 正式序幕：主菜单新游戏，通过 `GameSession.activate_prologue_chase()` 进入 `res://scenes/prologue/prologue_exploration.tscn`；对白数据在 `res://data/native/stories/prologue_chase_story.tres`。玩家因送家书路过，雨夜在殿内醒来，调查劫镖，选择救严守诚，包扎，击退庙外两名与古道三名探子，断桥托卷、诱敌，最终洞察单名哨探当前手牌并逃向平江府。
+- 独立 QA：主菜单 `K · 序幕地图`，或者在 Godot 中打开 `prologue_exploration.tscn` 运行当前场景（F6，且不处在正式故事会话）。测试自由探索、调查线索、早归安全、探索后返庙首次遇敌。此测试保留旧版 `AmbushActors`，**不代表正式剧情有返庙 Boss 战**。
+- 操作：WASD/方向键移动，靠近入口或互动点按 `E`，`F3` 显示可走区；正式剧情中的 `Esc` 可返回菜单。
 
-| 原生 `.tscn` | 内容 | 入口／出口 | 美术状态 |
-| --- | --- | --- | --- |
-| `zones/temple_hall.tscn` | 主角在内殿火边醒来；篝火、断梁、神像、神像后藏身点；返庙后出现两名鬼面刀卫 | `WakeByFire`／`FromCourtyard`；`ToCourtyard` | Godot `Polygon2D` 可编辑灰盒，尚需室内原画 |
-| `zones/temple_courtyard.tscn` | 空院、内殿门和出山口；后续韩骁决战预留空间 | `FromHall`／`FromRoad`；`ToHall`／`ToRoad` | 使用现有破庙背景／地面／前景，尚需对齐美术视角 |
-| `zones/mountain_road.tscn` | 雨夜古道、破损镖车和新鲜刀痕；给玩家一段自由探索的时间 | `FromCourtyard`／`FromBridge`；`ToCourtyard`／`ToBridge` | Godot `Polygon2D` 可编辑灰盒，尚需山路原画 |
-| `zones/broken_bridge.tscn` | 断桥、追兵线索方向；暂不接通后续渡口 | `FromRoad`；`ToRoad` | 使用现有断桥背景／地面／前景 |
+## 四张可编辑地图
 
-地图拓扑为 **内殿 ↔ 前院 ↔ 古道 ↔ 断桥**。每个场景为 1600×1000 世界像素，玩家按当前探索约 170px 身高显示；不会将四张画面永久合并成一张大图。
+每张世界画布 **1600×1000**；主角在探索场景约 **170 像素**高。四区依次为**破庙内殿 ↔ 前院 ↔ 荒山古道 ↔ 断桥**，不合并成一张长图。
 
-## 交互和剧情门槛
+| 原生 `.tscn` | 内容／正式剧情 | 原生图层与美术资源 |
+| --- | --- | --- |
+| `scenes/prologue/zones/temple_hall.tscn` | 篝火初醒、避雨、救人后包扎 | `PaintedLayers/{Background,Ground,Foreground}`，引用在用 `prologue_temple_hall` WebP 三层；`Architecture` 灰盒隐藏；`Campfire` 独立火焰演出，`StoryAnchors/YanRestByFire` 为严的固定疗伤位 |
+| `scenes/prologue/zones/temple_courtyard.tscn` | 救人后第一波两名探子（1v2） | 复用在用 `ruined_temple` 三层；`StoryAnchors/ScoutWave1Entry`、`ChaseActors/ScoutA,B`；**没有韩啸出场锚点** |
+| `scenes/prologue/zones/mountain_road.tscn` | 劫镖残局与破车线索、第二波三名探子（1v3） | `PaintedLayers/{Background,Ground,Foreground}`，引用在用 `prologue_mountain_road` WebP 三层；`BlockoutArt` 和重复破车隐藏；`StoryAnchors/ScoutWave2Entry`、`ChaseActors/ScoutA,B,C` |
+| `scenes/prologue/zones/broken_bridge.tscn` | 严守诚因两场护送而信任主角，留下残卷并沿明路诱敌；主角下溪谷对上哨探（1v1） | 复用在用 `rainy_bridge` 三层；`StoryAnchors/YanDecoy`、可调整的 `YanDecoyRoute`、五处 `SearchPartyTorches`、`FutureFerryTrailNotConnected` |
 
-1. **初醒**：玩家位于内殿篝火旁，可自由走动，鬼面刀卫节点默认隐藏。靠近内殿出口按 `E` 到前院。
-2. **自由探索**：可以先回庙；如果没有外部探索成果，**返回时不会刷敌**，避免刚出门就误触发。
-3. **外部成果**：走至古道破车，靠近线索按 `E` 调查；或者一路走到断桥。任一项完成即记录本次 QA 的外出探索里程碑，不依赖玩家待机时长。
-4. **返庙遇敌**：从前院重新进入内殿时，第一次展示两名鬼面刀卫，以及严守诚藏于神像后方的锚点；再次出入不会重复触发。
-5. **后续剧情**：严守诚交付旧镖文书、韩骁在前院决战（`StoryAnchors/HanXiaoForecourtBattle`）、烟水渡收束（断桥 `StoryAnchors/FutureFerryTrailNotConnected`），均**只预留地图位置与连接方向**。对白、战斗和奖励仍由正式章节 Resource 决定，此 QA 暂不伪造联动。
+**正式演出状态：** 前院两名、古道三名追兵是独立场景节点，分别只在 `wave1_ready` 与 `wave2_ready` 显示；断桥远处搜山火光在第二波击退后出现。它们是当前阶段的简易场景剪影／灯光标记，正式战斗人数以 `GameSession`、`BattleModel` 为准。独立 QA 不显示这些追击节点。
 
-## 在 Godot 原生编辑器里修改
+**严守诚护送／诱敌状态：** `EscortFollower` 在 `healing` 时用已在用的受伤坐姿，固定于 `YanRestByFire`；疗伤后复用其已有站姿作为临时行走表现，主角护送速度变慢，老人以限速跟随。断桥托卷完成后，原随行实例隐藏、场景内 `YanDecoyRoute/Traveler` 从同一脚点沿编辑器定义的 `Curve2D` 向旧关卡折返，带简易断旗并淡出。全程不对 `BattleModel`、NPC 生死或道路碰撞作任何剧情豁免。
 
-- 选择对应 `zones/*.tscn` → **2D 视图**修改 `Architecture`／`BlockoutArt`／`PaintedLayers` 下的图层。
-- `Navigation/Walkable` 的 `Polygon2D.polygon` 是此灰盒中玩家脚点可走范围的权威数据；`Navigation/Blockers` 下的多边形是不可走的篝火、神像、障碍物。按 `F3` 可在游戏里显示／隐藏可走范围；角色脚点使用约 20px 的周边检测。
-- `Entries/` 下的 `Marker2D` 是出生／换区落点；`Exits/` 下的标记使用 `prologue_portal.gd`，在 Inspector 设置 `target_zone_id` 和 `target_entry_id`，运行时校验落点合法。出口和落点不要重合以免返回后误触发。
-- `Landmarks/CartTraces` 使用 `prologue_landmark.gd`；查看线索和断桥到达会改变本次 QA 的内存状态。`AmbushActors/` 是返庙后出现的人物锚点，目前的彩色剪影不是正式角色贴图。
-- 在运行的 QA 场景里 **WASD/方向键**移动，靠近标记按 **E**，**Esc** 返回菜单。玩家实际操作可验收首次返回安全、探索后返庙遇敌。
+**镜头／气氛（临时演出）**：正式序幕根场景新增原生 `CinematicOverlay/ScreenTint`，位于地图之上、对白 UI 之下，不拦截输入。追兵出现时有短促的镜头震动与逐步逼近的剪影；断桥火把慢慢推进，托卷对白和严折返阶段镜头略微收紧、画面压暗；洞察首次开启时出现短暂暖色闪光。效果随场景重置，不改卡牌、奖励、碰撞、出入口。根节点 Inspector 的 `Cinematic Tuning` 可调整 `handover_zoom`、`farewell_zoom`、追兵推进距离、远景火把移动距离与洞察闪光强度；将 `enable_cinematic_fx=false` 可关闭非必要气氛特效，但不会中断严的路线或剧情流程。镜头偏移会限制在原画画布范围内，避免边缘露黑。
 
-## 测试与后续接入
+## Godot 编辑约定
 
-```sh
-godot --headless --path demos/changfeng-battle --editor --import --quit
-godot --headless --path demos/changfeng-battle --script res://checks/test_prologue_native_scenes.gd
-```
+1. **改图层**：直接打开对应 `zones/*.tscn`，在 `PaintedLayers` 里调 `Sprite2D`；三张 1600×1000 同画布图层与 `data/native/scene_art/prologue_temple_hall.tres`、`prologue_mountain_road.tres` 保持一致。`prologue_zone.gd` 只做绑定一致性检查，**不再运行时动态创建图层或从候选目录选图**。
+2. **改碰撞**：`Navigation/Walkable` 的多边形权威定义人物可站立区域；`Navigation/Blockers` 是不可通行实体。图片不决定通行范围。修改建筑、镖车等画面时，须同步检查脚点与遮挡。
+3. **改换区**：`Entries` 为出生标记，`Exits` 为 `prologue_portal.gd` 入口；设置 `target_zone_id` 与 `target_entry_id`。出口及落点留足距离，避免一加载就返回。
+4. **改互动／剧情**：`Landmarks` 管调查，`StoryAnchors` 管演出站位；正式对白／奖励编辑 `prologue_chase_story.tres`，章节与战斗阶段逻辑在 `prologue_exploration.gd`、`GameSession`。不能仅移动场景锚点而忘记更新正式互动距离。
+5. **改角色**：场景追兵剪影不是正式帧动画资产。主角仍使用在用角色动画配置；严守诚当前随行显示受伤静态姿势。替换角色动画需遵循动画导入规范并在 Godot 中重新验收比例。
 
-正式接入顺序：确认内殿／山路两张美术 → 为四张地图建立／校准正式 `WuxiaMapDefinition` 与 SceneArtProfile → 把退出／调查／返庙状态挂到章节原生 Story 事件 → 驱动严守诚对话与战斗遭遇 → 继续制作烟水渡。正式 Resource 应保持单一配置来源，**不要把这套 QA 状态直接写回正式章节数据**。
+## 已有资源与待补素材
 
-## 新增内殿／古道候选美术预览（PR #141 第二阶段）
+- **已绑定**：四张地图各三层（内殿、古道为已导入的 WebP，前院、断桥复用既有正式素材）；篝火轻微火焰动画；主角角色资源；受伤严守诚静态图；战斗系统通用敌人资源。
+- **待美术／演出验收（P0）**：四地图连续走图的脚点与前景遮挡；古道破车现场的伤痕、血迹／断旗是否容易读懂；严守诚目前只是受伤／站姿静态图加移动与轻微摆动，尚需正式搀扶动作、跛行及转身递卷帧，断桥路线也需实机检查镜头中的停顿与遮挡；鬼面探子的实际逐帧动作素材替换场景剪影。
+- **待独立交付（P1）**：溪谷小径／烟水渡真实过场地图、船只与脚夫环境图、雨雾与远景火光 VFX；第一波和第二波区分的战斗背景（目前三场共用雨夜断桥战斗图）。尚不能把 `FutureFerryTrailNotConnected` 当作已完成的渡口地图。
+- **保留悬念**：韩啸不在序幕与主角碰面，不知道残卷存在；受上级交差后才得知少了关键物品。卷名、严的生死都不在序幕揭晓。
 
-两张美术母版已按 **1600×1000** 生成并拆为同画布的背景、地面与前景三层。为避免 AI 独立分层产生不对位，本轮采用**从同一母版按遮罩分割**的方法，构建后的 `preview.png` 必须逐像素还原 `master.png`；真实动态篝火与雨雾仍需单独开发。
+> 内殿／古道候选美术原工作单仍可在 `art-production/candidates/scenes/` 查阅。当前场景引用的是 `assets/imported/scenes/prologue_*` 下**已有在用**的 WebP，未将新的候选版本擅自替换成正式资源。画面比例、人物脚点与前景遮挡仍需在 Godot 窗口里人工验收。
 
-PR #141 已上传八个 1600×1000 WebP 二进制文件（两张场景各三层，加两张母版），并有可复用构建工具、验收工作单和原生预览入口。无损 PNG 仍在独立交付的候选原画包中；**缺任意完整三层时会回退原灰盒**，不得把自动加载等同于人工美术验收通过。
+## 自动检查
 
-将原始 `雨夜残寺篝火.png` 和 `雨中竹山古道与破车.png` 放在同一目录，在仓库根目录执行：
-
-```sh
-python art-production/tools/build_prologue_candidate_layers.py \
-  --source-root /path/to/masters \
-  --out demos/changfeng-battle/assets/candidates/prologue
-```
-
-Godot 预览入口：
-
-- `res://scenes/prologue/prologue_hall_art_review.tscn`
-- `res://scenes/prologue/prologue_road_art_review.tscn`
-
-测试命令：
+从仓库根目录执行：
 
 ```sh
 godot --headless --path demos/changfeng-battle --editor --import --quit
 godot --headless --path demos/changfeng-battle --script res://checks/test_prologue_candidate_art.gd
 godot --headless --path demos/changfeng-battle --script res://checks/test_prologue_native_scenes.gd
+godot --headless --path demos/changfeng-battle --script res://checks/test_prologue_chase_flow.gd
 ```
 
-候选美术的单独审核依据见 `art-production/candidates/scenes/prologue_temple_hall/WORK_ORDER.md` 与 `art-production/candidates/scenes/prologue_mountain_road/WORK_ORDER.md`。碰撞和人物脚点仍由原生区域节点控制，**候选贴图仅用于预览，不直接写入正式 WuxiaMapDefinition 或 SceneArtProfile**。
-
-
-## 四张地图美术绑定与候选资源交付（第三阶段）
-
-**已存在于 GitHub PR #141 的原生场景绑定：**
-
-| 地图 | 场景 | 分层图片来源 |
-| --- | --- | --- |
-| 破庙内殿 | `zones/temple_hall.tscn` | 通过 `prologue_zone.gd` 自动加载 `res://assets/candidates/prologue/temple_hall/{background,ground,foreground}.webp`（导入无损 PNG 后优先 PNG） |
-| 破庙前院 | `zones/temple_courtyard.tscn` | 正式复用 `res://assets/imported/scenes/ruined_temple/` 的背景/地面/前景 |
-| 荒山古道 | `zones/mountain_road.tscn` | 自动加载 `res://assets/candidates/prologue/mountain_road/{background,ground,foreground}.webp`（导入无损 PNG 后优先 PNG） |
-| 断桥 | `zones/broken_bridge.tscn` | 正式复用 `res://assets/imported/scenes/rainy_bridge/` 的背景/地面/前景 |
-
-内殿、古道必须同时存在 **全部三张 1600×1000** 图片才切换到绘制版本；任何一张缺失或尺寸错误，`prologue_zone.gd` 均保留原生可玩灰盒，**不会显示部分贴图**。图层绘制层级为背景 0、地面 1、前景 17；角色 z=15，篝火效果 z=12；碰撞与 `Marker2D` 不被图片替代，仍可原生编辑。古道绘制启用时自动隐藏重复灰盒破车。
-
-**资源已入 PR：** 两张场景的八张 WebP（各三层 + 母版）已进入 GitHub，拉取分支即可预览。原始无损 PNG 单独随艺术素材包交付，尚未纳入 Git 对象；WebP 为高质量有损运行时版本。
-
-先把已交付的 `prologue_art_pr141_dropin.zip` 解压到仓库根目录，或使用原始 `prologue_scene_art_candidates_v01.zip` 运行：
-
-```sh
-python art-production/tools/import_prologue_candidate_package.py \
-  --package /path/to/prologue_scene_art_candidates_v01.zip
-python art-production/tools/import_prologue_candidate_package.py \
-  --package /path/to/prologue_scene_art_candidates_v01.zip --check
-godot --headless --path demos/changfeng-battle --editor --import --quit
-PROLOGUE_REQUIRE_ART=1 godot --headless --path demos/changfeng-battle \
-  --script res://checks/test_prologue_candidate_art.gd
-godot --headless --path demos/changfeng-battle \
-  --script res://checks/test_prologue_native_scenes.gd
-```
-
-PR 已自带六张 WebP 分层贴图；如需留存无损 PNG 也可额外提交源文件。候选美术**尚未通过人物脚点与前景遮挡的实机人工验收**，正式 Chapter/Story 引用暂不改变。
+两个独立预览入口仍可用：`res://scenes/prologue/prologue_hall_art_review.tscn`、`prologue_road_art_review.tscn`。界面标注“原生分层实景（视觉待验收）”，不暗示人工视觉验收已完成。

@@ -1,6 +1,7 @@
 extends SceneTree
-## Four-zone art contract. PR includes aligned WebP images; optional local lossless PNGs.
-## PROLOGUE_REQUIRE_ART=1 makes all 6 usable texture layers mandatory.
+## Four-zone art contract. Hall and road use the existing imported in-use WebPs;
+## all three layers are authored directly into editable native zone scenes.
+## PROLOGUE_REQUIRE_ART=1 makes all 6 texture layers mandatory.
 
 var failures := 0
 
@@ -35,31 +36,33 @@ func _run() -> void:
 		check(int(preview.get("imported_layer_count")) in [0, 3],
 			"never partially apply candidate layers: " + scene_id)
 		check(int(zone.get("painted_layer_count")) == preview.imported_layer_count,
-			"preview reuses native scene art (no duplicate sprites): " + scene_id)
+			"review reuses scene-authored native layers (no duplicate sprites): " + scene_id)
 		var art_path := (
 			"res://data/native/scene_art/prologue_%s.tres" % scene_id)
 		var art := load(art_path) as WuxiaSceneArtProfile
 		check(art != null and art.valid_for(Vector2i(1600, 1000))
 			and art.foreground != null,
-			"native candidate SceneArtProfile validates: " + art_path)
+			"native SceneArtProfile validates: " + art_path)
+		check(zone.scene_art == art, "scene references its registered art profile: " + scene_id)
 		if required:
 			check(preview.imported_layer_count == 3,
-				"mandatory raster layers imported: " + scene_id)
+				"mandatory native raster layers exist: " + scene_id)
 		if preview.imported_layer_count == 3:
 			imported_count += 1
 			check(not zone.get_node(
 				"Architecture" if scene_id == "temple_hall" else "BlockoutArt").visible,
-				"candidate art replaces blockout visuals: " + scene_id)
+				"in-use raster art hides blockout visuals: " + scene_id)
 			for role in ["background", "ground", "foreground"]:
-				var committed_webp := (
-					"res://assets/candidates/prologue/%s/%s.webp" % [scene_id, role])
-				check(ResourceLoader.exists(committed_webp),
-					"candidate art binary exists in PR: " + committed_webp)
+				var in_use_webp := (
+					"res://assets/imported/scenes/prologue_%s/%s.webp" % [scene_id, role])
+				check(ResourceLoader.exists(in_use_webp),
+					"registered in-use binary exists: " + in_use_webp)
 				var sprite := zone.get_node_or_null(
 					"PaintedLayers/" + role.capitalize()) as Sprite2D
 				check(sprite != null and sprite.texture != null
-					and sprite.texture.get_size() == Vector2(1600,1000),
-					"aligned 1600x1000 bound candidate layer: " + scene_id + "/" + role)
+					and sprite.texture.get_size() == Vector2(1600, 1000)
+					and sprite.texture.resource_path == in_use_webp,
+					"aligned 1600x1000 scene-bound in-use layer: " + scene_id + "/" + role)
 		preview.queue_free()
 		await process_frame
 
@@ -88,7 +91,7 @@ func _run() -> void:
 
 	if failures == 0:
 		if imported_count == 2:
-			print("PROLOGUE_FOUR_ZONE_ART_PASS: 2 imported candidates, 2 official reused zones")
+			print("PROLOGUE_FOUR_ZONE_ART_PASS: 2 native in-use WebP zones, 2 official reused zones")
 		else:
 			print("PROLOGUE_ART_STRUCTURE_PASS: 2 native reviews + 2 official reused zones")
 			print("PROLOGUE_ART_ASSETS_PENDING: rerun with PROLOGUE_REQUIRE_ART=1 after importing ZIP")
