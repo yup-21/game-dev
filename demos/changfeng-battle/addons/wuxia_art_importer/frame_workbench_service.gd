@@ -315,6 +315,18 @@ static func make_frames(existing: SpriteFrames, built: Dictionary, atlas: Textur
     return frames
 
 
+static func check_profile_binding(profile: WuxiaActorAnimationProfile,
+        profile_path: String) -> String:
+    if profile == null:
+        return "角色没有可编辑的 AnimationProfile"
+    if not FileAccess.file_exists(profile_path):
+        return "缺少角色独立 AnimationProfile 文件：" + profile_path
+    if profile.resource_path != profile_path:
+        return "AnimationProfile 引用异常（实际：%s；应为：%s）。角色 .tres 可能被旧版导入器写入了内嵌资源。请检查角色文件与动画配置文件，并从版本控制或导入事务备份恢复；工具不会自动兼容或修复错误数据。" % [
+            profile.resource_path, profile_path]
+    return ""
+
+
 static func prepare(target: String, built: Dictionary) -> Dictionary:
     if not str(built.get("error", "")).is_empty():
         return built
@@ -343,8 +355,9 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
     if FileAccess.file_exists(frames_path):
         return {"error": "同版本 SpriteFrames 已存在；为保护 Godot 原生修改，拒绝覆盖：" + frames_path}
     var profile_path := "res://data/native/animations/" + id + ".tres"
-    if not FileAccess.file_exists(profile_path) or profile.resource_path != profile_path:
-        return {"error": "角色缺少独立 AnimationProfile 文件，拒绝创建可能覆盖其他资源的绑定"}
+    var binding_problem := check_profile_binding(profile, profile_path)
+    if not binding_problem.is_empty():
+        return {"error": binding_problem}
     var plan := {"error": "", "mode": "workbench", "target": target,
         "target_sha256": FileAccess.get_sha256(target),
         "profile_sha256": FileAccess.get_sha256(profile_path),
@@ -356,6 +369,39 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
     if not check.is_empty():
         return {"error": check}
     return plan
+
+
+## Save the external profile first, then reload that exact Resource before
+## attaching it to the actor. Resource.duplicate(true) has no resource_path;
+## attaching that transient duplicate embeds an accidental second Profile.
+## This method deliberately rejects broken references rather than repairing them.
+static func save_external_binding(actor: WuxiaCharacterDefinition,
+        staged: WuxiaActorAnimationProfile, profile_path: String,
+        target: String, frames_path: String) -> String:
+    if actor == null or staged == null or staged.native_frames == null or \
+            not FileAccess.file_exists(frames_path):
+        return "待保存的角色动画配置不完整"
+    if staged.native_frames.resource_path != frames_path:
+        return "SpriteFrames 尚未以独立 Resource 保存，拒绝内嵌动作数据"
+    if ResourceSaver.save(staged, profile_path) != OK:
+        return "AnimationProfile 保存失败"
+    var saved := ResourceLoader.load(profile_path, "", ResourceLoader.CACHE_MODE_REPLACE) \
+        as WuxiaActorAnimationProfile
+    if saved == null or saved.resource_path != profile_path or \
+            saved.native_frames == null or saved.native_frames.resource_path != frames_path:
+        return "AnimationProfile 重新加载后引用不一致，拒绝绑定角色"
+    var updated := actor.duplicate(true) as WuxiaCharacterDefinition
+    updated.animation_profile = saved
+    if ResourceSaver.save(updated, target) != OK:
+        return "角色动画绑定失败"
+    var checked := ResourceLoader.load(target, "", ResourceLoader.CACHE_MODE_REPLACE) \
+        as WuxiaCharacterDefinition
+    if checked == null or checked.animation_profile == null or \
+            checked.animation_profile.resource_path != profile_path or \
+            checked.animation_profile.native_frames == null or \
+            checked.animation_profile.native_frames.resource_path != frames_path:
+        return "保存后角色未正确引用独立 AnimationProfile/SpriteFrames，已拒绝提交"
+    return ""
 
 
 static func apply(plan: Dictionary) -> Dictionary:
@@ -406,14 +452,11 @@ static func apply(plan: Dictionary) -> Dictionary:
         else:
             staged.native_frames = ResourceLoader.load(str(plan["native_frames_path"]),
                 "SpriteFrames", ResourceLoader.CACHE_MODE_REPLACE) as SpriteFrames
-            if staged.native_frames == null or ResourceSaver.save(staged,
-                    str(plan["profile_path"])) != OK:
-                failure = "AnimationProfile 保存失败"
+            if staged.native_frames == null:
+                failure = "SpriteFrames 重新加载失败"
             else:
-                var updated := actor.duplicate(true) as WuxiaCharacterDefinition
-                updated.animation_profile = staged
-                if ResourceSaver.save(updated, str(plan["target"])) != OK:
-                    failure = "角色动画绑定失败"
+                failure = save_external_binding(actor, staged, str(plan["profile_path"]),
+                    str(plan["target"]), str(plan["native_frames_path"]))
     if failure.is_empty():
         failure = Transaction.commit(journal)
     if not failure.is_empty():

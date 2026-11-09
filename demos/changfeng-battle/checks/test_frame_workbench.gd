@@ -17,6 +17,64 @@ func _frame(image: Image, offset: Vector2 = Vector2.ZERO) -> Dictionary:
         "polygon": PackedVector2Array()}
 
 
+func _test_sequential_binding(frame: Dictionary) -> void:
+    # Exercise actual save/reload of 3 actions on throwaway user:// resources.
+    # Never replace a project's authored character or its real SpriteFrames.
+    var source_actor := ResourceLoader.load(
+        "res://data/native/characters/gu_qingshuang.tres") as WuxiaCharacterDefinition
+    check(source_actor != null and source_actor.animation_profile != null,
+        "load gu_qingshuang native resource for test")
+    if source_actor == null or source_actor.animation_profile == null:
+        return
+    var official := "res://data/native/animations/gu_qingshuang.tres"
+    check(Workbench.check_profile_binding(source_actor.animation_profile, official).is_empty(),
+        "allow valid external animation profile")
+    var accidental_embed := source_actor.animation_profile.duplicate(true) as WuxiaActorAnimationProfile
+    check(not Workbench.check_profile_binding(accidental_embed, official).is_empty(),
+        "reject duplicate/embedded animation profile instead of silently repairing it")
+    var prefix := "user://workbench_binding_%d" % Time.get_ticks_usec()
+    var target := prefix + "_character.tres"
+    var profile_path := prefix + "_profile.tres"
+    var created: Array[String] = [target, profile_path]
+    var actor := source_actor.duplicate(true) as WuxiaCharacterDefinition
+    var profile := source_actor.animation_profile.duplicate(true) as WuxiaActorAnimationProfile
+    var expected: Array[String] = []
+    for action in ["idle", "walk", "run"]:
+        var built := Workbench.build([frame], Vector2i(328, 256), action, 12.0, true)
+        check(str(built.get("error", "")).is_empty(), "build %s fixture" % action)
+        if not str(built.get("error", "")).is_empty():
+            break
+        var frames_path: String = prefix + "_" + str(action) + "_frames.tres"
+        created.append(frames_path)
+        var merged := Workbench.make_frames(profile.native_frames, built,
+            ImageTexture.create_from_image(built["image"] as Image))
+        check(ResourceSaver.save(merged, frames_path) == OK,
+            "serialize %s SpriteFrames fixture" % action)
+        profile.native_frames = ResourceLoader.load(frames_path, "SpriteFrames",
+            ResourceLoader.CACHE_MODE_REPLACE) as SpriteFrames
+        var problem: String = Workbench.save_external_binding(actor, profile,
+            profile_path, target, frames_path)
+        check(problem.is_empty(), "save %s external binding: %s" % [action, problem])
+        if not problem.is_empty():
+            break
+        actor = ResourceLoader.load(target, "", ResourceLoader.CACHE_MODE_REPLACE) \
+            as WuxiaCharacterDefinition
+        check(actor != null and actor.animation_profile != null and \
+            actor.animation_profile.resource_path == profile_path,
+            "%s character must retain external AnimationProfile" % action)
+        if actor == null or actor.animation_profile == null:
+            break
+        profile = actor.animation_profile.duplicate(true) as WuxiaActorAnimationProfile
+        expected.append(action)
+        for previous in expected:
+            check(profile.native_frames.has_animation(previous) and \
+                profile.native_frames.get_frame_count(previous) == 1,
+                "after %s, prior %s action still bound" % [action, previous])
+    for path in created:
+        if FileAccess.file_exists(path):
+            DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
 func _initialize() -> void:
     var source := Image.create(80, 80, false, Image.FORMAT_RGBA8)
     source.fill(Color.TRANSPARENT)
@@ -93,6 +151,7 @@ func _initialize() -> void:
         .get("error", "")).is_empty(), "output overflow rejected, source still accepted")
     check(not str(Workbench.build([frame], Vector2i(328, 256), "defeat", 10.0, true)
         .get("error", "")).is_empty(), "defeat cannot loop")
+    _test_sequential_binding(frame)
     var dock := Dock.new()
     root.add_child(dock)
     # SceneTree._initialize runs before the first idle frame; initialize the
@@ -107,7 +166,7 @@ func _initialize() -> void:
         "actor/action change rejects stale editing session and approval")
     dock.queue_free()
     if failures.is_empty():
-        print("PASS frame workbench: edge cleanup, extraction, normalization, incremental action")
+        print("PASS frame workbench: edge cleanup, normalization, native serialization, idle/walk/run binding")
         quit(0)
         return
     for failure in failures:
