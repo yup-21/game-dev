@@ -17,6 +17,8 @@ const ESCORT_WAIT_SPEED := 88.0
 const ESCORT_FOLLOW_SPEED := 135.0
 const ESCORT_MAX_SEPARATION := 150.0
 const YAN_DECOY_DURATION := 3.0
+const CAMERA_DEFAULT_ZOOM := Vector2(1.15, 1.15)
+const INSIGHT_GLOW_DURATION := 1.2
 const ZONE_SCENES := {
 	"temple_hall": preload("res://scenes/prologue/zones/temple_hall.tscn"),
 	"temple_courtyard": preload("res://scenes/prologue/zones/temple_courtyard.tscn"),
@@ -24,9 +26,18 @@ const ZONE_SCENES := {
 	"broken_bridge": preload("res://scenes/prologue/zones/broken_bridge.tscn")
 }
 
+@export_group("Cinematic Tuning")
+@export var enable_cinematic_fx: bool = true
+@export_range(1.0, 1.4, 0.01) var handover_zoom: float = 1.23
+@export_range(1.0, 1.4, 0.01) var farewell_zoom: float = 1.29
+@export_range(0.0, 30.0, 1.0) var scout_advance_pixels: float = 18.0
+@export_range(0.0, 60.0, 1.0) var search_torch_advance_pixels: float = 35.0
+@export_range(0.0, 0.25, 0.01) var insight_glow_alpha: float = 0.16
+
 @onready var zone_host: Node2D = $CurrentZone
 @onready var hero: Node2D = $ShenChangfeng
 @onready var camera: Camera2D = $ShenChangfeng/Camera2D
+@onready var screen_tint: ColorRect = $CinematicOverlay/ScreenTint
 @onready var avatar: Sprite2D = $ShenChangfeng/Avatar
 @onready var status: Label = $Interface/Status
 @onready var escort_follower: Sprite2D = $EscortFollower
@@ -54,6 +65,12 @@ var escort_follow_position: Vector2 = Vector2.ZERO
 var escort_travel_direction: Vector2 = Vector2.RIGHT
 var escort_stride_time: float = 0.0
 var yan_decoy_time: float = -1.0
+var pursuit_motion_time: float = 0.0
+var torch_approach_time: float = 0.0
+var camera_impact_time: float = 0.0
+var camera_impact_strength: float = 0.0
+var insight_glow_time: float = 0.0
+var cinematic_time: float = 0.0
 
 func _ready() -> void:
 	session = get_node_or_null("/root/GameSession")
@@ -83,6 +100,7 @@ func _process(delta: float) -> void:
 	# Visual-only scene feedback. Combat and story resources still own results.
 	if current_zone == null:
 		return
+	cinematic_time += delta
 	var flame := current_zone.get_node_or_null("Campfire/Flame") as Polygon2D
 	if flame != null:
 		fire_animation_time += delta
@@ -99,12 +117,87 @@ func _process(delta: float) -> void:
 		if absf(escort_travel_direction.x) > 0.25:
 			escort_follower.flip_h = escort_travel_direction.x < 0.0
 	_update_yan_decoy(delta)
+	_update_pursuer_visuals(delta)
+	_update_cinematic_camera(delta)
 	var torches := current_zone.get_node_or_null("SearchPartyTorches") as Node2D
-	if torches != null and torches.visible:
+	if enable_cinematic_fx and torches != null and torches.visible:
 		fire_animation_time += delta
 		for torch in torches.get_children():
 			if torch is Polygon2D:
 				torch.modulate.a = 0.79 + 0.14 * sin(fire_animation_time * 6.0 + float(torch.get_index()))
+
+func _update_pursuer_visuals(delta: float) -> void:
+	if not formal_mode or not enable_cinematic_fx:
+		return
+	var pursuers := current_zone.get_node_or_null("ChaseActors") as Node2D
+	if pursuers != null and pursuers.visible:
+		pursuit_motion_time += delta
+		for actor in pursuers.get_children():
+			if not actor is Node2D:
+				continue
+			if not actor.has_meta("authored_origin"):
+				actor.set_meta("authored_origin", actor.position)
+			var origin: Vector2 = actor.get_meta("authored_origin")
+			var advance := (hero.position - origin).normalized() * minf(scout_advance_pixels, pursuit_motion_time * 7.0)
+			actor.position = origin + advance + Vector2(0, sin(pursuit_motion_time * 5.4 + float(actor.get_index())) * 2.0)
+	var torches := current_zone.get_node_or_null("SearchPartyTorches") as Node2D
+	if torches != null and torches.visible:
+		torch_approach_time += delta
+		torches.position = Vector2(minf(search_torch_advance_pixels, torch_approach_time * 8.0),
+			sin(torch_approach_time * 1.9) * 1.5)
+
+func _update_cinematic_camera(delta: float) -> void:
+	if not enable_cinematic_fx:
+		camera.offset = Vector2.ZERO
+		camera.zoom = CAMERA_DEFAULT_ZOOM
+		screen_tint.color = Color(0.06, 0.11, 0.18, 0.0)
+		camera_impact_time = 0.0
+		insight_glow_time = 0.0
+		return
+	var focus := Vector2.ZERO
+	var target_zoom := CAMERA_DEFAULT_ZOOM
+	var veil_alpha := 0.0
+	if formal_mode and current_zone.zone_id == "broken_bridge":
+		if dialogue_panel.visible and dialogue_outcome == "handover":
+			focus = Vector2(-60, -18)
+			target_zoom = Vector2.ONE * handover_zoom
+			veil_alpha = 0.075
+		elif yan_decoy_time >= 0.0:
+			var focus_ratio := sin(PI * minf(1.0, yan_decoy_time / YAN_DECOY_DURATION))
+			focus = Vector2(-112, -20) * focus_ratio
+			target_zoom = CAMERA_DEFAULT_ZOOM.lerp(Vector2.ONE * farewell_zoom, focus_ratio)
+			veil_alpha = 0.07 + 0.09 * focus_ratio
+	var tint := Color(0.06, 0.11, 0.18, veil_alpha)
+	if insight_glow_time > 0.0:
+		insight_glow_time = maxf(0.0, insight_glow_time - delta)
+		var phase := 1.0 - insight_glow_time / INSIGHT_GLOW_DURATION
+		tint = Color(0.86, 0.63, 0.25, insight_glow_alpha * sin(PI * phase))
+	if camera_impact_time > 0.0:
+		camera_impact_time = maxf(0.0, camera_impact_time - delta)
+		var strength := camera_impact_strength * camera_impact_time / 0.55
+		focus += Vector2(sin(cinematic_time * 41.0), cos(cinematic_time * 37.0)) * strength
+	# Camera2D.offset is not clamped by the normal camera limits. Avoid revealing
+	# empty space beyond the 1600×1000 painted scene during a close-up or shake.
+	var half_view: Vector2 = get_viewport_rect().size / (target_zoom * 2.0)
+	var center := Vector2(
+		clampf(hero.position.x, half_view.x, 1600.0 - half_view.x),
+		clampf(hero.position.y, half_view.y, 1000.0 - half_view.y))
+	focus.x = clampf(focus.x, half_view.x - center.x, 1600.0 - half_view.x - center.x)
+	focus.y = clampf(focus.y, half_view.y - center.y, 1000.0 - half_view.y - center.y)
+	camera.offset = camera.offset.lerp(focus, minf(1.0, delta * 4.2))
+	camera.zoom = camera.zoom.lerp(target_zoom, minf(1.0, delta * 3.4))
+	screen_tint.color = Color(tint.r, tint.g, tint.b,
+		lerpf(screen_tint.color.a, tint.a, minf(1.0, delta * 7.5)))
+
+func _reset_cinematic_state() -> void:
+	camera.offset = Vector2.ZERO
+	camera.zoom = CAMERA_DEFAULT_ZOOM
+	screen_tint.color = Color(0.06, 0.11, 0.18, 0.0)
+	camera_impact_time = 0.0
+	insight_glow_time = 0.0
+	pursuit_motion_time = 0.0
+	torch_approach_time = 0.0
+	yan_decoy_time = -1.0
 
 
 func _setup_avatar() -> void:
@@ -219,6 +312,7 @@ func follow_portal(portal_name: String) -> bool:
 	if not formal_mode and next_zone.zone_id == "broken_bridge":
 		progress.discover("broken_bridge")
 	if formal_mode:
+		_reset_cinematic_state()
 		_on_formal_portal(previous_id, next_zone.zone_id)
 	elif next_zone.zone_id == "temple_hall" and progress.on_enter_hall(previous_id):
 		notice = "庙里传来脚步声——两名鬼面刀卫已经闯入！"
@@ -351,6 +445,7 @@ func _teleport_formal(zone_id: String, entry_name: String) -> void:
 	zone_host.add_child(next_zone)
 	current_zone = next_zone
 	hero.position = entry
+	_reset_cinematic_state()
 	_update_escort_visibility()
 	_apply_zone_state()
 
@@ -451,6 +546,12 @@ func _start_formal_dialogue(node_id: String, outcome: String) -> bool:
 	if story == null or not story.interact_at(node_id):
 		return false
 	dialogue_outcome = outcome
+	match node_id:
+		"wave1_open", "wave2_open":
+			camera_impact_time = 0.55
+			camera_impact_strength = 7.0 if node_id == "wave1_open" else 12.0
+		"lookout_open":
+			insight_glow_time = INSIGHT_GLOW_DURATION
 	_apply_formal_events()
 	_render_formal_dialogue()
 	return true

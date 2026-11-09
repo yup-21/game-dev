@@ -88,6 +88,11 @@ func _run() -> void:
 	check(scene.current_zone.get_node("ChaseActors").visible
 		and scene.current_zone.get_node("ChaseActors").get_child_count() == 2,
 		"formal courtyard reveals exactly two scouts, never the commander")
+	var first_scout: Node2D = scene.current_zone.get_node("ChaseActors/ScoutA")
+	var first_scout_start: Vector2 = first_scout.position
+	scene._process(0.6)
+	check(first_scout.position.distance_to(first_scout_start) > 1.0,
+		"courtyard scouts visibly close in before the first fight")
 
 	check(session.begin_prologue_wave(), "first two-scout encounter starts")
 	check(session.encounter_options().get("combatants", []).size() == 3,
@@ -105,6 +110,14 @@ func _run() -> void:
 	check(scene.current_zone.get_node("ChaseActors").visible
 		and scene.current_zone.get_node("ChaseActors").get_child_count() == 3,
 		"formal road reveals three scouts as pursuit escalates")
+	check(scene.camera.offset == Vector2.ZERO
+		and scene.camera.zoom == scene.CAMERA_DEFAULT_ZOOM,
+		"scene transitions reset camera composition and screen effects")
+	var second_scout: Node2D = scene.current_zone.get_node("ChaseActors/ScoutC")
+	var second_scout_start: Vector2 = second_scout.position
+	scene._process(0.6)
+	check(second_scout.position.distance_to(second_scout_start) > 1.0,
+		"second wave has independently animated pursuer staging")
 	check(session.begin_prologue_wave(), "second three-scout encounter starts")
 	check(session.encounter_options().get("combatants", []).size() == 4,
 		"second wave has three scouts without exposing the boss")
@@ -124,21 +137,40 @@ func _run() -> void:
 		"handover begins at the route's first position, without an actor jump")
 
 	check(scene._start_formal_dialogue("handover_open", "handover"), "elder's trust is earned after two wins")
+	scene._process(0.5)
+	check(scene.camera.zoom.x > scene.CAMERA_DEFAULT_ZOOM.x
+		and scene.screen_tint.color.a > 0.03,
+		"trust and fragment handover tighten the framing with a restrained dusk tint")
 	exhaust_dialogue(scene)
 	check(session.prologue_stage == "lookout_ready" and session.flags.get("obtained_fragment", false)
 		and session.items.get("unknown_fragment", 0) == 1,
 		"elder leaves an unnamed fragment and stays to divert the search")
 	check(not scene.escort_follower.visible and decoy_route.visible,
 		"after handing over the fragment Yan visibly turns back instead of vanishing")
-	scene._process(1.0)
+	scene.enable_cinematic_fx = false
+	scene._process(0.2)
+	check(scene.camera.zoom == scene.CAMERA_DEFAULT_ZOOM and scene.screen_tint.color.a == 0.0,
+		"low-effects switch disables camera and tint without cancelling the story")
+	scene.enable_cinematic_fx = true
+	scene._process(0.8)
 	var traveler: PathFollow2D = decoy_route.get_node("Traveler")
 	check(traveler.progress_ratio > 0.05 and traveler.progress_ratio < 1.0,
 		"the injured elder retreats slowly toward the searching torchlights")
+	check(scene.current_zone.get_node("SearchPartyTorches").position.x > 0.0
+		and scene.camera.zoom.x > scene.CAMERA_DEFAULT_ZOOM.x,
+		"searching lights approach while the camera briefly tracks Yan's diversion")
 	scene._process(2.5)
 	check(not decoy_route.visible and traveler.progress_ratio == 1.0,
 		"diversion finishes offscreen without making Yan an unbeatable fighter")
+	scene._process(0.7)
+	check(is_equal_approx(scene.camera.zoom.x, scene.CAMERA_DEFAULT_ZOOM.x)
+		and scene.screen_tint.color.a < 0.01,
+		"camera and screen tint return to the standard framing after farewell")
 	scene.hero.position = scene.current_zone.get_node("StoryAnchors/FutureFerryTrailNotConnected").position
 	check(scene.interact(), "ferry trail activates first encounter with the fragment")
+	scene._process(0.3)
+	check(scene.screen_tint.color.r > 0.5 and scene.screen_tint.color.a > 0.04,
+		"fragment insight wakes with a short amber screen pulse")
 	exhaust_dialogue(scene)
 	check(session.flags.get("fragment_insight_unlocked", false)
 		and session.prologue_stage == "lookout_battle", "fragment awakens against a lone lookout")

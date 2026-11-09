@@ -26,6 +26,18 @@ scale = Vector2(0.12, 0.12)
 zoom = Vector2(1.15, 1.15)
 position_smoothing_enabled = false
 
+[node name="CinematicOverlay" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="ScreenTint" type="ColorRect" parent="CinematicOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.06, 0.11, 0.18, 0)
+
 [node name="Interface" type="CanvasLayer" parent="."]
 layer = 30
 

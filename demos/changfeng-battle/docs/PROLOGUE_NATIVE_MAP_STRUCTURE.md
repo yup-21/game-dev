@@ -23,6 +23,8 @@
 
 **严守诚护送／诱敌状态：** `EscortFollower` 在 `healing` 时用已在用的受伤坐姿，固定于 `YanRestByFire`；疗伤后复用其已有站姿作为临时行走表现，主角护送速度变慢，老人以限速跟随。断桥托卷完成后，原随行实例隐藏、场景内 `YanDecoyRoute/Traveler` 从同一脚点沿编辑器定义的 `Curve2D` 向旧关卡折返，带简易断旗并淡出。全程不对 `BattleModel`、NPC 生死或道路碰撞作任何剧情豁免。
 
+**镜头／气氛（临时演出）**：正式序幕根场景新增原生 `CinematicOverlay/ScreenTint`，位于地图之上、对白 UI 之下，不拦截输入。追兵出现时有短促的镜头震动与逐步逼近的剪影；断桥火把慢慢推进，托卷对白和严折返阶段镜头略微收紧、画面压暗；洞察首次开启时出现短暂暖色闪光。效果随场景重置，不改卡牌、奖励、碰撞、出入口。根节点 Inspector 的 `Cinematic Tuning` 可调整 `handover_zoom`、`farewell_zoom`、追兵推进距离、远景火把移动距离与洞察闪光强度；将 `enable_cinematic_fx=false` 可关闭非必要气氛特效，但不会中断严的路线或剧情流程。镜头偏移会限制在原画画布范围内，避免边缘露黑。
+
 ## Godot 编辑约定
 
 1. **改图层**：直接打开对应 `zones/*.tscn`，在 `PaintedLayers` 里调 `Sprite2D`；三张 1600×1000 同画布图层与 `data/native/scene_art/prologue_temple_hall.tres`、`prologue_mountain_road.tres` 保持一致。`prologue_zone.gd` 只做绑定一致性检查，**不再运行时动态创建图层或从候选目录选图**。

@@ -87,6 +87,10 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 	check(scene.current_zone.zone_id == "temple_hall", "player starts in hall")
+	check(scene.get_node_or_null("CinematicOverlay/ScreenTint") is ColorRect
+		and scene.screen_tint.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and scene.screen_tint.color.a == 0.0,
+		"editor-authored cinematic tint starts transparent and never intercepts UI")
 	check(scene.current_zone.get_node_or_null("StoryAnchors/YanRestByFire") is Marker2D,
 		"elder's recovery spot is editable in the hall scene")
 	await capture("01_hall_fire_start")
