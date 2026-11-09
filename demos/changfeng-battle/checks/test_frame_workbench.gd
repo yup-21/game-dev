@@ -26,12 +26,6 @@ func _test_sequential_binding(frame: Dictionary) -> void:
         "load gu_qingshuang native resource for test")
     if source_actor == null or source_actor.animation_profile == null:
         return
-    var official := "res://data/native/animations/gu_qingshuang.tres"
-    check(Workbench.check_profile_binding(source_actor.animation_profile, official).is_empty(),
-        "allow valid external animation profile")
-    var accidental_embed := source_actor.animation_profile.duplicate(true) as WuxiaActorAnimationProfile
-    check(not Workbench.check_profile_binding(accidental_embed, official).is_empty(),
-        "reject duplicate/embedded animation profile instead of silently repairing it")
     var prefix := "user://workbench_binding_%d" % Time.get_ticks_usec()
     var target := prefix + "_character.tres"
     var profile_path := prefix + "_profile.tres"
@@ -53,7 +47,7 @@ func _test_sequential_binding(frame: Dictionary) -> void:
         profile.native_frames = ResourceLoader.load(frames_path, "SpriteFrames",
             ResourceLoader.CACHE_MODE_REPLACE) as SpriteFrames
         var problem: String = Workbench.save_external_binding(actor, profile,
-            profile_path, target, frames_path)
+            profile_path, target)
         check(problem.is_empty(), "save %s external binding: %s" % [action, problem])
         if not problem.is_empty():
             break

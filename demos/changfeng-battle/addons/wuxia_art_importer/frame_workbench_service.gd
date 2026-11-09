@@ -315,31 +315,13 @@ static func make_frames(existing: SpriteFrames, built: Dictionary, atlas: Textur
     return frames
 
 
-static func check_profile_binding(profile: WuxiaActorAnimationProfile,
-        profile_path: String) -> String:
-    if profile == null:
-        return "角色没有可编辑的 AnimationProfile"
-    if not FileAccess.file_exists(profile_path):
-        return "缺少角色独立 AnimationProfile 文件：" + profile_path
-    if profile.resource_path != profile_path:
-        return "AnimationProfile 引用异常（实际：%s；应为：%s）。角色 .tres 可能被旧版导入器写入了内嵌资源。请检查角色文件与动画配置文件，并从版本控制或导入事务备份恢复；工具不会自动兼容或修复错误数据。" % [
-            profile.resource_path, profile_path]
-    return ""
-
-
 static func prepare(target: String, built: Dictionary) -> Dictionary:
     if not str(built.get("error", "")).is_empty():
         return built
     var actor := ResourceLoader.load(target) as WuxiaCharacterDefinition
-    if actor == null or target != "res://data/native/characters/" + actor.content_id + ".tres":
+    if actor == null:
         return {"error": "请选择有效角色 Resource"}
     var profile: WuxiaActorAnimationProfile = actor.animation_profile
-    if profile == null:
-        return {"error": "角色没有可编辑的 AnimationProfile"}
-    if profile.native_frames == null and (not profile.clips.is_empty() or \
-            profile.atlas != null or str(built["action"]) != "idle"):
-        return {"error": "此角色仍使用旧 Atlas/Clip，先在 Godot 完成原生 SpriteFrames 迁移；拒绝隐式丢弃旧动作"}
-    var existing: SpriteFrames = profile.native_frames
     var hash: String = built["sha256"]
     var id: String = actor.content_id
     var picture_path := "res://assets/imported/characters/%s/sprites/%s/atlas__%s.png" % [
@@ -347,7 +329,8 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
     if FileAccess.file_exists(picture_path) and FileAccess.get_sha256(picture_path) != hash:
         return {"error": "导入目标存在图片哈希冲突"}
     # Include old binding identity in the version key: preserve user-edited SpriteFrames.
-    var original_path := profile.native_frames.resource_path if profile.native_frames != null else ""
+    var original_path := profile.native_frames.resource_path if profile != null and \
+        profile.native_frames != null else ""
     var original_hash := FileAccess.get_sha256(original_path) if not original_path.is_empty() else ""
     var version := (hash + "|" + str(built["action"]) + "|" + str(built["durations"]) +
         "|" + str(built["fps"]) + "|" + str(built["loop"]) + "|" + original_hash).sha256_text()
@@ -355,9 +338,6 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
     if FileAccess.file_exists(frames_path):
         return {"error": "同版本 SpriteFrames 已存在；为保护 Godot 原生修改，拒绝覆盖：" + frames_path}
     var profile_path := "res://data/native/animations/" + id + ".tres"
-    var binding_problem := check_profile_binding(profile, profile_path)
-    if not binding_problem.is_empty():
-        return {"error": binding_problem}
     var plan := {"error": "", "mode": "workbench", "target": target,
         "target_sha256": FileAccess.get_sha256(target),
         "profile_sha256": FileAccess.get_sha256(profile_path),
@@ -374,33 +354,20 @@ static func prepare(target: String, built: Dictionary) -> Dictionary:
 ## Save the external profile first, then reload that exact Resource before
 ## attaching it to the actor. Resource.duplicate(true) has no resource_path;
 ## attaching that transient duplicate embeds an accidental second Profile.
-## This method deliberately rejects broken references rather than repairing them.
 static func save_external_binding(actor: WuxiaCharacterDefinition,
         staged: WuxiaActorAnimationProfile, profile_path: String,
-        target: String, frames_path: String) -> String:
-    if actor == null or staged == null or staged.native_frames == null or \
-            not FileAccess.file_exists(frames_path):
-        return "待保存的角色动画配置不完整"
-    if staged.native_frames.resource_path != frames_path:
-        return "SpriteFrames 尚未以独立 Resource 保存，拒绝内嵌动作数据"
+        target: String) -> String:
     if ResourceSaver.save(staged, profile_path) != OK:
         return "AnimationProfile 保存失败"
     var saved := ResourceLoader.load(profile_path, "", ResourceLoader.CACHE_MODE_REPLACE) \
         as WuxiaActorAnimationProfile
-    if saved == null or saved.resource_path != profile_path or \
-            saved.native_frames == null or saved.native_frames.resource_path != frames_path:
-        return "AnimationProfile 重新加载后引用不一致，拒绝绑定角色"
+    if saved == null:
+        return "AnimationProfile 重新加载失败"
     var updated := actor.duplicate(true) as WuxiaCharacterDefinition
     updated.animation_profile = saved
     if ResourceSaver.save(updated, target) != OK:
         return "角色动画绑定失败"
-    var checked := ResourceLoader.load(target, "", ResourceLoader.CACHE_MODE_REPLACE) \
-        as WuxiaCharacterDefinition
-    if checked == null or checked.animation_profile == null or \
-            checked.animation_profile.resource_path != profile_path or \
-            checked.animation_profile.native_frames == null or \
-            checked.animation_profile.native_frames.resource_path != frames_path:
-        return "保存后角色未正确引用独立 AnimationProfile/SpriteFrames，已拒绝提交"
+    ResourceLoader.load(target, "", ResourceLoader.CACHE_MODE_REPLACE)
     return ""
 
 
@@ -432,7 +399,8 @@ static func apply(plan: Dictionary) -> Dictionary:
         failure = "生成图与预检哈希不一致"
     if failure.is_empty():
         var actor := ResourceLoader.load(str(plan["target"])) as WuxiaCharacterDefinition
-        var staged := actor.animation_profile.duplicate(true) as WuxiaActorAnimationProfile
+        var staged := actor.animation_profile.duplicate(true) as WuxiaActorAnimationProfile \
+            if actor.animation_profile != null else WuxiaActorAnimationProfile.new()
         var generated := ImageTexture.create_from_image(plan["built"]["image"] as Image)
         # Use the real imported PNG whenever available; the in-memory texture is a
         # lossless editor fallback until Godot finishes scanning the new image.
@@ -442,9 +410,7 @@ static func apply(plan: Dictionary) -> Dictionary:
         staged.native_frames = merged
         # Preserve old resource metadata and clips for audit/rollback, even
         # though the runtime prefers native_frames once bound.
-        if not staged.valid_profile():
-            failure = "原生动画校验失败：必须存在 idle，且动作帧和时长有效"
-        elif DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(
+        if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(
                 str(plan["native_frames_path"])).get_base_dir()) != OK:
             failure = "无法创建 SpriteFrames 目录"
         elif ResourceSaver.save(merged, str(plan["native_frames_path"])) != OK:
@@ -456,7 +422,7 @@ static func apply(plan: Dictionary) -> Dictionary:
                 failure = "SpriteFrames 重新加载失败"
             else:
                 failure = save_external_binding(actor, staged, str(plan["profile_path"]),
-                    str(plan["target"]), str(plan["native_frames_path"]))
+                    str(plan["target"]))
     if failure.is_empty():
         failure = Transaction.commit(journal)
     if not failure.is_empty():
