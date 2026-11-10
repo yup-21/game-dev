@@ -1,0 +1,13 @@
+{
+  "comfy_root": "",
+  "pose_templates_root": "",
+  "pose_model": "resources/pose/dw-ll_ucoco_384.onnx",
+  "alpha_model": "resources/alpha/isnet-general-use.onnx",
+  "pose_dependencies": "",
+  "models": {
+    "action": "flux-2-klein-4b-fp8.safetensors",
+    "lora": "refcontrol-pose-klein-4b.safetensors",
+    "clip": "qwen_3_4b_fp4_flux2.safetensors",
+    "vae": "full_encoder_small_decoder.safetensors"
+  }
+}

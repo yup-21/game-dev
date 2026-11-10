@@ -1,0 +1,4 @@
+/outputs/
+/project.json
+__pycache__/
+*.blend1

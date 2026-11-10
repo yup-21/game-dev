@@ -1,0 +1,7 @@
+/settings.local.json
+/outputs/
+/workflows/
+/resources/
+/logs/
+__pycache__/
+*.pyc
