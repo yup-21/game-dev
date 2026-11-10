@@ -64,6 +64,36 @@ def action_set_graphs(source_path=None):
     return prepare,render,calibrate
 
 
+def install_rig2d_workflow(destination, user):
+    name = '06_2D骨骼渲染'
+    kind = 'WuxiaRig2DRender'
+    inputs = {'project_path': '',
+              'action_filter': '', 'parts_override': '', 'motion_override': ''}
+    api = {'1': {'class_type': kind, 'inputs': inputs}}
+    ui = {
+        'id': '7b02e8ad-1c6e-45bf-bf55-0639b54ef87d', 'revision': 0,
+        'last_node_id': 2, 'last_link_id': 0, 'links': [], 'groups': [], 'config': {},
+        'nodes': [
+            {'id': 1, 'type': kind, 'title': '选择角色工程与动作，直接渲染',
+             'pos': [0, 0], 'size': [600, 550], 'flags': {}, 'order': 0, 'mode': 0,
+             'inputs': [], 'outputs': [{'name': '批次报告路径', 'type': 'STRING', 'links': []}],
+             'properties': {'Node name for S&R': kind}, 'widgets_values': list(inputs.values())},
+            {'id': 2, 'type': 'Note', 'title': '输入和输出', 'pos': [640, 0], 'size': [450, 250],
+             'flags': {}, 'order': 1, 'mode': 0, 'inputs': [], 'outputs': [], 'properties': {},
+             'widgets_values': [
+                 'action_filter 留空渲染全部，填 walk 或 walk,run 只跑指定动作。\n'
+                 '填写本地拆件工程 project.json。它引用 parts.json 和逐动作 motion.json。\n'
+                 'PNG 按动作分组保存在 ComfyUI 输出目录的 WuxiaRig2D 下，同批可打开 动作预览.html 播放 GIF。\n'
+                 '输出采用工程画布和时间表，保留 RGBA。检查结果见 批次报告.json。']},
+        ],
+        'extra': {'ds': {'scale': 0.8, 'offset': [50, 50]}}, 'version': 0.4,
+    }
+    for suffix, graph in (('.api.json', api), ('.json', ui)):
+        path = destination / (name + suffix)
+        path.write_text(json.dumps(graph, ensure_ascii=False, indent=2) + '\n', 'utf8')
+    shutil.copy2(destination / (name + '.json'), user / (name + '.json'))
+
+
 OUTPUTS={'WuxiaPoseSource':['IMAGE','IMAGE','STRING','STRING','INT','INT','INT','WUXIA_PLAN'],
          'WuxiaCharacterInput':['STRING'],'WuxiaVideoInput':['STRING'],'WuxiaPoseImageInput':['STRING'],
          'WuxiaTransparentFrames':['STRING'],'PreviewImage':[],'UNETLoader':['MODEL'],'LoraLoaderModelOnly':['MODEL'],
@@ -161,6 +191,7 @@ def install(comfy_root, templates_root=None, *, replace_loader=False, user_direc
         api.write_text(json.dumps(g,ensure_ascii=False,indent=2)+'\n','utf8')
         ui.write_text(json.dumps(ui_graph(g,name.startswith(('01','03'))),ensure_ascii=False,indent=2)+'\n','utf8')
         shutil.copy2(ui,user/ui.name)
+    install_rig2d_workflow(destination,user)
     print('UI_WORKFLOWS='+str(destination),flush=True)
     return core
 
@@ -169,9 +200,16 @@ def launch(core,port=8189,open_browser=True, *, python=None, user_directory=None
     url=f'http://127.0.0.1:{port}'
     process=None
     opener = build_opener(ProxyHandler({}))
+
+    def nodes_loaded(timeout):
+        for kind in ('WuxiaPoseSource', 'WuxiaRig2DRender'):
+            with opener.open(url + '/object_info/' + kind, timeout=timeout) as response:
+                if kind not in json.load(response):
+                    return False
+        return True
+
     try:
-        with opener.open(url+'/object_info/WuxiaPoseSource',timeout=3) as response:info=json.load(response)
-        if 'WuxiaPoseSource' not in info:raise ValueError(f'端口{port}已有其他ComfyUI实例，请换端口或重启该实例以加载节点。')
+        if not nodes_loaded(3):raise ValueError(f'端口{port}的ComfyUI缺少最新节点，请重启服务或更换端口。')
     except OSError:
         embedded=core.parent/'python_embeded/python.exe'
         python=Path(python).resolve(strict=True) if python else embedded if embedded.is_file() else Path(sys.executable)
@@ -190,8 +228,7 @@ def launch(core,port=8189,open_browser=True, *, python=None, user_directory=None
         for _ in range(180):
             if process.poll() is not None:raise RuntimeError('ComfyUI启动失败，请查看logs/comfy-ui日志。')
             try:
-                with opener.open(url+'/object_info/WuxiaPoseSource',timeout=2) as response:info=json.load(response)
-                if 'WuxiaPoseSource' not in info:raise ValueError('自定义节点未加载，请检查日志。')
+                if not nodes_loaded(2):raise ValueError('角色动作自定义节点未加载，请检查日志。')
                 break
             except OSError:time.sleep(1)
         else:raise TimeoutError('ComfyUI启动超时；进程保留，查看日志。')

@@ -20,6 +20,7 @@ import nodes
 from character_action_paths import ALPHA_MODEL, POSE_MODEL, POSE_DEPS
 from character_alpha import process_frame
 from comfy_ui_pose_source import prepare_source
+from .rig2d import WuxiaRig2DRender
 
 NONE = '(未选择)'
 DIRECT_RENDER = '直接生成全部'
@@ -352,6 +353,8 @@ class WuxiaTransparentFrames:
 
 
 NODE_CLASS_MAPPINGS={'WuxiaPoseSource':WuxiaPoseSource,'WuxiaTransparentFrames':WuxiaTransparentFrames,
+                     'WuxiaRig2DRender':WuxiaRig2DRender,
                      'WuxiaCharacterInput':WuxiaCharacterInput,'WuxiaVideoInput':WuxiaVideoInput,'WuxiaPoseImageInput':WuxiaPoseImageInput}
 NODE_DISPLAY_NAME_MAPPINGS={'WuxiaPoseSource':'角色动作：文字／视频／骨架输入','WuxiaTransparentFrames':'角色动作：透明帧与检查报告',
+                            'WuxiaRig2DRender':'角色动作：2D 骨骼渲染',
                             'WuxiaCharacterInput':'上传角色原画','WuxiaVideoInput':'上传模板视频','WuxiaPoseImageInput':'上传骨架PNG'}

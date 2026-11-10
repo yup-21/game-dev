@@ -4,7 +4,7 @@
 
 ## 安装
 
-使用包含 FLUX.2 Klein、ReferenceLatent 和 Flux2Scheduler 节点的 ComfyUI，以及其运行环境中的 Python 3.12 或更新版本。将 `settings.example.json` 复制为 `settings.local.json`，可填写 ComfyUI 安装目录、模板仓库检出路径和外部模型路径。相对配置路径以本目录为基准。
+使用 ComfyUI 及其运行环境中的 Python 3.12 或更新版本。02、04、05 的扩散路线需要 FLUX.2 Klein、ReferenceLatent 和 Flux2Scheduler 节点。将 `settings.example.json` 复制为 `settings.local.json`，可填写 ComfyUI 安装目录、模板仓库检出路径和外部模型路径。相对配置路径以本目录为基准。
 
 在本目录运行以下命令。用对应 ComfyUI 安装的 Python 代替 `python`，并填写真实安装位置。
 
@@ -39,5 +39,14 @@ python scripts/install_comfy_ui.py --comfy-root <ComfyUI安装目录> --template
 | 03 12 组骨架一次性预览 | 预览整套动作；标准模板含 117 帧 |
 | 04 12 组动作批量生成 | 默认直接生成全部，可填 `action_filter` 只跑指定动作 |
 | 05 12 组动作样帧校准 | 每组抽代表帧并记录姿态与透明度检查 |
+| 06 2D 骨骼渲染 | 用 Blender 将本地拆件工程渲染为透明 PNG，按动作分组 |
 
 输出可在 ComfyUI 画廊查看，完整清单与逐帧证据位于本目录的 `outputs`。04 的候选如果边距不足或去背景失败，报告与画廊会标明相应状态。尺寸以骨架清单和实际角色身高为准，参考骨架默认采用 384×288。姿态、透明与模型检查属于候选验收的一部分，最终仍按角色美术 Skill 做目视与 Godot 实速复核。
+
+### 06 2D 骨骼渲染
+
+在工作流列表打开 `06_2D骨骼渲染`，把 `project_path` 填为本地 [2D 拆件工程](../rig2d/README.md)的 `project.json` 路径。路径可用绝对路径或相对于本目录，留空使用 `WUXIA_RIG_PROJECT`。Blender 可放在工作区的 `tools/blender/blender-*/blender.exe` 或加入 ComfyUI 进程的 `PATH`。此入口只需 Blender 与 ComfyUI 自带的 Pillow。
+
+`action_filter` 留空处理工程中的全部动作，或填 `walk`、`walk,run` 选择动作。需要试用替代部件或单组动作清单时，可填 `parts_override` 或 `motion_override`，相对路径从 `project.json` 所在目录解析。
+
+运行后画布预览原生 RGBA PNG。实际文件保存在 ComfyUI 输出目录的 `WuxiaRig2D/<批次>/<动作>/frames`，同批还包含带原动作时序的灰底 GIF、HTML 预览页、Blender 工程和技术检查报告。尺寸和根点由拆件工程决定。输出保持美术候选状态。
