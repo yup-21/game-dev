@@ -40,3 +40,12 @@
 见[骨骼动作优化方法](骨骼动作优化方法.md)。先分别调整肩、肘和腕的运动节奏，再检查剪影、袖口和握点。渲染器支持 `shoulder_overlaps`、`elbow_cuffs`、独立剑穗、肩位移、手腕角度和衣摆运动。备选手型的逐帧切换仍需独立实现。
 
 `scripts/build_arm_example.py --project <项目> --patch <肩片UV补丁>` 可生成肩腕试样，要求补丁标注的图集 SHA-256 与项目一致。生成后用 `-Action walk -PartsOverride parts_with_shoulders.json -MotionOverride walk_shoulder_wrist.json` 单独比较。其他角色须重新画或标定肩片。
+
+### 可选的发梢／衣摆柔性试样
+
+传统拆件会把整片发束、前后衣摆当成刚体旋转。需要对比局部弯曲时，在同级的替代 `parts.json` 中增加 `"soft_deformation": ["hair", "front_hem", "back_hem"]`，对应部件使用矩形 UV 区域。动作每帧可填写：
+
+- `rig_soft_bend_degrees`：部件名 → 局部弯曲角度（度）。
+- `rig_soft_tip_px`：部件名 → 自锚点向末端渐增的局部水平形变（源像素）。
+
+Blender 为这些部件建立细分网格与可编辑形态键；源贴图、关节骨长、逻辑根点、动作时长和帧数均不更改。不填写时仍按原刚性拆件渲染。此功能用于候选效果对照，不能替代重新绘制肩窝、袖内衬和裙摆遮挡纹理；角度或末端位移过大可能产生不自然拉伸。先针对单个 `walk` 或 `attack_thrust` 用 `-PartsOverride` 和 `-MotionOverride` 对照预览。

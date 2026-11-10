@@ -20,15 +20,33 @@ def world(p, depth):
     return (p.x / 100, -p.y / 100, depth)
 
 
-def mesh_from_texture(name, coordinates, image_size, material, transforms, timeline, wrap_frame, depth):
+def mesh_from_texture(name, coordinates, image_size, material, transforms, timeline, wrap_frame, depth,
+                      bend_angles=None, tip_offsets=None):
     source = [Vector(xy) for xy in coordinates]
-    tess_input = [Vector((p.x, p.y, 0)) for p in source]
-    triangles = tessellate_polygon([tess_input])
+    if bend_angles is not None:
+        # Soft accessories use a subdivided rectangle so Blender can bend
+        # cloth/hair pixels while retaining their original texture UVs.
+        if len(source) != 4 or len({p.x for p in source}) != 2 or len({p.y for p in source}) != 2:
+            raise ValueError(f"{name}: soft deformation requires a rectangular UV polygon")
+        x0, x1 = min(p.x for p in source), max(p.x for p in source)
+        y0, y1 = min(p.y for p in source), max(p.y for p in source)
+        cols, rows = 5, 12
+        source = [Vector((x0 + (x1 - x0) * c / cols,
+                          y0 + (y1 - y0) * r / rows))
+                  for r in range(rows + 1) for c in range(cols + 1)]
+        faces = []
+        for r in range(rows):
+            for c in range(cols):
+                a = r * (cols + 1) + c
+                faces.append((a, a + 1, a + cols + 2, a + cols + 1))
+    else:
+        tess_input = [Vector((p.x, p.y, 0)) for p in source]
+        faces = tessellate_polygon([tess_input])
     part = transforms[0].part
     assert all(t.part is part for t in transforms)
     pivot, scale = part.pivot, part.scale
     mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata([world((p - pivot) * scale, 0) for p in source], [], triangles)
+    mesh.from_pydata([world((p - pivot) * scale, 0) for p in source], [], faces)
     mesh.update()
     uv_layer = mesh.uv_layers.new()
     for face in mesh.polygons:
@@ -38,6 +56,49 @@ def mesh_from_texture(name, coordinates, image_size, material, transforms, timel
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.collection.objects.link(obj)
     obj.data.materials.append(material)
+    if tip_offsets is not None:
+        obj.shape_key_add(name="Undeformed")
+        blocks = []
+        for index, tip_px in enumerate(tip_offsets):
+            key = obj.shape_key_add(name=f"Soft pose {index:03d}")
+            for vertex, source_xy in zip(key.data, source):
+                progress = max(0, min(1, (source_xy.y - y0) / max(1, y1 - y0)))
+                vertex.co.x += (tip_px * progress * progress) / 100.0
+            blocks.append(key)
+        for i, time in enumerate(timeline):
+            for j, key in enumerate(blocks):
+                key.value = 1.0 if i == j else 0.0
+                key.keyframe_insert(data_path="value", frame=time)
+        if wrap_frame is not None:
+            for j, key in enumerate(blocks):
+                key.value = 1.0 if j == 0 else 0.0
+                key.keyframe_insert(data_path="value", frame=wrap_frame)
+        keys_animation = obj.data.shape_keys.animation_data
+        if keys_animation is not None and keys_animation.action is not None:
+            shape_action = keys_animation.action
+            if hasattr(shape_action, "layers"):
+                shape_curves = (curve for layer in shape_action.layers for strip in layer.strips
+                                for bag in strip.channelbags for curve in bag.fcurves)
+            else:
+                shape_curves = iter(shape_action.fcurves)
+            for curve in shape_curves:
+                for key in curve.keyframe_points:
+                    key.interpolation = "LINEAR"
+    if bend_angles is not None:
+        modifier = obj.modifiers.new("Secondary cloth bend", "SIMPLE_DEFORM")
+        modifier.deform_method = "BEND"
+        modifier.deform_axis = "Y"
+        origin = bpy.data.objects.new(name + " bend anchor", None)
+        bpy.context.collection.objects.link(origin)
+        origin.parent = obj
+        origin.location = (0.0, 0.0, 0.0)
+        modifier.origin = origin
+        bend_keys = list(zip(timeline, bend_angles))
+        if wrap_frame is not None:
+            bend_keys.append((wrap_frame, bend_angles[0]))
+        for time, degrees in bend_keys:
+            modifier.angle = math.radians(degrees)
+            modifier.keyframe_insert(data_path="angle", frame=time)
     keys = list(zip(timeline, transforms))
     if wrap_frame is not None:
         keys.append((wrap_frame, transforms[0]))
@@ -51,12 +112,17 @@ def mesh_from_texture(name, coordinates, image_size, material, transforms, timel
         obj.keyframe_insert("location", frame=time)
         obj.keyframe_insert("rotation_euler", frame=time)
     animation = obj.animation_data
-    for layer in animation.action.layers:
-        for strip in layer.strips:
-            for channelbag in strip.channelbags:
-                for curve in channelbag.fcurves:
-                    for key in curve.keyframe_points:
-                        key.interpolation = "LINEAR"
+    action = animation.action
+    if hasattr(action, "layers"):
+        curves = (curve for layer in action.layers
+                  for strip in layer.strips
+                  for channelbag in strip.channelbags
+                  for curve in channelbag.fcurves)
+    else:
+        curves = iter(action.fcurves)
+    for curve in curves:
+        for key in curve.keyframe_points:
+            key.interpolation = "LINEAR"
 
 
 def alpha_material(path):
@@ -174,8 +240,9 @@ def main():
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
     scene.cycles.samples = 8
-    # These flat emissive textures need no lighting denoiser.
+    # Flat emissive textures need no denoiser; minimal Blender builds may omit OIDN.
     scene.cycles.use_denoising = False
+    bpy.context.view_layer.cycles.use_denoising = False
     scene.cycles.transparent_max_bounces = 32
     scene.render.resolution_x, scene.render.resolution_y = motion["canvas"]
     scene.render.resolution_percentage = 100
@@ -190,12 +257,18 @@ def main():
     scene.view_settings.look = "None"
     transforms = [item[0] for item in poses_and_diagnostics]
     materials = {}
+    soft = set(art.get("soft_deformation", []))
     for part in parts.values():
         if part.texture not in materials:
             materials[part.texture] = alpha_material(part.texture)
         image, material = materials[part.texture]
+        angles = ([frame.get("rig_soft_bend_degrees", {}).get(part.name, 0.0)
+                   for frame in frames] if part.name in soft else None)
+        tips = ([frame.get("rig_soft_tip_px", {}).get(part.name, 0.0)
+                 for frame in frames] if part.name in soft else None)
         mesh_from_texture(part.name, part_boundary(part, image.size), image.size, material,
-                          [t[part.name] for t in transforms], timeline, wrap_frame, part.depth / 100)
+                          [t[part.name] for t in transforms], timeline, wrap_frame, part.depth / 100,
+                          bend_angles=angles, tip_offsets=tips)
 
     camera = bpy.data.cameras.new("Fixed orthographic sprite camera")
     camera.type, camera.ortho_scale = "ORTHO", width / 100
