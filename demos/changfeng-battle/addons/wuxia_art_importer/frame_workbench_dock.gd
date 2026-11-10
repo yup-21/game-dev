@@ -3,6 +3,7 @@ extends VBoxContainer
 ## One guided path for GIFs, mixed sprite sheets and individual source frames.
 const Service = preload("res://addons/wuxia_art_importer/frame_workbench_service.gd")
 const Canvas = preload("res://addons/wuxia_art_importer/frame_workbench_canvas.gd")
+const ActualPreview = preload("res://addons/wuxia_art_importer/frame_workbench_preview.gd")
 const Transaction = preload("res://addons/wuxia_art_importer/art_transaction_service.gd")
 
 var actor_choice: OptionButton
@@ -22,6 +23,7 @@ var fps: SpinBox
 var looping: CheckBox
 var file_picker: FileDialog
 var confirmation: ConfirmationDialog
+var actual_preview: Window
 var play_timer: Timer
 var frames: Array[Dictionary] = []
 var current_image: Image
@@ -150,6 +152,7 @@ func _ready() -> void:
     content.add_child(play_row)
     _button(content, "检查标准化成品", _review)
     _button(content, "导入并绑定当前动作（保留其他动作）", _confirm_apply)
+    _button(content, "预览实际动画（已绑定 SpriteFrames）", _preview_actual)
     _button(content, "撤销本次绑定", _undo)
     status = Label.new()
     status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -164,6 +167,8 @@ func _ready() -> void:
     confirmation.title = "确认更新正式角色动作"
     confirmation.confirmed.connect(_apply)
     add_child(confirmation)
+    actual_preview = ActualPreview.new()
+    add_child(actual_preview)
     play_timer = Timer.new()
     play_timer.one_shot = true
     play_timer.timeout.connect(func():
@@ -487,6 +492,9 @@ func _fit_all() -> void:
     var cell := _cell()
     var scale := minf(float(cell.x - 32) / maximum.x,
         float(cell.y - 32) / maximum.y)
+    var reference_height := Service.reference_idle_height(_target())
+    if reference_height > 0.0:
+        scale = minf(scale, reference_height / maximum.y)
     for i in range(frames.size()):
         frames[i]["scale"] = minf(scale, 8.0)
         frames[i]["offset"] = Vector2.ZERO
@@ -594,6 +602,14 @@ func _apply() -> void:
     status.text = "导入完成，依赖已自动创建/更新。\nSpriteFrames：" + \
         str(result["frames_path"]) + "\n请在 Godot 中查看动画效果。"
     _invalidate()
+
+
+func _preview_actual() -> void:
+    if actual_preview == null:
+        return
+    var problem: String = actual_preview.show_actor(_target(), _action())
+    if not problem.is_empty():
+        status.text = "无法预览实际动画：" + problem
 
 
 func _undo() -> void:

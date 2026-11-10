@@ -38,11 +38,11 @@
 5. 统一动作名 `idle/walk/run/attack1/attack2/attack3/attack4/skill/evade/guard/hit/defeat`。四套攻击按**该角色自己的武器契约**分镜，不强制全员单剑刺劈斩。既有 `move/attack/combo` 及迁移产生的额外动作只用于显式兼容；新 GIF 可分批导入当前剧情实际需要的动作，但正式完整新角色的十二组制作验收不能因此减免。**缺失动作报错，禁止静默回退。**
 6. `WuxiaCharacterDefinition` 引用 Profile 并按内容身份登记 Manifest；不往共享 `battle_actor.tscn` 写死人物资产，也不为新角色加特殊规则分支。对已保存、已微调的 `SpriteFrames` 做重复导入须显示目标及哈希保护，不能无声覆写。
 
-当前仓库的原生 `SpriteFrames.tres` 路径均合法：已迁移角色位于 `data/native/sprite_frames/<id>.tres`；`Native GIF` 导入器生成 `data/native/animations/<id>_frames.tres`；新自由装配输出 `data/native/animations/<id>_frames__<hash>.tres`，以保护已经手工修改的版本。三者都可以作为 `WuxiaActorAnimationProfile.native_frames` 的引用目标，**不要为了整理目录擅自移动或双写**。操作见 [GIF 导入指南](../demos/changfeng-battle/docs/NATIVE_ANIMATION_IMPORT.md)和 [Art Production 导入指南](../art-production/tools/GODOT_IMPORTER.md)。
+当前仓库保留多种合法的原生 `SpriteFrames.tres` 历史来源：迁移角色位于 `data/native/sprite_frames/<id>.tres`；早期自由装配产生过 `data/native/animations/<id>_frames__<hash>.tres`。**V3 当前正式使用的动画统一保存为 `data/native/animations/<id>_frames.tres`**，每角色一份，全部动作放在这一资源里；后续导入单动作时只替换该动作、保留其他动作。旧版文件保留供备份／回退，不为了整理目录擅自移动或双写。操作见 [GIF 导入指南](../demos/changfeng-battle/docs/NATIVE_ANIMATION_IMPORT.md)和 [V3 工作台指南](../art-production/tools/FRAME_WORKBENCH_V3.md)。
 
 **工具落地边界：**Native GIF Dock 可将逐动作 GIF 导入 SpriteFrames；Art Production 的“自由装配”可将已人工映射、校准、通过 Alpha 检查的 Sheet 自动转换为 SpriteFrames（FPS、时长、循环均写入原生资源），旧 Atlas/Clip 仍可显式选择兼容输出。复杂绘画边缘需人工复核；本功能的自动回归与 Godot GUI 实机验收分别记录，不得把代码接通等同于视觉审批。
 
-**V3 逐帧修复导入（候选后处理）**：`角色动画 V3` Dock 直接接受任意实际尺寸的 GIF／PNG／WebP／JPG，自动登记候选，允许框选、多边形蒙版、擦除／恢复、每帧等比缩放与偏移，在**最终** 328×256 或 384×288 透明画布上执行硬性边距／越界检查。源图的 5×5 和 8px 原始验收仍是**新制 AI 美术的制作目标**，不作为 V3 修复候选加载门槛；逐帧编辑记录不等于对缺帧、人体比例漂移或错误武器的美术批准。只有显式人工批准才可版本化更新单个 `SpriteFrames` 动作，保留其他动作、旧资源和事务撤销；旧 Atlas/Clip 角色未迁移时拒绝隐式清除旧动作。操作见 [V3 工作台指南](../art-production/tools/FRAME_WORKBENCH_V3.md)。
+**V3 逐帧修复导入（候选后处理）**：`角色动画 V3` Dock 直接接受任意实际尺寸的 GIF／PNG／WebP／JPG，自动登记候选，允许框选、多边形蒙版、擦除／恢复、每帧等比缩放与偏移，在**最终** 328×256 或 384×288 透明画布上执行硬性边距／越界检查。源图的 5×5 和 8px 原始验收仍是**新制 AI 美术的制作目标**，不作为 V3 修复候选加载门槛；逐帧编辑记录不等于对缺帧、人体比例漂移或错误武器的美术批准。显式确认导入后在唯一的 `<id>_frames.tres` 中更新单动作，旧文件与原生修改通过事务备份恢复；其他动作必须保持原样。编辑器内可用「预览实际动画」直接查看当前绑定的全部动作及原始像素尺寸。操作见 [V3 工作台指南](../art-production/tools/FRAME_WORKBENCH_V3.md)。
 
 ## 4. 地图、HUD 与 VFX 的编辑交接
 
