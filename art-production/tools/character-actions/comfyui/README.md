@@ -40,6 +40,8 @@ python scripts/install_comfy_ui.py --comfy-root <ComfyUI安装目录> --template
 | 04 12 组动作批量生成 | 默认直接生成全部，可填 `action_filter` 只跑指定动作 |
 | 05 12 组动作样帧校准 | 每组抽代表帧并记录姿态与透明度检查 |
 | 06 2D 骨骼渲染 | 用 Blender 将本地拆件工程渲染为透明 PNG，按动作分组 |
+| 07 原画生成 2D 拆件候选 | 原画和布局参考生成拆件图集，保留原始稿与去背景候选 |
+| 08 生成 2D 骨骼工程 | 校对后的部件与动作坐标生成目标骨架预览和可供 06 渲染的工程 |
 
 输出可在 ComfyUI 画廊查看，完整清单与逐帧证据位于本目录的 `outputs`。04 的候选如果边距不足或去背景失败，报告与画廊会标明相应状态。尺寸以骨架清单和实际角色身高为准，参考骨架默认采用 384×288。姿态、透明与模型检查属于候选验收的一部分，最终仍按角色美术 Skill 做目视与 Godot 实速复核。
 
@@ -50,3 +52,13 @@ python scripts/install_comfy_ui.py --comfy-root <ComfyUI安装目录> --template
 `action_filter` 留空处理工程中的全部动作，或填 `walk`、`walk,run` 选择动作。需要试用替代部件或单组动作清单时，可填 `parts_override` 或 `motion_override`，相对路径从 `project.json` 所在目录解析。
 
 运行后画布预览原生 RGBA PNG。实际文件保存在 ComfyUI 输出目录的 `WuxiaRig2D/<批次>/<动作>/frames`，同批还包含带原动作时序的灰底 GIF、HTML 预览页、Blender 工程和技术检查报告。尺寸和根点由拆件工程决定。输出保持美术候选状态。
+
+### 07 原画生成 2D 拆件候选
+
+上传角色原画，可在 `identity_notes` 填需要保留的发型、衣饰和配色。安装时传入模板仓库会自动填好 `parts_template`，也可指向仓库里的 `rig2d/parts-template/parts.template.json`。当前布局适用于朝右正侧视、右手单剑。工作流使用现有 FLUX.2 模型和去背景模型输出 1536×1024 图集，保存到 ComfyUI 输出目录的 `WuxiaPartsAtlas/<批次>`。逐件校对图集位置、遮挡补画和透明背景后，按[拆件工程说明](../rig2d/README.md)制作 `parts.json`。
+
+### 08 生成 2D 骨骼工程
+
+填写已校对的 `parts.json`、角色 ID 和显示名。`motion_path` 支持单组或合并的 `motion.json`，也支持按 `<动作>/motion.json` 组织的动作目录。动作源须有朝右的关节坐标、左右鞋跟与鞋尖、剑握点与剑尖，以及逐帧时长。所有动作应与目标部件比例匹配，并共享画布和根点。留空 `action_filter` 会导入全部。
+
+08 会在 ComfyUI 输出目录的 `WuxiaRig2DProject/<批次>` 保存分组动作、已检查的贴图副本、目标骨架预览及 `project.json`。把该工程路径填入 06，Blender 会求解实际关节与部件姿势并渲染。骨架预览使用动作源的目标坐标，关节可达性在 Blender 预检或渲染时检查。

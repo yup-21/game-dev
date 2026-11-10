@@ -174,6 +174,8 @@ def main():
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
     scene.cycles.samples = 8
+    # These flat emissive textures need no lighting denoiser.
+    scene.cycles.use_denoising = False
     scene.cycles.transparent_max_bounces = 32
     scene.render.resolution_x, scene.render.resolution_y = motion["canvas"]
     scene.render.resolution_percentage = 100

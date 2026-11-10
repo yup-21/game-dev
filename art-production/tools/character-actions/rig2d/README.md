@@ -16,6 +16,8 @@
 
 可用 Python 直接运行 `scripts/run_workflow.py --project <路径> --action walk`，适用于已有 Blender 和 Pillow 的环境。
 
+已具备部件清单和动作坐标时，也可用 [ComfyUI 08](../comfyui/README.md) 生成工程，或运行 `python scripts/build_rig_project.py --parts <部件清单> --motion <动作清单或目录> --output <新工程目录> --character-id <角色ID> --display-name <显示名>`。输出可交给 06 或上面的命令行渲染入口。
+
 ## 准备一个角色项目
 
 1. 克隆 [pose_templates](https://github.com/yup-21/pose_templates.git)。使用 `rig2d/parts-template` 里的 SVG 和清单模板制作拆件图集。补画肩窝、肘部、腕部和衣摆被挡住的区域。

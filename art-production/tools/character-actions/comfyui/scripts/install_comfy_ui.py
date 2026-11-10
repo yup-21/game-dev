@@ -14,6 +14,8 @@ import webbrowser
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from character_action_paths import BUNDLE, DEFAULT_COMFY, MODELS, TEMPLATE_ROOT
+from parts_atlas_workflow import install_parts_atlas_workflow
+from rig_project_workflow import install_rig_project_workflow
 
 
 def graph_inputs():
@@ -100,12 +102,16 @@ OUTPUTS={'WuxiaPoseSource':['IMAGE','IMAGE','STRING','STRING','INT','INT','INT',
          'CLIPLoader':['CLIP'],'VAELoader':['VAE'],'VAEEncode':['LATENT'],'CLIPTextEncode':['CONDITIONING'],
          'ReferenceLatent':['CONDITIONING'],'EmptyFlux2LatentImage':['LATENT'],'RandomNoise':['NOISE'],
          'KSamplerSelect':['SAMPLER'],'Flux2Scheduler':['SIGMAS'],'CFGGuider':['GUIDER'],
-         'SamplerCustomAdvanced':['LATENT','LATENT'],'VAEDecode':['IMAGE']}
+         'SamplerCustomAdvanced':['LATENT','LATENT'],'VAEDecode':['IMAGE'],
+         'ImageScaleToTotalPixels':['IMAGE'],
+         'WuxiaPartsAtlasGuide':['IMAGE','STRING','IMAGE'],'WuxiaPartsAtlasOutput':['STRING']}
 WIDGETS={'WuxiaPoseSource':[k for k in graph_inputs() if k not in ('character','video','pose_image')],
          'WuxiaCharacterInput':['file'],'WuxiaVideoInput':['file'],'WuxiaPoseImageInput':['file'],'UNETLoader':['unet_name','weight_dtype'],
          'LoraLoaderModelOnly':['lora_name','strength_model'],'CLIPLoader':['clip_name','type','device'],
          'VAELoader':['vae_name'],'CLIPTextEncode':['text'],'EmptyFlux2LatentImage':['width','height','batch_size'],
-         'RandomNoise':['noise_seed'],'KSamplerSelect':['sampler_name'],'Flux2Scheduler':['steps','width','height'],'CFGGuider':['cfg']}
+         'RandomNoise':['noise_seed'],'KSamplerSelect':['sampler_name'],'Flux2Scheduler':['steps','width','height'],'CFGGuider':['cfg'],
+         'ImageScaleToTotalPixels':['upscale_method','megapixels','resolution_steps'],
+         'WuxiaPartsAtlasGuide':['parts_template','identity_notes']}
 DEFAULTS={'width':384,'height':288,'noise_seed':420163,'text':''}
 TITLES={'1':'① 选择来源、上传原画、设置尺寸与身高','2':'视频路线：Klein4B蒸馏版','3':'姿态LoRA：默认1','4':'文字编码器',
         '5':'VAE','6':'骨架编码（图1）','7':'固定原画编码（图2）','8':'逐帧局部提示词','9':'负向条件（CFG1时不参与）',
@@ -113,7 +119,7 @@ TITLES={'1':'① 选择来源、上传原画、设置尺寸与身高','2':'视�
         '15':'逐帧种子','16':'Euler','17':'采样步数：默认4','18':'CFG：默认1','19':'② 逐帧生成','20':'解码原始帧','21':'③ 去背景、检查、保存透明候选'}
 
 
-def ui_graph(graph,prepare=False):
+def ui_graph(graph,prepare=False,parts_atlas=False):
     nodes=[];links=[]
     positions={'1':[0,0],'30':[-520,0],'31':[-520,280],'32':[-520,560],
                '2':[530,0],'3':[530,200],'4':[530,430],'5':[530,650],
@@ -121,6 +127,11 @@ def ui_graph(graph,prepare=False):
                '10':[1550,0],'11':[1550,200],'12':[1550,420],'13':[1550,620],
                '14':[2060,0],'15':[2060,230],'16':[2060,430],'17':[2060,620],'18':[2060,860],
                '19':[2570,0],'20':[2570,360],'21':[3080,0]}
+    if parts_atlas:
+        positions.update({'22':[-520,440],'23':[0,260]})
+    atlas_titles={'1':'拆件布局与角色细节','2':'Klein4B 蒸馏版','6':'编码拆件布局（图1）','7':'编码原画（图2）',
+                  '8':'拆件提示词','10':'加入布局参考','11':'加入原画参考','15':'图集种子',
+                  '19':'渲染一张拆件图集','21':'保存原稿与透明候选','22':'缩放原画参考','23':'拆件布局预览'}
     for key,spec in graph.items():
         kind=spec['class_type'];inputs=[];values=[]
         for name in WIDGETS.get(kind,[]):
@@ -138,6 +149,10 @@ def ui_graph(graph,prepare=False):
         if prepare and key in ('2','3'):
             pos=[600 if key=='2' else 1200,0];title='骨架预览' if key=='2' else '固定原画参考预览'
         size=[470,1040] if key=='1' else [470,430] if kind in ('WuxiaTransparentFrames','PreviewImage') else [460,220]
+        if parts_atlas:
+            title=atlas_titles.get(key,title)
+            if key in ('1','21','30'):
+                size={'1':[470,220],'21':[470,430],'30':[460,400]}[key]
         nodes.append({'id':int(key),'type':kind,'title':title,'pos':pos,'size':size,'flags':{},'order':int(key)-1,'mode':0,
                       'inputs':inputs,'outputs':[{'name':t,'type':t,'links':[]} for t in OUTPUTS[kind]],
                       'properties':{'Node name for S&R':kind},'widgets_values':values,
@@ -145,19 +160,24 @@ def ui_graph(graph,prepare=False):
     by_id={n['id']:n for n in nodes}
     for link in links:by_id[link[1]]['outputs'][link[2]]['links'].append(link[0])
     note=max(by_id)+1
-    mode = graph['1']['inputs']['execution_mode']
+    mode = graph['1']['inputs'].get('execution_mode')
     instructions = (
         '准备图预览全部骨架。' if prepare else
         '直接生成全部骨架对应的角色帧。样帧校准在独立的05工作流执行。画廊展示每帧，去背景失败时展示原始图。' if mode == '直接生成全部' else
         '样帧检查从每组抽取代表帧，生成后进行姿态与Alpha检查并保存报告。'
     )
-    nodes.append({'id':note,'type':'Note','title':'使用顺序','pos':[0,1100],'size':[480,240],'flags':{},'order':note,'mode':0,
-                  'inputs':[],'outputs':[],'properties':{},'widgets_values':[
-                      '先在本图选择文字／视频／已有骨架并上传角色原画。已有骨架可上传单PNG，或在source_path填motion.json/骨架目录。GIF可填本地路径。文字规划使用现有Codex登录。\n'
+    note_text = (
+        '上传本次角色原画。当前布局适用于朝右正侧视、右手单剑。填 parts_template 指向模板仓库中的 parts.template.json。\n'
+        '输出为 1536×1024 拆件候选。检查部件数量、位置、接缝与 Alpha，再用人物部件模板生成 parts.json。\n'
+        '原稿和去背景稿保存到 ComfyUI 输出目录的 WuxiaPartsAtlas。'
+        if parts_atlas else
+        '先在本图选择文字／视频／已有骨架并上传角色原画。已有骨架可上传单PNG，或在source_path填motion.json/骨架目录。GIF可填本地路径。文字规划使用现有Codex登录。\n'
                       + instructions + '\n'
                       'action_filter留空处理全部；填walk、attack_thrust等只处理这一组。\n'
                       '模型默认蒸馏4B、4步、CFG1、LoRA1；输出原生384×288，不事后缩放。角色身高须按实际设定填写。\n'
-                      '全部结果保持候选，原图不当首帧，不用前帧作身份参考。']})
+                      '全部结果保持候选，原图不当首帧，不用前帧作身份参考。')
+    nodes.append({'id':note,'type':'Note','title':'使用顺序','pos':[0,730 if parts_atlas else 1100],'size':[480,240],
+                  'flags':{},'order':note,'mode':0,'inputs':[],'outputs':[],'properties':{},'widgets_values':[note_text]})
     return {'id':str(uuid.uuid4()),'revision':0,'last_node_id':note,'last_link_id':len(links),'nodes':nodes,'links':links,
             'groups':[],'config':{},'extra':{'ds':{'scale':0.35 if prepare else 0.23,'offset':[600,40]}},'version':0.4}
 
@@ -192,6 +212,8 @@ def install(comfy_root, templates_root=None, *, replace_loader=False, user_direc
         ui.write_text(json.dumps(ui_graph(g,name.startswith(('01','03'))),ensure_ascii=False,indent=2)+'\n','utf8')
         shutil.copy2(ui,user/ui.name)
     install_rig2d_workflow(destination,user)
+    install_parts_atlas_workflow(destination,user,variants[1][1],templates_root,ui_graph)
+    install_rig_project_workflow(destination,user)
     print('UI_WORKFLOWS='+str(destination),flush=True)
     return core
 
@@ -202,7 +224,8 @@ def launch(core,port=8189,open_browser=True, *, python=None, user_directory=None
     opener = build_opener(ProxyHandler({}))
 
     def nodes_loaded(timeout):
-        for kind in ('WuxiaPoseSource', 'WuxiaRig2DRender'):
+        for kind in ('WuxiaPoseSource', 'WuxiaRig2DRender', 'WuxiaPartsAtlasGuide',
+                     'WuxiaPartsAtlasOutput', 'WuxiaRig2DProject'):
             with opener.open(url + '/object_info/' + kind, timeout=timeout) as response:
                 if kind not in json.load(response):
                     return False
