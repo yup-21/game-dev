@@ -49,3 +49,22 @@
 - `rig_soft_tip_px`：部件名 → 自锚点向末端渐增的局部水平形变（源像素）。
 
 Blender 为这些部件建立细分网格与可编辑形态键；源贴图、关节骨长、逻辑根点、动作时长和帧数均不更改。不填写时仍按原刚性拆件渲染。此功能用于候选效果对照，不能替代重新绘制肩窝、袖内衬和裙摆遮挡纹理；角度或末端位移过大可能产生不自然拉伸。先针对单个 `walk` 或 `attack_thrust` 用 `-PartsOverride` 和 `-MotionOverride` 对照预览。
+
+### 可选的靴筒与前脚掌拆分
+
+长靴源画通常同时画了小腿靴筒与鞋底。直接把整只靴子当 `left_foot` / `right_foot`，脚掌在落跟或蹬趾时会带着靴筒绕脚跟转，产生不自然的脚踝折角。
+
+候选 `parts.json` 可让 `left_foot` / `right_foot` 的 `polygon` 只覆盖鞋跟、脚掌与鞋尖，把同一图集的靴筒上段另拆为一块（例如 `left_boot_shaft`）。两块保留原图集 Alpha 与各自 UV，不按帧缩放：
+
+```json
+"ankle_overlays": {
+  "left": {"part": "left_boot_shaft"},
+  "right": {"part": "right_boot_shaft"}
+}
+```
+
+渲染器把靴筒锚在解出的脚踝位置，并沿膝盖方向放置；鞋跟／脚尖仍由原有 `support_foot_geometry` 决定。新靴筒 Part 的 `pivot` 是源图脚踝点，`axis` 指向靴筒上部，`length_px` 与原鞋底使用相同源图缩放比例。原 `parts.json` 不用改；字段不填写时维持原来的整靴渲染。
+
+这是一种使用既有纹理的低成本试样，脚踝处需要足够的重叠贴片避免接缝。单张靴子很难同时满足屈膝、踮脚、腾空：正式品质仍建议补画独立靴筒、踝关节遮挡片、鞋跟与鞋尖 2–3 组轮廓，再逐帧审查。
+
+顾清霜候选工程的 `project_biomech_v2.json` 可直接给 06 的 `project_path`，一次渲染 12 组动作。其 `parts_biomech_v2.json`、`motion_biomech_v2/` 与参考 Pose 位于 [pose_templates PR #1](https://github.com/yup-21/pose_templates/pull/1)，不会覆盖原来的 `project.json` 和动作清单。

@@ -133,9 +133,11 @@ def load_manifest(path):
     accessories = {item["part"]: item for item in doc.get("accessories", [])}
     cuffs = doc.get("elbow_cuffs", {})
     overlaps = doc.get("shoulder_overlaps", {})
+    ankles = doc.get("ankle_overlays", {})
     tassel = doc.get("sword_tassel")
     attachments = [*accessories, *(item["part"] for item in cuffs.values()),
-                   *(item["part"] for item in overlaps.values())]
+                   *(item["part"] for item in overlaps.values()),
+                   *(item["part"] for item in ankles.values())]
     if tassel is not None:
         attachments.append(tassel["part"])
         if tassel["sword_port"] not in parts["sword"].ports:
@@ -153,6 +155,9 @@ def load_manifest(path):
     for side, item in overlaps.items():
         if side not in ("left", "right") or not 0 <= item["arm_weight"] <= 1:
             raise ValueError("Shoulder overlap needs a valid side and blend weight in 0..1")
+    for side, item in ankles.items():
+        if side not in ("left", "right") or item["part"] not in parts:
+            raise ValueError("Ankle overlay needs a valid side and texture part")
     if any(doc["bend"][f"{side}_{chain}"] not in (-1, 1)
            for side in ("left", "right") for chain in ("arm", "leg")):
         raise ValueError("Every arm and leg bend direction must be -1 or 1")
@@ -230,6 +235,12 @@ def solve_frame(frame, doc, parts, previous_bends, grip_velocity_x=0.0):
         placed[thigh.name] = directed(thigh, hip, angle(knee - hip))
         placed[shin.name] = directed(shin, knee, angle(ankle - knee))
         placed[foot.part.name] = Placement(foot.part, heel + correction, foot.radians)
+        ankle_overlay = doc.get("ankle_overlays", {}).get(side)
+        if ankle_overlay is not None:
+            # The boot shaft remains aligned with the shin while the cropped
+            # shoe/toe piece may roll independently around heel/toe contact.
+            shaft = parts[ankle_overlay["part"]]
+            placed[shaft.name] = directed(shaft, ankle, angle(knee - ankle))
         diagnostics[f"{side}_boot_reach_correction_px"] = correction.length
 
     weapon = frame["weapon_geometry"]
