@@ -279,7 +279,7 @@ def main():
     scene["logical_origin_px"] = motion["logical_origin"]
     scene["source_generated_atlas_sha256"] = art["generated_atlas"]["sha256"]
     scene["source_motion_sha256"] = motion_digest
-    scene["candidate_scope"] = "Candidate modular profile with optional shoulder, ankle and secondary deformation layers."
+    scene["candidate_scope"] = "Candidate modular profile with optional shoulder, ankle, toe and secondary deformation layers."
     scene.frame_set(1)
     bpy.ops.wm.save_as_mainfile(filepath=str(args.output / f"{args.character_id}_{action}.blend"))
     for index, time in enumerate(timeline):
@@ -297,7 +297,7 @@ def main():
         "canvas": motion["canvas"], "logical_origin": motion["logical_origin"], "action_id": action,
         "character_id": args.character_id,
         "blender_timeline_fps": scene.render.fps, "end_contract": motion["end_contract"],
-        "render_engine": "Cycles CPU", "placement": "layered profile with optional soft and ankle overlays",
+        "render_engine": "Cycles CPU", "placement": "layered profile with optional soft, ankle and toe overlays",
         "original_used_as_initial_frame": False,
         "status": "candidate", "duration_ms": motion["duration_ms"], "loop": motion["loop"],
         "frames": [
@@ -316,3 +316,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

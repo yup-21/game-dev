@@ -134,10 +134,12 @@ def load_manifest(path):
     cuffs = doc.get("elbow_cuffs", {})
     overlaps = doc.get("shoulder_overlaps", {})
     ankles = doc.get("ankle_overlays", {})
+    toes = doc.get("toe_overlays", {})
     tassel = doc.get("sword_tassel")
     attachments = [*accessories, *(item["part"] for item in cuffs.values()),
                    *(item["part"] for item in overlaps.values()),
-                   *(item["part"] for item in ankles.values())]
+                   *(item["part"] for item in ankles.values()),
+                   *(item["part"] for item in toes.values())]
     if tassel is not None:
         attachments.append(tassel["part"])
         if tassel["sword_port"] not in parts["sword"].ports:
@@ -158,6 +160,14 @@ def load_manifest(path):
     for side, item in ankles.items():
         if side not in ("left", "right") or item["part"] not in parts:
             raise ValueError("Ankle overlay needs a valid side and texture part")
+    for side, item in toes.items():
+        if side not in ("left", "right") or item["part"] not in parts:
+            raise ValueError("Toe overlay needs a valid side and texture part")
+        shoe, tip = parts[f"{side}_foot"], parts[item["part"]]
+        # Both polygons are cut from the same atlas. They must have identical
+        # texture scale so that the seam is closed when the toe is relaxed.
+        if abs(shoe.scale - tip.scale) > 0.0001:
+            raise ValueError(f"{side} toe overlay must match the shoe's texture scale")
     if any(doc["bend"][f"{side}_{chain}"] not in (-1, 1)
            for side in ("left", "right") for chain in ("arm", "leg")):
         raise ValueError("Every arm and leg bend direction must be -1 or 1")
@@ -223,10 +233,31 @@ def solve_frame(frame, doc, parts, previous_bends, grip_velocity_x=0.0):
         }
         return middle, endpoint
 
+    toe_angles = frame.get("rig_toe_flex_degrees", {})
+    if not isinstance(toe_angles, dict) or set(toe_angles) - {"left", "right"}:
+        raise ValueError("rig_toe_flex_degrees must contain only left/right angles")
+    diagnostics["toe_flex_degrees"] = {}
+    diagnostics["toe_contact_error_px"] = {}
     for side in ("left", "right"):
         heel_toe = frame["support_foot_geometry"][side]
         heel, toe = point(heel_toe["heel"]), point(heel_toe["toe"])
         foot = directed(parts[f"{side}_foot"], heel, angle(toe - heel))
+        tip_part = None
+        tip_pose = None
+        tip_info = doc.get("toe_overlays", {}).get(side)
+        if tip_info is not None:
+            tip_part = parts[tip_info["part"]]
+            flex = bounded_degrees(toe_angles.get(side, 0),
+                                   f"rig_toe_flex_degrees.{side}", 28)
+            joint = foot.at(tip_part.pivot)
+            tip_pose = Placement(tip_part, joint, foot.radians + flex)
+            if heel_toe["contact"] == "toe":
+                # The authored toe is the stance contact. Allow the heel to
+                # rise as the metatarsal joint bends; do not drag the toe.
+                shift = toe - tip_pose.at(tip_part.axis)
+                foot = Placement(foot.part, foot.target + shift, foot.radians)
+                tip_pose = Placement(tip_part, joint + shift, tip_pose.radians)
+            diagnostics["toe_flex_degrees"][side] = math.degrees(flex)
         requested = foot.port("ankle")
         hip = torso.port(f"{side}_hip")
         thigh, shin = parts[f"{side}_thigh"], parts[f"{side}_shin"]
@@ -234,7 +265,15 @@ def solve_frame(frame, doc, parts, previous_bends, grip_velocity_x=0.0):
         correction = ankle - requested
         placed[thigh.name] = directed(thigh, hip, angle(knee - hip))
         placed[shin.name] = directed(shin, knee, angle(ankle - knee))
-        placed[foot.part.name] = Placement(foot.part, heel + correction, foot.radians)
+        # Use the final foot target; toe contact is exact unless fixed-length
+        # IK required a documented reach correction.
+        placed[foot.part.name] = Placement(foot.part, foot.target + correction, foot.radians)
+        if tip_pose is not None:
+            placed[tip_part.name] = Placement(tip_part, tip_pose.target + correction,
+                                             tip_pose.radians)
+            if heel_toe["contact"] == "toe":
+                error = (placed[tip_part.name].at(tip_part.axis) - toe).length
+                diagnostics["toe_contact_error_px"][side] = error
         ankle_overlay = doc.get("ankle_overlays", {}).get(side)
         if ankle_overlay is not None:
             # The boot shaft remains aligned with the shin while the cropped
@@ -326,3 +365,4 @@ def solve_frame(frame, doc, parts, previous_bends, grip_velocity_x=0.0):
         placed[layer.name] = directed(layer, placed["sword"].port(tassel["sword_port"]), heading)
         diagnostics["secondary_angles_degrees"][layer.name] = math.degrees(heading)
     return placed, diagnostics
+
