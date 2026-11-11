@@ -33,7 +33,7 @@
 
 1. 在 `art-production/candidates/` 建工作单、身份设定和候选图；先按 [角色美术规范](../art-production/standards/ART_PRODUCTION_STANDARD.md)与 [动画 QA](../art-production/standards/SPRITE_ANIMATION_QA.md)规划**每个动作真实帧数**、人物比例、武器契约与脚点，再选择来源形式。
 2. **5×5 AI Sheet 路径**：先验证完整 25 格映射、统一标准化与拆格、跨批动作续帧；按明确的 `batch_id/cell_index -> action_id/action_frame_index` 输出合格帧。5×5 是**AI 制作批次**，不要求最终 `SpriteFrames` 或运行时 Atlas 保持 5×5。Godot Art Production Dock 的自由装配支持每帧独立矩形、可选手绘套索/多边形 Alpha 蒙版及统一的等比标准化；默认直接导出 `SpriteFrames.tres`，或显式选旧 Clip 兼容输出。不会自动判断角色轮廓、补出被遮挡像素或改变单帧人物比例。
-3. **逐动作 GIF 路径**：每组动作一张实际存在的完整透明 GIF，登记独立候选 `.tres`，声明实际源像素和 `action_id`；GIF 不强制填写 C×R 网格。使用 `Native GIF` Dock 校验、按原时长预览、确认映射并生成原生 `SpriteFrames.tres`。独立透明 PNG 序列须先按对应导入器要求装配为可审查的动画输入，不假称 GIF Dock 能直接导入任意 PNG 文件夹。
+3. **直接生成 GIF 路径**：每组动作由动画模型直接生成一张原生 GIF（不是 Sheet 切片再编码），登记独立候选 `.tres`，声明实际源像素、时长、Alpha 和 `action_id`；不填写 C×R 网格。源 GIF 已满足最终画布和透明边距时可使用 `Native GIF` Dock；其他 GIF 先通过 V3 逐帧工作台清边／抠图／等比标准化为目标画布，再导入原生 `SpriteFrames.tres`。独立透明 PNG 序列须先按对应导入器要求装配为可审查的动画输入，不假称 GIF Dock 能直接导入任意 PNG 文件夹。
 4. **最终 Godot 编辑**：新 GIF 动画在原生 SpriteFrames 面板调整动作帧序、播放速度、逐帧时长与循环；`WuxiaActorAnimationProfile.native_frames` 引用这一资源。Profile 继续维护统一脚点、缩放、朝向参数；`AnimatedSprite2D` 承担帧显示，`AnimationPlayer`／ActionTimeline 管理表现时序和 Cue。已有 Clip 是兼容内容，不能与 `native_frames` 再分别成为同一动作的新帧序真源。
 5. 统一动作名 `idle/walk/run/attack1/attack2/attack3/attack4/skill/evade/guard/hit/defeat`。四套攻击按**该角色自己的武器契约**分镜，不强制全员单剑刺劈斩。既有 `move/attack/combo` 及迁移产生的额外动作只用于显式兼容；新 GIF 可分批导入当前剧情实际需要的动作，但正式完整新角色的十二组制作验收不能因此减免。**缺失动作报错，禁止静默回退。**
 6. `WuxiaCharacterDefinition` 引用 Profile 并按内容身份登记 Manifest；不往共享 `battle_actor.tscn` 写死人物资产，也不为新角色加特殊规则分支。对已保存、已微调的 `SpriteFrames` 做重复导入须显示目标及哈希保护，不能无声覆写。
