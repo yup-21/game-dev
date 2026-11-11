@@ -256,10 +256,11 @@ static func render_frame(frame: Dictionary, cell: Vector2i, strict: bool = true)
         return {"error": "角色或武器超出画布，请缩小或移动当前帧"}
     output.blit_rect(scaled, Rect2i(Vector2i.ZERO, dimensions), dest)
     var bounds := output.get_used_rect()
-    if strict and (not bounds.has_area() or bounds.position.x < MARGIN or bounds.position.y < MARGIN or \
+    var warnings: Array[String] = []
+    if bounds.has_area() and (bounds.position.x < MARGIN or bounds.position.y < MARGIN or \
             bounds.end.x > cell.x - MARGIN or bounds.end.y > cell.y - MARGIN):
-        return {"error": "标准化后四边必须保留至少 8px 透明边距"}
-    return {"error": "", "image": output}
+        warnings.append("四边不足 8px 透明边距，建议在实际动画预览中检查")
+    return {"error": "", "image": output, "warnings": warnings}
 
 
 static func build(frames: Array, cell: Vector2i, action: String, fps: float,
@@ -276,10 +277,13 @@ static func build(frames: Array, cell: Vector2i, action: String, fps: float,
     var atlas := Image.create(columns * cell.x, rows * cell.y, false, Image.FORMAT_RGBA8)
     atlas.fill(Color.TRANSPARENT)
     var durations: PackedFloat32Array = PackedFloat32Array()
+    var warnings: Array[String] = []
     for index in range(count):
         var result := render_frame(frames[index], cell)
         if not str(result.get("error", "")).is_empty():
             return {"error": "第 %d 帧：%s" % [index + 1, result["error"]]}
+        for warning in result.get("warnings", []):
+            warnings.append("第 %d 帧：%s" % [index + 1, warning])
         var picture: Image = result["image"]
         atlas.blit_rect(picture, Rect2i(Vector2i.ZERO, cell),
             Vector2i(index % columns, index / columns) * cell)
@@ -293,7 +297,8 @@ static func build(frames: Array, cell: Vector2i, action: String, fps: float,
     hash.update(bytes)
     return {"error": "", "bytes": bytes, "sha256": hash.finish().hex_encode(),
         "image": atlas, "columns": columns, "rows": rows, "cell": cell,
-        "count": count, "durations": durations, "fps": fps, "loop": looping, "action": action}
+        "count": count, "durations": durations, "fps": fps, "loop": looping,
+        "action": action, "warnings": warnings}
 
 
 static func make_frames(existing: SpriteFrames, built: Dictionary, atlas: Texture2D) -> SpriteFrames:

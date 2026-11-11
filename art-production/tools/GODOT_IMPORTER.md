@@ -2,7 +2,7 @@
 
 插件目录：`demos/changfeng-battle/addons/wuxia_art_importer/`。
 Godot **4.7.2** 编辑器显示 **Art Production** Dock。
-角色 GIF／任意精灵图的简化编辑与单动作绑定，优先使用新 `角色动画 V3` Dock；操作见[逐帧制作工作台 V3](FRAME_WORKBENCH_V3.md)。下述自由装配和独立 Native GIF Dock 继续作为旧版兼容入口。
+角色 GIF／任意精灵图的简化编辑与单动作绑定，优先使用新 `角色动画 V3` Dock；操作见[逐帧制作工作台 V3](FRAME_WORKBENCH_V3.md)。下述自由装配和独立 Native GIF Dock 继续作为旧版兼容入口，其完整批次检查不约束 V3 的单动作导入、编辑和预览。
 **运行时引用仍以 Godot 原生 .tres 为唯一配置来源。**
 `art-production/inventory` 与 `art-production/reviews` 的 JSON 只用于离线审计、SHA-256 校验和回退。
 
@@ -56,7 +56,7 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_art_ca
    - 对两帧太近、矩形内带入相邻人物残影的情况，改选“自由手绘套索抠图”（按住左键沿人物外形画一圈）或“多边形点击描边”（逐点点击、右键或双击闭合）。轮廓外像素会在**导入副本**内被设置为全透明；原图保持原样。预览动作帧可以检查实际抠图效果，重置按钮清除当前格矩形、蒙版、偏移、缩放和脚点。
    - 轮廓必须在对应的矩形内，不能代替修复真正重叠的身体/武器像素。复杂发丝、衣袖及半透明边缘可以在 Krita/GIMP 中先人工修图，再回到导入器使用保留的透明度。
 3. 动作选择器固定显示新十二动作 `idle/walk/run/attack1/attack2/attack3/attack4/skill/evade/guard/hit/defeat`。在「当前动作的有序帧映射」输入如 `0:0-7,1:4,0:9`，表示源图 0 的 0～7 格、源图 1 的第 4 格、源图 0 的第 9 格，**严格按填写顺序播放**。可手动乱序、非连续选择，也可以点击网格逐帧追加，跨图续帧不需额外 Clip。
-4. 分别设置每个动作循环、FPS、可选的逗号分隔逐帧秒数；点击「播放动作」切换到当前动作逐帧播放，另有「暂停」「上一帧」「下一帧」「查看网格」。**即使其余动作尚未完成，也能先预览当前已映射动作**。非循环动作只播放一次，`defeat` 保持最后一帧。正式导入预检仍要求十二动作均已绑定，丢失动作直接报错，不使用 `move/attack/combo` 旧别名回退。
+4. 分别设置每个动作循环、FPS、可选的逗号分隔逐帧秒数；点击「播放动作」切换到当前动作逐帧播放，另有「暂停」「上一帧」「下一帧」「查看网格」。**即使其余动作尚未完成，也能先预览当前已映射动作**。非循环动作只播放一次，`defeat` 保持最后一帧。此旧版自由装配入口的正式全套角色检查仍要求十二动作；如需逐个添加动作，请使用 V3 工作台，其他动作缺失不会阻断当前导入，也不会使用 `move/attack/combo` 旧别名回退。
 5. 选择输出普通档单格 328×256（默认）或高个档 384×288。「检查并导入」校验每帧内容非空、至少 8px 真透明留白、切格/描边不越界、合法的时间/帧序；不同源图/独立裁切矩形允许具有不同尺寸，默认使用共同的等比缩放因子，可为个别帧手工叠加倍率并点选脚点。所有帧使用共享画布及可编辑输出定位。合格后按动作顺序装配为 PNG，默认直接生成可编辑的原生 `SpriteFrames.tres`（含 FPS、循环和逐帧时长），Profile 的 `native_frames` 指向它且不再另外保留一套 Clip 帧序。取消“生成原生 SpriteFrames”才输出旧 Clip 兼容资源。`WuxiaCharacterDefinition`、Animation Profile、PNG、SpriteFrames 与候选 `.tres` 元数据通过原有事务备份、版本化路径和确认界面一起切换。**候选图的独立 `.tres` 与角色 ID 必须一致**。
 
 注意：自由裁切和多边形/套索蒙版可以人工排除相邻帧的残留像素，但不会自动猜测人物/武器轮廓、补出被别帧遮住的细节或修复真正重叠的原画；必要时请在外部绘图软件返工。输出使用固定两档画布，单帧仍需 8px 透明边距。源图文件始终保留。本节旧自由装配流程仍采用版本化 `_frames__<hash>.tres`；**角色动画 V3** 工作台已改为每角色唯一的无版本号 `<id>_frames.tres`，导入前自动备份并仅更新指定动作，可直接预览已绑定动画。操作见 [V3 工作台指南](FRAME_WORKBENCH_V3.md)。新动作集为十二动作，历史九动作 Resource 仍可正常读取和播放。
@@ -64,6 +64,8 @@ godot --headless --path demos/changfeng-battle --script res://checks/test_art_ca
 逐帧手工缩放和点选脚点的用法见 [逐帧缩放与脚点对齐](SPRITE_FRAME_ALIGNMENT.md)。未设置逐帧参数的来源沿用上述共同缩放和定位。
 
 ## 数据保护与限制
+
+本节描述旧导入器的操作约束；V3 以其独立工作台规则为准，不应从这里继承额外的验收门槛。
 
 - 导出不修改 `res://assets/`；导入不覆盖旧图片。不论素材原稿来自 `art-production/candidates/` 还是 `art-production/in-use/`，Godot 均只写入 `assets/imported/characters/<actor-id>/portraits|sprites/`、`scenes/<scene-id>/`、`vfx/<actor-id>/<skill-id>/`、`ui/<component-id>/` 等分类路径；不在导入目录保留 candidate/in-use 或 `baseline`、`sprite-vNN` 制作批次层级。名称冲突仍需显式版本化替换。
 - `in-use/` 导出副本不再包含 `imported/` 或日期层级。导入撤销只恢复 .tres，保留新图片供检查。Godot 自动生成的 `.godot/imported/` 是缓存，不应手动整理或提交。

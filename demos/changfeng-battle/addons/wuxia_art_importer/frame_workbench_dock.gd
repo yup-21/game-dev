@@ -456,6 +456,9 @@ func _refresh_output() -> void:
         var strict := Service.render_frame(frame, _cell())
         if not str(strict.get("error", "")).is_empty():
             status.text = "第 %d 帧需调整：%s" % [current_index + 1, strict["error"]]
+        elif not strict.get("warnings", []).is_empty():
+            status.text = "第 %d 帧质量提示：%s（仍可导入）" % [
+                current_index + 1, ", ".join(strict["warnings"])]
     else:
         status.text = str(preview["error"])
 
@@ -575,6 +578,8 @@ func _review() -> void:
         lines.append("• " + str(notice))
     status.text = "%s · %d 帧 · %s\n本次将自动创建/更新：\n%s\n确认后导入，动画画面可随后检查。" % [
         _action(), frames.size(), str(_cell()), "\n".join(lines)]
+    if not built.get("warnings", []).is_empty():
+        status.text += "\n质量提示（不阻断导入）：\n" + "\n".join(built["warnings"])
 
 
 func _confirm_apply() -> void:

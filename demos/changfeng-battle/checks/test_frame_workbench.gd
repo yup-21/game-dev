@@ -200,6 +200,12 @@ func _initialize() -> void:
     var removed := Workbench.clean_edges(white)
     check(removed.get_pixel(0, 0).a == 0.0 and removed.get_pixel(30, 30).a > 0.9,
         "opaque uniform background removed without deleting foreground")
+    var near_edge := _frame(source)
+    near_edge["offset"] = Vector2(-150, 0)
+    var margin_result := Workbench.build([near_edge], Vector2i(328, 256), "idle", 10.0, true)
+    check(str(margin_result.get("error", "")).is_empty() and
+        not margin_result.get("warnings", []).is_empty(),
+        "small transparent margin warns without blocking the import")
     var edge := _frame(source)
     edge["offset"] = Vector2(160, 0)
     check(not str(Workbench.build([edge], Vector2i(328, 256), "idle", 10.0, true)
