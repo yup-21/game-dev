@@ -71,17 +71,17 @@ Single figure, transparent RGBA, clean edges and safe margins; no scene or text.
 
 ## 5. 游戏内 2D 角色：Sprite / Animation Atlas
 
-**新战斗角色精灵图已定稿**：普通档单格 **328×256px**，高个档例外 **384×288px**；源人物自然站姿高度 `round(height_m×100)`，100–220px。**AI 每张生成固定 5×5、25 格**；标准化后普通档整图 **1640×1280**，高个档 **1920×1440**。这些是后处理成品规格，生图模型并不能可靠强制输出精确宽高。运行时 `.tres` 支持独立 Clip Atlas、任意合法列行、脚点/帧序/时长；旧图保留。
+**新战斗角色的最终帧规格已定稿**：普通档 **328×256px**，高个档 **384×288px**；人物自然站姿高度 `round(height_m×100)`，100–220px。**两条生成路线并列**：[A：AI 5×5 混合 Sheet](../standards/SPRITE_SHEET_5X5_STANDARD.md)，标准化后整图普通 1640×1280／高个 1920×1440；[B：直接逐动作 GIF](../standards/SPRITE_GIF_STANDARD.md)，原始 GIF 画布由模型实际输出，逐帧后处理成统一尺寸。游戏最终以原生 `SpriteFrames.tres` 管理动作帧序、时长和循环，旧 Atlas/Clip 仅兼容。
 
-制作方法：Agent 对 12 组动作分别分镜、按角色身高/武器选择整角色唯一 W×H 格档，再把动作的实际帧序持续填入每张 5×5 AI Sheet。**一张图可以跨多个动作，也可在第 25 格结束后让当前动作从下一张第 1 格继续**；普通档后处理为 1640×1280。提示词只提供角色参考、5×5 布局、格位动作/帧号、已选身份武器和局部姿势，不把精确像素当作生图设置。先核对 AI 输出的等格布局，再统一等比变换与透明补边，逐格机械切分、验收；失败不靠强制拉伸/裁切掩盖。
+路线 A 的制作方法：Agent 对 12 组动作分别分镜、按角色身高/武器选择整角色唯一 W×H 格档，再把动作的实际帧序持续填入每张 5×5 AI Sheet。**一张图可以跨多个动作，也可在第 25 格结束后让当前动作从下一张第 1 格继续**；普通档后处理为 1640×1280。提示词只提供角色参考、5×5 布局、格位动作/帧号、已选身份武器和局部姿势，不把精确像素当作生图设置。先核对 AI 输出的等格布局，再统一等比变换与透明补边，逐格机械切分、验收；失败不靠强制拉伸/裁切掩盖。
 
-**生图入口**：角色逐帧描述只作为分镜数据，不再单独使用单帧生图模板。实际调用下文 §5.1 的多帧 Sheet 简版提示词。
+**生图入口**：先运行 §5.2 动作分镜，再按本次任务选择 §5.1 的 **5×5 Sheet** 或 §5.3 的 **直接 GIF** 短提示词。两条路线不相互强制转换；从 Sheet 抽帧生成 GIF 属于路线 A 衍生物。
 
 **完整美术生产清单为 12 组**：`idle` 待机、`walk` 行走、`run` 跑步、**四套按当前角色武器契约定义的攻击变体**、`skill` 技能、`evade` 闪避、`guard` 格挡、`hit` 受击、`defeat` 倒地。单剑角色可用 `attack_thrust/attack_overhead/attack_sweep/attack_heavy` 作为示例，其他武器应选择适合其形制、握法和打击方式的攻击。每组分别分镜与验收；合图由程序自动完成。
 
-**当前原生动作合同**：`idle/walk/run/attack1/attack2/attack3/attack4/skill/evade/guard/hit/defeat` 共 12 组。每名角色按其武器／徒手设计四种不同攻击，单剑直刺、下劈、横斩、蓄力重击仅作分镜范例；正式 Clip 的 `action` 字段使用 `attack1-4`，不是这四个范例名称。连携是对已配置攻击的时序编排，不单独绘制固定 `combo`；旧 `move/attack/combo` 只在明确配置的存量 Profile 中可用，不能静默代替缺失动作。每组有自己的循环／复位合同，技能可绑定指定动作和有效帧 VFX Cue；逐帧时长与表现根位移需要写入原生 Clip 才会生效。
+**当前原生动作合同**：`idle/walk/run/attack1/attack2/attack3/attack4/skill/evade/guard/hit/defeat` 共 12 组。每名角色按其武器／徒手设计四种不同攻击，单剑直刺、下劈、横斩、蓄力重击仅作分镜范例；正式 Clip 的 `action` 字段使用 `attack1-4`，不是这四个范例名称。连携是对已配置攻击的时序编排，不单独绘制固定 `combo`；旧 `move/attack/combo` 只在明确配置的存量 Profile 中可用，不能静默代替缺失动作。每组有自己的循环／复位合同，技能可绑定指定动作和有效帧 VFX Cue；逐帧时长在新动画的 `SpriteFrames.tres` 中维护，旧 Clip 才使用 `frame_durations`；局部表现位移和游戏世界移动分别配置。
 
-### 5.1 AI 默认生成：一张多帧动作 Sprite Sheet
+### 5.1 路线 A：一张多帧动作 Sprite Sheet
 
 按 [精灵动画生产与验收合同](../standards/SPRITE_ANIMATION_QA.md) 执行。AI **每次生成一张固定 5 列×5 行的多动作 Sprite Sheet**，25 个行优先格位分别对应一个确定的 `action_id + action_frame_index`；各动作 N 由 §5.2 分镜决定，不能用 25 反推动作长度。原图允许模型自身分辨率，普通档经程序标准化后单格 328×256、整图 1640×1280（高个档保留 384×288 / 1920×1440）。末批不足 25 时尾部保持透明，不为凑格重复帧。
 
@@ -151,8 +151,24 @@ Only final unused cells transparent; no clipping, neighboring-cell spill, border
 - **补全其余动作**：`idle` 呼吸戒备循环、`walk` 蹬地换脚循环、`run` 快速跨步循环、`skill` 专属招式与复位、`evade` 蹬地落脚与合理位移、`guard` 架剑承压与撤架、`hit` 受力缓冲与恢复、`defeat` 倒地接触直至静止。每种均按 §2.2 的独立阶段和首尾合同生成，不能把 walk/run 混成 move 的一套动作，也不能让 defeat 自动站起。
 - **图集布局选择**：每张新 AI Sheet 固定 5×5，按从左到右、自上而下编号 0..24，格位连续排入多种动作，动作可以跨批次。记录 `batch_id+cell_index -> action_id+action_frame_index`，装配时还原为各动作真实 N 与有序绝对帧索引、循环/复位标记。运行时 Atlas 可重打包，不强制 5×5。
 - **运行时边界**：`attack_thrust/attack_overhead/attack_sweep/attack_heavy` 等是示例分镜标签，正式 `clip.action` 统一写 `attack1-4`；Skill 或武学 Resource 仅绑定一个已存在的动作 ID，VFX 通过 Cue 或事件绑定。没有实际 Godot 播放与时序验证的素材仍只算未验收候选，不宣称完整接入。
-- **审查分工**：机器核查分镜帧号/数量/时间/字段完整、PNG Alpha、格子边距和零重叠；AI 视觉只初筛身份、与角色武器契约不符的武器增减/握持、侧视及明显姿态跳变；真实支撑脚识别与动作合理性不能自动保证，疑难帧与最终少量样片再人工复核。分镜 `time_ms` 仅是离线节奏建议；必须映射到 `WuxiaActorAnimationClip.frame_durations` 才会影响 Godot 逐帧停留时间。
+- **审查分工**：机器核查分镜帧号/数量/时间/字段完整、PNG Alpha、格子边距和零重叠；AI 视觉只初筛身份、与角色武器契约不符的武器增减/握持、侧视及明显姿态跳变；真实支撑脚识别与动作合理性不能自动保证，疑难帧与最终少量样片再人工复核。分镜 `time_ms` 仅是离线节奏建议；新动作必须映射到 `SpriteFrames` 单帧 duration；只有兼容旧 Atlas 时才写入 `WuxiaActorAnimationClip.frame_durations`。
 
+### 5.3 路线 B：直接生成逐动作 GIF
+
+按 [直接 GIF 规范](../standards/SPRITE_GIF_STANDARD.md) 制作：**一个生成任务只对应一个动作、一张原生动画 GIF**。先完成 §5.2 的分镜，再以同一人设／武器基准制作连续运动，不使用 5×5 网格、25 格映射或 Sheet 分帧提示。原始 GIF 的画布、透明度与帧时长读取真实文件；进入 V3 逐帧工作台后统一成 328×256／384×288、RGBA、8px 真透明边距及同一脚点。生成器若只输出静态图或由 Sheet 后加工得到 GIF，应归入路线 A 衍生预览，不标记为直接生成。
+
+**单动作 GIF 短提示词**（选择一个 action_id 并展开，不发送多个候选项）：
+
+```text
+Animated 2D hand-painted wuxia GIF, one continuous {action_id} motion.
+Match the approved character reference and exact equipment: {weapon_contract}.
+Fixed right-facing side view, same body proportions and feet-ground reference.
+Motion beats: {ordered_key_poses_and_transitions}; timing: {duration_and_loop_or_finish}.
+One complete character throughout, readable weight shift and weapon trajectory.
+No camera motion, extra limbs, extra weapons, captions, grid or background objects.
+```
+
+保留原始 GIF、实际帧数和毫秒时长；逐动作可分批交付。最终动作名、帧序、FPS、逐帧 duration 与循环写到 `SpriteFrames.tres`，新动画不写第二份 Clip 帧序。
 ## 6. 场景设定与可运行地图贴图
 
 **城镇、街区、大地图补充**：横向主街、竖向街巷与十字街口使用同一尺度。生成前先阅读 [城镇与大地图统一比例尺规范](../standards/TOWN_MAP_SCALE_PRODUCTION.md)，使用 `art-production/tools/scene_scale_guide.py` 生成的透明标尺图作为参考。普通角色始终 200 世界像素高，街区以 1600×1000 单屏为单位生成；场景各层同坐标、同画布、无运行时二次拉伸。城市通过街区连接表现，不靠一张超大画布缩小角色。纵向单屏仍是 1600×1000 的横屏画布；连续南北长街可以使用 1600×2400 等完整世界画布，并由固定 1600×1000 游戏视口跟随人物滚动，不旋转背景、不把角色向远处缩小。通过 `--orientation vertical`（南北）、`--orientation mixed`（十字街口）输出对应的参考层。
