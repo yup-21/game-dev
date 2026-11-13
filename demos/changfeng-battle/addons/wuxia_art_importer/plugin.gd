@@ -4,11 +4,15 @@ extends EditorPlugin
 const Dock = preload("res://addons/wuxia_art_importer/art_import_dock.gd")
 const GifDock = preload("res://addons/wuxia_art_importer/native_gif_dock.gd")
 const FrameWorkbench = preload("res://addons/wuxia_art_importer/frame_workbench_dock.gd")
+const Rig2DPoseDock = preload("res://addons/wuxia_art_importer/rig2d_pose_dock.gd")
 var dock: Control
 var gif_dock: Control
 var frame_workbench: Control
+var rig2d_pose_dock: Control
 
 func _enter_tree() -> void:
+    rig2d_pose_dock = Rig2DPoseDock.new()
+    add_control_to_dock(DOCK_SLOT_RIGHT_BL, rig2d_pose_dock)
     frame_workbench = FrameWorkbench.new()
     add_control_to_dock(DOCK_SLOT_RIGHT_BL, frame_workbench)
     dock = Dock.new()
@@ -17,6 +21,10 @@ func _enter_tree() -> void:
     add_control_to_dock(DOCK_SLOT_RIGHT_BL, gif_dock)
 
 func _exit_tree() -> void:
+    if rig2d_pose_dock != null:
+        remove_control_from_docks(rig2d_pose_dock)
+        rig2d_pose_dock.queue_free()
+        rig2d_pose_dock = null
     if frame_workbench != null:
         remove_control_from_docks(frame_workbench)
         frame_workbench.queue_free()

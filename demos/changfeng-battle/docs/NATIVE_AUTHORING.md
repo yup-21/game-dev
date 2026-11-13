@@ -41,6 +41,7 @@
 ## 自研导入与地图编辑器
 
 - **Art Production Importer**：角色 Atlas／立绘继续绑定到唯一的 `WuxiaCharacterDefinition` 与 `WuxiaActorAnimationProfile`；Atlas Clip 仅是未绑定 `native_frames` 时的兼容帧序。**Native GIF Dock** 可导入逐动作 GIF、预览并生成 `SpriteFrames.tres`，具体步骤见 [原生 GIF 导入指南](NATIVE_ANIMATION_IMPORT.md)。导入器不把某个角色的贴图硬写进所有角色共用的 `.tscn`。
+- **2D 骨骼 Dock**：可读取 `pose_templates` 拆件、拖动左臂 IK 与部件轴点，生成不覆盖运行时资源的原生 `Skeleton2D + Bone2D + Polygon2D + AnimationPlayer` 候选。仓库已附带顾清霜 25 部件、12 动作的可打开场景；参见 [2D 骨骼可视化编辑指南](RIG2D_VISUAL_EDITOR.md)。
 - **分层场景导入**：默认只修改地图或章节的 `.tres` 和 `WuxiaSceneArtProfile`。如果已在 Godot 里建立原生地图场景，可在导入器的“原生地图 .tscn”栏显式填写路径，或打开该地图后点击“当前场景”自动填入路径；**随后先 Ctrl+S 保存并关闭该场景，再执行导入**，避免覆盖编辑器内尚未保存的微调。预检会核对根节点的 `source_map`、`Background/Ground` 原生 `Sprite2D` 以及可选层节点，仅替换指定层的 `texture`，**不会修改位置、比例、碰撞、出口、Marker**。缺少的可选图层需先在编辑器中创建。
 - **防覆盖和回退**：导入前确认弹窗显示将修改的 `.tscn`；导入事务同时备份 `.tres`、所选 `.tscn`，保存前复查文件哈希，自动失败或手动撤销都要求文件没有被后续修改。新导入图片保留，避免误删其他资源。
 - **Wuxia Map Editor**：在 Inspector 选旧 `WuxiaMapDefinition`，仍可使用多边形画笔编辑 Resource；选带 `source_map` 的原生地图根节点时切为只读检查模式。直接在 Godot 2D 视图修改 `WalkableArea/Boundary`、`Obstacles`、`Markers`、`Exits`；保存 `.tscn` 后，使用该根节点的“同步原生节点到地图 .tres”按钮更新旧消费者使用的 Resource。地图插件不会暗中用旧画笔覆盖原生几何。
